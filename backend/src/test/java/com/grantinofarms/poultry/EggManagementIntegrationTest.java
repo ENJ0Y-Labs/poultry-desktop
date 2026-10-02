@@ -75,6 +75,19 @@ class EggManagementIntegrationTest {
     }
 
     @Test
+    void backdatedSaleCannotMakeLaterHistoricalBalanceNegative() {
+        var batch = setupLayer();
+        eggService.addCollection(batch.id(), new EggCollectionRequest(
+                LocalDate.of(2026, 2, 1), 100, 0, null));
+        eggService.addSale(batch.id(), new EggSaleRequest(
+                LocalDate.of(2026, 2, 10), "Later customer", new BigDecimal("2"), 300_000L));
+
+        assertThatThrownBy(() -> eggService.addSale(batch.id(), new EggSaleRequest(
+                LocalDate.of(2026, 2, 5), "Backdated customer", new BigDecimal("2"), 300_000L)))
+                .hasMessage("The sale exceeds good eggs available on that date.");
+    }
+
+    @Test
     void broilerCannotUseEggFeatures() {
         setupFarm();
         var house = houseService.create(new HouseCreateRequest("Broiler House", "BH1", null));
