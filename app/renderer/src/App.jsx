@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { batchApi, costApi, farmApi } from "./services/api.js";
+import { batchApi, costApi, farmApi, feedApi } from "./services/api.js";
 
 const emptyFarm = { name: "", location: "", timezone: "Africa/Lagos", currency: "NGN" };
 const emptyHouse = { name: "", code: "", notes: "" };
@@ -17,6 +17,22 @@ const emptyCost = {
   amountMinor: "",
   reason: "",
 };
+const emptyFeedType = { name: "", unit: "bag", applicableType: "BOTH" };
+const emptyFeedPurchase = {
+  feedTypeId: "",
+  supplierId: "",
+  purchaseDate: new Date().toISOString().slice(0, 10),
+  quantity: "",
+  unit: "bag",
+  totalCostMinor: "",
+};
+const emptyFeedUsage = {
+  batchId: "",
+  feedTypeId: "",
+  usageDate: new Date().toISOString().slice(0, 10),
+  quantity: "",
+  unit: "bag",
+};
 
 export default function App() {
   const [farm, setFarm] = useState(null);
@@ -25,6 +41,11 @@ export default function App() {
   const [batches, setBatches] = useState([]);
   const [batchForm, setBatchForm] = useState(emptyBatch);
   const [costForm, setCostForm] = useState(emptyCost);
+  const [feedTypes, setFeedTypes] = useState([]);
+  const [feedInventory, setFeedInventory] = useState([]);
+  const [feedTypeForm, setFeedTypeForm] = useState(emptyFeedType);
+  const [feedPurchaseForm, setFeedPurchaseForm] = useState(emptyFeedPurchase);
+  const [feedUsageForm, setFeedUsageForm] = useState(emptyFeedUsage);
   const [houseForm, setHouseForm] = useState(emptyHouse);
   const [crateSize, setCrateSize] = useState(30);
   const [defaultWater, setDefaultWater] = useState("");
@@ -47,6 +68,8 @@ export default function App() {
       setHouses(currentHouses);
       setBatchForm(form => ({ ...form, houseId: form.houseId || currentHouses[0]?.id || "" }));
       setBatches(await batchApi.list());
+      setFeedTypes(await feedApi.listTypes());
+      setFeedInventory(await feedApi.inventory());
     } catch (err) {
       if (err.message !== "No farm has been created yet.") setError(err.message);
     } finally { setLoading(false); }
@@ -64,6 +87,8 @@ export default function App() {
       setWaterSizes(settings.waterContainerSizes.join(", "));
       setHouses([]);
       setBatches([]);
+      setFeedTypes([]);
+      setFeedInventory([]);
       setBatchForm(emptyBatch);
     } catch (err) { setError(err.message); } finally { setSaving(false); }
   }
@@ -115,6 +140,51 @@ export default function App() {
       });
       setCostForm(form => ({ ...emptyCost, batchId: form.batchId }));
     } catch (err) { setError(err.message); } finally { setSaving(false); }
+  }
+
+  async function createFeedType(event) {
+    event.preventDefault(); setSaving(true); setError("");
+    try {
+      const created = await feedApi.createType(feedTypeForm);
+      setFeedTypes(current => [...current, created].sort((a, b) => a.name.localeCompare(b.name)));
+      setFeedTypeForm(emptyFeedType);
+    } catch (err) { setError(err.message); } finally { setSaving(false); }
+  }
+
+  async function purchaseFeed(event) {
+    event.preventDefault(); setSaving(true); setError("");
+    try {
+      const type = feedTypes.find(item => item.id === feedPurchaseForm.feedTypeId);
+      await feedApi.purchase({
+        feedTypeId: feedPurchaseForm.feedTypeId,
+        supplierId: feedPurchaseForm.supplierId.trim() || null,
+        purchaseDate: feedPurchaseForm.purchaseDate,
+        quantity: feedPurchaseForm.quantity,
+        unit: type?.unit || feedPurchaseForm.unit,
+        totalCostMinor: feedPurchaseForm.totalCostMinor,
+      });
+      setFeedPurchaseForm(form => ({ ...emptyFeedPurchase, feedTypeId: form.feedTypeId }));
+      setFeedInventory(await feedApi.inventory());
+    } catch (err) { setError(err.message); } finally { setSaving(false); }
+  }
+
+  async function useFeed(event) {
+    event.preventDefault(); setSaving(true); setError("");
+    try {
+      const type = feedTypes.find(item => item.id === feedUsageForm.feedTypeId);
+      await feedApi.use(feedUsageForm.batchId, {
+        feedTypeId: feedUsageForm.feedTypeId,
+        usageDate: feedUsageForm.usageDate,
+        quantity: feedUsageForm.quantity,
+        unit: type?.unit || feedUsageForm.unit,
+      });
+      setFeedUsageForm(form => ({ ...emptyFeedUsage, batchId: form.batchId, feedTypeId: form.feedTypeId }));
+      setFeedInventory(await feedApi.inventory());
+    } catch (err) { setError(err.message); } finally { setSaving(false); }
+  }
+
+  function feedQuantity(value) {
+    return (Number(value || 0) / 1000).toString();
   }
 
   async function markBatchSold(id) {
@@ -204,6 +274,72 @@ export default function App() {
               <input placeholder="Reason" value={costForm.reason} onChange={e=>setCostForm({...costForm,reason:e.target.value})}/>
               <button disabled={saving || batches.filter(batch => batch.status === "ACTIVE").length===0}>Add cost</button>
             </form>
+          </div>
+        </section>
+
+        <section className="card full">
+          <div className="section-head"><h2>Feed management</h2><p className="muted">Purchases create inventory and one expense. Usage consumes FIFO stock and adds its cost to the batch once.</p></div>
+          <div className="subsection">
+            <h3>Feed types</h3>
+            <form className="inline-form" onSubmit={createFeedType}>
+              <input required placeholder="Name e.g. Starter" value={feedTypeForm.name} onChange={e=>setFeedTypeForm({...feedTypeForm,name:e.target.value})}/>
+              <input required placeholder="Unit e.g. bag or kg" value={feedTypeForm.unit} onChange={e=>setFeedTypeForm({...feedTypeForm,unit:e.target.value})}/>
+              <select value={feedTypeForm.applicableType} onChange={e=>setFeedTypeForm({...feedTypeForm,applicableType:e.target.value})}>
+                <option value="BOTH">Both</option><option value="LAYER">Layers</option><option value="BROILER">Broilers</option>
+              </select>
+              <button disabled={saving}>Add feed type</button>
+            </form>
+            <div className="table">
+              <div className="row header"><span>Name</span><span>Unit</span><span>For</span><span>Status</span></div>
+              {feedTypes.map(type=><div className="row" key={type.id}><span>{type.name}</span><span>{type.unit}</span><span>{type.applicableType}</span><span>{type.status}</span></div>)}
+              {feedTypes.length===0 && <p className="muted empty">No feed types yet.</p>}
+            </div>
+          </div>
+
+          <div className="subsection">
+            <h3>Purchase feed</h3>
+            <form className="inline-form" onSubmit={purchaseFeed}>
+              <select required value={feedPurchaseForm.feedTypeId} onChange={e=>{
+                const type=feedTypes.find(item=>item.id===e.target.value);
+                setFeedPurchaseForm({...feedPurchaseForm,feedTypeId:e.target.value,unit:type?.unit||"bag"});
+              }}>
+                <option value="">Feed type</option>{feedTypes.filter(t=>t.status==="ACTIVE").map(t=><option key={t.id} value={t.id}>{t.name} ({t.unit})</option>)}
+              </select>
+              <input required type="date" value={feedPurchaseForm.purchaseDate} onChange={e=>setFeedPurchaseForm({...feedPurchaseForm,purchaseDate:e.target.value})}/>
+              <input required min="0.001" step="0.001" type="number" placeholder="Quantity" value={feedPurchaseForm.quantity} onChange={e=>setFeedPurchaseForm({...feedPurchaseForm,quantity:e.target.value})}/>
+              <input placeholder="Supplier/source ID" value={feedPurchaseForm.supplierId} onChange={e=>setFeedPurchaseForm({...feedPurchaseForm,supplierId:e.target.value})}/>
+              <input required min="1" step="1" type="number" placeholder="Total cost (minor units)" value={feedPurchaseForm.totalCostMinor} onChange={e=>setFeedPurchaseForm({...feedPurchaseForm,totalCostMinor:e.target.value})}/>
+              <button disabled={saving || feedTypes.filter(t=>t.status==="ACTIVE").length===0}>Record purchase</button>
+            </form>
+          </div>
+
+          <div className="subsection">
+            <h3>Use feed</h3>
+            <form className="inline-form" onSubmit={useFeed}>
+              <select required value={feedUsageForm.batchId} onChange={e=>setFeedUsageForm({...feedUsageForm,batchId:e.target.value})}>
+                <option value="">Batch</option>{batches.filter(b=>b.status==="ACTIVE").map(b=><option key={b.id} value={b.id}>{b.code}</option>)}
+              </select>
+              <select required value={feedUsageForm.feedTypeId} onChange={e=>{
+                const type=feedTypes.find(item=>item.id===e.target.value);
+                setFeedUsageForm({...feedUsageForm,feedTypeId:e.target.value,unit:type?.unit||"bag"});
+              }}>
+                <option value="">Feed type</option>{feedTypes.filter(t=>t.status==="ACTIVE").map(t=><option key={t.id} value={t.id}>{t.name} ({t.unit})</option>)}
+              </select>
+              <input required type="date" value={feedUsageForm.usageDate} onChange={e=>setFeedUsageForm({...feedUsageForm,usageDate:e.target.value})}/>
+              <input required min="0.001" step="0.001" type="number" placeholder="Quantity" value={feedUsageForm.quantity} onChange={e=>setFeedUsageForm({...feedUsageForm,quantity:e.target.value})}/>
+              <button disabled={saving}>Record usage</button>
+            </form>
+          </div>
+
+          <div className="subsection">
+            <h3>Feed inventory</h3>
+            <div className="table">
+              <div className="row header"><span>Feed</span><span>Purchased</span><span>Used</span><span>Remaining</span><span>Remaining cost</span></div>
+              {feedInventory.map(item=><div className="row" key={item.feedTypeId}>
+                <span>{item.feedTypeName}</span><span>{feedQuantity(item.purchasedQuantityMilli)} {item.unit}</span><span>{feedQuantity(item.consumedQuantityMilli)} {item.unit}</span><span>{feedQuantity(item.remainingQuantityMilli)} {item.unit}</span><span>{item.remainingCostMinor}</span>
+              </div>)}
+              {feedInventory.length===0 && <p className="muted empty">No feed inventory yet.</p>}
+            </div>
           </div>
         </section>
 
