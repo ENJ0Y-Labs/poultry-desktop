@@ -98,7 +98,7 @@ export default function App() {
         houseId: batchForm.houseId,
         initialBirdCount: Number(batchForm.initialBirdCount),
         supplierId: batchForm.supplierId.trim() || null,
-        purchaseCostMinor: Number(batchForm.purchaseCostMinor),
+        purchaseCostMinor: batchForm.purchaseCostMinor,
       });
       setBatches(current => [created, ...current]);
       setBatchForm({ ...emptyBatch, houseId: batchForm.houseId });
@@ -110,7 +110,7 @@ export default function App() {
     try {
       await costApi.add(costForm.batchId, {
         eventDate: costForm.eventDate,
-        amountMinor: Number(costForm.amountMinor),
+        amountMinor: costForm.amountMinor,
         reason: costForm.reason.trim() || null,
       });
       setCostForm(form => ({ ...emptyCost, batchId: form.batchId }));
