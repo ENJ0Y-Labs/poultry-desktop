@@ -13,5 +13,5 @@ public record BatchCreateRequest(
         @NotBlank String houseId,
         @NotNull @Positive Integer initialBirdCount,
         String supplierId,
-        @PositiveOrZero Long purchaseCostMinor
+        @NotNull @PositiveOrZero Long purchaseCostMinor
 ) {}
