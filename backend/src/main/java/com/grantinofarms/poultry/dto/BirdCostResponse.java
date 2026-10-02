@@ -8,6 +8,7 @@ public record BirdCostResponse(
         int currentBirds,
         long initialPurchaseCostMinor,
         long additionalCostsMinor,
+        long transferInCostMinor,
         long soldBirdCostMinor,
         long mortalityCostMinor,
         long cullingCostMinor,
