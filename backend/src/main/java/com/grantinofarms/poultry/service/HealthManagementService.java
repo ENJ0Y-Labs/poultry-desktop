@@ -37,7 +37,7 @@ public class HealthManagementService {
         repository.insertHealth(id, batchId, request.recordDate(), condition, description, action, now);
         auditRepository.append(
                 farmId, "CREATE", "HEALTH_RECORD", id, null, null,
-                String.format("{"batchId":"%s","recordDate":"%s","conditionProblem":"%s"}",
+                String.format("{\"batchId\":\"%s\",\"recordDate\":\"%s\",\"conditionProblem\":\"%s\"}",
                         batchId, request.recordDate(), condition), now
         );
         return new HealthRecordResponse(id, batchId, request.recordDate(), condition, description, action);
@@ -65,7 +65,7 @@ public class HealthManagementService {
 
         auditRepository.append(
                 farmId, "CREATE", "DRUG_RECORD", id, reason, null,
-                String.format("{"batchId":"%s","recordDate":"%s","drug":"%s","costMinor":%d}",
+                String.format("{\"batchId\":\"%s\",\"recordDate\":\"%s\",\"drug\":\"%s\",\"costMinor\":%d}",
                         batchId, request.recordDate(), drug, request.costMinor()), now
         );
         return new DrugRecordResponse(id, batchId, request.recordDate(), drug, request.quantity(),
@@ -92,7 +92,7 @@ public class HealthManagementService {
                 request.quantity(), notes, now);
         auditRepository.append(
                 farmId, "CREATE", "VACCINATION_RECORD", id, notes, null,
-                String.format("{"batchId":"%s","recordDate":"%s","vaccine":"%s","quantity":%d}",
+                String.format("{\"batchId\":\"%s\",\"recordDate\":\"%s\",\"vaccine\":\"%s\",\"quantity\":%d}",
                         batchId, request.recordDate(), vaccine, request.quantity()), now
         );
         return new VaccinationRecordResponse(id, batchId, request.recordDate(), vaccine, dose,
