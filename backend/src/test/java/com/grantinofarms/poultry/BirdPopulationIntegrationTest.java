@@ -36,7 +36,7 @@ class BirdPopulationIntegrationTest {
         var house = houseService.create(new HouseCreateRequest(
                 "Layer House", "LH1", null));
         var batch = batchService.create(new com.grantinofarms.poultry.dto.BatchCreateRequest(
-                "LAYER", LocalDate.of(2026, 1, 1), house.id(), 500, null, null));
+                "LAYER", LocalDate.of(2026, 1, 1), house.id(), 500, null, 5_000_000L));
 
         populationService.addMortality(
                 batch.id(),
@@ -69,7 +69,7 @@ class BirdPopulationIntegrationTest {
         var house = houseService.create(new HouseCreateRequest(
                 "Broiler House", "BH1", null));
         var batch = batchService.create(new com.grantinofarms.poultry.dto.BatchCreateRequest(
-                "BROILER", LocalDate.of(2026, 1, 1), house.id(), 100, null, null));
+                "BROILER", LocalDate.of(2026, 1, 1), house.id(), 100, null, 1_000_000L));
 
         populationService.addMortality(
                 batch.id(),
@@ -97,9 +97,9 @@ class BirdPopulationIntegrationTest {
                 "Transfer House", "TH1", null));
 
         var source = batchService.create(new com.grantinofarms.poultry.dto.BatchCreateRequest(
-                "LAYER", LocalDate.of(2026, 1, 1), house.id(), 200, null, null));
+                "LAYER", LocalDate.of(2026, 1, 1), house.id(), 200, null, 2_000_000L));
         var target = batchService.create(new com.grantinofarms.poultry.dto.BatchCreateRequest(
-                "LAYER", LocalDate.of(2026, 1, 1), house.id(), 100, null, null));
+                "LAYER", LocalDate.of(2026, 1, 1), house.id(), 100, null, 1_000_000L));
 
         var result = populationService.transfer(
                 source.id(),
