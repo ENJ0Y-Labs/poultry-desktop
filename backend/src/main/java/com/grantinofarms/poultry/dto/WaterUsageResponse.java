@@ -5,5 +5,5 @@ public record WaterUsageResponse(
         String containerName,
         int capacityUnits,
         int containerCount,
-        int totalUnits
+        long totalUnits
 ) {}
