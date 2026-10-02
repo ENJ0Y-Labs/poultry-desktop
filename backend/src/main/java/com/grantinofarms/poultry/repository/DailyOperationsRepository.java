@@ -77,22 +77,20 @@ public class DailyOperationsRepository {
         );
     }
 
-    public boolean waterSizeBelongsToFarm(String sizeId, String farmId) {
+    public boolean waterSizeBelongsToFarm(int capacityUnits, String farmId) {
         Integer count = jdbc.queryForObject("""
                 SELECT COUNT(*) FROM water_container_sizes
-                WHERE id = ? AND farm_id = ?
-                """, Integer.class, sizeId, farmId);
+                WHERE capacity_units = ? AND farm_id = ?
+                """, Integer.class, capacityUnits, farmId);
         return count != null && count == 1;
     }
 
-    public String waterSizeName(String sizeId) {
-        return jdbc.queryForObject(
-                "SELECT name FROM water_container_sizes WHERE id = ?", String.class, sizeId);
-    }
-
-    public int waterSizeCapacity(String sizeId) {
-        return jdbc.queryForObject(
-                "SELECT capacity_units FROM water_container_sizes WHERE id = ?", Integer.class, sizeId);
+    public String waterSizeId(int capacityUnits, String farmId) {
+        return jdbc.query("""
+                SELECT id FROM water_container_sizes
+                WHERE capacity_units = ? AND farm_id = ?
+                """, (rs, n) -> rs.getString("id"), capacityUnits, farmId)
+                .stream().findFirst().orElse(null);
     }
 
     public void insertWater(String id, String dailyRecordId, String sizeId, int count, String now) {
