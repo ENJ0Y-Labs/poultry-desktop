@@ -72,7 +72,12 @@ public final class BirdCostCalculator {
         int population = initialBirds;
         long carriedCost = initialCostMinor;
 
-        for (LocalDate date : orderedDates(existingPopulationEvents, costEvents, proposedReduction.eventDate())) {
+        for (LocalDate date : orderedDates(
+                existingPopulationEvents,
+                costEvents,
+                proposedReduction.eventDate(),
+                proposedReduction.eventDate()
+        )) {
             for (BirdCostEvent costEvent : costEvents) {
                 if (costEvent.eventDate().equals(date)) {
                     carriedCost = addExact(carriedCost, costEvent.amountMinor());
@@ -131,11 +136,15 @@ public final class BirdCostCalculator {
     private static List<LocalDate> orderedDates(
             List<BirdPopulationEvent> populationEvents,
             List<BirdCostEvent> costEvents,
-            LocalDate asOf
+            LocalDate asOf,
+            LocalDate requiredDate
     ) {
         return java.util.stream.Stream.concat(
-                        populationEvents.stream().map(BirdPopulationEvent::eventDate),
-                        costEvents.stream().map(BirdCostEvent::eventDate)
+                        java.util.stream.Stream.concat(
+                                populationEvents.stream().map(BirdPopulationEvent::eventDate),
+                                costEvents.stream().map(BirdCostEvent::eventDate)
+                        ),
+                        java.util.stream.Stream.of(requiredDate)
                 )
                 .filter(date -> !date.isAfter(asOf))
                 .distinct()
