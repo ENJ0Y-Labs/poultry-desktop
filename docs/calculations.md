@@ -44,3 +44,6 @@ For:
 the current population is **4,842 birds**.
 
 Stage 6 does not yet implement feed, egg, weight, or financial calculations.
+
+
+A BROILER batch is eligible for the `SOLD` terminal lifecycle only when its calculated current population is zero.
