@@ -33,13 +33,13 @@ Do not build later-stage features unless the owner explicitly changes the stage.
 5. The Electron renderer has no Node.js, filesystem, or database access.
 6. Electron IPC validates every input.
 7. The Spring Boot backend validates every request at the API boundary.
-8. The Electron app communicates with Spring Boot through a typed HTTP API. Do not introduce a second backend API style.
-9. Backups use SQLite `db.backup()` or `VACUUM INTO` when SQLite is the selected database implementation, never a raw copy of a live DB.
+8. The Electron app communicates with Spring Boot through a REST API. Do not introduce a second backend API style.
+9. Backups use SQLite `backup` functionality or `VACUUM INTO`, never a raw copy of a live DB.
 10. The application must remain fully usable without internet access.
 11. No telemetry, cloud dependency, CDN assets, or third-party network service in normal operation.
 12. Never edit a shipped migration. Add a new migration.
 13. Never weaken/delete a test to make it pass.
-14. Never silence TypeScript with `any`, `@ts-ignore`, or equivalent.
+14. Do not introduce TypeScript into the frontend. The frontend is React + JavaScript.
 15. Never commit `*.db`, `*.db-wal`, `*.db-shm`, backups, or real farm data.
 16. Keep one local farm data model. Do not unnecessarily split the farm into separate databases/accounts.
 17. Stage 1 has one primary owner/operator account. Multi-user roles can be added later.
@@ -52,7 +52,8 @@ Do not build later-stage features unless the owner explicitly changes the stage.
 | Concern | Choice |
 |---|---|
 | Desktop shell | Electron |
-| Frontend | React + TypeScript, strict |
+| Frontend | React + JavaScript |
+| Frontend modules | JavaScript/JSX |
 | Backend | Java + Spring Boot |
 | Backend API | Spring Boot REST API |
 | Database | SQLite for local-first operation |
@@ -71,6 +72,7 @@ Do not build later-stage features unless the owner explicitly changes the stage.
 
 - Do not add Flask.
 - Do not add Express.
+- Do not add TypeScript to the frontend.
 - Do not add another backend framework.
 - Do not add an ORM such as Hibernate/JPA unless the owner explicitly approves it.
 - Do not add cloud services, telemetry, or another server/process without owner approval.
@@ -85,7 +87,7 @@ Do not build later-stage features unless the owner explicitly changes the stage.
 
 The system has three application layers:
 
-**Electron → React renderer → typed HTTP API → Spring Boot → SQLite**
+**Electron → React renderer → REST API → Spring Boot → SQLite**
 
 ### Electron
 
@@ -108,6 +110,8 @@ React owns:
 - loading/error states
 - keyboard-first interaction
 - displaying values returned by the backend
+
+Use normal JavaScript and JSX files. Do not create `.ts` or `.tsx` frontend source files.
 
 React must not:
 - connect directly to SQLite
@@ -147,13 +151,12 @@ Recommended package structure:
 - `validation/`
 - `audit/`
 - `exception/`
-- `config/`
 
 Keep controllers thin. Business logic belongs in services/domain code. Repositories contain persistence logic.
 
 ### API flow
 
-**React → Electron-safe API client → local Spring Boot REST endpoint → Controller → Service → Repository → SQLite**
+**React → API client → local Spring Boot REST endpoint → Controller → Service → Repository → SQLite**
 
 The renderer must never bypass the API.
 
@@ -181,7 +184,7 @@ Use:
 - controlled navigation
 - controlled window creation
 
-The renderer communicates with the backend through the application's API client, not by opening arbitrary external URLs.
+The renderer communicates with the backend through the application's API client.
 
 Spring Boot should bind only to localhost for the local desktop deployment.
 
@@ -408,7 +411,7 @@ If the remaining bird later receives ₦200 of additional attributable feed cost
 The general algorithm must:
 1. identify the cost carried by available/live birds
 2. allocate cost to birds sold/lost as required
-3. leave the remaining cost with the remaining birds
+3. leave the remaining cost with the remaining population
 4. add later attributable costs to the remaining population
 5. remain explainable and deterministic
 
@@ -915,10 +918,10 @@ Definition of done:
 6. Keyboard-friendly UI with visible units.
 7. Farm and batch dashboards remain consistent.
 8. Electron ↔ Spring Boot integration remains healthy.
-9. Typecheck passes.
-10. Frontend tests pass.
-11. Backend tests pass.
-12. Lint/build passes.
+9. Frontend tests pass.
+10. Backend tests pass.
+11. Frontend build/lint passes.
+12. Backend build/tests pass.
 13. Documentation is current.
 
 Keep commits small and focused.
@@ -957,7 +960,8 @@ These decisions are intentional and should not be changed casually:
 - SQLite remains the local database.
 - Flyway owns database migrations.
 - Maven owns backend builds.
-- React/TypeScript remains the frontend.
+- React + JavaScript remains the frontend.
+- Frontend source uses JavaScript/JSX, not TypeScript.
 - Electron renderer never accesses SQLite or backend internals directly.
 
 ## 33. Guiding principle
