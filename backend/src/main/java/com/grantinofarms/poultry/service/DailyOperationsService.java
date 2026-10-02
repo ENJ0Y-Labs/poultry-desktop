@@ -48,12 +48,12 @@ public class DailyOperationsService {
 
         if (request.waterContainers() != null) {
             for (WaterContainerEntryRequest entry : request.waterContainers()) {
-                if (!repository.waterSizeBelongsToFarm(entry.containerSizeId(), farmId)) {
+                if (!repository.waterSizeBelongsToFarm(entry.containerSizeUnits(), farmId)) {
                     throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_WATER_CONTAINER",
                             "Water container size does not belong to the active farm.");
                 }
                 repository.insertWater(
-                        UUID.randomUUID().toString(), id, entry.containerSizeId(),
+                        UUID.randomUUID().toString(), id, repository.waterSizeId(entry.containerSizeUnits(), farmId),
                         entry.containerCount(), now
                 );
             }
