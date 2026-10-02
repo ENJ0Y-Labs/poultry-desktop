@@ -56,7 +56,7 @@ public class BroilerProductionService {
 
         auditRepository.append(repository.batchFarmId(batchId), "CREATE", "WEIGHT_RECORD",
                 id, null, null,
-                String.format("{"batchId":"%s","recordDate":"%s","sampleQuantity":%d,"totalWeightKg":%s}",
+                String.format("{\"batchId\":\"%s\",\"recordDate\":\"%s\",\"sampleQuantity\":%d,\"totalWeightKg\":%s}",
                         batchId, request.recordDate(), request.sampleQuantity(),
                         request.totalWeightKg().stripTrailingZeros().toPlainString()),
                 now);
@@ -123,7 +123,7 @@ public class BroilerProductionService {
 
         auditRepository.append(repository.batchFarmId(batchId), "CREATE", "BIRD_SALE",
                 id, null, null,
-                String.format("{"batchId":"%s","recordDate":"%s","quantity":%d,"pricePerBirdMinor":%d,"totalAmountMinor":%d,"customer":"%s"}",
+                String.format("{\"batchId\":\"%s\",\"recordDate\":\"%s\",\"quantity\":%d,\"pricePerBirdMinor\":%d,\"totalAmountMinor\":%d,\"customer\":\"%s\"}",
                         batchId, request.recordDate(), request.quantity(),
                         request.pricePerBirdMinor(), total, clean(request.customer())),
                 now);
