@@ -99,3 +99,37 @@ Those tables will be introduced through separate forward-only migrations when th
 The schema uses `NOT NULL`, `CHECK`, `UNIQUE`, foreign keys, and indexes for foundational invariants. Service-layer validation remains responsible for cross-record rules that SQLite cannot express safely, such as population balance and batch-code allocation.
 
 Never edit an applied migration. Add a new migration instead.
+
+
+## Stage 6: Bird population events
+
+`bird_population_events` stores population-changing facts instead of a mutable `current_birds` total.
+
+Supported event types:
+- `MORTALITY`
+- `CULLING`
+- `SOLD`
+- `TRANSFER_IN`
+- `TRANSFER_OUT`
+
+Each event stores:
+- batch
+- farm business date
+- positive quantity
+- optional reference batch for transfers
+- optional reason
+- technical creation timestamp
+
+Indexes support batch/date historical calculations and transfer references.
+
+The authoritative population formula is:
+
+`initial birds - mortality - culling - sold + transfers in - transfers out`
+
+Population is calculated for an `asOf` business date. Events after that date are ignored.
+
+Reduction events are rejected when their quantity exceeds the birds available immediately before that event date. This also protects historical reports when a record is entered for an earlier date.
+
+Transfers are recorded as an atomic outbound event on the source batch and inbound event on the target batch. The source population is validated before either event is committed.
+
+No `current_birds` column is stored.
