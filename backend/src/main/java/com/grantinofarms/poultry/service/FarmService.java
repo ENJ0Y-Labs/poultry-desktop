@@ -75,10 +75,7 @@ public class FarmService {
         farmRepository.update(current.id(), request.name().trim(), clean(request.location()),
                 request.timezone().trim(), request.currency().trim().toUpperCase(), now);
         auditRepository.append(current.id(), "UPDATE", "FARM", current.id(), null,
-                json(current), json(Map.of("name", request.name().trim(),
-                        "location", clean(request.location()),
-                        "timezone", request.timezone().trim(),
-                        "currency", request.currency().trim().toUpperCase())), now);
+                json(current), json(request), now);
         return get();
     }
 
