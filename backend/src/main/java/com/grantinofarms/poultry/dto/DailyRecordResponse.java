@@ -12,7 +12,7 @@ public record DailyRecordResponse(
         int culling,
         List<DailyFeedUsageResponse> feed,
         List<WaterUsageResponse> water,
-        int totalWaterUnits,
+        long totalWaterUnits,
         List<DailyPopulationEventResponse> populationEvents,
         String notes
 ) {}
