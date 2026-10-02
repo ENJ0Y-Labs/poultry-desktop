@@ -40,12 +40,6 @@ class DailyOperationsIntegrationTest {
 
         var settings = farmService.updateSettings(new FarmSettingsRequest(
                 30, 25, java.util.List.of(25, 75)));
-        String size25 = jdbc.queryForObject(
-                "SELECT id FROM water_container_sizes WHERE farm_id = ? AND capacity_units = 25",
-                String.class, farmService.get().id());
-        String size75 = jdbc.queryForObject(
-                "SELECT id FROM water_container_sizes WHERE farm_id = ? AND capacity_units = 75",
-                String.class, farmService.get().id());
 
         var feedType = feedService.createType(new FeedTypeCreateRequest("Layer Mash", "bag", "LAYER"));
         feedService.purchase(new FeedPurchaseRequest(
@@ -63,8 +57,8 @@ class DailyOperationsIntegrationTest {
                 LocalDate.of(2026, 1, 5),
                 "Morning operational notes",
                 java.util.List.of(
-                        new WaterContainerEntryRequest(size25, 4),
-                        new WaterContainerEntryRequest(size75, 2)
+                        new WaterContainerEntryRequest(25, 4),
+                        new WaterContainerEntryRequest(75, 2)
                 )
         ));
 
