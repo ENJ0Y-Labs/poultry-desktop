@@ -1,5 +1,20 @@
-import { useEffect, useState } from "react";
-import { batchApi, costApi, dailyApi, eggApi, farmApi, feedApi, populationApi, healthApi } from "./services/api.js";
+im
+const emptyWeight = {
+  batchId: "",
+  date: new Date().toISOString().slice(0, 10),
+  sampleQuantity: "",
+  totalWeightKg: "",
+  notes: "",
+};
+const emptyBirdSale = {
+  batchId: "",
+  date: new Date().toISOString().slice(0, 10),
+  quantity: "",
+  pricePerBirdMinor: "",
+  customer: "",
+};
+port { useEffect, useState } from "react";
+import { batchApi, broilerApi, costApi, dailyApi, eggApi, farmApi, feedApi, populationApi, healthApi } from "./services/api.js";
 
 const emptyFarm = { name: "", location: "", timezone: "Africa/Lagos", currency: "NGN" };
 const emptyHouse = { name: "", code: "", notes: "" };
@@ -93,6 +108,12 @@ export default function App() {
   const [drugRecords, setDrugRecords] = useState([]);
   const [vaccinationRecords, setVaccinationRecords] = useState([]);
   const [eggBatchId, setEggBatchId] = useState("");
+  const [broilerBatchId, setBroilerBatchId] = useState("");
+  const [broilerGrowth, setBroilerGrowth] = useState(null);
+  const [broilerWeights, setBroilerWeights] = useState([]);
+  const [broilerSales, setBroilerSales] = useState([]);
+  const [weightForm, setWeightForm] = useState(emptyWeight);
+  const [birdSaleForm, setBirdSaleForm] = useState(emptyBirdSale);
   const [eggInventory, setEggInventory] = useState(null);
   const [eggCollections, setEggCollections] = useState([]);
   const [eggSales, setEggSales] = useState([]);
@@ -280,6 +301,55 @@ export default function App() {
       setDailyRecord(record);
       if (type === "MORTALITY") setMortalityForm({ ...emptyPopulationEvent, batchId: form.batchId });
       else setCullingForm({ ...emptyPopulationEvent, batchId: form.batchId });
+    } catch (err) { setError(err.message); } finally { setSaving(false); }
+  }
+
+
+  async function loadBroilerForBatch(batchId) {
+    if (!batchId) {
+      setBroilerGrowth(null); setBroilerWeights([]); setBroilerSales([]);
+      return;
+    }
+    try {
+      const [growth, weights, sales] = await Promise.all([
+        broilerApi.growth(batchId),
+        broilerApi.weights(batchId),
+        broilerApi.sales(batchId),
+      ]);
+      setBroilerGrowth(growth);
+      setBroilerWeights(weights);
+      setBroilerSales(sales);
+    } catch (err) { setError(err.message); }
+  }
+
+  async function saveWeight(event) {
+    event.preventDefault(); setSaving(true); setError("");
+    try {
+      const batchId = weightForm.batchId;
+      await broilerApi.addWeight(batchId, {
+        recordDate: weightForm.date,
+        sampleQuantity: Number(weightForm.sampleQuantity),
+        totalWeightKg: weightForm.totalWeightKg,
+        notes: weightForm.notes.trim() || null,
+      });
+      await loadBroilerForBatch(batchId);
+      setWeightForm(form => ({ ...form, sampleQuantity: "", totalWeightKg: "", notes: "" }));
+    } catch (err) { setError(err.message); } finally { setSaving(false); }
+  }
+
+  async function saveBirdSale(event) {
+    event.preventDefault(); setSaving(true); setError("");
+    try {
+      const batchId = birdSaleForm.batchId;
+      await broilerApi.addSale(batchId, {
+        recordDate: birdSaleForm.date,
+        quantity: Number(birdSaleForm.quantity),
+        pricePerBirdMinor: birdSaleForm.pricePerBirdMinor,
+        customer: birdSaleForm.customer.trim(),
+      });
+      await loadBroilerForBatch(batchId);
+      setBatches(await batchApi.list());
+      setBirdSaleForm(form => ({ ...form, quantity: "", pricePerBirdMinor: "", customer: "" }));
     } catch (err) { setError(err.message); } finally { setSaving(false); }
   }
 
@@ -749,6 +819,80 @@ export default function App() {
                   <div className="row header"><span>Date</span><span>Customer</span><span>Crates</span><span>Eggs</span><span>Price / crate</span><span>Total</span></div>
                   {eggSales.map(row=><div className="row" key={row.id}><span>{row.recordDate}</span><span>{row.customer}</span><span>{row.crates.toString()}</span><span>{row.soldEggs}</span><span>{row.pricePerCrateMinor}</span><span>{row.totalAmountMinor}</span></div>)}
                   {eggSales.length===0 && <p className="muted empty">No egg sales recorded.</p>}
+                </div>
+              </div>
+            </>
+          )}
+        </section>
+
+
+        <section className="card full">
+          <div className="section-head">
+            <h2>Broiler production</h2>
+            <p className="muted">Only BROILER batches expose weights, growth, FCR, and bird sales. FCR is calculated by the backend from feed consumed and live-weight gain.</p>
+          </div>
+
+          <div className="subsection">
+            <h3>Broiler batch</h3>
+            <select value={broilerBatchId} onChange={e => {
+              const id = e.target.value;
+              setBroilerBatchId(id);
+              setWeightForm(form => ({ ...form, batchId: id }));
+              setBirdSaleForm(form => ({ ...form, batchId: id }));
+              loadBroilerForBatch(id);
+            }}>
+              <option value="">Select a broiler batch</option>
+              {batches.filter(b => b.type === "BROILER").map(b =>
+                <option key={b.id} value={b.id}>{b.code} · {b.status}</option>
+              )}
+            </select>
+          </div>
+
+          {broilerBatchId && (
+            <>
+              <div className="subsection">
+                <h3>Growth summary</h3>
+                <div className="table">
+                  <div className="row header"><span>Average weight</span><span>Weight gain</span><span>FCR</span><span>Trend records</span></div>
+                  <div className="row">
+                    <span>{broilerGrowth?.averageWeightKg ?? "—"} kg</span>
+                    <span>{broilerGrowth?.weightGainKg ?? "—"} kg</span>
+                    <span>{broilerGrowth?.fcr ?? "—"}</span>
+                    <span>{broilerGrowth?.trend?.length ?? 0}</span>
+                  </div>
+                </div>
+                <p className="muted">FCR uses kilograms of feed consumed divided by live-weight gain. Feed types must use <strong>kg</strong> to contribute to this calculation.</p>
+              </div>
+
+              <div className="subsection">
+                <h3>Record weight</h3>
+                <form className="inline-form" onSubmit={saveWeight}>
+                  <input required type="date" value={weightForm.date} onChange={e=>setWeightForm({...weightForm,date:e.target.value})}/>
+                  <input required min="1" type="number" placeholder="Sampled birds" value={weightForm.sampleQuantity} onChange={e=>setWeightForm({...weightForm,sampleQuantity:e.target.value})}/>
+                  <input required min="0.001" step="0.001" type="number" placeholder="Total sample weight (kg)" value={weightForm.totalWeightKg} onChange={e=>setWeightForm({...weightForm,totalWeightKg:e.target.value})}/>
+                  <input placeholder="Notes" value={weightForm.notes} onChange={e=>setWeightForm({...weightForm,notes:e.target.value})}/>
+                  <button disabled={saving}>Record weight</button>
+                </form>
+                <div className="table">
+                  <div className="row header"><span>Date</span><span>Sample</span><span>Total kg</span><span>Average kg</span><span>Gain kg/bird</span></div>
+                  {broilerWeights.map(row=><div className="row" key={row.id}><span>{row.recordDate}</span><span>{row.sampleQuantity}</span><span>{row.totalWeightKg}</span><span>{row.averageWeightKg}</span><span>{row.weightGainKg}</span></div>)}
+                  {broilerWeights.length===0 && <p className="muted empty">No weight records yet.</p>}
+                </div>
+              </div>
+
+              <div className="subsection">
+                <h3>Bird sales</h3>
+                <form className="inline-form" onSubmit={saveBirdSale}>
+                  <input required type="date" value={birdSaleForm.date} onChange={e=>setBirdSaleForm({...birdSaleForm,date:e.target.value})}/>
+                  <input required min="1" type="number" placeholder="Quantity" value={birdSaleForm.quantity} onChange={e=>setBirdSaleForm({...birdSaleForm,quantity:e.target.value})}/>
+                  <input required min="1" step="1" type="number" placeholder="Price / bird (minor units)" value={birdSaleForm.pricePerBirdMinor} onChange={e=>setBirdSaleForm({...birdSaleForm,pricePerBirdMinor:e.target.value})}/>
+                  <input required placeholder="Customer" value={birdSaleForm.customer} onChange={e=>setBirdSaleForm({...birdSaleForm,customer:e.target.value})}/>
+                  <button disabled={saving}>Record bird sale</button>
+                </form>
+                <div className="table">
+                  <div className="row header"><span>Date</span><span>Quantity</span><span>Price / bird</span><span>Total</span><span>Customer</span></div>
+                  {broilerSales.map(row=><div className="row" key={row.id}><span>{row.recordDate}</span><span>{row.quantity}</span><span>{row.pricePerBirdMinor}</span><span>{row.totalAmountMinor}</span><span>{row.customer}</span></div>)}
+                  {broilerSales.length===0 && <p className="muted empty">No bird sales recorded.</p>}
                 </div>
               </div>
             </>
