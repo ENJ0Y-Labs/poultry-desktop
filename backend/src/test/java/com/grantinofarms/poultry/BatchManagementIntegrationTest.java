@@ -70,7 +70,7 @@ class BatchManagementIntegrationTest {
         assertThatThrownBy(() -> batchService.create(new BatchCreateRequest(
                 "LAYER", LocalDate.of(2026, 6, 1), house.id(), 3, null, 100L
         )))
-                .hasMessage("Purchase cost must divide evenly into whole kobo per bird.");
+                .hasMessage("Purchase cost must divide evenly into whole minor units per bird.");
     }
 
     @Test
