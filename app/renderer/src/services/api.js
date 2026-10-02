@@ -54,3 +54,15 @@ export const feedApi = {
   }),
   batchCost: (batchId, asOf) => request("/feed/batches/" + batchId + "/cost" + (asOf ? "?asOf=" + asOf : "")),
 };
+
+
+export const dailyApi = {
+  create: (batchId, data) => request("/batches/" + batchId + "/daily-records", {
+    method: "POST", body: JSON.stringify(data)
+  }),
+  get: (batchId, date) => request("/batches/" + batchId + "/daily-records/" + date),
+  list: (batchId, from, to) => request(
+    "/batches/" + batchId + "/daily-records" +
+    (from || to ? "?from=" + encodeURIComponent(from || "") + "&to=" + encodeURIComponent(to || "") : "")
+  ),
+};
