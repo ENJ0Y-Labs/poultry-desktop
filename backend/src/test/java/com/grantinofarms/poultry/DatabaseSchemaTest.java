@@ -60,7 +60,7 @@ class DatabaseSchemaTest {
                 "SELECT COUNT(*) FROM flyway_schema_history WHERE success = 1",
                 Integer.class
         );
-        assertThat(flywaySuccess).isGreaterThanOrEqualTo(10);
+        assertThat(flywaySuccess).isGreaterThanOrEqualTo(11);
     }
 
     @Test
