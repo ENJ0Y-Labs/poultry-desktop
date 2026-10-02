@@ -20,9 +20,9 @@ Priority order:
 
 A boring screen with correct poultry numbers beats a beautiful dashboard showing agricultural fiction.
 
-**Current stage: 9 — Daily farm operations.**
+**Current stage: 10 — Health management.**
 
-Stage 8 feed management is implemented. Stage 9 adds operational daily records, separate mortality/culling notes, feed usage aggregation, and configurable water-container counts. Eggs, weight, health, and other production modules remain future work.
+Stage 8 feed management is implemented. Stage 9 daily farm operations is implemented. Stage 10 adds health records, drug records with shared Drugs expenses, and vaccination records. Eggs, weight, and other production modules remain future work.
 
 Do not build later-stage features unless the owner explicitly changes the stage.
 
@@ -503,11 +503,33 @@ No unnecessary egg-size field is required for the current system.
 
 ## 15. Drugs and health costs
 
-For accounting, medications and vaccines use one expense category:
+Health, drug, and vaccination records are batch-scoped operational history.
 
-**Drugs**
+Health records store:
+- date
+- condition/problem
+- description
+- action
 
-Operational health/vaccination records can remain distinct where needed for production history.
+Drug records store:
+- drug
+- quantity
+- date
+- batch
+- cost in integer minor units
+- reason
+
+Every drug record creates exactly one shared expense with category **DRUGS**. Drug usage does not create a second expense.
+
+Vaccination records store:
+- vaccine
+- date
+- batch
+- dose
+- quantity
+- notes
+
+Health and vaccination remain operationally separate. Vaccines do not create an expense automatically because the current requirement does not attach a cost to vaccination records.
 
 ## 16. Expense scope
 
