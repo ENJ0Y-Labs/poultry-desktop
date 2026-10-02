@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { batchApi, farmApi } from "./services/api.js";
+import { batchApi, costApi, farmApi } from "./services/api.js";
 
 const emptyFarm = { name: "", location: "", timezone: "Africa/Lagos", currency: "NGN" };
 const emptyHouse = { name: "", code: "", notes: "" };
@@ -11,6 +11,12 @@ const emptyBatch = {
   supplierId: "",
   purchaseCostMinor: "",
 };
+const emptyCost = {
+  batchId: "",
+  eventDate: new Date().toISOString().slice(0, 10),
+  amountMinor: "",
+  reason: "",
+};
 
 export default function App() {
   const [farm, setFarm] = useState(null);
@@ -18,6 +24,7 @@ export default function App() {
   const [houses, setHouses] = useState([]);
   const [batches, setBatches] = useState([]);
   const [batchForm, setBatchForm] = useState(emptyBatch);
+  const [costForm, setCostForm] = useState(emptyCost);
   const [houseForm, setHouseForm] = useState(emptyHouse);
   const [crateSize, setCrateSize] = useState(30);
   const [defaultWater, setDefaultWater] = useState("");
@@ -91,10 +98,22 @@ export default function App() {
         houseId: batchForm.houseId,
         initialBirdCount: Number(batchForm.initialBirdCount),
         supplierId: batchForm.supplierId.trim() || null,
-        purchaseCostMinor: batchForm.purchaseCostMinor === "" ? null : Number(batchForm.purchaseCostMinor),
+        purchaseCostMinor: Number(batchForm.purchaseCostMinor),
       });
       setBatches(current => [created, ...current]);
       setBatchForm({ ...emptyBatch, houseId: batchForm.houseId });
+    } catch (err) { setError(err.message); } finally { setSaving(false); }
+  }
+
+  async function addBirdCost(event) {
+    event.preventDefault(); setSaving(true); setError("");
+    try {
+      await costApi.add(costForm.batchId, {
+        eventDate: costForm.eventDate,
+        amountMinor: Number(costForm.amountMinor),
+        reason: costForm.reason.trim() || null,
+      });
+      setCostForm(form => ({ ...emptyCost, batchId: form.batchId }));
     } catch (err) { setError(err.message); } finally { setSaving(false); }
   }
 
@@ -165,13 +184,26 @@ export default function App() {
             <select required value={batchForm.houseId} onChange={e=>setBatchForm({...batchForm,houseId:e.target.value})}><option value="">House / pen</option>{houses.filter(h=>h.status==="ACTIVE").map(h=><option key={h.id} value={h.id}>{h.name} ({h.code})</option>)}</select>
             <input required min="1" type="number" placeholder="Initial birds" value={batchForm.initialBirdCount} onChange={e=>setBatchForm({...batchForm,initialBirdCount:e.target.value})}/>
             <input placeholder="Supplier/source ID (optional)" value={batchForm.supplierId} onChange={e=>setBatchForm({...batchForm,supplierId:e.target.value})}/>
-            <input min="0" type="number" placeholder="Purchase cost (minor units)" value={batchForm.purchaseCostMinor} onChange={e=>setBatchForm({...batchForm,purchaseCostMinor:e.target.value})}/>
+            <input required min="0" step="1" type="number" placeholder="Purchase cost (kobo)" value={batchForm.purchaseCostMinor} onChange={e=>setBatchForm({...batchForm,purchaseCostMinor:e.target.value})}/>
             <button disabled={saving || houses.length===0}>Create batch</button>
           </form>
           <div className="table">
             <div className="row header"><span>Code</span><span>Type</span><span>Placement</span><span>Birds</span><span>Status</span><span>Action</span></div>
             {batches.map(batch=><div className="row" key={batch.id}><span>{batch.code}</span><span>{batch.type}</span><span>{batch.placementDate}</span><span>{batch.initialBirdCount}</span><span>{batch.status}</span><span>{batch.status==="SOLD" ? <button type="button" onClick={()=>reopenBatch(batch.id)} disabled={saving}>Reopen</button> : batch.type==="BROILER" ? <button type="button" onClick={()=>markBatchSold(batch.id)} disabled={saving}>Mark sold</button> : "—"}</span></div>)}
             {batches.length===0 && <p className="muted empty">No batches yet.</p>}
+          </div>
+          <div className="subsection">
+            <div className="section-head"><h3>Additional attributable bird cost</h3><p className="muted">Enter integer minor units only. The backend carries this cost with the live birds.</p></div>
+            <form className="inline-form" onSubmit={addBirdCost}>
+              <select required value={costForm.batchId} onChange={e=>setCostForm({...costForm,batchId:e.target.value})}>
+                <option value="">Batch</option>
+                {batches.filter(batch => batch.status === "ACTIVE").map(batch=><option key={batch.id} value={batch.id}>{batch.code}</option>)}
+              </select>
+              <input required type="date" value={costForm.eventDate} onChange={e=>setCostForm({...costForm,eventDate:e.target.value})}/>
+              <input required min="1" step="1" type="number" placeholder="Amount (kobo)" value={costForm.amountMinor} onChange={e=>setCostForm({...costForm,amountMinor:e.target.value})}/>
+              <input placeholder="Reason" value={costForm.reason} onChange={e=>setCostForm({...costForm,reason:e.target.value})}/>
+              <button disabled={saving || batches.filter(batch => batch.status === "ACTIVE").length===0}>Add cost</button>
+            </form>
           </div>
         </section>
 
