@@ -75,3 +75,19 @@ export const dailyApi = {
     (from || to ? "?from=" + encodeURIComponent(from || "") + "&to=" + encodeURIComponent(to || "") : "")
   ),
 };
+
+
+export const healthApi = {
+  add: (batchId, data) => request("/batches/" + batchId + "/health", {
+    method: "POST", body: JSON.stringify(data)
+  }),
+  listHealth: (batchId) => request("/batches/" + batchId + "/health"),
+  addDrug: (batchId, data) => request("/batches/" + batchId + "/drugs", {
+    method: "POST", body: JSON.stringify(data)
+  }),
+  listDrugs: (batchId) => request("/batches/" + batchId + "/drugs"),
+  addVaccination: (batchId, data) => request("/batches/" + batchId + "/vaccinations", {
+    method: "POST", body: JSON.stringify(data)
+  }),
+  listVaccinations: (batchId) => request("/batches/" + batchId + "/vaccinations"),
+};
