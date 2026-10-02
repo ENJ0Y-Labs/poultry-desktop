@@ -81,3 +81,24 @@ The backend rejects a reduction that exceeds the population available immediatel
 
 
 A BROILER batch may enter the terminal `SOLD` lifecycle only when its calculated current bird population is zero. Population records cannot be added to a non-ACTIVE batch.
+
+
+## Bird cost accounting
+
+`POST /api/v1/batches` now requires `purchaseCostMinor` as an integer minor-unit amount. The purchase total must divide evenly into whole minor units per bird. The backend records the original purchase in `bird_purchases`.
+
+`GET /api/v1/batches/{id}/costs?asOf=YYYY-MM-DD` returns the historical carried-cost breakdown.
+
+`POST /api/v1/batches/{id}/costs` records an additional attributable cost:
+
+```json
+{
+  "eventDate": "2026-01-05",
+  "amountMinor": 200000,
+  "reason": "Applicable bird cost"
+}
+```
+
+Additional cost dates cannot precede the batch placement date. Cost writes are rejected for non-ACTIVE batches.
+
+The cost engine uses integer arithmetic and a deterministic weighted-average carried-cost pool. Cost additions on a business date are applied before population changes on that date. Sale, mortality, culling, and transfer-out birds receive their proportional attributable cost. Transfer-out cost is carried into the target batch as a transfer-in cost in the same transaction.
