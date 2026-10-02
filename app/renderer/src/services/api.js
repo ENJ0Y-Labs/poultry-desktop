@@ -104,3 +104,16 @@ export const eggApi = {
   listSales: (batchId, asOf) => request("/batches/" + batchId + "/eggs/sales" + (asOf ? "?asOf=" + asOf : "")),
   inventory: (batchId, asOf) => request("/batches/" + batchId + "/eggs/inventory" + (asOf ? "?asOf=" + asOf : "")),
 };
+
+
+export const broilerApi = {
+  addWeight: (batchId, data) => request("/batches/" + batchId + "/broiler/weights", {
+    method: "POST", body: JSON.stringify(data)
+  }),
+  weights: (batchId, asOf) => request("/batches/" + batchId + "/broiler/weights" + (asOf ? "?asOf=" + asOf : "")),
+  growth: (batchId, asOf) => request("/batches/" + batchId + "/broiler/growth" + (asOf ? "?asOf=" + asOf : "")),
+  addSale: (batchId, data) => request("/batches/" + batchId + "/broiler/sales", {
+    method: "POST", body: JSON.stringify(data)
+  }),
+  sales: (batchId, asOf) => request("/batches/" + batchId + "/broiler/sales" + (asOf ? "?asOf=" + asOf : "")),
+};
