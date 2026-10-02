@@ -74,13 +74,14 @@ public class BirdPopulationRepository {
             int quantity,
             String referenceBatchId,
             String reason,
+            String notes,
             String createdAt
     ) {
         jdbc.update("""
                 INSERT INTO bird_population_events
                     (id, batch_id, event_date, event_type, quantity,
-                     reference_batch_id, reason, created_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                     reference_batch_id, reason, notes, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 id,
                 batchId,
@@ -89,6 +90,7 @@ public class BirdPopulationRepository {
                 quantity,
                 referenceBatchId,
                 reason,
+                notes,
                 createdAt
         );
     }
