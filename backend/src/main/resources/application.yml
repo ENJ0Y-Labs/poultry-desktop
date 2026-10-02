@@ -4,7 +4,7 @@ spring:
   profiles:
     default: dev
   datasource:
-    url: jdbc:sqlite:${poultry.database-path:./data/poultry.db}
+    url: jdbc:sqlite:${poultry.database-path:./data/poultry.db}?foreign_keys=on&journal_mode=WAL&synchronous=FULL
     driver-class-name: org.sqlite.JDBC
     hikari:
       maximum-pool-size: 1
