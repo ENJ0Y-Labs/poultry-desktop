@@ -117,3 +117,25 @@ A daily record request contains the business date, optional notes, and water-con
 The daily response derives birds from the authoritative population engine, mortality and culling from that day's population events, and feed from that day's feed-usage records. Water is returned as container size × count plus a calculated total container capacity in configured units.
 
 Mortality and culling remain separate population event types. Their requests support reason and notes. Population records continue to be validated by the existing population engine.
+
+## Health management
+
+Health endpoints:
+- `POST /api/v1/batches/{id}/health`
+- `GET /api/v1/batches/{id}/health`
+
+A health record contains `recordDate`, `conditionProblem`, `description`, and `action`.
+
+Drug endpoints:
+- `POST /api/v1/batches/{id}/drugs`
+- `GET /api/v1/batches/{id}/drugs`
+
+A drug record contains `recordDate`, `drug`, positive `quantity`, integer minor-unit `costMinor`, and `reason`. Each drug record creates exactly one `DRUGS` expense linked to the drug record.
+
+Vaccination endpoints:
+- `POST /api/v1/batches/{id}/vaccinations`
+- `GET /api/v1/batches/{id}/vaccinations`
+
+A vaccination record contains `recordDate`, `vaccine`, `dose`, positive `quantity`, and optional `notes`. Vaccination history is separate from health records and does not create an expense automatically.
+
+Health, drug, and vaccination writes require an ACTIVE batch and cannot be dated before batch placement.
