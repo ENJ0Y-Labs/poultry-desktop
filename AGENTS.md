@@ -229,7 +229,7 @@ Every batch has:
 - initial bird count
 - house/pen
 - supplier/source where applicable
-- original bird purchase cost where applicable
+- original bird purchase cost in integer minor units
 - status
 - audit history
 
@@ -531,7 +531,8 @@ For broilers, preserve:
 - supplier/source
 - purchase date
 - purchase quantity
-- original cost per bird or equivalent purchase cost
+- original cost per bird
+- original total purchase cost
 
 Historical purchase price must remain attached to the original purchase/batch data.
 
