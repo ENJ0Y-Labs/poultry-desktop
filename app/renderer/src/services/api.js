@@ -24,6 +24,14 @@ export const farmApi = {
   updateHouse: (id, data) => request("/farm/houses/" + id, { method: "PUT", body: JSON.stringify(data) }),
 };
 
+export const costApi = {
+  get: (batchId, asOf) => request("/batches/" + batchId + "/costs" + (asOf ? "?asOf=" + asOf : "")),
+  add: (batchId, data) => request("/batches/" + batchId + "/costs", {
+    method: "POST",
+    body: JSON.stringify(data),
+  }),
+};
+
 export const batchApi = {
   list: () => request("/batches"),
   get: (id) => request("/batches/" + id),
