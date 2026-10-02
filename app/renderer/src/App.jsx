@@ -1,13 +1,23 @@
 import { useEffect, useState } from "react";
-import { farmApi } from "./services/api.js";
+import { batchApi, farmApi } from "./services/api.js";
 
 const emptyFarm = { name: "", location: "", timezone: "Africa/Lagos", currency: "NGN" };
 const emptyHouse = { name: "", code: "", notes: "" };
+const emptyBatch = {
+  type: "LAYER",
+  placementDate: new Date().toISOString().slice(0, 10),
+  houseId: "",
+  initialBirdCount: "",
+  supplierId: "",
+  purchaseCostMinor: "",
+};
 
 export default function App() {
   const [farm, setFarm] = useState(null);
   const [farmForm, setFarmForm] = useState(emptyFarm);
   const [houses, setHouses] = useState([]);
+  const [batches, setBatches] = useState([]);
+  const [batchForm, setBatchForm] = useState(emptyBatch);
   const [houseForm, setHouseForm] = useState(emptyHouse);
   const [crateSize, setCrateSize] = useState(30);
   const [defaultWater, setDefaultWater] = useState("");
@@ -26,7 +36,10 @@ export default function App() {
       setCrateSize(settings.defaultCrateSize);
       setDefaultWater(settings.defaultWaterContainerSize ?? "");
       setWaterSizes(settings.waterContainerSizes.join(", "));
-      setHouses(await farmApi.listHouses());
+      const currentHouses = await farmApi.listHouses();
+      setHouses(currentHouses);
+      setBatchForm(form => ({ ...form, houseId: form.houseId || currentHouses[0]?.id || "" }));
+      setBatches(await batchApi.list());
     } catch (err) {
       if (err.message !== "No farm has been created yet.") setError(err.message);
     } finally { setLoading(false); }
@@ -43,6 +56,8 @@ export default function App() {
       setDefaultWater(settings.defaultWaterContainerSize ?? "");
       setWaterSizes(settings.waterContainerSizes.join(", "));
       setHouses([]);
+      setBatches([]);
+      setBatchForm(emptyBatch);
     } catch (err) { setError(err.message); } finally { setSaving(false); }
   }
 
@@ -64,6 +79,40 @@ export default function App() {
       setCrateSize(updated.defaultCrateSize);
       setDefaultWater(updated.defaultWaterContainerSize ?? "");
       setWaterSizes(updated.waterContainerSizes.join(", "));
+    } catch (err) { setError(err.message); } finally { setSaving(false); }
+  }
+
+  async function createBatch(event) {
+    event.preventDefault(); setSaving(true); setError("");
+    try {
+      const created = await batchApi.create({
+        type: batchForm.type,
+        placementDate: batchForm.placementDate,
+        houseId: batchForm.houseId,
+        initialBirdCount: Number(batchForm.initialBirdCount),
+        supplierId: batchForm.supplierId.trim() || null,
+        purchaseCostMinor: batchForm.purchaseCostMinor === "" ? null : Number(batchForm.purchaseCostMinor),
+      });
+      setBatches(current => [created, ...current]);
+      setBatchForm({ ...emptyBatch, houseId: batchForm.houseId });
+    } catch (err) { setError(err.message); } finally { setSaving(false); }
+  }
+
+  async function markBatchSold(id) {
+    setSaving(true); setError("");
+    try {
+      const updated = await batchApi.markSold(id);
+      setBatches(current => current.map(batch => batch.id === id ? updated : batch));
+    } catch (err) { setError(err.message); } finally { setSaving(false); }
+  }
+
+  async function reopenBatch(id) {
+    const reason = window.prompt("Reason for reopening this SOLD batch:");
+    if (reason === null) return;
+    setSaving(true); setError("");
+    try {
+      const updated = await batchApi.reopen(id, reason);
+      setBatches(current => current.map(batch => batch.id === id ? updated : batch));
     } catch (err) { setError(err.message); } finally { setSaving(false); }
   }
 
@@ -108,6 +157,23 @@ export default function App() {
           <label>Water container sizes<input value={waterSizes} onChange={e=>setWaterSizes(e.target.value)}/><small>Comma-separated, e.g. 25, 75.</small></label>
           <button disabled={saving}>Save defaults</button>
         </form></section>
+
+        <section className="card full"><div className="section-head"><h2>Batches</h2><p className="muted">Opening a batch creates a permanent flock record and generates its code automatically.</p></div>
+          <form className="inline-form" onSubmit={createBatch}>
+            <select value={batchForm.type} onChange={e=>setBatchForm({...batchForm,type:e.target.value})}><option value="LAYER">Layer</option><option value="BROILER">Broiler</option></select>
+            <input required type="date" value={batchForm.placementDate} onChange={e=>setBatchForm({...batchForm,placementDate:e.target.value})}/>
+            <select required value={batchForm.houseId} onChange={e=>setBatchForm({...batchForm,houseId:e.target.value})}><option value="">House / pen</option>{houses.filter(h=>h.status==="ACTIVE").map(h=><option key={h.id} value={h.id}>{h.name} ({h.code})</option>)}</select>
+            <input required min="1" type="number" placeholder="Initial birds" value={batchForm.initialBirdCount} onChange={e=>setBatchForm({...batchForm,initialBirdCount:e.target.value})}/>
+            <input placeholder="Supplier/source ID (optional)" value={batchForm.supplierId} onChange={e=>setBatchForm({...batchForm,supplierId:e.target.value})}/>
+            <input min="0" type="number" placeholder="Purchase cost (minor units)" value={batchForm.purchaseCostMinor} onChange={e=>setBatchForm({...batchForm,purchaseCostMinor:e.target.value})}/>
+            <button disabled={saving || houses.length===0}>Create batch</button>
+          </form>
+          <div className="table">
+            <div className="row header"><span>Code</span><span>Type</span><span>Placement</span><span>Birds</span><span>Status</span><span>Action</span></div>
+            {batches.map(batch=><div className="row" key={batch.id}><span>{batch.code}</span><span>{batch.type}</span><span>{batch.placementDate}</span><span>{batch.initialBirdCount}</span><span>{batch.status}</span><span>{batch.status==="SOLD" ? <button type="button" onClick={()=>reopenBatch(batch.id)} disabled={saving}>Reopen</button> : batch.type==="BROILER" ? <button type="button" onClick={()=>markBatchSold(batch.id)} disabled={saving}>Mark sold</button> : "—"}</span></div>)}
+            {batches.length===0 && <p className="muted empty">No batches yet.</p>}
+          </div>
+        </section>
 
         <section className="card full"><div className="section-head"><h2>Houses / pens</h2><p className="muted">Physical locations that batches belong to.</p></div>
           <form className="inline-form" onSubmit={addHouse}><input required placeholder="Name" value={houseForm.name} onChange={e=>setHouseForm({...houseForm,name:e.target.value})}/><input required placeholder="Code" value={houseForm.code} onChange={e=>setHouseForm({...houseForm,code:e.target.value})}/><input placeholder="Notes" value={houseForm.notes} onChange={e=>setHouseForm({...houseForm,notes:e.target.value})}/><button disabled={saving}>Add house</button></form>
