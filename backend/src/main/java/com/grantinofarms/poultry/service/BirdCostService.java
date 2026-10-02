@@ -57,6 +57,12 @@ public class BirdCostService {
                 .mapToLong(BirdCostEvent::amountMinor)
                 .reduce(0L, Math::addExact);
 
+        long transferIn = costEvents.stream()
+                .filter(event -> "TRANSFER_IN_COST".equals(event.eventType()))
+                .filter(event -> !event.eventDate().isAfter(effectiveDate))
+                .mapToLong(BirdCostEvent::amountMinor)
+                .reduce(0L, Math::addExact);
+
         long sold = reductionCost(batchId, effectiveDate, populationEvents, costEvents, "SOLD");
         long mortality = reductionCost(batchId, effectiveDate, populationEvents, costEvents, "MORTALITY");
         long culling = reductionCost(batchId, effectiveDate, populationEvents, costEvents, "CULLING");
@@ -68,6 +74,7 @@ public class BirdCostService {
                 snapshot.currentBirds(),
                 costRepository.initialCost(batchId),
                 additionalCosts,
+                transferIn,
                 sold,
                 mortality,
                 culling,
