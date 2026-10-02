@@ -175,3 +175,14 @@ Stores batch-scoped drug records with drug name, positive quantity, business dat
 Stores batch-scoped vaccination history with vaccine, business date, dose, positive quantity, optional notes, and technical timestamp.
 
 Health and vaccination are operational records. Drug cost is the accounting event and is recorded once in `expenses`.
+
+
+## Stage 11: Layer egg management
+
+### egg_collections
+Stores batch-scoped egg production as individual eggs. Good and cracked quantities are separate, with optional notes and technical creation timestamp.
+
+### egg_sales
+Stores batch-scoped sales of good eggs. sold_eggs is the authoritative individual-egg quantity. crate_size preserves the configured crate size used at sale time. price_per_crate_minor and total_amount_minor are integer minor-unit money values.
+
+Cracked eggs are intentionally absent from the sales table because they are not sellable.
