@@ -23,3 +23,14 @@ export const farmApi = {
   createHouse: (data) => request("/farm/houses", { method: "POST", body: JSON.stringify(data) }),
   updateHouse: (id, data) => request("/farm/houses/" + id, { method: "PUT", body: JSON.stringify(data) }),
 };
+
+export const batchApi = {
+  list: () => request("/batches"),
+  get: (id) => request("/batches/" + id),
+  create: (data) => request("/batches", { method: "POST", body: JSON.stringify(data) }),
+  markSold: (id) => request("/batches/" + id + "/sold", { method: "POST" }),
+  reopen: (id, reason) => request("/batches/" + id + "/reopen", {
+    method: "POST",
+    body: JSON.stringify({ reason }),
+  }),
+};
