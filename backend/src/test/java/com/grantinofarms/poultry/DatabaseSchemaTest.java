@@ -10,7 +10,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @SpringBootTest(properties = {
-        "spring.datasource.url=jdbc:sqlite:file:schema-test?mode=memory&cache=shared",
+        "spring.datasource.url=jdbc:sqlite:./target/schema-test.db?foreign_keys=on&journal_mode=WAL&synchronous=FULL",
         "poultry.database-path=:memory:"
 })
 class DatabaseSchemaTest {
@@ -28,7 +28,9 @@ class DatabaseSchemaTest {
                 "batches",
                 "bird_purchases",
                 "audit_logs",
-                "batch_code_sequences"
+                "batch_code_sequences",
+                "farm_settings",
+                "water_container_sizes"
         );
 
         for (String table : expectedTables) {
