@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
@@ -24,15 +25,18 @@ public class BatchService {
     private final BatchRepository batchRepository;
     private final AuditRepository auditRepository;
     private final ObjectMapper objectMapper;
+    private final BirdPopulationService birdPopulationService;
 
     public BatchService(FarmRepository farmRepository,
                         BatchRepository batchRepository,
                         AuditRepository auditRepository,
-                        ObjectMapper objectMapper) {
+                        ObjectMapper objectMapper,
+                        BirdPopulationService birdPopulationService) {
         this.farmRepository = farmRepository;
         this.batchRepository = batchRepository;
         this.auditRepository = auditRepository;
         this.objectMapper = objectMapper;
+        this.birdPopulationService = birdPopulationService;
     }
 
     public List<BatchResponse> list() {
@@ -110,6 +114,12 @@ public class BatchService {
         if ("SOLD".equals(current.status())) {
             throw new ApiException(HttpStatus.CONFLICT, "BATCH_ALREADY_SOLD",
                     "This batch is already SOLD.");
+        }
+
+        int currentBirds = birdPopulationService.get(current.id(), LocalDate.now()).currentBirds();
+        if (currentBirds != 0) {
+            throw new ApiException(HttpStatus.CONFLICT, "BATCH_NOT_EMPTY",
+                    "A BROILER batch can only be marked SOLD when all birds have been sold.");
         }
 
         String now = Instant.now().toString();
