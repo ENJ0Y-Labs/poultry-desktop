@@ -126,3 +126,16 @@ Water total is calculated per recorded container entry:
 total water units = container capacity units × container count
 
 The UI must not invent a precise measured volume when workers only recorded container counts.
+
+
+## Stage 10: Health management
+
+Health, drug, and vaccination records do not introduce a derived production formula.
+
+Drug accounting is direct:
+
+`DRUGS expense = recorded drug costMinor`
+
+Each drug record creates exactly one shared `DRUGS` expense. The same drug cost is not recorded again when the record is read or reported.
+
+Health and vaccination records remain operational history. Vaccination does not create an accounting expense automatically because no vaccination cost field is part of the current contract.
