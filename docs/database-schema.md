@@ -61,6 +61,14 @@ Append-only audit foundation.
 
 Stores actor, timestamp, action, entity, optional farm/batch scope, reason, and JSON snapshots of changed state. Application code must not expose update/delete operations for this table.
 
+### `farm_settings`
+Stores one set of farm-level defaults.
+- Default egg crate size defaults to 30 eggs.
+- Default water container size is optional and must be one of the configured sizes.
+
+### `water_container_sizes`
+Stores configurable water container sizes for the farm. Sizes are archived rather than destroyed so configuration history is preserved.
+
 ### `batch_code_sequences`
 Supports transactional Layer/Broiler batch-code generation by year.
 
