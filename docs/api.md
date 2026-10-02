@@ -103,3 +103,17 @@ Additional cost dates cannot precede the batch placement date. Cost writes are r
 
 The cost engine uses integer arithmetic and a deterministic weighted-average carried-cost pool. Cost additions on a business date are applied before population changes on that date. Sale, mortality, culling, and transfer-out birds receive their proportional attributable cost. Transfer-out cost is carried into the target batch as a transfer-in cost in the same transaction.
 \n## Feed management\n\nFeed type endpoints:\n- `GET /api/v1/feed/types`\n- `POST /api/v1/feed/types`\n- `POST /api/v1/feed/types/{id}/archive`\n\nPurchase and inventory endpoints:\n- `POST /api/v1/feed/purchases`\n- `GET /api/v1/feed/inventory?asOf=YYYY-MM-DD`\n\nBatch feed endpoints:\n- `POST /api/v1/feed/batches/{batchId}/usage`\n- `GET /api/v1/feed/batches/{batchId}/cost?asOf=YYYY-MM-DD`\n\nFeed quantities accept decimal input with at most three decimal places and are stored as integer thousandths of the configured unit. The usage/purchase unit must match the configured feed type unit.\n\nPurchasing feed records the original purchase cost and creates one `FEED` expense. Usage consumes inventory by FIFO and does not create another expense. Usage cost is added once to the batch attributable bird-cost pool.\n
+
+## Daily farm operations
+
+Daily operational views are exposed per batch:
+
+- POST /api/v1/batches/{id}/daily-records
+- GET /api/v1/batches/{id}/daily-records/{date}
+- GET /api/v1/batches/{id}/daily-records?from=YYYY-MM-DD&to=YYYY-MM-DD
+
+A daily record request contains the business date, optional notes, and water-container entries. Water entries reference configured farm container sizes and record a count, not a fake precise volume.
+
+The daily response derives birds from the authoritative population engine, mortality and culling from that day's population events, and feed from that day's feed-usage records. Water is returned as container size × count plus a calculated total container capacity in configured units.
+
+Mortality and culling remain separate population event types. Their requests support reason and notes. Population records continue to be validated by the existing population engine.
