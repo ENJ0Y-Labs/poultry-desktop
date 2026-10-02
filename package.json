@@ -1,0 +1,9 @@
+{
+  "name":"poultry-desktop","version":"0.1.0","private":true,
+  "description":"Local-first poultry farm management desktop application.",
+  "main":"app/main/main.js",
+  "scripts":{"dev":"electron-vite dev","build":"electron-vite build","test":"vitest run","test:watch":"vitest","lint":"eslint .","package":"npm run build && electron-builder","backend:test":"mvn -f backend/pom.xml test","backend:verify":"mvn -f backend/pom.xml verify","backend:package":"mvn -f backend/pom.xml package"},
+  "dependencies":{"react":"^19.1.1","react-dom":"^19.1.1","recharts":"^3.2.1"},
+  "devDependencies":{"@eslint/js":"^9.35.0","@testing-library/jest-dom":"^6.8.0","@testing-library/react":"^16.3.0","@vitejs/plugin-react":"^5.0.2","electron":"^38.2.1","electron-builder":"^26.0.12","electron-vite":"^4.0.1","eslint":"^9.35.0","eslint-plugin-react-hooks":"^5.2.0","eslint-plugin-react-refresh":"^0.4.20","globals":"^16.4.0","jsdom":"^26.1.0","vite":"^7.1.7","vitest":"^3.2.4"},
+  "build":{"appId":"com.grantinofarms.poultry","productName":"Poultry Farm Manager","directories":{"output":"release"},"files":["app/**","dist/**","backend/target/**","package.json"],"win":{"target":"nsis"}}
+}
