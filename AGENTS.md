@@ -867,7 +867,6 @@ Done when a Layer or Broiler batch can be opened and its dashboard and populatio
 
 Build:
 - daily records
-- feed usage
 - mortality
 - culling
 - water
@@ -890,8 +889,6 @@ Broilers:
 - weight
 - growth
 - FCR
-- FIFO feed costing
-- attributable bird cost
 - bird sales
 - SOLD lifecycle
 - pricing/margin logic
@@ -906,6 +903,8 @@ Common:
 - profit
 
 Done when farm and batch totals reconcile with their source records.
+
+Feed management was moved to Stage 8. Bird cost accounting was moved to Stage 7.
 
 ### Stage 7 — Cost accounting
 
