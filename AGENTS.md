@@ -20,9 +20,9 @@ Priority order:
 
 A boring screen with correct poultry numbers beats a beautiful dashboard showing agricultural fiction.
 
-**Current stage: 5 — Batch management.**
+**Current stage: 6 — Bird population engine.**
 
-Stage 5 implements batch creation, transactional batch-code generation, ACTIVE/SOLD lifecycle rules, and audited reopening of SOLD batches. Later production records such as mortality, feed, eggs, weight, and bird sales remain future work.
+Stage 6 implements event-based bird population tracking, historical `asOf(date)` calculation, mortality/culling/sale/transfer records, and backend rejection of impossible population states. Feed, eggs, weight, health, and other production records remain future work.
 
 Do not build later-stage features unless the owner explicitly changes the stage.
 
