@@ -20,9 +20,9 @@ Priority order:
 
 A boring screen with correct poultry numbers beats a beautiful dashboard showing agricultural fiction.
 
-**Current stage: 8 — Feed management.**
+**Current stage: 9 — Daily farm operations.**
 
-Stage 7 implements integer-minor-unit money handling, bird purchase cost history, attributable bird cost, additional batch-level attributable costs, cost carried by remaining birds, cost allocated to sold/lost birds, transfer cost carrying, and historical `asOf(date)` cost calculations. Feed inventory/FIFO consumption is now implemented. Eggs, weight, health, and other production modules remain future work.
+Stage 8 feed management is implemented. Stage 9 adds operational daily records, separate mortality/culling notes, feed usage aggregation, and configurable water-container counts. Eggs, weight, health, and other production modules remain future work.
 
 Do not build later-stage features unless the owner explicitly changes the stage.
 
