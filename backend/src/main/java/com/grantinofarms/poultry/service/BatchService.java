@@ -78,7 +78,7 @@ public class BatchService {
 
         if (request.purchaseCostMinor() % request.initialBirdCount() != 0) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_PURCHASE_COST",
-                    "Purchase cost must divide evenly into whole kobo per bird.");
+                    "Purchase cost must divide evenly into whole minor units per bird.");
         }
 
         int year = request.placementDate().getYear();
