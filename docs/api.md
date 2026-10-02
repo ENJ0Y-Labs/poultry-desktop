@@ -60,7 +60,7 @@ Examples:
 
 A batch is created as ACTIVE. SOLD is terminal for ordinary writes. Reopening is an exceptional action and is audited with the supplied reason and timestamp.
 
-The current Stage 5 `/sold` action is intentionally limited to BROILER batches. Full verification that all birds have been sold will be connected to the later bird-sales/event records, because those records are not yet part of the schema.
+A BROILER batch may enter SOLD only when its calculated current bird population is zero. Population records cannot be added to a non-ACTIVE batch.
 
 
 ## Bird population
