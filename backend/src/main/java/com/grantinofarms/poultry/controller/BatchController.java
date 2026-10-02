@@ -35,6 +35,11 @@ public class BatchController {
                 .body(Map.of("ok", true, "data", service.create(request)));
     }
 
+    @PostMapping("/{id}/sold")
+    ResponseEntity<?> markSold(@PathVariable String id) {
+        return ResponseEntity.ok(Map.of("ok", true, "data", service.markSold(id)));
+    }
+
     @PostMapping("/{id}/reopen")
     ResponseEntity<?> reopen(@PathVariable String id, @Valid @RequestBody BatchReopenRequest request) {
         return ResponseEntity.ok(Map.of("ok", true, "data", service.reopen(id, request)));
