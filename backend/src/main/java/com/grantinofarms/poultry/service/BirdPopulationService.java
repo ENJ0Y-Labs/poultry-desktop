@@ -182,6 +182,7 @@ public class BirdPopulationService {
                 request.quantity(),
                 null,
                 clean(request.reason()),
+                clean(request.notes()),
                 now
         );
 
