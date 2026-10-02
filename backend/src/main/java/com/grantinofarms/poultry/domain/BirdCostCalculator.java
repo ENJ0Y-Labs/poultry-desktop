@@ -21,7 +21,7 @@ public final class BirdCostCalculator {
         long carriedCost = initialCostMinor;
         long allocatedCost = 0L;
 
-        for (LocalDate date : orderedDates(populationEvents, costEvents, asOf)) {
+        for (LocalDate date : orderedDates(populationEvents, costEvents, asOf, asOf)) {
             for (BirdCostEvent costEvent : costEvents) {
                 if (costEvent.eventDate().equals(date)) {
                     carriedCost = addExact(carriedCost, costEvent.amountMinor());
