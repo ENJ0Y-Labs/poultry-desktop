@@ -103,7 +103,7 @@ public class FeedService {
         repository.insertPurchase(id, farmId, type.id(), cleanNullable(request.supplierId()),
                 request.purchaseDate(), quantityMilli, type.unit(), request.totalCostMinor(), now);
         repository.insertExpense(UUID.randomUUID().toString(), farmId, request.totalCostMinor(),
-                request.purchaseDate(), id, "Feed purchase: " + type.name());
+                request.purchaseDate(), id, "Feed purchase: " + type.name(), now);
         auditRepository.append(farmId, "CREATE", "FEED_PURCHASE", id, null, null,
                 String.format("{\"feedTypeId\":\"%s\",\"quantityMilli\":%d,\"totalCostMinor\":%d}",
                         type.id(), quantityMilli, request.totalCostMinor()), now);
