@@ -1,0 +1,3 @@
+server:
+  address: localhost
+  port: ${PORT:18942}
