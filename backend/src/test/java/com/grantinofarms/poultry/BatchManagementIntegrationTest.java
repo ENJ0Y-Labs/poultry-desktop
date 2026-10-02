@@ -2,9 +2,11 @@ package com.grantinofarms.poultry;
 
 import com.grantinofarms.poultry.dto.BatchCreateRequest;
 import com.grantinofarms.poultry.dto.BatchReopenRequest;
+import com.grantinofarms.poultry.dto.BirdPopulationEventRequest;
 import com.grantinofarms.poultry.dto.FarmCreateRequest;
 import com.grantinofarms.poultry.dto.HouseCreateRequest;
 import com.grantinofarms.poultry.service.BatchService;
+import com.grantinofarms.poultry.service.BirdPopulationService;
 import com.grantinofarms.poultry.service.FarmService;
 import com.grantinofarms.poultry.service.HouseService;
 import org.junit.jupiter.api.Test;
@@ -25,6 +27,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class BatchManagementIntegrationTest {
 
     @Autowired BatchService batchService;
+    @Autowired BirdPopulationService populationService;
     @Autowired FarmService farmService;
     @Autowired HouseService houseService;
     @Autowired JdbcTemplate jdbc;
@@ -59,6 +62,11 @@ class BatchManagementIntegrationTest {
 
         var batch = batchService.create(new BatchCreateRequest(
                 "BROILER", LocalDate.of(2026, 4, 1), house.id(), 300, null, null));
+
+        populationService.addSale(
+                batch.id(),
+                new BirdPopulationEventRequest(LocalDate.of(2026, 4, 2), 300, "All birds sold")
+        );
 
         var sold = batchService.markSold(batch.id());
         assertThat(sold.status()).isEqualTo("SOLD");
