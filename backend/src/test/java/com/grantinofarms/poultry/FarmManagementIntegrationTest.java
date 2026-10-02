@@ -31,12 +31,19 @@ class FarmManagementIntegrationTest {
         assertThat(farm.name()).isEqualTo("Grantino Farms");
         assertThat(farm.currency()).isEqualTo("NGN");
 
+        var updatedFarm = farmService.update(new com.grantinofarms.poultry.dto.FarmUpdateRequest(
+                "Grantino Farms", "", "Africa/Lagos", "NGN"));
+        assertThat(updatedFarm.location()).isNull();
+
         var settings = farmService.updateSettings(new FarmSettingsRequest(
                 30, 75, List.of(25, 75)));
 
         assertThat(settings.defaultCrateSize()).isEqualTo(30);
         assertThat(settings.defaultWaterContainerSize()).isEqualTo(75);
         assertThat(settings.waterContainerSizes()).containsExactly(25, 75);
+
+        var updatedSettings = farmService.updateSettings(new FarmSettingsRequest(30, 25, List.of(25, 75)));
+        assertThat(updatedSettings.defaultWaterContainerSize()).isEqualTo(25);
 
         var house = houseService.create(new HouseCreateRequest(
                 "Layer House 1", "LH1", "North block"));
