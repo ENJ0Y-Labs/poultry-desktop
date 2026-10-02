@@ -133,3 +133,19 @@ Reduction events are rejected when their quantity exceeds the birds available im
 Transfers are recorded as an atomic outbound event on the source batch and inbound event on the target batch. The source population is validated before either event is committed.
 
 No `current_birds` column is stored.
+
+## Stage 7: Bird cost events
+
+`bird_cost_events` stores dated attributable costs that are added to a batch after the original bird purchase.
+
+Supported event types:
+- `ADDITIONAL_COST`
+- `TRANSFER_IN_COST`
+
+Amounts are integer minor units. A transfer-in cost references the source batch so the transferred birds carry the source cost into the target batch.
+
+The original bird purchase remains in `batches.original_purchase_cost_minor` and is also recorded in `bird_purchases` with quantity, supplier/source, purchase date, integer unit cost, and total cost.
+
+Batch creation requires a purchase total that divides evenly into whole minor units per bird. This prevents a stored unit price from becoming an approximation.
+
+No floating-point monetary values are stored or used by the cost engine.
