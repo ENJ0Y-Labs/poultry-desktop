@@ -20,9 +20,9 @@ Priority order:
 
 A boring screen with correct poultry numbers beats a beautiful dashboard showing agricultural fiction.
 
-**Current stage: 11 — Layer production.**
+**Current stage: 12 — Broiler production.**
 
-Stage 8 feed management is implemented. Stage 9 daily farm operations is implemented. Stage 10 health management is implemented. Stage 11 adds Layer-only egg production, egg inventory, cracked-egg history, configurable crate conversion, and egg sales. Broiler production modules such as weight and growth remain future work.
+Stage 8 feed management is implemented. Stage 9 daily farm operations is implemented. Stage 10 health management is implemented. Stage 11 added Layer-only egg production, egg inventory, cracked-egg history, configurable crate conversion, and egg sales. Stage 12 adds Broiler-only weight records, growth calculations, backend-owned FCR, bird sales, and automatic SOLD lifecycle locking.
 
 Do not build later-stage features unless the owner explicitly changes the stage.
 
@@ -264,6 +264,16 @@ Broilers additionally:
 - FCR
 - Bird Sales
 - SOLD lifecycle
+
+Stage 12 Broiler rules:
+- Weight records are Broiler-only and store sample quantity plus total sample weight in kilograms.
+- Average weight is calculated as total sample weight divided by sampled birds.
+- Growth is calculated from ordered weight records; the first recorded average weight is the baseline for the batch growth series.
+- FCR is calculated only by Spring Boot: feed consumed in kilograms divided by live-weight gain in kilograms. Frontend code must display the backend result and never calculate FCR.
+- Feed types using kg contribute to FCR. Other feed units do not contribute until a canonical kilogram conversion exists.
+- Bird sales are recorded separately from mortality/culling and create SOLD population events.
+- A Broiler becomes SOLD automatically when a bird sale leaves zero live birds as of the current farm date. SOLD batches reject ordinary production/population writes.
+- Weight and sales records cannot be dated before batch placement.
 
 ## 8. Batch lifecycle
 
