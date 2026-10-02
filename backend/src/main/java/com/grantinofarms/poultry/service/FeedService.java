@@ -82,6 +82,10 @@ public class FeedService {
         if (!type.unit().equalsIgnoreCase(clean(request.unit()))) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_FEED_UNIT", "Purchase unit must match the feed type unit.");
         }
+        if (request.supplierId() != null && !request.supplierId().isBlank()
+                && !repository.supplierBelongsToFarm(request.supplierId().trim(), farmId)) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_SUPPLIER", "Supplier/source does not belong to the active farm.");
+        }
         LocalDate latestUsage = repository.latestUsageDate(type.id());
         if (latestUsage != null && request.purchaseDate().isBefore(latestUsage)) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_FEED_PURCHASE_DATE",
@@ -162,12 +166,19 @@ public class FeedService {
         );
         List<FeedPurchaseLot> purchases = repository.findPurchases(type.id(), request.usageDate());
         List<FeedUsageEvent> existingUsages = repository.findUsages(type.id(), request.usageDate());
-        long feedCost = FeedCostCalculator.costForUsage(purchases, existingUsages, proposed);
+        long feedCost;
+        try {
+            feedCost = FeedCostCalculator.costForUsage(purchases, existingUsages, proposed);
+        } catch (IllegalArgumentException e) {
+            throw new ApiException(HttpStatus.CONFLICT, "INSUFFICIENT_FEED", e.getMessage());
+        }
 
         repository.insertUsage(proposed.id(), batchId, type.id(), request.usageDate(),
                 quantityMilli, proposed.createdAt().toString());
-        birdCostService.addAdditionalCost(batchId,
-                new BirdAdditionalCostRequest(request.usageDate(), feedCost, "Feed usage: " + type.name()));
+        if (feedCost > 0) {
+            birdCostService.addAdditionalCost(batchId,
+                    new BirdAdditionalCostRequest(request.usageDate(), feedCost, "Feed usage: " + type.name()));
+        }
 
         auditRepository.append(farmId, "CREATE", "FEED_USAGE", proposed.id(), null, null,
                 String.format("{\"batchId\":\"%s\",\"feedTypeId\":\"%s\",\"quantityMilli\":%d,\"feedCostMinor\":%d}",
@@ -198,7 +209,7 @@ public class FeedService {
         }
 
         int currentBirds = populationService.get(batchId, effective).currentBirds();
-        Long perBird = currentBirds > 0 ? totalCost / currentBirds : null;
+        Long perBird = totalQuantity > 0 && currentBirds > 0 ? totalCost / currentBirds : null;
         return new BatchFeedCostResponse(batchId, effective, currentBirds, totalQuantity, totalCost, perBird);
     }
 
