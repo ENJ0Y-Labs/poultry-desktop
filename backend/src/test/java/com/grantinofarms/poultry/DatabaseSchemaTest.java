@@ -33,7 +33,11 @@ class DatabaseSchemaTest {
                 "farm_settings",
                 "water_container_sizes",
                 "bird_population_events",
-                "bird_cost_events"
+                "bird_cost_events",
+                "feed_types",
+                "feed_purchases",
+                "feed_usage",
+                "expenses"
         );
 
         for (String table : expectedTables) {
@@ -49,7 +53,7 @@ class DatabaseSchemaTest {
                 "SELECT COUNT(*) FROM flyway_schema_history WHERE success = 1",
                 Integer.class
         );
-        assertThat(flywaySuccess).isGreaterThanOrEqualTo(6);
+        assertThat(flywaySuccess).isGreaterThanOrEqualTo(7);
     }
 
     @Test
