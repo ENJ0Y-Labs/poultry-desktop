@@ -68,13 +68,9 @@ public class EggManagementService {
         int crateSize = crateSize(farmId);
         BigDecimal crates = request.crates().stripTrailingZeros();
         BigDecimal eggsDecimal = crates.multiply(BigDecimal.valueOf(crateSize));
-        if (eggsDecimal.scale() > 0) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_EGG_QUANTITY",
-                    "Crate quantity must convert to a whole number of individual eggs.");
-        }
         int soldEggs;
         try {
-            soldEggs = eggsDecimal.intValueExact();
+            soldEggs = eggsDecimal.setScale(0, RoundingMode.UNNECESSARY).intValueExact();
         } catch (ArithmeticException e) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_EGG_QUANTITY",
                     "Crate quantity is too large.");
