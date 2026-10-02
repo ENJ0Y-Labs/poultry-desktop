@@ -90,7 +90,7 @@ The service layer owns sequence allocation. It must allocate the number and crea
 
 These are intentionally not created yet because later production stages have not begun:
 
-`daily_records`, `mortality_records`, `culling_records`, `water_usage`, `health_records`, `drug_records`, `vaccination_records`, `egg_production`, `egg_sales`, `weight_records`, `bird_sales`, `inventory`, `customers`, and `settings`.
+`egg_production`, `egg_sales`, `weight_records`, `bird_sales`, `inventory`, `customers`, and `settings`.
 
 Those tables will be introduced through separate forward-only migrations when their stage begins.
 
@@ -162,3 +162,16 @@ Bird count, mortality, culling, and feed values are not duplicated into this tab
 Stores configurable water-container size references and the number of containers recorded for a daily record. Total water is calculated as container capacity × container count.
 
 The bird_population_events table now also stores optional notes. Mortality and culling remain separate event types and retain their reason/notes independently.
+
+## Stage 10: Health management
+
+### health_records
+Stores batch-scoped health observations: business date, condition/problem, description, action, and technical timestamps.
+
+### drug_records
+Stores batch-scoped drug records with drug name, positive quantity, business date, integer minor-unit cost, reason, and technical timestamp. Each drug record creates one linked `DRUGS` expense in the shared `expenses` ledger.
+
+### vaccination_records
+Stores batch-scoped vaccination history with vaccine, business date, dose, positive quantity, optional notes, and technical timestamp.
+
+Health and vaccination are operational records. Drug cost is the accounting event and is recorded once in `expenses`.
