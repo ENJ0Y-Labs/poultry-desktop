@@ -150,3 +150,15 @@ Batch creation requires a purchase total that divides evenly into whole minor un
 
 No floating-point monetary values are stored or used by the cost engine.
 \n## Stage 8: Feed management\n\n### `feed_types`\nConfigurable feed definitions scoped to the farm. Each type declares its display unit and whether it applies to LAYER, BROILER, or BOTH. Types are archived rather than deleted.\n\n### `feed_purchases`\nStores immutable feed purchase facts: feed type, supplier, purchase date, quantity in integer thousandths of the configured unit, unit, and total cost in integer minor currency units. A purchase also creates one `FEED` expense.\n\n### `feed_usage`\nStores feed consumption facts by batch, feed type, date, and quantity. Consumption is not a second expense. Its FIFO cost is added once to the batch attributable bird-cost pool.\n\n### `expenses`\nThe common expense ledger currently supports `FEED`, `DRUGS`, and `OTHER`. Feed purchase rows reference their corresponding expense.\n\nFeed inventory is derived from purchase quantities minus usage quantities. Remaining lot cost is derived using FIFO and the original purchase price. No mutable inventory balance is stored.\n
+
+## Stage 9: Daily farm operations
+
+### daily_records
+Stores the operational daily-record header for a batch and business date. It contains notes and technical timestamps. One record is allowed per batch/date.
+
+Bird count, mortality, culling, and feed values are not duplicated into this table. They are derived from their authoritative event/usage records when a daily record is read.
+
+### water_usage
+Stores configurable water-container size references and the number of containers recorded for a daily record. Total water is calculated as container capacity × container count.
+
+The bird_population_events table now also stores optional notes. Mortality and culling remain separate event types and retain their reason/notes independently.
