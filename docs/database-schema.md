@@ -88,7 +88,7 @@ The service layer owns sequence allocation. It must allocate the number and crea
 
 ## Planned later-stage tables
 
-These are intentionally not created yet because the repository is still in Stage 1:
+These are intentionally not created yet because later production stages have not begun:
 
 `daily_records`, `mortality_records`, `culling_records`, `feed_types`, `feed_purchases`, `feed_usage`, `water_usage`, `health_records`, `drug_records`, `vaccination_records`, `egg_production`, `egg_sales`, `weight_records`, `bird_sales`, `inventory`, `customers`, `expenses`, and `settings`.
 
