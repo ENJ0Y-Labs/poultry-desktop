@@ -97,12 +97,14 @@ public class EggManagementService {
                     "This crate price produces a fractional minor-unit sale total.");
         }
 
-        int collected = repository.goodCollectedThrough(batchId, request.recordDate());
-        int sold = repository.goodSoldThrough(batchId, request.recordDate());
-        int available = EggInventoryCalculator.goodRemaining(collected, sold);
-        if (soldEggs > available) {
-            throw new ApiException(HttpStatus.CONFLICT, "INSUFFICIENT_GOOD_EGGS",
-                    "The sale exceeds good eggs available on that date.");
+        try {
+            EggInventoryCalculator.validateHistoricalSale(
+                    repository.ledgerEvents(batchId),
+                    request.recordDate(),
+                    soldEggs
+            );
+        } catch (IllegalArgumentException e) {
+            throw new ApiException(HttpStatus.CONFLICT, "INSUFFICIENT_GOOD_EGGS", e.getMessage());
         }
 
         String id = UUID.randomUUID().toString();
