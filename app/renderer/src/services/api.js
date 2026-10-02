@@ -91,3 +91,16 @@ export const healthApi = {
   }),
   listVaccinations: (batchId) => request("/batches/" + batchId + "/vaccinations"),
 };
+
+
+export const eggApi = {
+  addCollection: (batchId, data) => request("/batches/" + batchId + "/eggs/collections", {
+    method: "POST", body: JSON.stringify(data)
+  }),
+  listCollections: (batchId, asOf) => request("/batches/" + batchId + "/eggs/collections" + (asOf ? "?asOf=" + asOf : "")),
+  addSale: (batchId, data) => request("/batches/" + batchId + "/eggs/sales", {
+    method: "POST", body: JSON.stringify(data)
+  }),
+  listSales: (batchId, asOf) => request("/batches/" + batchId + "/eggs/sales" + (asOf ? "?asOf=" + asOf : "")),
+  inventory: (batchId, asOf) => request("/batches/" + batchId + "/eggs/inventory" + (asOf ? "?asOf=" + asOf : "")),
+};
