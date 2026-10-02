@@ -106,9 +106,9 @@ public class FarmService {
         String now = Instant.now().toString();
         settingsRepository.update(farm.id(), request.defaultCrateSize(),
                 request.defaultWaterContainerSize(), now);
-        waterRepository.archiveAll(farm.id(), now);
+        waterRepository.archiveAllExcept(farm.id(), sizes, now);
         for (Integer size : sizes) {
-            waterRepository.insert(farm.id(), size, now);
+            waterRepository.upsertActive(farm.id(), size, now);
         }
 
         auditRepository.append(farm.id(), "UPDATE", "FARM_SETTINGS", farm.id(), null,
