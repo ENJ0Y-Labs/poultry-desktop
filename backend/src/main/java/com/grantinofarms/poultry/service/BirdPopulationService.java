@@ -51,8 +51,14 @@ public class BirdPopulationService {
 
     @Transactional
     public BirdPopulationResponse transfer(String sourceBatchId, BirdTransferRequest request) {
-        requireBatch(sourceBatchId);
-        requireBatch(request.targetBatchId());
+        requireWritableBatch(sourceBatchId);
+        requireWritableBatch(request.targetBatchId());
+
+        String sourceFarmId = populationRepository.batchFarmId(sourceBatchId);
+        String targetFarmId = populationRepository.batchFarmId(request.targetBatchId());
+        if (!sourceFarmId.equals(targetFarmId)) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_TRANSFER",\n                    "Birds can only be transferred between batches on the same farm.");
+        }
 
         if (sourceBatchId.equals(request.targetBatchId())) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_TRANSFER",
@@ -120,7 +126,7 @@ public class BirdPopulationService {
             BirdPopulationEventRequest request,
             String eventType
     ) {
-        requireBatch(batchId);
+        requireWritableBatch(batchId);
 
         List<BirdPopulationEvent> events = populationRepository.findEvents(batchId);
         int initialBirds = populationRepository.initialBirds(batchId);
@@ -195,6 +201,14 @@ public class BirdPopulationService {
     private void requireBatch(String batchId) {
         if (!populationRepository.batchExists(batchId)) {
             throw new ApiException(HttpStatus.NOT_FOUND, "BATCH_NOT_FOUND", "Batch not found.");
+        }
+    }
+
+    private void requireWritableBatch(String batchId) {
+        requireBatch(batchId);
+        if (!"ACTIVE".equals(populationRepository.batchStatus(batchId))) {
+            throw new ApiException(HttpStatus.CONFLICT, "BATCH_NOT_ACTIVE",
+                    "Population records cannot be added to a non-ACTIVE batch.");
         }
     }
 
