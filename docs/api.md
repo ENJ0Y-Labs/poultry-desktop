@@ -78,3 +78,6 @@ Mortality, culling, and bird-sale requests contain `eventDate`, positive `quanti
 Transfer requests contain `targetBatchId`, `eventDate`, positive `quantity`, and optional `reason`. A transfer creates matching outbound and inbound events atomically.
 
 The backend rejects a reduction that exceeds the population available immediately before the event date. This includes back-dated records. The renderer must display the returned API error rather than calculating a replacement value locally.
+
+
+A BROILER batch may enter the terminal `SOLD` lifecycle only when its calculated current bird population is zero. Population records cannot be added to a non-ACTIVE batch.
