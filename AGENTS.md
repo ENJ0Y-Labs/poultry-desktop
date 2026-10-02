@@ -20,7 +20,9 @@ Priority order:
 
 A boring screen with correct poultry numbers beats a beautiful dashboard showing agricultural fiction.
 
-**Current stage: 1 — Farm foundation.**
+**Current stage: 5 — Batch management.**
+
+Stage 5 implements batch creation, transactional batch-code generation, ACTIVE/SOLD lifecycle rules, and audited reopening of SOLD batches. Later production records such as mortality, feed, eggs, weight, and bird sales remain future work.
 
 Do not build later-stage features unless the owner explicitly changes the stage.
 
