@@ -20,11 +20,14 @@ import java.util.UUID;
 @Service
 public class BirdPopulationService {
     private final BirdPopulationRepository populationRepository;
+    private final BirdCostService birdCostService;
     private final AuditRepository auditRepository;
 
     public BirdPopulationService(BirdPopulationRepository populationRepository,
+                                  BirdCostService birdCostService,
                                   AuditRepository auditRepository) {
         this.populationRepository = populationRepository;
+        this.birdCostService = birdCostService;
         this.auditRepository = auditRepository;
     }
 
@@ -81,6 +84,16 @@ public class BirdPopulationService {
             throw populationConflict(e.getMessage());
         }
 
+        long transferredCost;
+        try {
+            transferredCost = birdCostService.costForReduction(sourceBatchId, outbound);
+        } catch (ApiException e) {
+            throw e;
+        } catch (ArithmeticException e) {
+            throw new ApiException(HttpStatus.CONFLICT, "INVALID_BIRD_COST",
+                    "The transfer cost could not be calculated exactly.");
+        }
+
         String now = Instant.now().toString();
         String transferId = UUID.randomUUID().toString();
 
@@ -106,6 +119,14 @@ public class BirdPopulationService {
                 now
         );
 
+        birdCostService.addTransferInCost(
+                request.targetBatchId(),
+                request.eventDate(),
+                transferredCost,
+                sourceBatchId,
+                request.reason()
+        );
+
         auditRepository.append(
                 sourceFarmId,
                 "TRANSFER",
@@ -114,10 +135,11 @@ public class BirdPopulationService {
                 clean(request.reason()),
                 null,
                 String.format(
-                        "{\"sourceBatchId\":\"%s\",\"targetBatchId\":\"%s\",\"quantity\":%d}",
+                        "{\"sourceBatchId\":\"%s\",\"targetBatchId\":\"%s\",\"quantity\":%d,\"transferredCostMinor\":%d}",
                         sourceBatchId,
                         request.targetBatchId(),
-                        request.quantity()
+                        request.quantity(),
+                        transferredCost
                 ),
                 now
         );
@@ -146,6 +168,8 @@ public class BirdPopulationService {
             throw populationConflict(e.getMessage());
         }
 
+        long allocatedCost = birdCostService.costForReduction(batchId, proposed);
+
         String now = Instant.now().toString();
         String id = UUID.randomUUID().toString();
 
@@ -168,11 +192,12 @@ public class BirdPopulationService {
                 clean(request.reason()),
                 null,
                 String.format(
-                        "{\"batchId\":\"%s\",\"eventType\":\"%s\",\"quantity\":%d,\"eventDate\":\"%s\"}",
+                        "{\"batchId\":\"%s\",\"eventType\":\"%s\",\"quantity\":%d,\"eventDate\":\"%s\",\"allocatedCostMinor\":%d}",
                         batchId,
                         eventType,
                         request.quantity(),
-                        request.eventDate()
+                        request.eventDate(),
+                        allocatedCost
                 ),
                 now
         );
