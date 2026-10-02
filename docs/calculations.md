@@ -139,3 +139,36 @@ Drug accounting is direct:
 Each drug record creates exactly one shared `DRUGS` expense. The same drug cost is not recorded again when the record is read or reported.
 
 Health and vaccination records remain operational history. Vaccination does not create an accounting expense automatically because no vaccination cost field is part of the current contract.
+
+
+## Stage 11: Egg production and inventory
+
+Eggs are stored internally as individual eggs.
+
+total collected = good collected + cracked collected
+
+good remaining = good collected - good sold
+
+Cracked eggs are historical production records and never enter the sellable balance.
+
+### Crate conversion
+
+The farm's configurable default crate size is used when an egg sale is recorded.
+
+sold eggs = crates sold × configured crate size
+
+The conversion must produce a whole number of individual eggs. For example, with a 30-egg crate:
+
+- 1 crate = 30 eggs
+- 0.5 crate = 15 eggs
+- 2.5 crates = 75 eggs
+
+The sale stores the crate size used at that time so later settings changes do not rewrite historical sales.
+
+### Egg sale money
+
+total sale = sold eggs × price per crate ÷ crate size
+
+The result must be an exact integer minor-unit amount. No floating-point money is used.
+
+The egg ledger is replayed chronologically when a sale is recorded. A back-dated sale is rejected if it would make the good-egg balance negative on that date or any later historical date.
