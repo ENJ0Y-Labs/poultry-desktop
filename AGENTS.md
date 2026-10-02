@@ -20,9 +20,9 @@ Priority order:
 
 A boring screen with correct poultry numbers beats a beautiful dashboard showing agricultural fiction.
 
-**Current stage: 6 — Bird population engine.**
+**Current stage: 7 — Cost accounting.**
 
-Stage 6 implements event-based bird population tracking, historical `asOf(date)` calculation, mortality/culling/sale/transfer records, and backend rejection of impossible population states. Feed, eggs, weight, health, and other production records remain future work.
+Stage 7 implements integer-minor-unit money handling, bird purchase cost history, attributable bird cost, additional batch-level attributable costs, cost carried by remaining birds, cost allocated to sold/lost birds, transfer cost carrying, and historical `asOf(date)` cost calculations. Feed inventory/FIFO consumption, eggs, weight, health, and other production modules remain future work.
 
 Do not build later-stage features unless the owner explicitly changes the stage.
 
@@ -422,6 +422,25 @@ A sold bird must carry its attributable cost. Otherwise profit is meaningless.
 Example: a bird sold for ₦900 with ₦700 attributable cost produces ₦200 before other applicable expenses.
 
 Mortality and culling must also be handled by an explicit tested cost-allocation rule. Do not silently delete their cost.
+
+
+### Cost accounting
+
+Money is always stored and calculated in integer minor units. For NGN, ₦500 is 50,000 kobo.
+
+Initial bird purchase cost is required when a batch is opened and is preserved in both the batch opening data and `bird_purchases` history.
+
+Bird cost uses a deterministic weighted-average carried-cost pool:
+1. start with the batch purchase cost
+2. apply dated attributable cost additions before population changes on that business date
+3. when birds leave through sale, mortality, culling, or transfer-out, allocate the current carried pool proportionally to the birds leaving
+4. subtract that attributable cost from the carried pool
+5. when birds transfer in, their calculated source cost is added to the target cost pool
+6. any remainder stays with the remaining birds
+
+All arithmetic is integer-only. If a proportional allocation is not an exact number of minor units, the integer quotient is used and the remaining minor-unit balance stays with the remaining birds. If all remaining birds leave, the entire remaining cost is allocated so no kobo disappears.
+
+Additional attributable costs are recorded as dated cost events. The cost engine is historical: an `asOf` date includes only cost and population events on or before that date.
 
 ## 13. Water containers
 
@@ -886,6 +905,21 @@ Common:
 - profit
 
 Done when farm and batch totals reconcile with their source records.
+
+### Stage 7 — Cost accounting
+
+Build:
+- integer minor-unit money model
+- required bird purchase cost history
+- attributable bird cost calculation
+- additional attributable batch costs
+- cost carried by remaining birds
+- cost allocated to sold, mortality, culling, and transfer-out birds
+- transfer cost carrying into the target batch
+- historical `asOf` cost reporting
+- tests for exact allocation and reconciliation
+
+Done when purchase cost, attributable cost, carried cost, and reduction cost reconcile without floating-point arithmetic.
 
 ### Stage 4 — Management
 
