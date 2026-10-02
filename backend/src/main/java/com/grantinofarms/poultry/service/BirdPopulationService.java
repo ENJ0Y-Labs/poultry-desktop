@@ -105,6 +105,7 @@ public class BirdPopulationService {
                 request.quantity(),
                 request.targetBatchId(),
                 clean(request.reason()),
+                clean(request.notes()),
                 now
         );
 
