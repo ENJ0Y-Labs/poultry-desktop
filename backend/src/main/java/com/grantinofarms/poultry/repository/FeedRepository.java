@@ -162,7 +162,24 @@ public class FeedRepository {
         return ids.getFirst();
     }
 
-    public long lastUsageDateEpoch(String feedTypeId) {
-        return 0L;
+    public boolean supplierBelongsToFarm(String supplierId, String farmId) {
+        Integer count = jdbc.queryForObject(
+                "SELECT COUNT(*) FROM suppliers WHERE id = ? AND farm_id = ? AND status = 'ACTIVE'",
+                Integer.class, supplierId, farmId);
+        return count != null && count == 1;
+    }
+
+    public LocalDate latestUsageDate(String feedTypeId) {
+        List<String> dates = jdbc.query(
+                "SELECT usage_date FROM feed_usage WHERE feed_type_id = ? ORDER BY usage_date DESC, created_at DESC LIMIT 1",
+                (rs, n) -> rs.getString("usage_date"), feedTypeId);
+        return dates.isEmpty() ? null : LocalDate.parse(dates.getFirst());
+    }
+
+    public LocalDate latestPurchaseDate(String feedTypeId) {
+        List<String> dates = jdbc.query(
+                "SELECT purchase_date FROM feed_purchases WHERE feed_type_id = ? ORDER BY purchase_date DESC, created_at DESC LIMIT 1",
+                (rs, n) -> rs.getString("purchase_date"), feedTypeId);
+        return dates.isEmpty() ? null : LocalDate.parse(dates.getFirst());
     }
 }
