@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { batchApi, costApi, dailyApi, farmApi, feedApi, populationApi } from "./services/api.js";
+import { batchApi, costApi, dailyApi, farmApi, feedApi, populationApi, healthApi } from "./services/api.js";
 
 const emptyFarm = { name: "", location: "", timezone: "Africa/Lagos", currency: "NGN" };
 const emptyHouse = { name: "", code: "", notes: "" };
@@ -46,6 +46,29 @@ const emptyPopulationEvent = {
   reason: "",
   notes: "",
 };
+const emptyHealth = {
+  batchId: "",
+  date: new Date().toISOString().slice(0, 10),
+  conditionProblem: "",
+  description: "",
+  action: "",
+};
+const emptyDrug = {
+  batchId: "",
+  date: new Date().toISOString().slice(0, 10),
+  drug: "",
+  quantity: "",
+  costMinor: "",
+  reason: "",
+};
+const emptyVaccination = {
+  batchId: "",
+  date: new Date().toISOString().slice(0, 10),
+  vaccine: "",
+  dose: "",
+  quantity: "",
+  notes: "",
+};
 
 export default function App() {
   const [farm, setFarm] = useState(null);
@@ -63,6 +86,12 @@ export default function App() {
   const [dailyRecord, setDailyRecord] = useState(null);
   const [mortalityForm, setMortalityForm] = useState(emptyPopulationEvent);
   const [cullingForm, setCullingForm] = useState(emptyPopulationEvent);
+  const [healthForm, setHealthForm] = useState(emptyHealth);
+  const [drugForm, setDrugForm] = useState(emptyDrug);
+  const [vaccinationForm, setVaccinationForm] = useState(emptyVaccination);
+  const [healthRecords, setHealthRecords] = useState([]);
+  const [drugRecords, setDrugRecords] = useState([]);
+  const [vaccinationRecords, setVaccinationRecords] = useState([]);
   const [houseForm, setHouseForm] = useState(emptyHouse);
   const [crateSize, setCrateSize] = useState(30);
   const [defaultWater, setDefaultWater] = useState("");
@@ -242,6 +271,64 @@ export default function App() {
       if (type === "MORTALITY") setMortalityForm({ ...emptyPopulationEvent, batchId: form.batchId });
       else setCullingForm({ ...emptyPopulationEvent, batchId: form.batchId });
     } catch (err) { setError(err.message); } finally { setSaving(false); }
+  }
+
+  async function saveHealth(event) {
+    event.preventDefault(); setSaving(true); setError("");
+    try {
+      await healthApi.add(healthForm.batchId, {
+        recordDate: healthForm.date,
+        conditionProblem: healthForm.conditionProblem.trim(),
+        description: healthForm.description.trim(),
+        action: healthForm.action.trim(),
+      });
+      setHealthRecords(await healthApi.listHealth(healthForm.batchId));
+      setHealthForm(form => ({ ...emptyHealth, batchId: form.batchId }));
+    } catch (err) { setError(err.message); } finally { setSaving(false); }
+  }
+
+  async function saveDrug(event) {
+    event.preventDefault(); setSaving(true); setError("");
+    try {
+      await healthApi.addDrug(drugForm.batchId, {
+        recordDate: drugForm.date,
+        drug: drugForm.drug.trim(),
+        quantity: Number(drugForm.quantity),
+        costMinor: drugForm.costMinor,
+        reason: drugForm.reason.trim(),
+      });
+      setDrugRecords(await healthApi.listDrugs(drugForm.batchId));
+      setDrugForm(form => ({ ...emptyDrug, batchId: form.batchId }));
+    } catch (err) { setError(err.message); } finally { setSaving(false); }
+  }
+
+  async function saveVaccination(event) {
+    event.preventDefault(); setSaving(true); setError("");
+    try {
+      await healthApi.addVaccination(vaccinationForm.batchId, {
+        recordDate: vaccinationForm.date,
+        vaccine: vaccinationForm.vaccine.trim(),
+        dose: vaccinationForm.dose.trim(),
+        quantity: Number(vaccinationForm.quantity),
+        notes: vaccinationForm.notes.trim() || null,
+      });
+      setVaccinationRecords(await healthApi.listVaccinations(vaccinationForm.batchId));
+      setVaccinationForm(form => ({ ...emptyVaccination, batchId: form.batchId }));
+    } catch (err) { setError(err.message); } finally { setSaving(false); }
+  }
+
+  async function loadHealthForBatch(batchId) {
+    if (!batchId) return;
+    try {
+      const [health, drugs, vaccinations] = await Promise.all([
+        healthApi.listHealth(batchId),
+        healthApi.listDrugs(batchId),
+        healthApi.listVaccinations(batchId),
+      ]);
+      setHealthRecords(health);
+      setDrugRecords(drugs);
+      setVaccinationRecords(vaccinations);
+    } catch (err) { setError(err.message); }
   }
 
   async function markBatchSold(id) {
@@ -468,6 +555,75 @@ export default function App() {
               <p className="muted">Feed usage is recorded through Feed management and appears here automatically. Birds are calculated from the population ledger.</p>
             </div>
           )}
+        </section>
+
+        <section className="card full">
+          <div className="section-head">
+            <h2>Health management</h2>
+            <p className="muted">Keep health observations, treatments, and vaccinations as separate operational records. Drug costs enter the shared Drugs expense category.</p>
+          </div>
+
+          <div className="subsection">
+            <h3>Health record</h3>
+            <form className="inline-form" onSubmit={saveHealth}>
+              <select required value={healthForm.batchId} onChange={e=>{setHealthForm({...healthForm,batchId:e.target.value});loadHealthForBatch(e.target.value);}}>
+                <option value="">Batch</option>
+                {batches.map(b=><option key={b.id} value={b.id}>{b.code}</option>)}
+              </select>
+              <input required type="date" value={healthForm.date} onChange={e=>setHealthForm({...healthForm,date:e.target.value})}/>
+              <input required placeholder="Condition / problem" value={healthForm.conditionProblem} onChange={e=>setHealthForm({...healthForm,conditionProblem:e.target.value})}/>
+              <input required placeholder="Description" value={healthForm.description} onChange={e=>setHealthForm({...healthForm,description:e.target.value})}/>
+              <input required placeholder="Action taken" value={healthForm.action} onChange={e=>setHealthForm({...healthForm,action:e.target.value})}/>
+              <button disabled={saving}>Record health issue</button>
+            </form>
+            <div className="table">
+              <div className="row header"><span>Date</span><span>Condition</span><span>Description</span><span>Action</span></div>
+              {healthRecords.map(row=><div className="row" key={row.id}><span>{row.recordDate}</span><span>{row.conditionProblem}</span><span>{row.description}</span><span>{row.action}</span></div>)}
+              {healthRecords.length===0 && <p className="muted empty">Select a batch to view health records.</p>}
+            </div>
+          </div>
+
+          <div className="subsection">
+            <h3>Drugs</h3>
+            <form className="inline-form" onSubmit={saveDrug}>
+              <select required value={drugForm.batchId} onChange={e=>{setDrugForm({...drugForm,batchId:e.target.value});loadHealthForBatch(e.target.value);}}>
+                <option value="">Batch</option>
+                {batches.map(b=><option key={b.id} value={b.id}>{b.code}</option>)}
+              </select>
+              <input required type="date" value={drugForm.date} onChange={e=>setDrugForm({...drugForm,date:e.target.value})}/>
+              <input required placeholder="Drug" value={drugForm.drug} onChange={e=>setDrugForm({...drugForm,drug:e.target.value})}/>
+              <input required min="1" type="number" placeholder="Quantity" value={drugForm.quantity} onChange={e=>setDrugForm({...drugForm,quantity:e.target.value})}/>
+              <input required min="1" step="1" type="number" placeholder="Cost (minor units)" value={drugForm.costMinor} onChange={e=>setDrugForm({...drugForm,costMinor:e.target.value})}/>
+              <input required placeholder="Reason" value={drugForm.reason} onChange={e=>setDrugForm({...drugForm,reason:e.target.value})}/>
+              <button disabled={saving}>Record drug</button>
+            </form>
+            <div className="table">
+              <div className="row header"><span>Date</span><span>Drug</span><span>Quantity</span><span>Cost</span><span>Reason</span></div>
+              {drugRecords.map(row=><div className="row" key={row.id}><span>{row.recordDate}</span><span>{row.drug}</span><span>{row.quantity}</span><span>{row.costMinor}</span><span>{row.reason}</span></div>)}
+              {drugRecords.length===0 && <p className="muted empty">No drug records for the selected batch.</p>}
+            </div>
+          </div>
+
+          <div className="subsection">
+            <h3>Vaccination</h3>
+            <form className="inline-form" onSubmit={saveVaccination}>
+              <select required value={vaccinationForm.batchId} onChange={e=>{setVaccinationForm({...vaccinationForm,batchId:e.target.value});loadHealthForBatch(e.target.value);}}>
+                <option value="">Batch</option>
+                {batches.map(b=><option key={b.id} value={b.id}>{b.code}</option>)}
+              </select>
+              <input required type="date" value={vaccinationForm.date} onChange={e=>setVaccinationForm({...vaccinationForm,date:e.target.value})}/>
+              <input required placeholder="Vaccine" value={vaccinationForm.vaccine} onChange={e=>setVaccinationForm({...vaccinationForm,vaccine:e.target.value})}/>
+              <input required placeholder="Dose e.g. 1 dose" value={vaccinationForm.dose} onChange={e=>setVaccinationForm({...vaccinationForm,dose:e.target.value})}/>
+              <input required min="1" type="number" placeholder="Quantity" value={vaccinationForm.quantity} onChange={e=>setVaccinationForm({...vaccinationForm,quantity:e.target.value})}/>
+              <input placeholder="Notes" value={vaccinationForm.notes} onChange={e=>setVaccinationForm({...vaccinationForm,notes:e.target.value})}/>
+              <button disabled={saving}>Record vaccination</button>
+            </form>
+            <div className="table">
+              <div className="row header"><span>Date</span><span>Vaccine</span><span>Dose</span><span>Quantity</span><span>Notes</span></div>
+              {vaccinationRecords.map(row=><div className="row" key={row.id}><span>{row.recordDate}</span><span>{row.vaccine}</span><span>{row.dose}</span><span>{row.quantity}</span><span>{row.notes||"—"}</span></div>)}
+              {vaccinationRecords.length===0 && <p className="muted empty">No vaccination records for the selected batch.</p>}
+            </div>
+          </div>
         </section>
 
         <section className="card full"><div className="section-head"><h2>Houses / pens</h2><p className="muted">Physical locations that batches belong to.</p></div>
