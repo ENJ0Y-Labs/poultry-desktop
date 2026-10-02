@@ -56,6 +56,15 @@ export const feedApi = {
 };
 
 
+export const populationApi = {
+  mortality: (batchId, data) => request("/batches/" + batchId + "/mortality", {
+    method: "POST", body: JSON.stringify(data)
+  }),
+  culling: (batchId, data) => request("/batches/" + batchId + "/culling", {
+    method: "POST", body: JSON.stringify(data)
+  }),
+};
+
 export const dailyApi = {
   create: (batchId, data) => request("/batches/" + batchId + "/daily-records", {
     method: "POST", body: JSON.stringify(data)
