@@ -1,5 +1,6 @@
 package com.grantinofarms.poultry.repository;
 
+import com.grantinofarms.poultry.domain.EggLedgerEvent;
 import com.grantinofarms.poultry.dto.EggCollectionResponse;
 import com.grantinofarms.poultry.dto.EggSaleResponse;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -107,6 +108,24 @@ public class EggManagementRepository {
                     rs.getLong("total_amount_minor")
             );
         }, batchId, asOf.toString());
+    }
+
+    public List<EggLedgerEvent> ledgerEvents(String batchId) {
+        return jdbc.query("""
+                SELECT record_date, good_eggs, 0 AS good_sold
+                FROM egg_collections
+                WHERE batch_id = ?
+                UNION ALL
+                SELECT record_date, 0 AS good_eggs, sold_eggs AS good_sold
+                FROM egg_sales
+                WHERE batch_id = ?
+                ORDER BY record_date
+                """,
+                (rs, n) -> new EggLedgerEvent(
+                        LocalDate.parse(rs.getString("record_date")),
+                        rs.getInt("good_eggs"),
+                        rs.getInt("good_sold")
+                ), batchId, batchId);
     }
 
     public int goodCollectedThrough(String batchId, LocalDate date) {
