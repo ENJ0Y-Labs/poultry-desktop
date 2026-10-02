@@ -61,3 +61,20 @@ Examples:
 A batch is created as ACTIVE. SOLD is terminal for ordinary writes. Reopening is an exceptional action and is audited with the supplied reason and timestamp.
 
 The current Stage 5 `/sold` action is intentionally limited to BROILER batches. Full verification that all birds have been sold will be connected to the later bird-sales/event records, because those records are not yet part of the schema.
+
+
+## Bird population
+
+`GET /api/v1/batches/{id}/population?asOf=YYYY-MM-DD` returns the authoritative population breakdown for the requested business date. If `asOf` is omitted, the current local business date is used.
+
+Population event endpoints:
+- `POST /api/v1/batches/{id}/mortality`
+- `POST /api/v1/batches/{id}/culling`
+- `POST /api/v1/batches/{id}/bird-sales`
+- `POST /api/v1/batches/{id}/transfers`
+
+Mortality, culling, and bird-sale requests contain `eventDate`, positive `quantity`, and optional `reason`.
+
+Transfer requests contain `targetBatchId`, `eventDate`, positive `quantity`, and optional `reason`. A transfer creates matching outbound and inbound events atomically.
+
+The backend rejects a reduction that exceeds the population available immediately before the event date. This includes back-dated records. The renderer must display the returned API error rather than calculating a replacement value locally.
