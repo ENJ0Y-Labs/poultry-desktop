@@ -20,9 +20,9 @@ Priority order:
 
 A boring screen with correct poultry numbers beats a beautiful dashboard showing agricultural fiction.
 
-**Current stage: 10 — Health management.**
+**Current stage: 11 — Layer production.**
 
-Stage 8 feed management is implemented. Stage 9 daily farm operations is implemented. Stage 10 adds health records, drug records with shared Drugs expenses, and vaccination records. Eggs, weight, and other production modules remain future work.
+Stage 8 feed management is implemented. Stage 9 daily farm operations is implemented. Stage 10 health management is implemented. Stage 11 adds Layer-only egg production, egg inventory, cracked-egg history, configurable crate conversion, and egg sales. Broiler production modules such as weight and growth remain future work.
 
 Do not build later-stage features unless the owner explicitly changes the stage.
 
