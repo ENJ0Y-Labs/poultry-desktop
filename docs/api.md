@@ -174,3 +174,38 @@ The configured farm default crate size is used at the time of sale. The database
 GET /api/v1/batches/{id}/eggs/sales?asOf=YYYY-MM-DD
 
 The backend validates the complete historical good-egg ledger, including back-dated sales, so a new sale cannot make a later historical balance negative.
+
+
+## Broiler production
+
+Broiler production endpoints are available only for BROILER batches.
+
+### Weight records
+
+- POST /api/v1/batches/{id}/broiler/weights
+- GET /api/v1/batches/{id}/broiler/weights?asOf=YYYY-MM-DD
+
+Request fields: recordDate, sampleQuantity, totalWeightKg, optional notes.
+
+The backend converts total weight to integer grams. Average weight and weight gain are calculated server-side.
+
+### Growth and FCR
+
+- GET /api/v1/batches/{id}/broiler/growth?asOf=YYYY-MM-DD
+
+Returns latest average weight, cumulative live-weight gain, FCR, and the ordered growth trend.
+
+FCR is calculated only by the backend:
+
+FCR = feed consumed (kg) / live-weight gain (kg)
+
+The known test vector is 400 kg feed and 200 kg live-weight gain, producing FCR 2.0. Only feed usage whose configured unit is kg contributes to this calculation.
+
+### Bird sales
+
+- POST /api/v1/batches/{id}/broiler/sales
+- GET /api/v1/batches/{id}/broiler/sales?asOf=YYYY-MM-DD
+
+Request fields: recordDate, quantity, pricePerBirdMinor, customer.
+
+A bird sale creates a SOLD population event and is never recorded as mortality. When a sale leaves zero current birds, the backend transitions the batch to SOLD and subsequent ordinary writes are rejected.
