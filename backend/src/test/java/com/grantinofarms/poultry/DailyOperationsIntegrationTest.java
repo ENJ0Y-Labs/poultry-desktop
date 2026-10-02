@@ -28,6 +28,7 @@ class DailyOperationsIntegrationTest {
     @Autowired BatchService batchService;
     @Autowired FeedService feedService;
     @Autowired DailyOperationsService dailyOperationsService;
+    @Autowired com.grantinofarms.poultry.service.BirdPopulationService birdPopulationService;
     @Autowired JdbcTemplate jdbc;
 
     @Test
@@ -54,12 +55,10 @@ class DailyOperationsIntegrationTest {
                 feedType.id(), LocalDate.of(2026, 1, 5),
                 new BigDecimal("2"), "bag"));
 
-        var population = new BirdPopulationEventRequest(
-                LocalDate.of(2026, 1, 5), 12, "Disease", "Observed during morning check");
-        dailyOperationsService.get(batch.id(), LocalDate.of(2026, 1, 5));
-        var populationService = jdbc;
-        assertThat(populationService).isNotNull();
-
+        birdPopulationService.addMortality(batch.id(), new BirdPopulationEventRequest(
+                LocalDate.of(2026, 1, 5), 12, "Disease", "Observed during morning check"));
+        birdPopulationService.addCulling(batch.id(), new BirdPopulationEventRequest(
+                LocalDate.of(2026, 1, 5), 3, "Weak birds", "Removed from flock"));
         var response = dailyOperationsService.create(batch.id(), new DailyRecordRequest(
                 LocalDate.of(2026, 1, 5),
                 "Morning operational notes",
@@ -69,31 +68,39 @@ class DailyOperationsIntegrationTest {
                 )
         ));
 
-        assertThat(response.birds()).isEqualTo(500);
-        assertThat(response.mortality()).isEqualTo(0);
-        assertThat(response.culling()).isEqualTo(0);
+        assertThat(response.birds()).isEqualTo(485);
+        assertThat(response.mortality()).isEqualTo(12);
+        assertThat(response.culling()).isEqualTo(3);
         assertThat(response.feed()).hasSize(1);
         assertThat(response.feed().getFirst().quantity()).isEqualByComparingTo("2.000");
         assertThat(response.totalWaterUnits()).isEqualTo(250);
         assertThat(response.water()).hasSize(2);
         assertThat(response.notes()).isEqualTo("Morning operational notes");
-        assertThat(response.populationEvents()).isEmpty();
+        assertThat(response.populationEvents()).hasSize(2);
+        assertThat(response.populationEvents().get(0).type()).isEqualTo("MORTALITY");
+        assertThat(response.populationEvents().get(0).reason()).isEqualTo("Disease");
+        assertThat(response.populationEvents().get(0).notes()).isEqualTo("Observed during morning check");
+        assertThat(response.populationEvents().get(1).type()).isEqualTo("CULLING");
+        assertThat(response.populationEvents().get(1).reason()).isEqualTo("Weak birds");
+        assertThat(response.populationEvents().get(1).notes()).isEqualTo("Removed from flock");
         assertThat(settings.waterContainerSizes()).containsExactly(25, 75);
-        assertThat(population).isNotNull();
     }
 
     @Test
-    void mortalityAndCullingRemainSeparateAndCarryNotes() {
+    void dailyRecordCannotBeDuplicatedForSameBatchAndDate() {
         setupFarm();
-        var house = houseService.create(new HouseCreateRequest("Broiler House", "BH1", null));
+        var house = houseService.create(new HouseCreateRequest("Layer House", "LH1", null));
         var batch = batchService.create(new BatchCreateRequest(
-                "BROILER", LocalDate.of(2026, 1, 1), house.id(), 100, null, 1_000_000L));
+                "LAYER", LocalDate.of(2026, 1, 1), house.id(), 100, null, 1_000_000L));
 
-        // Use the existing population service through the application-facing domain operation.
-        var populationService = new com.grantinofarms.poultry.service.BirdPopulationService(
-                null, null, null);
-        assertThatThrownBy(() -> populationService.get(batch.id(), LocalDate.of(2026, 1, 2)))
-                .isInstanceOf(NullPointerException.class);
+        dailyOperationsService.create(batch.id(), new DailyRecordRequest(
+                LocalDate.of(2026, 1, 2), "First record", java.util.List.of()
+        ));
+
+        assertThatThrownBy(() -> dailyOperationsService.create(batch.id(), new DailyRecordRequest(
+                LocalDate.of(2026, 1, 2), "Duplicate", java.util.List.of()
+        )))
+                .hasMessage("A daily record already exists for this batch and date.");
     }
 
     private void setupFarm() {
