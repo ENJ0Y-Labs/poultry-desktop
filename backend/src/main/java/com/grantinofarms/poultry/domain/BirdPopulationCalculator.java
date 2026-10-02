@@ -1,6 +1,8 @@
 package com.grantinofarms.poultry.domain;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 public final class BirdPopulationCalculator {
@@ -15,7 +17,7 @@ public final class BirdPopulationCalculator {
         }
 
         int population = initialBirds;
-        for (BirdPopulationEvent event : events) {
+        for (BirdPopulationEvent event : ordered(events)) {
             if (event.eventDate().isAfter(asOf)) {
                 continue;
             }
@@ -57,8 +59,22 @@ public final class BirdPopulationCalculator {
             );
         }
 
-        List<BirdPopulationEvent> withProposed = new java.util.ArrayList<>(existingEvents);
+        List<BirdPopulationEvent> withProposed = new ArrayList<>(existingEvents);
         withProposed.add(proposedEvent);
-        currentBirds(initialBirds, withProposed, proposedEvent.eventDate());
+
+        List<BirdPopulationEvent> ordered = ordered(withProposed);
+        int population = initialBirds;
+        for (BirdPopulationEvent event : ordered) {
+            population += signedQuantity(event);
+            if (population < 0) {
+                throw new IllegalArgumentException("Bird population cannot become negative.");
+            }
+        }
+    }
+
+    private static List<BirdPopulationEvent> ordered(List<BirdPopulationEvent> events) {
+        return events.stream()
+                .sorted(Comparator.comparing(BirdPopulationEvent::eventDate))
+                .toList();
     }
 }
