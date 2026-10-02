@@ -15,7 +15,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(properties = {
-        "spring.datasource.url=jdbc:sqlite:./target/farm-management-test.db?foreign_keys=on&journal_mode=WAL&synchronous=FULL"
+        "spring.datasource.url=jdbc:sqlite:file:farm-management-test?mode=memory&cache=shared"
 })
 class FarmManagementIntegrationTest {
 
