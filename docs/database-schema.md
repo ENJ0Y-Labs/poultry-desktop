@@ -90,7 +90,7 @@ The service layer owns sequence allocation. It must allocate the number and crea
 
 These are intentionally not created yet because later production stages have not begun:
 
-`daily_records`, `mortality_records`, `culling_records`, `feed_types`, `feed_purchases`, `feed_usage`, `water_usage`, `health_records`, `drug_records`, `vaccination_records`, `egg_production`, `egg_sales`, `weight_records`, `bird_sales`, `inventory`, `customers`, `expenses`, and `settings`.
+`daily_records`, `mortality_records`, `culling_records`, `water_usage`, `health_records`, `drug_records`, `vaccination_records`, `egg_production`, `egg_sales`, `weight_records`, `bird_sales`, `inventory`, `customers`, and `settings`.
 
 Those tables will be introduced through separate forward-only migrations when their stage begins.
 
