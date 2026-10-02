@@ -172,3 +172,54 @@ total sale = sold eggs × price per crate ÷ crate size
 The result must be an exact integer minor-unit amount. No floating-point money is used.
 
 The egg ledger is replayed chronologically when a sale is recorded. A back-dated sale is rejected if it would make the good-egg balance negative on that date or any later historical date.
+
+
+## Stage 12: Broiler production
+
+### Weight records
+
+Weight records store the measured total weight of a sample and the number of sampled birds. Weight is stored internally in grams and exposed in kilograms.
+
+average weight = total sample weight / sampled birds
+
+The first recorded average weight is the baseline for the batch's growth series.
+
+For each later record:
+
+weight gain per bird = current average weight - previous recorded average weight
+
+For the batch-level cumulative growth summary:
+
+current live biomass = current live birds × latest average weight
+starting live biomass = initial birds × first recorded average weight
+live-weight gain = current live biomass - starting live biomass
+
+If live-weight gain is not positive, FCR is undefined and the API returns null.
+
+### FCR
+
+The authoritative Broiler FCR formula is:
+
+FCR = feed consumed (kg) / live-weight gain (kg)
+
+The Spring Boot FcrCalculator is the only implementation. The frontend never calculates FCR.
+
+The known vector is:
+
+400 kg feed / 200 kg live-weight gain = 2.0
+
+Only feed usage whose configured feed unit is kg contributes to the Broiler FCR until a canonical conversion between other feed units and kilograms is introduced.
+
+### Bird sales
+
+Bird sales are SOLD population events, not mortality or culling:
+
+current birds = initial birds - mortality - culling - sold + transfers in - transfers out
+
+The sale total is:
+
+total sale = quantity × price per bird
+
+Money remains integer minor units.
+
+When a sale leaves the current live population at zero, the Broiler batch transitions from ACTIVE to SOLD and ordinary writes are locked.
