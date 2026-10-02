@@ -47,6 +47,10 @@ class BirdCostIntegrationTest {
                 new BirdPopulationEventRequest(LocalDate.of(2026, 1, 10), 20, "Partial sale")
         );
 
+        var historical = costService.get(batch.id(), LocalDate.of(2026, 1, 5));
+        assertThat(historical.soldBirdCostMinor()).isEqualTo(0L);
+        assertThat(historical.carriedCostMinor()).isEqualTo(1_000_000L);
+
         var costs = costService.get(batch.id(), LocalDate.of(2026, 1, 10));
 
         assertThat(costs.initialPurchaseCostMinor()).isEqualTo(1_000_000L);
