@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { batchApi, costApi, dailyApi, farmApi, feedApi, populationApi, healthApi } from "./services/api.js";
+import { batchApi, costApi, dailyApi, eggApi, farmApi, feedApi, populationApi, healthApi } from "./services/api.js";
 
 const emptyFarm = { name: "", location: "", timezone: "Africa/Lagos", currency: "NGN" };
 const emptyHouse = { name: "", code: "", notes: "" };
@@ -92,6 +92,16 @@ export default function App() {
   const [healthRecords, setHealthRecords] = useState([]);
   const [drugRecords, setDrugRecords] = useState([]);
   const [vaccinationRecords, setVaccinationRecords] = useState([]);
+  const [eggBatchId, setEggBatchId] = useState("");
+  const [eggInventory, setEggInventory] = useState(null);
+  const [eggCollections, setEggCollections] = useState([]);
+  const [eggSales, setEggSales] = useState([]);
+  const [eggCollectionForm, setEggCollectionForm] = useState({
+    batchId: "", date: new Date().toISOString().slice(0, 10), good: "", cracked: "", notes: ""
+  });
+  const [eggSaleForm, setEggSaleForm] = useState({
+    batchId: "", date: new Date().toISOString().slice(0, 10), customer: "", crates: "", pricePerCrateMinor: ""
+  });
   const [houseForm, setHouseForm] = useState(emptyHouse);
   const [crateSize, setCrateSize] = useState(30);
   const [defaultWater, setDefaultWater] = useState("");
@@ -270,6 +280,53 @@ export default function App() {
       setDailyRecord(record);
       if (type === "MORTALITY") setMortalityForm({ ...emptyPopulationEvent, batchId: form.batchId });
       else setCullingForm({ ...emptyPopulationEvent, batchId: form.batchId });
+    } catch (err) { setError(err.message); } finally { setSaving(false); }
+  }
+
+  async function loadEggsForBatch(batchId) {
+    if (!batchId) {
+      setEggInventory(null); setEggCollections([]); setEggSales([]);
+      return;
+    }
+    try {
+      const [inventory, collections, sales] = await Promise.all([
+        eggApi.inventory(batchId),
+        eggApi.listCollections(batchId),
+        eggApi.listSales(batchId),
+      ]);
+      setEggInventory(inventory);
+      setEggCollections(collections);
+      setEggSales(sales);
+    } catch (err) { setError(err.message); }
+  }
+
+  async function saveEggCollection(event) {
+    event.preventDefault(); setSaving(true); setError("");
+    try {
+      const batchId = eggCollectionForm.batchId;
+      await eggApi.addCollection(batchId, {
+        recordDate: eggCollectionForm.date,
+        good: Number(eggCollectionForm.good),
+        cracked: Number(eggCollectionForm.cracked),
+        notes: eggCollectionForm.notes.trim() || null,
+      });
+      await loadEggsForBatch(batchId);
+      setEggCollectionForm(form => ({ ...form, good: "", cracked: "", notes: "" }));
+    } catch (err) { setError(err.message); } finally { setSaving(false); }
+  }
+
+  async function saveEggSale(event) {
+    event.preventDefault(); setSaving(true); setError("");
+    try {
+      const batchId = eggSaleForm.batchId;
+      await eggApi.addSale(batchId, {
+        recordDate: eggSaleForm.date,
+        customer: eggSaleForm.customer.trim(),
+        crates: eggSaleForm.crates,
+        pricePerCrateMinor: eggSaleForm.pricePerCrateMinor,
+      });
+      await loadEggsForBatch(batchId);
+      setEggSaleForm(form => ({ ...form, customer: "", crates: "", pricePerCrateMinor: "" }));
     } catch (err) { setError(err.message); } finally { setSaving(false); }
   }
 
@@ -624,6 +681,78 @@ export default function App() {
               {vaccinationRecords.length===0 && <p className="muted empty">No vaccination records for the selected batch.</p>}
             </div>
           </div>
+        </section>
+
+        <section className="card full">
+          <div className="section-head">
+            <h2>Layer egg production</h2>
+            <p className="muted">Only LAYER batches can record eggs. Good and cracked eggs are stored as individual eggs. Cracked eggs remain historical and are never sellable.</p>
+          </div>
+
+          <div className="subsection">
+            <h3>Egg batch</h3>
+            <select value={eggBatchId} onChange={e => {
+              const id = e.target.value;
+              setEggBatchId(id);
+              setEggCollectionForm(form => ({ ...form, batchId: id }));
+              setEggSaleForm(form => ({ ...form, batchId: id }));
+              loadEggsForBatch(id);
+            }}>
+              <option value="">Select a layer batch</option>
+              {batches.filter(b => b.type === "LAYER").map(b => <option key={b.id} value={b.id}>{b.code}</option>)}
+            </select>
+          </div>
+
+          {eggBatchId && (
+            <>
+              <div className="subsection">
+                <h3>Egg inventory</h3>
+                <div className="table">
+                  <div className="row header"><span>Good collected</span><span>Good sold</span><span>Good remaining</span><span>Cracked</span><span>Total collected</span></div>
+                  <div className="row">
+                    <span>{eggInventory?.goodCollected ?? "—"}</span>
+                    <span>{eggInventory?.goodSold ?? "—"}</span>
+                    <span>{eggInventory?.goodRemaining ?? "—"}</span>
+                    <span>{eggInventory?.crackedCollected ?? "—"}</span>
+                    <span>{eggInventory?.totalCollected ?? "—"}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="subsection">
+                <h3>Record egg production</h3>
+                <form className="inline-form" onSubmit={saveEggCollection}>
+                  <input required type="date" value={eggCollectionForm.date} onChange={e=>setEggCollectionForm({...eggCollectionForm,date:e.target.value})}/>
+                  <input required min="0" step="1" type="number" placeholder="Good eggs" value={eggCollectionForm.good} onChange={e=>setEggCollectionForm({...eggCollectionForm,good:e.target.value})}/>
+                  <input required min="0" step="1" type="number" placeholder="Cracked eggs" value={eggCollectionForm.cracked} onChange={e=>setEggCollectionForm({...eggCollectionForm,cracked:e.target.value})}/>
+                  <input placeholder="Notes" value={eggCollectionForm.notes} onChange={e=>setEggCollectionForm({...eggCollectionForm,notes:e.target.value})}/>
+                  <button disabled={saving}>Record collection</button>
+                </form>
+                <div className="table">
+                  <div className="row header"><span>Date</span><span>Good</span><span>Cracked</span><span>Total</span><span>Notes</span></div>
+                  {eggCollections.map(row=><div className="row" key={row.id}><span>{row.recordDate}</span><span>{row.good}</span><span>{row.cracked}</span><span>{row.total}</span><span>{row.notes || "—"}</span></div>)}
+                  {eggCollections.length===0 && <p className="muted empty">No egg collections recorded.</p>}
+                </div>
+              </div>
+
+              <div className="subsection">
+                <h3>Egg sales</h3>
+                <p className="muted">Current crate size: {crateSize} eggs. The sale stores the crate size used at the time, so changing settings does not rewrite history.</p>
+                <form className="inline-form" onSubmit={saveEggSale}>
+                  <input required type="date" value={eggSaleForm.date} onChange={e=>setEggSaleForm({...eggSaleForm,date:e.target.value})}/>
+                  <input required placeholder="Customer" value={eggSaleForm.customer} onChange={e=>setEggSaleForm({...eggSaleForm,customer:e.target.value})}/>
+                  <input required min="0.001" step="0.001" type="number" placeholder="Crates e.g. 0.5 or 2.5" value={eggSaleForm.crates} onChange={e=>setEggSaleForm({...eggSaleForm,crates:e.target.value})}/>
+                  <input required min="1" step="1" type="number" placeholder="Price / crate (minor units)" value={eggSaleForm.pricePerCrateMinor} onChange={e=>setEggSaleForm({...eggSaleForm,pricePerCrateMinor:e.target.value})}/>
+                  <button disabled={saving}>Record sale</button>
+                </form>
+                <div className="table">
+                  <div className="row header"><span>Date</span><span>Customer</span><span>Crates</span><span>Eggs</span><span>Price / crate</span><span>Total</span></div>
+                  {eggSales.map(row=><div className="row" key={row.id}><span>{row.recordDate}</span><span>{row.customer}</span><span>{row.crates.toString()}</span><span>{row.soldEggs}</span><span>{row.pricePerCrateMinor}</span><span>{row.totalAmountMinor}</span></div>)}
+                  {eggSales.length===0 && <p className="muted empty">No egg sales recorded.</p>}
+                </div>
+              </div>
+            </>
+          )}
         </section>
 
         <section className="card full"><div className="section-head"><h2>Houses / pens</h2><p className="muted">Physical locations that batches belong to.</p></div>
