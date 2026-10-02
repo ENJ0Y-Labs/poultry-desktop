@@ -55,18 +55,18 @@ class BirdPopulationCalculatorTest {
     }
 
     @Test
-    void rejectsBackdatedCullingThatWouldMakeHistoricalPopulationNegative() {
+    void rejectsBackdatedCullingThatWouldBreakALaterHistoricalBalance() {
         List<BirdPopulationEvent> events = List.of(
-                new BirdPopulationEvent(LocalDate.of(2026, 1, 5), "MORTALITY", 60)
+                new BirdPopulationEvent(LocalDate.of(2026, 1, 3), "MORTALITY", 60)
         );
 
         assertThatThrownBy(() -> BirdPopulationCalculator.validatePopulationChange(
                 100,
                 events,
-                new BirdPopulationEvent(LocalDate.of(2026, 1, 4), "CULLING", 50)
+                new BirdPopulationEvent(LocalDate.of(2026, 1, 2), "CULLING", 50)
         ))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("culling quantity exceeds available birds.");
+                .hasMessage("Bird population cannot become negative.");
     }
 
     @Test
