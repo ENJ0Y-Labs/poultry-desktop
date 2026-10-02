@@ -10,5 +10,10 @@ public record BirdTransferRequest(
         @NotBlank String targetBatchId,
         @NotNull LocalDate eventDate,
         @NotNull @Positive Integer quantity,
-        String reason
-) {}
+        String reason,
+        String notes
+) {
+    public BirdTransferRequest(String targetBatchId, LocalDate eventDate, Integer quantity, String reason) {
+        this(targetBatchId, eventDate, quantity, reason, null);
+    }
+}
