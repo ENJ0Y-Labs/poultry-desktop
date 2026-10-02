@@ -59,6 +59,27 @@ class BirdCostCalculatorTest {
         assertThat(soldCost).isEqualTo(240_000L);
     }
 
+
+    @Test
+    void allocatesCostToMortalityAndCullingToo() {
+        List<BirdPopulationEvent> population = List.of(
+                new BirdPopulationEvent(LocalDate.of(2026, 1, 2), "MORTALITY", 10),
+                new BirdPopulationEvent(LocalDate.of(2026, 1, 3), "CULLING", 10)
+        );
+
+        var snapshot = BirdCostCalculator.calculate(
+                100,
+                1_000_000L,
+                population,
+                List.of(),
+                LocalDate.of(2026, 1, 3)
+        );
+
+        assertThat(snapshot.allocatedCostMinor()).isEqualTo(200_000L);
+        assertThat(snapshot.carriedCostMinor()).isEqualTo(800_000L);
+        assertThat(snapshot.currentBirds()).isEqualTo(80);
+    }
+
     @Test
     void exactIntegerAllocationKeepsEveryKoboAccountedFor() {
         List<BirdPopulationEvent> population = List.of(
