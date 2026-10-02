@@ -1045,3 +1045,13 @@ Never lose confirmed data.
 Never hide corrections.
 
 And never sacrifice poultry math for dashboard cosmetics.
+
+## Stage 9: Daily farm operations
+
+- Daily records are batch-scoped and use farm-local business dates.
+- A daily record stores notes and water-container entries. Bird count, mortality, culling, and feed are derived from authoritative records and are not duplicated into the daily-record table.
+- Mortality and culling remain separate population event types. Both support reason and notes.
+- Water is recorded as configured container size × count. Do not ask workers for invented precise volume measurements.
+- Water total is calculated as the sum of configured container capacity × container count.
+- Feed usage continues to be recorded through the feed module and is aggregated into daily records rather than creating a second feed ledger.
+- One daily-record header is allowed per batch/date.
