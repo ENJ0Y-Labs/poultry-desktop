@@ -6,6 +6,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.util.List;
+import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -61,17 +62,17 @@ class DatabaseSchemaTest {
     void foreignKeyAndCheckConstraintsAreEnforced() {
         jdbcTemplate.update(
                 "INSERT INTO farms (id, name, timezone, currency, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                "farm-1", "Test Farm", "Africa/Lagos", "NGN", "ACTIVE", "2026-10-02T00:00:00Z", "2026-10-02T00:00:00Z"
+                UUID.randomUUID().toString(), "Test Farm", "Africa/Lagos", "NGN", "ACTIVE", "2026-10-02T00:00:00Z", "2026-10-02T00:00:00Z"
         );
 
         assertThatThrownBy(() -> jdbcTemplate.update(
                 "INSERT INTO houses (id, farm_id, name, code, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                "house-1", "missing-farm", "House", "H1", "ACTIVE", "2026-10-02T00:00:00Z", "2026-10-02T00:00:00Z"
+                UUID.randomUUID().toString(), "missing-farm", "House", "H1", "ACTIVE", "2026-10-02T00:00:00Z", "2026-10-02T00:00:00Z"
         )).isInstanceOf(Exception.class);
 
         assertThatThrownBy(() -> jdbcTemplate.update(
                 "INSERT INTO batches (id, farm_id, house_id, code, batch_type, placement_date, initial_bird_count, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                "batch-1", "farm-1", "missing-house", "L-2026-001", "LAYER", "2026-10-02", 0, "ACTIVE", "2026-10-02T00:00:00Z", "2026-10-02T00:00:00Z"
+                UUID.randomUUID().toString(), "missing-farm", "missing-house", "L-2026-001", "LAYER", "2026-10-02", 0, "ACTIVE", "2026-10-02T00:00:00Z", "2026-10-02T00:00:00Z"
         )).isInstanceOf(Exception.class);
     }
 }
