@@ -186,3 +186,33 @@ Stores batch-scoped egg production as individual eggs. Good and cracked quantiti
 Stores batch-scoped sales of good eggs. sold_eggs is the authoritative individual-egg quantity. crate_size preserves the configured crate size used at sale time. price_per_crate_minor and total_amount_minor are integer minor-unit money values.
 
 Cracked eggs are intentionally absent from the sales table because they are not sellable.
+
+
+## Stage 12: Broiler production
+
+### weight_records
+
+Stores Broiler sample-weighing facts:
+- batch
+- business date
+- sample quantity
+- total sample weight in integer grams
+- optional notes
+- technical creation timestamp
+
+Average weight and growth are derived and are not stored as mutable totals.
+
+### bird_sales
+
+Stores Broiler bird-sale facts:
+- batch
+- business date
+- quantity sold
+- price per bird in integer minor currency units
+- total sale amount in integer minor currency units
+- customer
+- technical creation timestamp
+
+A corresponding SOLD population event remains the authoritative population change. The sale table preserves the commercial details.
+
+Broiler batches become SOLD when all current birds have been sold. Once SOLD, ordinary Broiler production and population writes are rejected. Reopening remains the existing exceptional audited lifecycle action.
