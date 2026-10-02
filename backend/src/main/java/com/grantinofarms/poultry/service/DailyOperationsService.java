@@ -61,7 +61,7 @@ public class DailyOperationsService {
 
         auditRepository.append(
                 farmId, "CREATE", "DAILY_RECORD", id, clean(request.notes()), null,
-                String.format("{"batchId":"%s","recordDate":"%s"}",
+                String.format("{\"batchId\":\"%s\",\"recordDate\":\"%s\"}",
                         batchId, request.recordDate()), now
         );
 
