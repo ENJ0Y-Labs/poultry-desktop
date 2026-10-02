@@ -57,7 +57,8 @@ public class BirdPopulationService {
         String sourceFarmId = populationRepository.batchFarmId(sourceBatchId);
         String targetFarmId = populationRepository.batchFarmId(request.targetBatchId());
         if (!sourceFarmId.equals(targetFarmId)) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_TRANSFER",\n                    "Birds can only be transferred between batches on the same farm.");
+            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_TRANSFER",
+                    "Birds can only be transferred between batches on the same farm.");
         }
 
         if (sourceBatchId.equals(request.targetBatchId())) {
@@ -106,15 +107,18 @@ public class BirdPopulationService {
         );
 
         auditRepository.append(
-                populationRepository.batchFarmId(sourceBatchId),
+                sourceFarmId,
                 "TRANSFER",
                 "BIRD_POPULATION",
                 transferId,
                 clean(request.reason()),
                 null,
-                "{"sourceBatchId":"" + sourceBatchId
-                        + "","targetBatchId":"" + request.targetBatchId()
-                        + "","quantity":" + request.quantity() + "}",
+                String.format(
+                        "{\"sourceBatchId\":\"%s\",\"targetBatchId\":\"%s\",\"quantity\":%d}",
+                        sourceBatchId,
+                        request.targetBatchId(),
+                        request.quantity()
+                ),
                 now
         );
 
@@ -163,10 +167,13 @@ public class BirdPopulationService {
                 id,
                 clean(request.reason()),
                 null,
-                "{"batchId":"" + batchId
-                        + "","eventType":"" + eventType
-                        + "","quantity":" + request.quantity()
-                        + ","eventDate":"" + request.eventDate() + ""}",
+                String.format(
+                        "{\"batchId\":\"%s\",\"eventType\":\"%s\",\"quantity\":%d,\"eventDate\":\"%s\"}",
+                        batchId,
+                        eventType,
+                        request.quantity(),
+                        request.eventDate()
+                ),
                 now
         );
 
