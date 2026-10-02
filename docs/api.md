@@ -139,3 +139,38 @@ Vaccination endpoints:
 A vaccination record contains `recordDate`, `vaccine`, `dose`, positive `quantity`, and optional `notes`. Vaccination history is separate from health records and does not create an expense automatically.
 
 Health, drug, and vaccination writes require an ACTIVE batch and cannot be dated before batch placement.
+
+
+## Layer egg production
+
+Egg endpoints are available only for LAYER batches.
+
+### Egg collection
+
+POST /api/v1/batches/{id}/eggs/collections
+
+Request fields: recordDate, good, cracked, notes.
+
+GET /api/v1/batches/{id}/eggs/collections?asOf=YYYY-MM-DD
+
+Collection quantities are individual eggs. Good and cracked are stored separately.
+
+### Egg inventory
+
+GET /api/v1/batches/{id}/eggs/inventory?asOf=YYYY-MM-DD
+
+Returns goodCollected, crackedCollected, goodSold, goodRemaining, and totalCollected.
+
+Cracked eggs never increase goodRemaining and cannot be sold.
+
+### Egg sales
+
+POST /api/v1/batches/{id}/eggs/sales
+
+Request fields: recordDate, customer, crates, pricePerCrateMinor.
+
+The configured farm default crate size is used at the time of sale. The database stores the resulting individual egg quantity and the crate size used for that sale, preserving historical meaning if the farm later changes its default crate size.
+
+GET /api/v1/batches/{id}/eggs/sales?asOf=YYYY-MM-DD
+
+The backend validates the complete historical good-egg ledger, including back-dated sales, so a new sale cannot make a later historical balance negative.
