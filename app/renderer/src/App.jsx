@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { batchApi, costApi, farmApi, feedApi } from "./services/api.js";
+import { batchApi, costApi, dailyApi, farmApi, feedApi, populationApi } from "./services/api.js";
 
 const emptyFarm = { name: "", location: "", timezone: "Africa/Lagos", currency: "NGN" };
 const emptyHouse = { name: "", code: "", notes: "" };
@@ -33,6 +33,19 @@ const emptyFeedUsage = {
   quantity: "",
   unit: "bag",
 };
+const emptyDaily = {
+  batchId: "",
+  date: new Date().toISOString().slice(0, 10),
+  notes: "",
+  water: "25:4, 75:2",
+};
+const emptyPopulationEvent = {
+  batchId: "",
+  date: new Date().toISOString().slice(0, 10),
+  quantity: "",
+  reason: "",
+  notes: "",
+};
 
 export default function App() {
   const [farm, setFarm] = useState(null);
@@ -46,6 +59,10 @@ export default function App() {
   const [feedTypeForm, setFeedTypeForm] = useState(emptyFeedType);
   const [feedPurchaseForm, setFeedPurchaseForm] = useState(emptyFeedPurchase);
   const [feedUsageForm, setFeedUsageForm] = useState(emptyFeedUsage);
+  const [dailyForm, setDailyForm] = useState(emptyDaily);
+  const [dailyRecord, setDailyRecord] = useState(null);
+  const [mortalityForm, setMortalityForm] = useState(emptyPopulationEvent);
+  const [cullingForm, setCullingForm] = useState(emptyPopulationEvent);
   const [houseForm, setHouseForm] = useState(emptyHouse);
   const [crateSize, setCrateSize] = useState(30);
   const [defaultWater, setDefaultWater] = useState("");
@@ -185,6 +202,46 @@ export default function App() {
 
   function feedQuantity(value) {
     return (Number(value || 0) / 1000).toString();
+  }
+
+  function parseWaterEntries(value) {
+    return value.split(",").map(item => item.trim()).filter(Boolean).map(item => {
+      const [size, count] = item.split(":").map(part => Number(part.trim()));
+      if (!Number.isInteger(size) || size <= 0 || !Number.isInteger(count) || count <= 0) {
+        throw new Error("Water format must be like 25:4, 75:2.");
+      }
+      return { containerSizeUnits: size, containerCount: count };
+    });
+  }
+
+  async function saveDailyRecord(event) {
+    event.preventDefault(); setSaving(true); setError("");
+    try {
+      const created = await dailyApi.create(dailyForm.batchId, {
+        recordDate: dailyForm.date,
+        notes: dailyForm.notes.trim() || null,
+        waterContainers: parseWaterEntries(dailyForm.water),
+      });
+      setDailyRecord(created);
+    } catch (err) { setError(err.message); } finally { setSaving(false); }
+  }
+
+  async function recordPopulationEvent(event, type) {
+    event.preventDefault(); setSaving(true); setError("");
+    try {
+      const form = type === "MORTALITY" ? mortalityForm : cullingForm;
+      const save = type === "MORTALITY" ? populationApi.mortality : populationApi.culling;
+      await save(form.batchId, {
+        eventDate: form.date,
+        quantity: Number(form.quantity),
+        reason: form.reason.trim() || null,
+        notes: form.notes.trim() || null,
+      });
+      const record = await dailyApi.get(form.batchId, form.date);
+      setDailyRecord(record);
+      if (type === "MORTALITY") setMortalityForm({ ...emptyPopulationEvent, batchId: form.batchId });
+      else setCullingForm({ ...emptyPopulationEvent, batchId: form.batchId });
+    } catch (err) { setError(err.message); } finally { setSaving(false); }
   }
 
   async function markBatchSold(id) {
@@ -341,6 +398,76 @@ export default function App() {
               {feedInventory.length===0 && <p className="muted empty">No feed inventory yet.</p>}
             </div>
           </div>
+        </section>
+
+        <section className="card full">
+          <div className="section-head">
+            <h2>Daily farm operations</h2>
+            <p className="muted">Record the day without making workers pretend they measured 143.73 litres of water with a laboratory.</p>
+          </div>
+
+          <div className="subsection">
+            <h3>Daily record</h3>
+            <form className="inline-form" onSubmit={saveDailyRecord}>
+              <select required value={dailyForm.batchId} onChange={e=>setDailyForm({...dailyForm,batchId:e.target.value})}>
+                <option value="">Batch</option>
+                {batches.filter(b=>b.status==="ACTIVE").map(b=><option key={b.id} value={b.id}>{b.code}</option>)}
+              </select>
+              <input required type="date" value={dailyForm.date} onChange={e=>setDailyForm({...dailyForm,date:e.target.value})}/>
+              <input placeholder="Water e.g. 25:4, 75:2" value={dailyForm.water} onChange={e=>setDailyForm({...dailyForm,water:e.target.value})}/>
+              <input placeholder="Daily notes" value={dailyForm.notes} onChange={e=>setDailyForm({...dailyForm,notes:e.target.value})}/>
+              <button disabled={saving}>Save daily record</button>
+            </form>
+            <p className="muted">Water format: container size × count. Example <strong>25:4, 75:2</strong> gives 250 configured units.</p>
+          </div>
+
+          <div className="subsection">
+            <h3>Mortality</h3>
+            <form className="inline-form" onSubmit={e=>recordPopulationEvent(e,"MORTALITY")}>
+              <select required value={mortalityForm.batchId} onChange={e=>setMortalityForm({...mortalityForm,batchId:e.target.value})}>
+                <option value="">Batch</option>
+                {batches.filter(b=>b.status==="ACTIVE").map(b=><option key={b.id} value={b.id}>{b.code}</option>)}
+              </select>
+              <input required type="date" value={mortalityForm.date} onChange={e=>setMortalityForm({...mortalityForm,date:e.target.value})}/>
+              <input required min="1" type="number" placeholder="Quantity" value={mortalityForm.quantity} onChange={e=>setMortalityForm({...mortalityForm,quantity:e.target.value})}/>
+              <input placeholder="Reason" value={mortalityForm.reason} onChange={e=>setMortalityForm({...mortalityForm,reason:e.target.value})}/>
+              <input placeholder="Notes" value={mortalityForm.notes} onChange={e=>setMortalityForm({...mortalityForm,notes:e.target.value})}/>
+              <button disabled={saving}>Record mortality</button>
+            </form>
+          </div>
+
+          <div className="subsection">
+            <h3>Culling</h3>
+            <form className="inline-form" onSubmit={e=>recordPopulationEvent(e,"CULLING")}>
+              <select required value={cullingForm.batchId} onChange={e=>setCullingForm({...cullingForm,batchId:e.target.value})}>
+                <option value="">Batch</option>
+                {batches.filter(b=>b.status==="ACTIVE").map(b=><option key={b.id} value={b.id}>{b.code}</option>)}
+              </select>
+              <input required type="date" value={cullingForm.date} onChange={e=>setCullingForm({...cullingForm,date:e.target.value})}/>
+              <input required min="1" type="number" placeholder="Quantity" value={cullingForm.quantity} onChange={e=>setCullingForm({...cullingForm,quantity:e.target.value})}/>
+              <input placeholder="Reason" value={cullingForm.reason} onChange={e=>setCullingForm({...cullingForm,reason:e.target.value})}/>
+              <input placeholder="Notes" value={cullingForm.notes} onChange={e=>setCullingForm({...cullingForm,notes:e.target.value})}/>
+              <button disabled={saving}>Record culling</button>
+            </form>
+          </div>
+
+          {dailyRecord && (
+            <div className="subsection">
+              <h3>Daily summary · {dailyRecord.date}</h3>
+              <div className="table">
+                <div className="row header"><span>Birds</span><span>Mortality</span><span>Culling</span><span>Feed entries</span><span>Water</span><span>Notes</span></div>
+                <div className="row">
+                  <span>{dailyRecord.birds}</span>
+                  <span>{dailyRecord.mortality}</span>
+                  <span>{dailyRecord.culling}</span>
+                  <span>{dailyRecord.feed.length}</span>
+                  <span>{dailyRecord.totalWaterUnits} units</span>
+                  <span>{dailyRecord.notes || "—"}</span>
+                </div>
+              </div>
+              <p className="muted">Feed usage is recorded through Feed management and appears here automatically. Birds are calculated from the population ledger.</p>
+            </div>
+          )}
         </section>
 
         <section className="card full"><div className="section-head"><h2>Houses / pens</h2><p className="muted">Physical locations that batches belong to.</p></div>
