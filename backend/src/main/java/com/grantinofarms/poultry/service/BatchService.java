@@ -8,6 +8,7 @@ import com.grantinofarms.poultry.dto.BatchReopenRequest;
 import com.grantinofarms.poultry.exception.ApiException;
 import com.grantinofarms.poultry.repository.AuditRepository;
 import com.grantinofarms.poultry.repository.BatchRepository;
+import com.grantinofarms.poultry.repository.BirdPurchaseRepository;
 import com.grantinofarms.poultry.repository.FarmRepository;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
@@ -23,17 +24,20 @@ import java.util.UUID;
 public class BatchService {
     private final FarmRepository farmRepository;
     private final BatchRepository batchRepository;
+    private final BirdPurchaseRepository birdPurchaseRepository;
     private final AuditRepository auditRepository;
     private final ObjectMapper objectMapper;
     private final BirdPopulationService birdPopulationService;
 
     public BatchService(FarmRepository farmRepository,
                         BatchRepository batchRepository,
+                        BirdPurchaseRepository birdPurchaseRepository,
                         AuditRepository auditRepository,
                         ObjectMapper objectMapper,
                         BirdPopulationService birdPopulationService) {
         this.farmRepository = farmRepository;
         this.batchRepository = batchRepository;
+        this.birdPurchaseRepository = birdPurchaseRepository;
         this.auditRepository = auditRepository;
         this.objectMapper = objectMapper;
         this.birdPopulationService = birdPopulationService;
@@ -72,6 +76,11 @@ public class BatchService {
                     "The selected supplier/source does not belong to this farm or is archived.");
         }
 
+        if (request.purchaseCostMinor() % request.initialBirdCount() != 0) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_PURCHASE_COST",
+                    "Purchase cost must divide evenly into whole kobo per bird.");
+        }
+
         int year = request.placementDate().getYear();
         batchRepository.ensureSequence(type, year);
         int sequence = batchRepository.allocateSequenceNumber(type, year);
@@ -91,6 +100,17 @@ public class BatchService {
                     type,
                     request.placementDate(),
                     request.initialBirdCount(),
+                    request.purchaseCostMinor(),
+                    now
+            );
+
+            birdPurchaseRepository.insert(
+                    UUID.randomUUID().toString(),
+                    id,
+                    clean(request.supplierId()),
+                    request.placementDate(),
+                    request.initialBirdCount(),
+                    request.purchaseCostMinor() / request.initialBirdCount(),
                     request.purchaseCostMinor(),
                     now
             );
