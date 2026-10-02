@@ -51,6 +51,26 @@ class BatchManagementIntegrationTest {
         assertThat(broilerOne.code()).isEqualTo("B-2026-001");
         assertThat(layerOne.status()).isEqualTo("ACTIVE");
         assertThat(layerOne.purchaseCostMinor()).isEqualTo(5_000_000L);
+        Long unitCost = jdbc.queryForObject(
+                "SELECT unit_cost_minor FROM bird_purchases WHERE batch_id = ?",
+                Long.class,
+                layerOne.id()
+        );
+        assertThat(unitCost).isEqualTo(5_000L);
+    }
+
+
+    @Test
+    void rejectsPurchaseCostThatCannotBeRepresentedAsWholeMinorUnitsPerBird() {
+        farmService.create(new FarmCreateRequest(
+                "Grantino Farms", "Port Harcourt", "Africa/Lagos", "NGN"));
+        var house = houseService.create(new HouseCreateRequest(
+                "Layer House", "LH1", null));
+
+        assertThatThrownBy(() -> batchService.create(new BatchCreateRequest(
+                "LAYER", LocalDate.of(2026, 6, 1), house.id(), 3, null, 100L
+        )))
+                .hasMessage("Purchase cost must divide evenly into whole kobo per bird.");
     }
 
     @Test
