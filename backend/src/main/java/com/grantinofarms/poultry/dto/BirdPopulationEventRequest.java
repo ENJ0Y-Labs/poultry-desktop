@@ -8,5 +8,10 @@ import java.time.LocalDate;
 public record BirdPopulationEventRequest(
         @NotNull LocalDate eventDate,
         @NotNull @Positive Integer quantity,
-        String reason
-) {}
+        String reason,
+        String notes
+) {
+    public BirdPopulationEventRequest(LocalDate eventDate, Integer quantity, String reason) {
+        this(eventDate, quantity, reason, null);
+    }
+}
