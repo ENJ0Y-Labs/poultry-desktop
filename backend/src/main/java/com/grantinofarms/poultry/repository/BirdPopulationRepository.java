@@ -58,6 +58,14 @@ public class BirdPopulationRepository {
         return count != null && count == 1;
     }
 
+    public String batchStatus(String batchId) {
+        return jdbc.query(
+                "SELECT status FROM batches WHERE id = ?",
+                (rs, rowNum) -> rs.getString("status"),
+                batchId
+        ).stream().findFirst().orElse(null);
+    }
+
     public void insert(
             String id,
             String batchId,
