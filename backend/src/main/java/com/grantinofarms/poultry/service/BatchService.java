@@ -101,6 +101,26 @@ public class BatchService {
     }
 
     @Transactional
+    public BatchResponse markSold(String id) {
+        BatchResponse current = get(id);
+        if (!"BROILER".equals(current.type())) {
+            throw new ApiException(HttpStatus.CONFLICT, "INVALID_SOLD_TRANSITION",
+                    "Only BROILER batches use the SOLD terminal lifecycle in this stage.");
+        }
+        if ("SOLD".equals(current.status())) {
+            throw new ApiException(HttpStatus.CONFLICT, "BATCH_ALREADY_SOLD",
+                    "This batch is already SOLD.");
+        }
+
+        String now = Instant.now().toString();
+        batchRepository.updateStatus(id, "SOLD", now);
+        BatchResponse sold = batchRepository.findById(id);
+        auditRepository.append(current.farmId(), "STATUS_CHANGE", "BATCH", id, null,
+                json(current), json(sold), now);
+        return sold;
+    }
+
+    @Transactional
     public BatchResponse reopen(String id, BatchReopenRequest request) {
         BatchResponse current = get(id);
         if (!"SOLD".equals(current.status())) {
