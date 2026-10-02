@@ -108,7 +108,8 @@ class BirdCostIntegrationTest {
 
         assertThat(costService.get(source.id(), LocalDate.of(2026, 3, 5)).carriedCostMinor())
                 .isEqualTo(800_000L);
-        assertThat(costService.get(target.id(), LocalDate.of(2026, 3, 5)).carriedCostMinor())
-                .isEqualTo(700_000L);
+        var targetCosts = costService.get(target.id(), LocalDate.of(2026, 3, 5));
+        assertThat(targetCosts.transferInCostMinor()).isEqualTo(200_000L);
+        assertThat(targetCosts.carriedCostMinor()).isEqualTo(700_000L);
     }
 }
