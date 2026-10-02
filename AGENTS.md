@@ -27,84 +27,191 @@ Do not build later-stage features unless the owner explicitly changes the stage.
 ## 2. Non-negotiables
 
 1. Derived state is calculated, never manually stored or maintained.
-2. Each formula has exactly one implementation in `src/shared/domain` and is tested.
+2. Each formula has exactly one implementation in the shared domain/calculation layer and is tested.
 3. Money is integer minor units. Never use floating-point money.
 4. Transactions are voided, not deleted. Important changes are audited.
-5. The renderer has no Node.js, filesystem, or database access.
-6. Main-process IPC validates every input.
-7. Backups use SQLite `db.backup()` or `VACUUM INTO`, never a raw copy of a live DB.
-8. No network calls, telemetry, cloud services, CDN assets, or local HTTP server in normal operation.
-9. Never edit a shipped migration. Add a new migration.
-10. Never weaken/delete a test to make it pass.
-11. Never silence TypeScript with `any`, `@ts-ignore`, or equivalent.
-12. Never commit `*.db`, `*.db-wal`, `*.db-shm`, backups, or real farm data.
-13. Keep one local farm data model. Do not unnecessarily split the farm into separate databases/accounts.
-14. Stage 1 has one primary owner/operator account. Multi-user roles can be added later.
-15. Opening a new batch creates a new permanent batch record. It does not overwrite an old batch.
-16. The broiler terminal status is **SOLD**, not COMPLETED.
-17. Reopening a SOLD batch is an exceptional, audited action and requires a reason.
+5. The Electron renderer has no Node.js, filesystem, or database access.
+6. Electron IPC validates every input.
+7. The Spring Boot backend validates every request at the API boundary.
+8. The Electron app communicates with Spring Boot through a typed HTTP API. Do not introduce a second backend API style.
+9. Backups use SQLite `db.backup()` or `VACUUM INTO` when SQLite is the selected database implementation, never a raw copy of a live DB.
+10. The application must remain fully usable without internet access.
+11. No telemetry, cloud dependency, CDN assets, or third-party network service in normal operation.
+12. Never edit a shipped migration. Add a new migration.
+13. Never weaken/delete a test to make it pass.
+14. Never silence TypeScript with `any`, `@ts-ignore`, or equivalent.
+15. Never commit `*.db`, `*.db-wal`, `*.db-shm`, backups, or real farm data.
+16. Keep one local farm data model. Do not unnecessarily split the farm into separate databases/accounts.
+17. Stage 1 has one primary owner/operator account. Multi-user roles can be added later.
+18. Opening a new batch creates a new permanent batch record. It does not overwrite an old batch.
+19. The broiler terminal status is **SOLD**, not COMPLETED.
+20. Reopening a SOLD batch is an exceptional, audited action and requires a reason.
 
 ## 3. Stack
 
 | Concern | Choice |
 |---|---|
-| Desktop | Electron |
-| UI | React + TypeScript, strict |
-| Database | SQLite + better-sqlite3 |
-| Validation | Zod |
-| Charts | Recharts |
-| Tests | Vitest |
-| Build | electron-vite + electron-builder |
-| Package manager | npm |
+| Desktop shell | Electron |
+| Frontend | React + TypeScript, strict |
+| Backend | Java + Spring Boot |
+| Backend API | Spring Boot REST API |
+| Database | SQLite for local-first operation |
+| Database access | Spring JDBC / repository layer |
+| Schema migrations | Flyway |
+| Validation | Jakarta Bean Validation |
+| Serialization | Jackson |
+| Frontend charts | Recharts |
+| Frontend tests | Vitest |
+| Backend tests | JUnit 5 + Spring Boot Test |
+| Desktop build | electron-vite + electron-builder |
+| Frontend package manager | npm |
+| Java build | Maven |
 
-Do not add Flask, Express, an ORM, cloud services, telemetry, or another process without owner approval.
+### Stack rules
 
-## 4. Repository architecture
+- Do not add Flask.
+- Do not add Express.
+- Do not add another backend framework.
+- Do not add an ORM such as Hibernate/JPA unless the owner explicitly approves it.
+- Do not add cloud services, telemetry, or another server/process without owner approval.
+- Spring Boot is the backend source of truth for business rules and persistence.
+- React is responsible for presentation and user interaction, not authoritative farm calculations.
+- Keep the backend capable of running locally on the same PC as the Electron application.
+- Prefer a packaged/local Spring Boot process launched and supervised by Electron for the desktop distribution.
+- The user must not need to install or manually operate Java/Spring Boot separately in the production desktop app.
+- Development may run Electron and Spring Boot as separate processes.
 
-`docs/` is the source of truth.
+## 4. Architecture
 
-`src/main`
-- Electron lifecycle
-- IPC handlers
+The system has three application layers:
+
+**Electron → React renderer → typed HTTP API → Spring Boot → SQLite**
+
+### Electron
+
+Electron owns:
+- application lifecycle
+- starting/stopping the local Spring Boot process
+- desktop/window security
+- native filesystem operations needed by the desktop shell
+- backup/restore file selection where appropriate
+- printing/export integration where appropriate
+- secure IPC between Electron main and renderer
+
+### React renderer
+
+React owns:
+- screens
+- forms
+- tables
+- navigation
+- loading/error states
+- keyboard-first interaction
+- displaying values returned by the backend
+
+React must not:
+- connect directly to SQLite
+- access Node.js APIs
+- implement authoritative farm calculations
+- mutate database files
+- bypass the Spring Boot API
+
+### Spring Boot
+
+Spring Boot owns:
+- REST API
+- request validation
+- authentication/session state
+- authorization
 - services/use cases
-- repositories/SQL
-- database/migrations
-- backup/restore
-- filesystem/printing/export
+- business rules
+- domain calculations
+- transaction boundaries
+- audit writes
+- repositories
+- SQL/database access
+- migrations
+- backup coordination
+- farm/batch invariants
 
-`src/preload`
-- narrow typed contextBridge API
+Recommended package structure:
 
-`src/renderer`
-- React UI only
-- no Node, SQLite, Electron main imports, or filesystem access
+`backend/src/main/java/.../`
 
-`src/shared`
-- pure domain calculations
-- enums/capabilities
-- Zod schemas
-- IPC contracts
+- `config/`
+- `controller/`
+- `dto/`
+- `service/`
+- `domain/`
+- `repository/`
+- `validation/`
+- `audit/`
+- `exception/`
+- `config/`
 
-Architecture:
+Keep controllers thin. Business logic belongs in services/domain code. Repositories contain persistence logic.
 
-`React → preload → IPC → service → repository → SQLite`
+### API flow
 
-IPC handlers validate input, resolve the acting user from the main-process session, call a service, and return:
+**React → Electron-safe API client → local Spring Boot REST endpoint → Controller → Service → Repository → SQLite**
 
-`Result<T> = { ok: true, data } | { ok: false, error: { code, message } }`
+The renderer must never bypass the API.
 
-Services own transactions, business rules, invariants, calculations, and audit writes. Repositories contain SQL only.
+API responses should use a consistent envelope where useful:
 
-Electron security:
+`{ ok: true, data: ... }`
+
+or
+
+`{ ok: false, error: { code, message, details? } }`
+
+Do not expose raw SQL/database exceptions to the UI.
+
+## 5. Electron security
+
+Use:
+
 - `contextIsolation: true`
 - `nodeIntegration: false`
-- `sandbox: true`
-- never expose `ipcRenderer` directly
-- never expose `fs` or arbitrary IPC
+- `sandbox: true` where compatible with the application
+- narrow typed `contextBridge`
+- no direct `ipcRenderer` exposure
+- no direct `fs` exposure
 - strict CSP
-- block uncontrolled navigation/window opening
+- controlled navigation
+- controlled window creation
 
-## 5. Farm and batch model
+The renderer communicates with the backend through the application's API client, not by opening arbitrary external URLs.
+
+Spring Boot should bind only to localhost for the local desktop deployment.
+
+Do not expose the local API to the LAN unless the owner explicitly changes the product security model.
+
+## 6. Backend lifecycle
+
+Electron is the desktop orchestrator.
+
+Development:
+
+- start Spring Boot locally
+- start Electron/React locally
+- Electron connects to the configured local API address
+
+Production:
+
+1. Electron starts.
+2. Electron starts the packaged Spring Boot backend.
+3. Spring Boot starts and validates the local database.
+4. Electron waits for a health/readiness endpoint.
+5. Electron opens the main window only when the backend is ready.
+6. Electron owns backend shutdown when the application exits.
+7. Backend failures must produce a clear application error rather than a blank UI.
+
+The backend must expose a lightweight local health/readiness endpoint for Electron startup checks.
+
+The health endpoint must not expose sensitive farm data.
+
+## 7. Farm and batch model
 
 Hierarchy:
 
@@ -127,7 +234,7 @@ Examples:
 
 Generate batch codes inside the creation transaction.
 
-Use one capability function, `flockCapabilities(type)`, to decide which modules exist. Do not scatter `if (type === 'LAYER')` across the codebase.
+Use one capability function, `flockCapabilities(type)`, to decide which modules exist. Do not scatter type checks across the codebase.
 
 Every batch:
 - Overview
@@ -153,7 +260,7 @@ Broilers additionally:
 - Bird Sales
 - SOLD lifecycle
 
-## 6. Batch lifecycle
+## 8. Batch lifecycle
 
 Broiler batches become **SOLD when all birds have been sold**.
 
@@ -175,7 +282,7 @@ Examples of reasons:
 
 The audit reason is part of the permanent history.
 
-## 7. Bird population
+## 9. Bird population
 
 The database stores events/transactions. The application calculates state.
 
@@ -193,7 +300,7 @@ Every historical metric accepts an `asOf` date.
 
 Undefined calculations return `null` and the UI displays **—**, never `0`, `NaN`, or `Infinity`.
 
-## 8. Dashboards
+## 10. Dashboards
 
 There are two dashboard levels.
 
@@ -215,7 +322,7 @@ It should show, where data exists:
 - relevant inventory/stock
 - other tested farm KPIs
 
-Every figure must come from an authoritative service or tested domain calculation.
+Every figure must come from an authoritative Spring Boot service or tested domain calculation.
 
 ### Batch dashboard
 
@@ -239,7 +346,7 @@ Every batch has its own smaller dashboard containing only that batch's data:
 
 Never duplicate calculation logic between the two.
 
-## 9. Daily records
+## 11. Daily records
 
 When a new batch is opened, preserve its opening information as historical data.
 
@@ -249,9 +356,9 @@ Correct mistakes by editing/voiding the underlying record and auditing the chang
 
 Business dates use `YYYY-MM-DD` in farm-local time. UTC ISO timestamps are used for technical timestamps.
 
-Never use `new Date('YYYY-MM-DD')` for business-date calculations.
+Do not parse business dates as UTC instants. Use `LocalDate` in Java for farm business dates.
 
-## 10. Feed and inventory
+## 12. Feed and inventory
 
 Feed is purchased in the units actually used by the farm, including bags/kg. The purchase records:
 - quantity
@@ -311,15 +418,13 @@ Example: a bird sold for ₦900 with ₦700 attributable cost produces ₦200 be
 
 Mortality and culling must also be handled by an explicit tested cost-allocation rule. Do not silently delete their cost.
 
-## 11. Water containers
-
-Feed quantity is measured in the farm's normal purchase/use units.
+## 13. Water containers
 
 Water consumption does not need fake precision.
 
 The configurable part is the water-container size. The farm can define sizes such as 25 and 75 units, and record the number of containers rather than pretending exact water volume was measured.
 
-## 12. Egg management
+## 14. Egg management
 
 Store egg quantities internally as **individual eggs**.
 
@@ -372,17 +477,15 @@ For a sale, record:
 
 No unnecessary egg-size field is required for the current system.
 
-## 13. Drugs and health costs
+## 15. Drugs and health costs
 
 For accounting, medications and vaccines use one expense category:
 
 **Drugs**
 
-Do not force the farm to separate medication and vaccination financially.
-
 Operational health/vaccination records can remain distinct where needed for production history.
 
-## 14. Expense scope
+## 16. Expense scope
 
 Keep the initial expense model deliberately simple.
 
@@ -396,7 +499,7 @@ Do not add separate categories for:
 
 Only include expense categories that reflect what the farm actually needs at this stage.
 
-## 15. Suppliers and bird purchase history
+## 17. Suppliers and bird purchase history
 
 Supplier records are important for tracing purchases.
 
@@ -410,7 +513,7 @@ Historical purchase price must remain attached to the original purchase/batch da
 
 Do not silently replace it with today's price.
 
-## 16. Broiler pricing and target margin
+## 18. Broiler pricing and target margin
 
 Broiler pricing must be calculatable from actual bird costs.
 
@@ -429,9 +532,11 @@ Changes to target/working margin are audited.
 
 If a recalculation is triggered by a new cost, bird count, feed allocation, or sale, calculate again from the underlying records rather than editing a stored derived price.
 
-## 17. Money
+## 19. Money
 
-Money is integer minor units. Never use JS floats for money.
+Money is integer minor units. Never use JS or Java floating-point types for money.
+
+Use integer minor units for persistence and API DTOs. In Java, prefer `long` for monetary minor units.
 
 Revenue:
 
@@ -445,9 +550,9 @@ Round only at the appropriate line-total boundary.
 
 Profit must account for the attributable cost of sold birds/eggs and relevant expenses.
 
-## 18. Core calculations
+## 20. Core calculations
 
-All formulas live once under `src/shared/domain/calculations`.
+All formulas live once in the shared domain/calculation layer, preferably under the Spring Boot domain package.
 
 They are pure, tested, and reused by dashboards, reports, and exports.
 
@@ -466,7 +571,55 @@ FCR's exact production basis must be documented before implementation if it affe
 
 Round for presentation only.
 
-## 19. Audit trail
+The frontend must never become a second source of truth for these calculations.
+
+## 21. API design
+
+Use REST endpoints under a versioned API prefix such as `/api/v1`.
+
+Keep endpoint naming resource-oriented.
+
+Examples:
+- `GET /api/v1/farm/dashboard`
+- `GET /api/v1/batches`
+- `POST /api/v1/batches`
+- `GET /api/v1/batches/{id}`
+- `GET /api/v1/batches/{id}/dashboard`
+- `POST /api/v1/batches/{id}/mortality`
+- `POST /api/v1/batches/{id}/feed-usage`
+- `POST /api/v1/batches/{id}/eggs`
+- `POST /api/v1/batches/{id}/sales`
+
+Do not make controllers responsible for SQL or domain calculations.
+
+Validate DTOs at the controller boundary using Jakarta Bean Validation.
+
+For complex business rules, validate again in the service/domain layer.
+
+Use explicit DTOs. Do not expose database entities directly as public API contracts.
+
+API error responses must be stable, user-safe, and actionable.
+
+## 22. Authentication and user model
+
+Stage 1 has one primary owner/operator account.
+
+The backend owns authentication and authorization.
+
+Do not trust a user ID supplied by the renderer when determining the acting user.
+
+If authentication is session-based, keep session state server-side and use a secure HTTP-only cookie where practical.
+
+For local-only operation:
+- bind the backend to localhost
+- do not expose authentication/session endpoints to the LAN
+- never store plaintext passwords
+- use a strong password hashing algorithm supported by the selected Java security library
+- audit important authentication/account actions
+
+Multi-user roles and permissions are future work.
+
+## 23. Audit trail
 
 Audit every material create/update/void/restore/status/cost/stock/bird-count/money action.
 
@@ -484,16 +637,20 @@ Audit logs are append-only. Normal application code must never update/delete the
 
 Reopening a SOLD batch always records a reason.
 
-## 20. Database rules
+## 24. Database rules
 
-Use SQLite with:
+Use SQLite for the local-first database.
+
+Required SQLite behavior:
 - foreign keys ON
-- WAL mode
+- WAL mode where supported
 - `synchronous = FULL`
 
-Keep transactions short. Do not `await` inside a transaction.
+Keep transactions short.
 
-Tables use snake_case plurals. TypeScript uses camelCase.
+Use Spring-managed transactions around service operations. Do not perform long-running or blocking work inside database transactions.
+
+Tables use snake_case plurals. Java uses camelCase.
 
 Use database constraints for:
 - NOT NULL
@@ -506,7 +663,9 @@ Transactions are voided rather than hard-deleted.
 
 Reference data such as houses, suppliers, and customers is archived when historical references require preservation.
 
-## 21. Migrations
+## 25. Migrations
+
+Use **Flyway** for schema migrations.
 
 Migrations are numbered, forward-only, and never edited after shipment.
 
@@ -516,11 +675,13 @@ Every schema migration updates `docs/database-schema.md`.
 
 Tests apply all migrations to a clean database.
 
-## 22. Backup and restore
+Do not mix Flyway migration ownership with ad-hoc schema creation in application startup.
+
+## 26. Backup and restore
 
 The database lives on a user's PC, so backups are mandatory.
 
-Use SQLite `db.backup()` or `VACUUM INTO`.
+Use SQLite `backup` functionality or `VACUUM INTO` through a controlled backend service.
 
 Never copy the live `.db` file.
 
@@ -541,12 +702,15 @@ Restore:
 2. run `PRAGMA integrity_check`
 3. reject a schema version newer than the app
 4. safety-backup current DB
-5. close DB
+5. stop/close database access
 6. replace DB
 7. reopen DB
-8. apply pending migrations if required
+8. apply pending Flyway migrations if required
+9. verify application health
 
-## 23. UI rules
+Because the backend owns the database connection, restore must be coordinated through the Spring Boot lifecycle. The Electron renderer must never replace database files directly.
+
+## 27. UI rules
 
 The app is designed for farm workers.
 
@@ -565,9 +729,9 @@ Abbreviations such as HDP and FCR must have formula tooltips.
 
 All null metrics display **—**.
 
-The UI presents data. It does not calculate farm metrics itself.
+The UI presents data returned by the backend. It does not own authoritative farm calculations.
 
-## 24. Navigation
+## 28. Navigation
 
 Main navigation:
 
@@ -599,7 +763,29 @@ Main navigation:
 
 Batch-specific modules must follow `flockCapabilities`.
 
-## 25. Testing
+## 29. Testing
+
+### Backend
+
+Use:
+- JUnit 5
+- Spring Boot Test
+- integration tests against a real temporary/in-memory SQLite database where supported
+- real Flyway migrations
+- service/repository integration tests
+- controller/API tests for validation and error contracts
+
+Do not mock database behavior when testing SQL, migrations, repository behavior, or transaction invariants.
+
+### Frontend
+
+Use:
+- Vitest
+- React testing tools where needed
+
+Test UI behavior without duplicating backend business rules.
+
+### Calculation tests
 
 Calculations require tests for:
 - zero
@@ -618,8 +804,6 @@ Calculations require tests for:
 - batch reopening
 - farm/batch isolation
 
-Use real in-memory SQLite and real migrations for service/repository integration tests. Do not mock database behavior.
-
 Reference vectors:
 
 `placed 5,000 − mortality 83 − culling 20 − sold 70 = 4,827`
@@ -632,7 +816,7 @@ Reference vectors:
 
 `0 / 0 = null`
 
-## 26. Delivery plan
+## 30. Delivery plan
 
 ### Stage 1 — Farm foundation
 
@@ -650,6 +834,7 @@ Build:
 - farm dashboard
 - audit foundation
 - pre-migration backups
+- Electron ↔ Spring Boot local process startup/health check
 
 Done when a Layer or Broiler batch can be opened and its dashboard and population are correct and traceable.
 
@@ -711,34 +896,36 @@ Build:
 
 Every report must use the same calculations as the batch/farm screens.
 
-## 27. Working agreement
+## 31. Working agreement
 
 Before coding:
 1. Read this file and relevant `docs/`.
 2. Confirm the task belongs to the current stage.
 3. If not, stop.
-4. For schema semantics, formulas, IPC, architecture, permissions, or Electron security changes, write a short plan and get owner approval.
+4. For schema semantics, formulas, API contracts, architecture, permissions, or Electron/Spring security changes, write a short plan and get owner approval.
 5. Record non-obvious decisions in `docs/decisions/`.
 6. If a farm rule is unclear, ask the owner. Do not invent one.
 
 Definition of done:
-1. Schema + migration + documentation updated when needed.
-2. Zod schema and IPC contract updated.
+1. Schema + Flyway migration + documentation updated when needed.
+2. API DTO/schema/contract updated.
 3. Service with transaction and invariants.
 4. Audit behavior implemented where required.
 5. Pure calculations implemented once and tested.
 6. Keyboard-friendly UI with visible units.
 7. Farm and batch dashboards remain consistent.
-8. Typecheck passes.
-9. Lint passes.
-10. Tests pass.
-11. Documentation is current.
+8. Electron ↔ Spring Boot integration remains healthy.
+9. Typecheck passes.
+10. Frontend tests pass.
+11. Backend tests pass.
+12. Lint/build passes.
+13. Documentation is current.
 
 Keep commits small and focused.
 
 If code and documentation disagree, stop and flag it.
 
-## 28. Owner decisions already made
+## 32. Owner decisions already made
 
 These decisions are intentional and should not be changed casually:
 
@@ -764,8 +951,16 @@ These decisions are intentional and should not be changed casually:
 - Broiler target margin is configurable and initially null.
 - Margin updates use the latest relevant record, with confirmation before lowering the configured target.
 - Farm and batch dashboards reuse the same tested calculations.
+- Backend is Java + Spring Boot.
+- Electron is the desktop shell and process orchestrator.
+- Spring Boot is the local backend/API and database owner.
+- SQLite remains the local database.
+- Flyway owns database migrations.
+- Maven owns backend builds.
+- React/TypeScript remains the frontend.
+- Electron renderer never accesses SQLite or backend internals directly.
 
-## 29. Guiding principle
+## 33. Guiding principle
 
 This is farm software, not a spreadsheet wearing an Electron costume.
 
