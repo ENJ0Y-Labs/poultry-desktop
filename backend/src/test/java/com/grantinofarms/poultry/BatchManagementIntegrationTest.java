@@ -42,7 +42,7 @@ class BatchManagementIntegrationTest {
         var layerOne = batchService.create(new BatchCreateRequest(
                 "LAYER", LocalDate.of(2026, 1, 10), house.id(), 1000, null, 5_000_000L));
         var layerTwo = batchService.create(new BatchCreateRequest(
-                "LAYER", LocalDate.of(2026, 2, 10), house.id(), 900, null, null));
+                "LAYER", LocalDate.of(2026, 2, 10), house.id(), 900, null, 4_500_000L));
         var broilerOne = batchService.create(new BatchCreateRequest(
                 "BROILER", LocalDate.of(2026, 3, 10), house.id(), 500, null, 2_500_000L));
 
@@ -61,7 +61,7 @@ class BatchManagementIntegrationTest {
                 "Broiler House", "BH1", null));
 
         var batch = batchService.create(new BatchCreateRequest(
-                "BROILER", LocalDate.of(2026, 4, 1), house.id(), 300, null, null));
+                "BROILER", LocalDate.of(2026, 4, 1), house.id(), 300, null, 3_000_000L));
 
         populationService.addSale(
                 batch.id(),
@@ -102,7 +102,7 @@ class BatchManagementIntegrationTest {
                 "Layer House", "LH1", null));
 
         var batch = batchService.create(new BatchCreateRequest(
-                "LAYER", LocalDate.of(2026, 5, 1), house.id(), 100, null, null));
+                "LAYER", LocalDate.of(2026, 5, 1), house.id(), 100, null, 1_000_000L));
 
         assertThatThrownBy(() -> batchService.markSold(batch.id()))
                 .hasMessage("Only BROILER batches use the SOLD terminal lifecycle in this stage.");
