@@ -20,9 +20,9 @@ Priority order:
 
 A boring screen with correct poultry numbers beats a beautiful dashboard showing agricultural fiction.
 
-**Current stage: 7 — Cost accounting.**
+**Current stage: 8 — Feed management.**
 
-Stage 7 implements integer-minor-unit money handling, bird purchase cost history, attributable bird cost, additional batch-level attributable costs, cost carried by remaining birds, cost allocated to sold/lost birds, transfer cost carrying, and historical `asOf(date)` cost calculations. Feed inventory/FIFO consumption, eggs, weight, health, and other production modules remain future work.
+Stage 7 implements integer-minor-unit money handling, bird purchase cost history, attributable bird cost, additional batch-level attributable costs, cost carried by remaining birds, cost allocated to sold/lost birds, transfer cost carrying, and historical `asOf(date)` cost calculations. Feed inventory/FIFO consumption is now implemented. Eggs, weight, health, and other production modules remain future work.
 
 Do not build later-stage features unless the owner explicitly changes the stage.
 
@@ -922,6 +922,27 @@ Build:
 
 Done when purchase cost, attributable cost, carried cost, and reduction cost reconcile without floating-point arithmetic.
 
+### Stage 8 — Feed management
+
+Build:
+- configurable Layer/Broiler/BOTH feed types with explicit units
+- feed purchase records with original purchase price
+- purchase-time feed inventory increase and FEED expense
+- batch feed usage records
+- FIFO consumption using oldest available purchase lots first
+- historical original purchase prices preserved
+- feed inventory and remaining-cost calculations
+- batch feed consumed quantity and feed cost
+- feed cost per current bird
+- feed cost added to attributable bird cost exactly once
+- tests for one purchase, multiple purchases, partial usage, multiple prices, exhausted lots, and FIFO ordering
+
+Feed quantities are stored as integer thousandths of the configured unit so kg, bags, and fractional quantities remain exact without floating-point arithmetic.
+
+Feed purchase and usage dates are chronological within each feed type. Backdating a purchase before existing usage or backdating usage before existing usage is rejected because doing so would change already-recorded FIFO attributable costs without rewriting historical bird-cost events.
+
+Done when feed purchases increase inventory and record one FEED expense, feed usage consumes the oldest stock first, no usage creates a second expense, and feed cost reconciles with attributable bird cost.
+
 ### Stage 4 — Management
 
 Build:
@@ -976,6 +997,11 @@ These decisions are intentional and should not be changed casually:
 - Broiler terminal lifecycle state is SOLD when all birds are sold.
 - Reopening requires an audited reason.
 - Feed purchases are inventory and expense at purchase time; later batch consumption is allocation, not a second expense.
+- Feed types are configurable and declare a unit plus applicable flock type.
+- Feed quantities use integer thousandths of the configured unit.
+- FIFO feed consumption preserves each purchase lot's original cost.
+- Feed usage cost is added once to the batch's attributable bird-cost pool.
+- Feed purchase/usage chronology is append-only per feed type so persisted attributable bird costs remain stable.
 - Feed costing is FIFO.
 - Original purchase price is preserved.
 - Cost follows birds so sold birds carry attributable cost and remaining birds retain remaining cost.
