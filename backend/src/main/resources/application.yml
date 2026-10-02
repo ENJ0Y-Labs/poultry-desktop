@@ -1,9 +1,8 @@
-server:
-  address: 127.0.0.1
-  port: ${PORT:18942}
 spring:
   application:
     name: poultry-backend
+  profiles:
+    default: dev
   datasource:
     url: jdbc:sqlite:${poultry.database-path:./data/poultry.db}
     driver-class-name: org.sqlite.JDBC
@@ -12,8 +11,10 @@ spring:
   flyway:
     enabled: true
     locations: classpath:db/migration
+
 poultry:
   database-path: ${DATABASE_PATH:./data/poultry.db}
+
 logging:
   level:
     root: ${LOG_LEVEL:INFO}
