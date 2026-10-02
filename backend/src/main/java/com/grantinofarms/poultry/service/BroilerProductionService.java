@@ -82,7 +82,6 @@ public class BroilerProductionService {
         WeightRecordResponse first = trend.get(0);
         WeightRecordResponse latest = trend.get(trend.size() - 1);
         BigDecimal currentAverage = latest.averageWeightKg();
-        BigDecimal gainPerBird = currentAverage.subtract(first.averageWeightKg());
 
         int currentBirds = populationService.get(batchId, effective).currentBirds();
         BigDecimal currentBiomass = currentAverage.multiply(BigDecimal.valueOf(currentBirds));
@@ -96,7 +95,7 @@ public class BroilerProductionService {
                 : null;
 
         return new BroilerGrowthResponse(batchId, effective, currentAverage,
-                gainPerBird, fcr, trend);
+                liveWeightGain, fcr, trend);
     }
 
     @Transactional
