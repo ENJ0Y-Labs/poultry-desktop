@@ -41,6 +41,11 @@ describe("BackendManager", () => {
   beforeEach(() => {
     spawnMock.mockReset();
     globalThis.fetch = vi.fn(async () => ({ ok: true }));
+
+    Object.defineProperty(process, "resourcesPath", {
+      configurable: true,
+      value: "C:/test/resources",
+    });
   });
 
   it("uses the project data directory for the development database", () => {
