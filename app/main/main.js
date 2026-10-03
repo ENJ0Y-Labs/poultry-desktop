@@ -8,6 +8,7 @@ let backendManager;
 async function createWindow() {
   backendManager = new BackendManager({
     userDataPath: app.getPath("userData"),
+    appPath: app.getAppPath(),
     isPackaged: app.isPackaged
   });
 
