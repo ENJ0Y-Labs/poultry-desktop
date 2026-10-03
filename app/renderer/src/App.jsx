@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import AppShell from "./components/AppShell.jsx";
 const emptyWeight = {
   batchId: "",
   date: new Date().toISOString().slice(0, 10),
@@ -663,9 +664,8 @@ export default function App() {
   );
 
   return (
-    <main className="shell">
-      <header className="topbar"><div><p className="eyebrow">GRANTINO FARMS</p><h1>{farm.name}</h1><p className="muted">{farm.location || "Farm profile"} · {farm.currency} · {farm.timezone}</p></div></header>
-      {error && <div className="error">{error}</div>}
+    <AppShell farm={farm} error={error}>
+      <section id="dashboard" className="card full">
       <section className="card full">
         <div className="section-head">
           <h2>Farm dashboard</h2>
@@ -702,7 +702,7 @@ export default function App() {
       </section>
 
       <div className="grid">
-        <section className="card"><h2>Farm profile</h2><form className="form-grid" onSubmit={saveFarm}>
+        <section id="settings" className="card"><h2>Farm profile</h2><form className="form-grid" onSubmit={saveFarm}>
           <label>Farm name<input required value={farmForm.name} onChange={e=>setFarmForm({...farmForm,name:e.target.value})}/></label>
           <label>Location<input value={farmForm.location} onChange={e=>setFarmForm({...farmForm,location:e.target.value})}/></label>
           <label>Timezone<input required value={farmForm.timezone} onChange={e=>setFarmForm({...farmForm,timezone:e.target.value})}/></label>
@@ -723,7 +723,7 @@ export default function App() {
           <button disabled={saving}>Save pricing target</button>
         </form></section>
 
-        <section className="card full"><div className="section-head"><h2>Batches</h2><p className="muted">Opening a batch creates a permanent flock record and generates its code automatically.</p></div>
+        <section id="batches" className="card full"><div className="section-head"><h2>Batches</h2><p className="muted">Opening a batch creates a permanent flock record and generates its code automatically.</p></div>
           <form className="inline-form" onSubmit={createBatch}>
             <select value={batchForm.type} onChange={e=>setBatchForm({...batchForm,type:e.target.value})}><option value="LAYER">Layer</option><option value="BROILER">Broiler</option></select>
             <input required type="date" value={batchForm.placementDate} onChange={e=>setBatchForm({...batchForm,placementDate:e.target.value})}/>
@@ -820,7 +820,7 @@ export default function App() {
           </div>
         </section>
 
-        <section className="card full">
+        <section id="operations" className="card full">
           <div className="section-head">
             <h2>Daily farm operations</h2>
             <p className="muted">Record the day without making workers pretend they measured 143.73 litres of water with a laboratory.</p>
@@ -959,7 +959,7 @@ export default function App() {
           </div>
         </section>
 
-        <section className="card full">
+        <section id="eggs" className="card full">
           <div className="section-head">
             <h2>Layer egg production</h2>
             <p className="muted">Only LAYER batches can record eggs. Good and cracked eggs are stored as individual eggs. Cracked eggs remain historical and are never sellable.</p>
@@ -1126,7 +1126,7 @@ export default function App() {
           )}
         </section>
 
-        <section className="card full">
+        <section id="inventory" className="card full">
           <div className="section-head">
             <h2>Inventory</h2>
             <p className="muted">Track drugs, vaccines, and farm supplies with explicit stock movements. Feed remains in the dedicated Feed module because its FIFO cost ledger is authoritative.</p>
@@ -1203,7 +1203,7 @@ export default function App() {
           </div>
         </section>
 
-        <section className="card full">
+        <section id="customers" className="card full">
           <div className="section-head">
             <h2>Customers</h2>
             <p className="muted">Keep reusable customer records for egg and broiler sales. Type-specific sale records also retain the customer name used when the sale was recorded.</p>
@@ -1221,7 +1221,7 @@ export default function App() {
           </div>
         </section>
 
-        <section className="card full">
+        <section id="sales" className="card full">
           <div className="section-head">
             <h2>Sales</h2>
             <p className="muted">Common commercial ledger for Layer egg and Broiler bird sales. Type-specific rules remain in their production modules.</p>
@@ -1244,7 +1244,7 @@ export default function App() {
           </div>
         </section>
 
-        <section className="card full">
+        <section id="expenses" className="card full">
           <div className="section-head">
             <h2>Expenses</h2>
             <p className="muted">Record farm-level or batch-associated expenses. Amounts use integer minor currency units.</p>
@@ -1287,7 +1287,7 @@ export default function App() {
           </div>
         </section>
 
-        <section className="card full"><div className="section-head"><h2>Houses / pens</h2><p className="muted">Physical locations that batches belong to.</p></div>
+        <section id="houses" className="card full"><div className="section-head"><h2>Houses / pens</h2><p className="muted">Physical locations that batches belong to.</p></div>
           <form className="inline-form" onSubmit={addHouse}><input required placeholder="Name" value={houseForm.name} onChange={e=>setHouseForm({...houseForm,name:e.target.value})}/><input required placeholder="Code" value={houseForm.code} onChange={e=>setHouseForm({...houseForm,code:e.target.value})}/><input placeholder="Notes" value={houseForm.notes} onChange={e=>setHouseForm({...houseForm,notes:e.target.value})}/><button disabled={saving}>Add house</button></form>
           <div className="table"><div className="row header"><span>Name</span><span>Code</span><span>Status</span><span>Notes</span></div>
             {houses.map(h=><div className="row" key={h.id}><span>{h.name}</span><span>{h.code}</span><span>{h.status}</span><span>{h.notes||"—"}</span></div>)}
@@ -1295,6 +1295,6 @@ export default function App() {
           </div>
         </section>
       </div>
-    </main>
+    </AppShell>
   );
 }
