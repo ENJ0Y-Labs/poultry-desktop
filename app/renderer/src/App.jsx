@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import AppShell from "./components/AppShell.jsx";
+// eslint-disable-next-line no-unused-vars\nimport AppShell from "./components/AppShell.jsx";
 const emptyWeight = {
   batchId: "",
   date: new Date().toISOString().slice(0, 10),
