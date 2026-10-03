@@ -1,5 +1,5 @@
 import { EventEmitter } from "node:events";
-import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -11,10 +11,6 @@ vi.mock("node:child_process", async importOriginal => {
   return { ...actual, spawn: spawnMock };
 });
 
-vi.mock("node:fs", async importOriginal => {
-  const actual = await importOriginal();
-  return { ...actual, existsSync: vi.fn(() => true) };
-});
 
 import { BackendManager } from "./backend-manager.js";
 
