@@ -45,6 +45,7 @@ ipcMain.handle("backup:restore", async () => {
     await backendManager.start();
     return { canceled: false, restored: true, safetyBackup: safety };
   } catch (error) {
+    console.error("Database restore failed; attempting safety restore:", error);
     if (existsSync(safety)) copyFileSync(safety, database);
     try { await backendManager.start(); } catch (restartError) { console.error("Backend restart after restore failure failed:", restartError); }
     throw error;
