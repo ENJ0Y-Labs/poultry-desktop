@@ -80,10 +80,10 @@ public class PricingService {
 
         Long targetPrice = settings.targetMarginPercent() == null
                 ? null
-                : PricingCalculator.priceForMargin(actualCost, settings.targetMarginPercent());
+                : PricingCalculator.pricePerUnitForMargin(actualCost, quantity, settings.targetMarginPercent());
         Long workingPrice = settings.workingMarginPercent() == null
                 ? null
-                : PricingCalculator.priceForMargin(actualCost, settings.workingMarginPercent());
+                : PricingCalculator.pricePerUnitForMargin(actualCost, quantity, settings.workingMarginPercent());
 
         return new PricingResponse(batchId, effective, quantity, actualCost,
                 settings.targetMarginPercent(), settings.workingMarginPercent(),
