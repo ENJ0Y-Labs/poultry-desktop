@@ -60,7 +60,7 @@ public class HealthManagementService {
 
         repository.insertDrug(id, batchId, request.recordDate(), drug, request.quantity(),
                 request.costMinor(), reason, now);
-        repository.insertExpense(UUID.randomUUID().toString(), farmId, request.costMinor(),
+        repository.insertExpense(UUID.randomUUID().toString(), farmId, batchId, request.costMinor(),
                 request.recordDate(), id, "Drug: " + drug + " - " + reason, now);
 
         auditRepository.append(
