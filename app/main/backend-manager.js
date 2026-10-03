@@ -8,10 +8,19 @@ const HEALTH_INTERVAL_MS = 250;
 const STOP_TIMEOUT_MS = 5_000;
 
 export class BackendManager {
-  constructor({ userDataPath, appPath, isPackaged, port } = {}) {
+  constructor({
+    userDataPath,
+    appPath,
+    isPackaged,
+    port,
+    resourcesPath = process.resourcesPath,
+    spawnProcess = spawn,
+  } = {}) {
     this.userDataPath = userDataPath;
     this.appPath = appPath;
     this.isPackaged = isPackaged;
+    this.resourcesPath = resourcesPath;
+    this.spawnProcess = spawnProcess;
     this.process = null;
     this.port = Number(port || process.env.POULTRY_BACKEND_PORT || DEFAULT_PORT);
     this.lastError = null;
@@ -28,12 +37,12 @@ export class BackendManager {
   }
 
   get javaPath() {
-    const bundled = join(process.resourcesPath, "runtime", process.platform === "win32" ? "bin/java.exe" : "bin/java");
+    const bundled = join(this.resourcesPath, "runtime", process.platform === "win32" ? "bin/java.exe" : "bin/java");
     return this.isPackaged && existsSync(bundled) ? bundled : "java";
   }
 
   get jarPath() {
-    return join(process.resourcesPath, "backend", "poultry-backend.jar");
+    return join(this.resourcesPath, "backend", "poultry-backend.jar");
   }
 
   get backendArguments() {
@@ -53,14 +62,14 @@ export class BackendManager {
 
     if (!this.isPackaged) {
       const command = process.platform === "win32" ? "mvn.cmd" : "mvn";
-      this.process = spawn(command, ["-f", join(this.appPath, "backend", "pom.xml"), "spring-boot:run", ...this.backendArguments], {
+      this.process = this.spawnProcess(command, ["-f", join(this.appPath, "backend", "pom.xml"), "spring-boot:run", ...this.backendArguments], {
         cwd: this.appPath,
         windowsHide: true,
         stdio: "ignore"
       });
     } else {
       if (!existsSync(this.jarPath)) throw new Error(`Packaged backend JAR not found: ${this.jarPath}`);
-      this.process = spawn(this.javaPath, ["-jar", this.jarPath, ...this.backendArguments], {
+      this.process = this.spawnProcess(this.javaPath, ["-jar", this.jarPath, ...this.backendArguments], {
         windowsHide: true,
         stdio: "ignore"
       });

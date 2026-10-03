@@ -2,15 +2,9 @@ import { EventEmitter } from "node:events";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const { spawnMock } = vi.hoisted(() => ({ spawnMock: vi.fn() }));
-
-vi.mock("node:child_process", async importOriginal => {
-  const actual = await importOriginal();
-  return { ...actual, spawn: spawnMock };
-});
-
 
 import { BackendManager } from "./backend-manager.js";
 
@@ -43,10 +37,6 @@ describe("BackendManager", () => {
     writeFileSync(join(resourcesPath, "backend", "poultry-backend.jar"), "");
     writeFileSync(join(resourcesPath, "runtime", "bin", "java.exe"), "");
 
-    Object.defineProperty(process, "resourcesPath", {
-      configurable: true,
-      value: resourcesPath,
-    });
   });
 
   afterEach(() => {
@@ -86,6 +76,8 @@ describe("BackendManager", () => {
         appPath: "C:/project",
         isPackaged: true,
         port: 19002,
+        resourcesPath,
+        spawnProcess: spawnMock,
       });
 
       await manager.start();
@@ -118,6 +110,8 @@ describe("BackendManager", () => {
         userDataPath,
         appPath: "C:/project",
         isPackaged: true,
+        resourcesPath,
+        spawnProcess: spawnMock,
       });
 
       await manager.start();
