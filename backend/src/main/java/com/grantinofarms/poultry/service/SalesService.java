@@ -3,6 +3,7 @@ package com.grantinofarms.poultry.service;
 import com.grantinofarms.poultry.dto.SaleResponse;
 import com.grantinofarms.poultry.exception.ApiException;
 import com.grantinofarms.poultry.repository.BatchRepository;
+import com.grantinofarms.poultry.repository.CustomerRepository;
 import com.grantinofarms.poultry.repository.FarmRepository;
 import com.grantinofarms.poultry.repository.SalesRepository;
 import org.springframework.http.HttpStatus;
@@ -30,7 +31,7 @@ public class SalesService {
 
     public List<SaleResponse> list(String batchId, String customerId, String saleType, LocalDate asOf) {
         String farmId = requireFarm();
-        String batch = cleanNullable(batchId);
+        String batch = cleanNullablePreservingCase(batchId);
         String customer = customerId == null || customerId.isBlank() ? null : customerId.trim();
         String type = saleType == null || saleType.isBlank() ? null : saleType.trim().toUpperCase();
 
@@ -57,7 +58,7 @@ public class SalesService {
         return farm.id();
     }
 
-    private String cleanNullable(String value) {
-        return value == null || value.isBlank() ? null : value.trim().toUpperCase();
+    private String cleanNullablePreservingCase(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
     }
 }
