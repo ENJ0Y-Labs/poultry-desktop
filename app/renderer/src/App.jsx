@@ -229,6 +229,14 @@ export default function App() {
       setFeedTypes(await feedApi.listTypes());
       setFeedInventory(await feedApi.inventory());
       setPricingSettings(await pricingApi.settings());
+      const [categories, currentAccount, appSettings, backupConfig] = await Promise.all([
+        expenseCategoryApi.list(), accountApi.get(), settingsApi.application(), settingsApi.backup()
+      ]);
+      setExpenseCategories(categories);
+      setAccount(currentAccount);
+      setAccountForm({ email: currentAccount.email, fullName: currentAccount.fullName, currentPassword: "", newPassword: "" });
+      setApplicationSettings(appSettings);
+      setBackupSettings(backupConfig);
     } catch (err) {
       if (err.message !== "No farm has been created yet.") setError(displayApiError(err));
     } finally { setLoading(false); }
