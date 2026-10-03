@@ -5,6 +5,7 @@ import com.grantinofarms.poultry.dto.*;
 import com.grantinofarms.poultry.exception.ApiException;
 import com.grantinofarms.poultry.repository.AuditRepository;
 import com.grantinofarms.poultry.repository.BroilerProductionRepository;
+import com.grantinofarms.poultry.repository.SalesRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
