@@ -15,7 +15,7 @@ const emptyBirdSale = {
   customerId: "",
 };
 const emptyPricing = { quantity: "", date: new Date().toISOString().slice(0, 10) };
-import { batchApi, broilerApi, costApi, dailyApi, eggApi, expenseApi, farmApi, feedApi, populationApi, healthApi, pricingApi, customerApi, salesApi, inventoryApi } from "./services/api.js";
+import { batchApi, broilerApi, costApi, dailyApi, eggApi, expenseApi, farmApi, feedApi, populationApi, healthApi, pricingApi, customerApi, salesApi, inventoryApi, dashboardApi, attentionApi, auditApi } from "./services/api.js";
 
 const emptyFarm = { name: "", location: "", timezone: "Africa/Lagos", currency: "NGN" };
 const emptyHouse = { name: "", code: "", notes: "" };
@@ -158,6 +158,9 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [dashboard, setDashboard] = useState(null);
+  const [attention, setAttention] = useState([]);
+  const [auditRows, setAuditRows] = useState([]);
 
   async function load() {
     setLoading(true); setError("");
@@ -185,7 +188,24 @@ export default function App() {
       if (err.message !== "No farm has been created yet.") setError(err.message);
     } finally { setLoading(false); }
   }
+  async function loadDashboard() {
+    if (!farm) return;
+    try {
+      const [summary, attentionRows, audit] = await Promise.all([
+        dashboardApi.farm(),
+        attentionApi.list(),
+        auditApi.list(20),
+      ]);
+      setDashboard(summary);
+      setAttention(attentionRows);
+      setAuditRows(audit);
+    } catch (err) {
+      setError(err.message);
+    }
+  }
+
   useEffect(() => { load(); }, []);
+  useEffect(() => { if (farm) loadDashboard(); }, [farm, batches.length, inventoryItems.length, sales.length, expenses.length]);
 
   async function submitFarm(event) {
     event.preventDefault(); setSaving(true); setError("");
@@ -646,6 +666,41 @@ export default function App() {
     <main className="shell">
       <header className="topbar"><div><p className="eyebrow">GRANTINO FARMS</p><h1>{farm.name}</h1><p className="muted">{farm.location || "Farm profile"} · {farm.currency} · {farm.timezone}</p></div></header>
       {error && <div className="error">{error}</div>}
+      <section className="card full">
+        <div className="section-head">
+          <h2>Farm dashboard</h2>
+          <p className="muted">Backend-derived state only. The UI is not allowed to invent poultry mathematics, a surprisingly necessary rule.</p>
+        </div>
+        {dashboard ? (
+          <>
+            <div className="table">
+              <div className="row header"><span>Metric</span><span>Value</span><span>Metric</span><span>Value</span></div>
+              <div className="row"><span>Total birds</span><span>{dashboard.totalBirds}</span><span>Active batches</span><span>{dashboard.activeBatches}</span></div>
+              <div className="row"><span>Layers</span><span>{dashboard.layerBirds}</span><span>Broilers</span><span>{dashboard.broilerBirds}</span></div>
+              <div className="row"><span>Mortality</span><span>{dashboard.mortality}</span><span>Good eggs</span><span>{dashboard.eggsGood}</span></div>
+              <div className="row"><span>Revenue</span><span>{dashboard.revenueMinor}</span><span>Expenses</span><span>{dashboard.expensesMinor}</span></div>
+              <div className="row"><span>Profit</span><span>{dashboard.profitMinor}</span><span>Inventory alerts</span><span>{dashboard.inventoryAlerts}</span></div>
+            </div>
+            <div className="subsection">
+              <h3>Attention</h3>
+              {attention.length === 0 ? <p className="muted">Nothing currently requires attention.</p> :
+                <div className="table">
+                  <div className="row header"><span>Severity</span><span>Type</span><span>Message</span></div>
+                  {attention.map((item, index) => <div className="row" key={item.type + index}><span>{item.severity}</span><span>{item.type}</span><span>{item.message}</span></div>)}
+                </div>}
+            </div>
+            <div className="subsection">
+              <h3>Recent audit activity</h3>
+              {auditRows.length === 0 ? <p className="muted">No audit records yet.</p> :
+                <div className="table">
+                  <div className="row header"><span>Time</span><span>Action</span><span>Entity</span><span>Reason</span></div>
+                  {auditRows.slice(0, 10).map(row => <div className="row" key={row.id}><span>{row.occurredAt}</span><span>{row.action}</span><span>{row.entityType}</span><span>{row.reason || "—"}</span></div>)}
+                </div>}
+            </div>
+          </>
+        ) : <p className="muted">Dashboard is loading…</p>}
+      </section>
+
       <div className="grid">
         <section className="card"><h2>Farm profile</h2><form className="form-grid" onSubmit={saveFarm}>
           <label>Farm name<input required value={farmForm.name} onChange={e=>setFarmForm({...farmForm,name:e.target.value})}/></label>
