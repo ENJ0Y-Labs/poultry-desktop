@@ -50,6 +50,9 @@ class ExpenseManagementIntegrationTest {
                     assertThat(row.amountMinor()).isEqualTo(45_000L);
                     assertThat(row.category()).isEqualTo("OTHER");
                 });
+        assertThat(expenseService.list(null, LocalDate.of(2026, 1, 3)))
+                .extracting("id")
+                .containsExactly(farmExpense.id());
 
         assertThat(jdbc.queryForObject(
                 "SELECT COUNT(*) FROM expenses WHERE batch_id = ?",

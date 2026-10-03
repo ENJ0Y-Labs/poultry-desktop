@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
@@ -71,6 +72,10 @@ public class ExpenseService {
     }
 
     public List<ExpenseResponse> list(String batchId) {
+        return list(batchId, null);
+    }
+
+    public List<ExpenseResponse> list(String batchId, LocalDate asOf) {
         FarmResponse farm = farmRepository.findActive();
         if (farm == null) {
             throw new ApiException(HttpStatus.NOT_FOUND, "FARM_NOT_FOUND", "No active farm has been created.");
@@ -85,7 +90,7 @@ public class ExpenseService {
             }
         }
 
-        return expenseRepository.findByFarm(farm.id(), normalizedBatchId);
+        return expenseRepository.findByFarm(farm.id(), normalizedBatchId, asOf);
     }
 
     private String cleanNullable(String value) {

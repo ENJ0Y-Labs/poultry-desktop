@@ -56,7 +56,7 @@ class ReportServiceTest {
         when(population.get("broiler-1", asOf)).thenReturn(broilerPopulation);
         when(eggs.inventory("layer-1", asOf)).thenReturn(mock(com.grantinofarms.poultry.dto.EggInventoryResponse.class));
         when(broilers.growth("broiler-1", asOf)).thenReturn(mock(com.grantinofarms.poultry.dto.BroilerGrowthResponse.class));
-        when(expenses.list(null)).thenReturn(List.<ExpenseResponse>of());
+        when(expenses.list(null, asOf)).thenReturn(List.<ExpenseResponse>of());
         when(sales.list(null, null, null, asOf)).thenReturn(List.of());
         when(feed.inventory(asOf)).thenReturn(List.of());
         when(inventory.listItems()).thenReturn(List.of());

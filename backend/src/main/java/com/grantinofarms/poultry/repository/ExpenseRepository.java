@@ -27,20 +27,27 @@ public class ExpenseRepository {
                 description, now);
     }
 
-    public List<ExpenseResponse> findByFarm(String farmId, String batchId) {
+    public List<ExpenseResponse> findByFarm(String farmId, String batchId, LocalDate asOf) {
         String sql = """
                 SELECT id, farm_id, batch_id, occurred_date, description, amount_minor,
                        category, reference_type, reference_id, created_at
                 FROM expenses
                 WHERE farm_id = ?
-                """ + (batchId == null ? "" : " AND batch_id = ? ") + """
+                """ + (batchId == null ? "" : " AND batch_id = ? ")
+                + (asOf == null ? "" : " AND occurred_date <= ? ") + """
                 ORDER BY occurred_date DESC, created_at DESC
                 """;
 
-        if (batchId == null) {
+        if (batchId == null && asOf == null) {
             return jdbc.query(sql, (rs, n) -> map(rs), farmId);
         }
-        return jdbc.query(sql, (rs, n) -> map(rs), farmId, batchId);
+        if (batchId == null) {
+            return jdbc.query(sql, (rs, n) -> map(rs), farmId, asOf.toString());
+        }
+        if (asOf == null) {
+            return jdbc.query(sql, (rs, n) -> map(rs), farmId, batchId);
+        }
+        return jdbc.query(sql, (rs, n) -> map(rs), farmId, batchId, asOf.toString());
     }
 
     private ExpenseResponse map(java.sql.ResultSet rs) throws java.sql.SQLException {
