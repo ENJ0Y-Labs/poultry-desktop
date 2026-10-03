@@ -41,6 +41,7 @@ public class BackupService {
     public synchronized Map<String,Object> create(String directory){
         try{
             if (database == null) {
+                log.warn("backup_unavailable reason=in_memory_database");
                 throw new ApiException(HttpStatus.BAD_REQUEST,"BACKUP_UNAVAILABLE",
                         "Database backups are unavailable for an in-memory database.");
             }
@@ -58,9 +59,10 @@ public class BackupService {
                 }
             }
             String escaped=target.toString().replace("'","''");
+            log.info("backup_creation_started filename={}", target.getFileName());
             jdbc.execute("VACUUM INTO '"+escaped+"'");
             prune(dir);
-            log.info("backup_created filename={} directory={}", target.getFileName(), dir);
+            log.info("backup_created filename={} retentionLimit=30", target.getFileName());
             return Map.of("path",target.toString(),"filename",target.getFileName().toString());
         } catch (ApiException e) {
             throw e;
@@ -71,9 +73,10 @@ public class BackupService {
     }
 
     public Map<String,Object> validate(String file){
+        Path path = Path.of(file).toAbsolutePath().normalize();
         try{
-            Path path=Path.of(file).toAbsolutePath().normalize();
             if(!Files.isRegularFile(path))throw new ApiException(HttpStatus.NOT_FOUND,"BACKUP_NOT_FOUND","Backup file was not found.");
+            log.info("backup_validation_started filename={}", path.getFileName());
             try(var connection=java.sql.DriverManager.getConnection("jdbc:sqlite:"+path)){
                 String integrity=connection.createStatement().executeQuery("PRAGMA integrity_check").getString(1);
                 if(!"ok".equalsIgnoreCase(integrity))throw new ApiException(HttpStatus.BAD_REQUEST,"INVALID_BACKUP","SQLite integrity check failed.");
@@ -104,7 +107,11 @@ public class BackupService {
                 log.info("backup_validated filename={} schemaVersion={}", path.getFileName(), version);
                 return Map.of("valid", true, "path", path.toString(), "schemaVersion", version);
             }
-        }catch(ApiException e){throw e;}catch(Exception e){
+        }catch(ApiException e){
+            log.warn("backup_validation_failed filename={} code={}", path.getFileName(), e.getCode());
+            throw e;
+        }catch(Exception e){
+            log.warn("backup_validation_failed filename={} reason=unexpected_error", path.getFileName(), e);
             throw new ApiException(HttpStatus.BAD_REQUEST,"INVALID_BACKUP","The selected file is not a valid Poultry Farm Manager database.");
         }
     }
