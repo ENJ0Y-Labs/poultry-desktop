@@ -8,13 +8,23 @@ export class BackendManager {
     this.isPackaged = isPackaged;
     this.process = null;
     this.port = Number(process.env.POULTRY_BACKEND_PORT || 18942);
+    this.lastError = null;
   }
 
   get databasePath() {
     return join(this.userDataPath, "data", "poultry.db");
   }
 
-  get javaPath() {\n    const bundled = join(process.resourcesPath, "runtime", process.platform === "win32" ? "bin/java.exe" : "bin/java");\n    return this.isPackaged && existsSync(bundled) ? bundled : "java";\n  }\n\n  get jarPath() {
+  get javaPath() {
+    const bundled = join(
+      process.resourcesPath,
+      "runtime",
+      process.platform === "win32" ? "bin/java.exe" : "bin/java"
+    );
+    return this.isPackaged && existsSync(bundled) ? bundled : "java";
+  }
+
+  get jarPath() {
     return join(process.resourcesPath, "backend", "poultry-backend.jar");
   }
 
@@ -27,15 +37,25 @@ export class BackendManager {
       }
 
       this.process = spawn(
-        "java",
+        this.javaPath,
         [
           "-jar",
           this.jarPath,
           `--server.port=${this.port}`,
-          `--poultry.database-path=${this.databasePath}`
+          `--poultry.database-path=${this.databasePath}`,
+          "--spring.profiles.active=prod"
         ],
-        { windowsHide: true, stdio: "ignore" }\n      );\n      this.process.on("error", (error) => {\n        this.lastError = error;\n      });\n      this.process.on("exit", (code) => {\n        if (code !== 0 && this.process) this.lastError = new Error(`Spring Boot exited with code ${code}.`);\n      });\n\n      if (this.process === null) throw new Error("Backend process failed to start.");
+        { windowsHide: true, stdio: "ignore" }
       );
+
+      this.process.on("error", (error) => {
+        this.lastError = error;
+      });
+      this.process.on("exit", (code) => {
+        if (code !== 0 && this.process) {
+          this.lastError = new Error(`Spring Boot exited with code ${code}.`);
+        }
+      });
     }
 
     await this.waitForHealth();
@@ -45,6 +65,7 @@ export class BackendManager {
     const started = Date.now();
 
     while (Date.now() - started < timeoutMs) {
+      if (this.lastError) throw this.lastError;
       try {
         const response = await fetch(`http://127.0.0.1:${this.port}/api/v1/health`);
         if (response.ok) return;
@@ -62,6 +83,15 @@ export class BackendManager {
     const child = this.process;
     this.process = null;
 
-    if (!child.killed) child.kill();
+    if (!child.killed) {
+      child.kill();
+      await new Promise((resolve) => {
+        const timer = setTimeout(resolve, 5000);
+        child.once("exit", () => {
+          clearTimeout(timer);
+          resolve();
+        });
+      });
+    }
   }
 }
