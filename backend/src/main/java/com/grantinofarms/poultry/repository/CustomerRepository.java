@@ -27,7 +27,7 @@ public class CustomerRepository {
                 FROM customers
                 WHERE farm_id = ? AND id = ?
                 """, (rs, n) -> map(rs), farmId, id);
-        return rows.isEmpty() ? null : rows.getFirst();
+        return rows.isEmpty() ? null : rows.get(0);
     }
 
     public CustomerResponse findByName(String farmId, String name) {
@@ -38,7 +38,7 @@ public class CustomerRepository {
                 ORDER BY created_at
                 LIMIT 1
                 """, (rs, n) -> map(rs), farmId, name);
-        return rows.isEmpty() ? null : rows.getFirst();
+        return rows.isEmpty() ? null : rows.get(0);
     }
 
     public List<CustomerResponse> findAll(String farmId) {
