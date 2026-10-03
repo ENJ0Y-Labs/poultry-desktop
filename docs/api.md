@@ -25,6 +25,10 @@ Application errors use:
 }
 ```
 
+Boundary validation uses HTTP 400 with `VALIDATION_ERROR`, including field details when available. Malformed JSON or invalid scalar values use `INVALID_REQUEST_BODY` or `INVALID_PARAMETER`. Missing required query parameters use `MISSING_PARAMETER`. Domain rules use the service-owned error code, for example `INSUFFICIENT_BIRDS`. Database constraint conflicts use `DATA_CONFLICT`. Unexpected failures use `INTERNAL_ERROR` without exposing SQL, stack traces, file paths, or credentials.
+
+The renderer API client preserves `code`, `status`, and `details` on `ApiError` while keeping the human-readable message available to the UI.
+
 ## Farm
 
 - GET /farm
