@@ -66,13 +66,45 @@ public class BackupService {
             try(var connection=java.sql.DriverManager.getConnection("jdbc:sqlite:"+path)){
                 String integrity=connection.createStatement().executeQuery("PRAGMA integrity_check").getString(1);
                 if(!"ok".equalsIgnoreCase(integrity))throw new ApiException(HttpStatus.BAD_REQUEST,"INVALID_BACKUP","SQLite integrity check failed.");
-                String version="";
-                try(var rs=connection.createStatement().executeQuery("SELECT version FROM flyway_schema_history ORDER BY installed_rank DESC LIMIT 1")){if(rs.next())version=rs.getString(1);}
+                boolean historyExists = tableExists(connection, "flyway_schema_history");
+                boolean metadataExists = tableExists(connection, "app_metadata");
+                if (!historyExists || !metadataExists) {
+                    throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_BACKUP",
+                            "The selected database is not a Poultry Farm Manager database.");
+                }
+
+                String version = "";
+                try (var rs = connection.createStatement().executeQuery(
+                        "SELECT version FROM flyway_schema_history WHERE success=1 ORDER BY installed_rank DESC LIMIT 1")) {
+                    if (rs.next()) version = rs.getString(1);
+                }
+                if (version.isBlank()) {
+                    throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_BACKUP",
+                            "The backup does not contain a valid schema version.");
+                }
+
+                try (var rs = connection.createStatement().executeQuery("PRAGMA foreign_key_check")) {
+                    if (rs.next()) {
+                        throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_BACKUP",
+                                "SQLite foreign-key integrity check failed.");
+                    }
+                }
+
                 log.info("backup_validated filename={} schemaVersion={}", path.getFileName(), version);
-                return Map.of("valid",true,"path",path.toString(),"schemaVersion",version);
+                return Map.of("valid", true, "path", path.toString(), "schemaVersion", version);
             }
         }catch(ApiException e){throw e;}catch(Exception e){
             throw new ApiException(HttpStatus.BAD_REQUEST,"INVALID_BACKUP","The selected file is not a valid Poultry Farm Manager database.");
+        }
+    }
+
+    private boolean tableExists(java.sql.Connection connection, String tableName) throws java.sql.SQLException {
+        try (var statement = connection.prepareStatement(
+                "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = ?")) {
+            statement.setString(1, tableName);
+            try (var rs = statement.executeQuery()) {
+                return rs.next() && rs.getInt(1) > 0;
+            }
         }
     }
 
