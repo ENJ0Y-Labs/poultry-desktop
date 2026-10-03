@@ -6,6 +6,7 @@ function formatQuantity(milli) { return milli == null ? "—" : (Number(milli) /
 function formatPercent(value) { return value == null ? "—" : Number(value).toFixed(2) + "%"; }
 function formatKg(value) { return value == null ? "—" : Number(value).toFixed(2) + " kg"; }
 function formatMetric(value) { return value == null ? "—" : Number(value).toFixed(2); }
+function formatCount(value) { return value == null ? "—" : Number(value).toLocaleString("en-NG"); }
 
 const emptyWeight = {
   batchId: "",
@@ -725,9 +726,9 @@ export default function App() {
           <>
             <div className="metric-grid">
               {[
-                ["Total birds", dashboard.totalBirds, ""], ["Layer birds", dashboard.layerBirds, ""],
-                ["Broiler birds", dashboard.broilerBirds, ""], ["Active batches", dashboard.activeBatches, ""],
-                ["Mortality", dashboard.mortality, "birds"], ["Good eggs", dashboard.eggsGood, "eggs"],
+                ["Total birds", formatCount(dashboard.totalBirds), ""], ["Layer birds", formatCount(dashboard.layerBirds), ""],
+                ["Broiler birds", formatCount(dashboard.broilerBirds), ""], ["Active batches", formatCount(dashboard.activeBatches), ""],
+                ["Mortality", formatCount(dashboard.mortality), "birds"], ["Good eggs", formatCount(dashboard.eggsGood), "eggs"],
                 ["Revenue", formatMoney(dashboard.revenueMinor, farm.currency), ""],
                 ["Expenses", formatMoney(dashboard.expensesMinor, farm.currency), ""],
                 ["Profit", formatMoney(dashboard.profitMinor, farm.currency), ""],
