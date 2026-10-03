@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App.jsx";
 import {
@@ -260,12 +260,12 @@ describe("App", () => {
     const eggBatch = screen.getByRole("option", { name: "Select a layer batch" }).parentElement;
     fireEvent.change(eggBatch, { target: { value: "layer-1" } });
     await waitFor(() => expect(screen.getByRole("heading", { name: "Record egg production" })).toBeInTheDocument());
-    expect(screen.getByRole("option", { name: "L-2026-001" })).toBeInTheDocument();
+    expect(within(eggBatch).getByRole("option", { name: "L-2026-001" })).toBeInTheDocument();
 
     const broilerBatch = screen.getByRole("option", { name: "Select a broiler batch" }).parentElement;
     fireEvent.change(broilerBatch, { target: { value: "broiler-1" } });
     await waitFor(() => expect(screen.getByRole("heading", { name: "Record weight" })).toBeInTheDocument());
-    expect(screen.getByRole("option", { name: /B-2026-001/ })).toBeInTheDocument();
+    expect(within(broilerBatch).getByRole("option", { name: /B-2026-001/ })).toBeInTheDocument();
   });
 
   it("switches the batch dashboard and requests the selected batch", async () => {
