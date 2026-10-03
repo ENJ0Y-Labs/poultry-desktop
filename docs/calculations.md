@@ -266,3 +266,24 @@ For both sale types:
 Layer commercial quantity is stored as crates in the common ledger, with the existing egg sale retaining individual sold-egg quantity and configured crate size. Broiler commercial quantity is birds.
 
 Money remains integer minor units. Quantities may be decimal for crate sales, but monetary values are never stored as floating-point values.
+
+
+## Stage 16: Inventory
+
+For a non-feed inventory item:
+
+stock on hand = received + adjustment in - issued - adjustment out - waste
+
+Every movement quantity is positive. Direction comes from movement type, so a quantity cannot become ambiguous because someone typed a minus sign into a form.
+
+A stock-reducing movement is valid only when:
+
+quantity <= current stock on hand
+
+The service checks this before writing the movement. The database stores the transaction history, while current stock is derived from that history.
+
+Reorder attention is descriptive rather than a hidden stock mutation:
+
+low stock = stock on hand <= reorder level
+
+Feed remains governed by the existing feed inventory/FIFO calculation because changing it into the generic inventory ledger would duplicate the authoritative feed-cost path.
