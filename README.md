@@ -80,11 +80,13 @@ Production binds to localhost only.
 
 ## Data
 
-Development defaults to `project/data/poultry.db`.
+Development and production use Electron's application-data directory for the database. The development database is stored under the same `data/poultry.db` location used by the desktop shell.
 
 Production data belongs under Electron's application-data directory:
 
 `%APPDATA%/Poultry Farm Manager/data/poultry.db`
+
+The Electron shell creates the directory before starting Spring Boot and passes the absolute database path to the backend.
 
 Do not commit databases, backups, WAL files, or real farm data.
 
