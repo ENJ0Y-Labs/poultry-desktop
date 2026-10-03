@@ -11,11 +11,21 @@ export class ApiError extends Error {
 }
 
 async function request(path, options = {}) {
-  const response = await fetch(API_BASE + path, {
-    credentials: "include",
-    headers: { "Content-Type": "application/json", ...(options.headers || {}) },
-    ...options,
-  });
+  let response;
+  try {
+    response = await fetch(API_BASE + path, {
+      credentials: "include",
+      headers: { "Content-Type": "application/json", ...(options.headers || {}) },
+      ...options,
+    });
+  } catch (error) {
+    throw new ApiError(
+      "BACKEND_UNAVAILABLE",
+      "The local backend is unavailable. Restart the application and try again.",
+      503,
+      { cause: error instanceof Error ? error.name : "network_error" },
+    );
+  }
 
   const body = await response.json().catch(() => ({}));
   if (!response.ok) {
