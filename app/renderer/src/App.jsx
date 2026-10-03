@@ -239,7 +239,33 @@ export default function App() {
     try { setBatchReport(await reportApi.batch(id)); } catch (err) { setError(displayApiError(err)); }
   }
 
-  async function exportCsv(loader, filename) { try { const csv = await loader(); const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" })); const anchor = document.createElement("a"); anchor.href = url; anchor.download = filename; anchor.click(); URL.revokeObjectURL(url); } catch (err) { setError(displayApiError(err)); } }
+  async function exportCsv(loader, filename) {
+    try {
+      const csv = await loader();
+      const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = filename;
+      anchor.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      setError(displayApiError(err));
+    }
+  }
+
+  async function exportPdf(loader, filename) {
+    try {
+      const blob = await loader();
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = filename;
+      anchor.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      setError(displayApiError(err));
+    }
+  }
 
   async function loadBatchDashboard(id = selectedBatchId) {
     if (!id) { setBatchDashboard(null); return; }
@@ -1408,7 +1434,7 @@ export default function App() {
 
         <section id="reports" className="card full">
           <div className="section-head"><div><p className="eyebrow">REPORTING</p><h2>Farm reports</h2></div>
-            <div className="inline-form"><button type="button" onClick={loadReport}>Refresh</button><button type="button" onClick={() => exportCsv(() => reportApi.farmCsv(), "farm-report.csv")}>Export CSV</button></div>
+            <div className="inline-form"><button type="button" onClick={loadReport}>Refresh</button><button type="button" onClick={() => exportCsv(() => reportApi.farmCsv(), "farm-report.csv")}>Export CSV</button><button type="button" onClick={() => exportPdf(() => reportApi.farmPdf(), "farm-report.pdf")}>Export PDF</button></div>
           </div>
           {farmReport ? <>
             <div className="metric-grid">
@@ -1437,6 +1463,7 @@ export default function App() {
               </select>
               <button type="button" onClick={() => loadBatchReport()}>Refresh</button>
               <button type="button" disabled={!selectedBatchId} onClick={() => exportCsv(() => reportApi.batchCsv(selectedBatchId), "batch-report.csv")}>Export CSV</button>
+              <button type="button" disabled={!selectedBatchId} onClick={() => exportPdf(() => reportApi.batchPdf(selectedBatchId), "batch-report.pdf")}>Export PDF</button>
             </div>
           </div>
           {batchReport ? <>
