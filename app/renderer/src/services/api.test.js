@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import { ApiError, authApi } from "./api.js";
+import { authApi } from "./api.js";
 
 describe("API client", () => {
   beforeEach(() => {
