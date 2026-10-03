@@ -17,7 +17,9 @@ import java.util.stream.Stream;
 @Service
 public class BackupService {
     private static final Logger log = LoggerFactory.getLogger(BackupService.class);
-    private static final DateTimeFormatter NAME=DateTimeFormatter.ofPattern("yyyy-MM-dd-HHmm");
+    private static final DateTimeFormatter DATE_NAME = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+    private static final DateTimeFormatter TIMESTAMP_NAME = DateTimeFormatter.ofPattern("yyyy-MM-dd-HHmm");
+    private static final java.util.regex.Pattern BACKUP_NAME = java.util.regex.Pattern.compile("poultry-\\d{4}-\\d{2}-\\d{2}(?:-\\d{4}(?:-\\d+)?)?\\.db");
     private final JdbcTemplate jdbc;
     private final Path database;
 
@@ -76,7 +78,7 @@ public class BackupService {
 
     private void prune(Path dir)throws Exception{
         try(Stream<Path>s=Files.list(dir)){
-            List<Path> backups=s.filter(p->p.getFileName().toString().startsWith("poultry-")&&p.getFileName().toString().endsWith(".db"))
+            List<Path> backups=s.filter(p->BACKUP_NAME.matcher(p.getFileName().toString()).matches())
                     .sorted(Comparator.comparing(Path::toString).reversed()).toList();
             for(int i=30;i<backups.size();i++)Files.deleteIfExists(backups.get(i));
         }
