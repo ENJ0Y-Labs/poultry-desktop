@@ -18,7 +18,7 @@ public class BackupScheduler {
         this.backups = backups; this.settings = settings; this.farms = farms;
     }
 
-    @Scheduled(fixedDelayString = "\${poultry.backup.interval-ms:86400000}")
+    @Scheduled(fixedDelay = 3600000)
     public void run() {
         var farm = farms.findActive();
         if (farm == null) return;
