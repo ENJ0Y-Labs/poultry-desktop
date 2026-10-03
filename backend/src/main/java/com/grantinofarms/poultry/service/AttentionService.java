@@ -3,6 +3,7 @@ package com.grantinofarms.poultry.service;
 import com.grantinofarms.poultry.repository.FarmRepository;
 import org.springframework.core.env.Environment;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowCallbackHandler;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -187,7 +188,8 @@ public class AttentionService {
                       WHERE d.batch_id = b.id AND d.record_date = ?
                   )
                 """,
-                rs -> result.add(alert(
+                (RowCallbackHandler) rs -> {
+                    result.add(alert(
                         "MISSING_DAILY_RECORD",
                         "WARNING",
                         "Missing daily record",
@@ -197,7 +199,8 @@ public class AttentionService {
                                 "batchCode", rs.getString("code"),
                                 "date", date
                         )
-                )), farmId, date.toString());
+                    ));
+                }, farmId, date.toString());
     }
 
     private void addVaccinationAlerts(List<Map<String, Object>> result, String farmId, LocalDate date) {
@@ -214,17 +217,17 @@ public class AttentionService {
                         AND v.record_date > date(?, '-' || ? || ' day')
                   )
                 """,
-                rs -> result.add(alert(
-                        "VACCINATION_DUE",
-                        "WARNING",
-                        "Vaccination due",
-                        rs.getString("code") + " has no vaccination recorded in the last "
-                                + VACCINATION_INTERVAL_DAYS + " days.",
-                        Map.of(
-                                "batchId", rs.getString("id"),
-                                "batchCode", rs.getString("code"),
-                                "intervalDays", VACCINATION_INTERVAL_DAYS
-                        )
+                (RowCallbackHandler) rs -> result.add(alert(
+                            "VACCINATION_DUE",
+                            "WARNING",
+                            "Vaccination due",
+                            rs.getString("code") + " has no vaccination recorded in the last "
+                                    + VACCINATION_INTERVAL_DAYS + " days.",
+                            Map.of(
+                                    "batchId", rs.getString("id"),
+                                    "batchCode", rs.getString("code"),
+                                    "intervalDays", VACCINATION_INTERVAL_DAYS
+                            )
                 )), farmId, date.toString(), VACCINATION_MINIMUM_AGE_DAYS,
                 date.toString(), date.toString(), VACCINATION_INTERVAL_DAYS);
     }
