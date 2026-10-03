@@ -17,6 +17,21 @@ const log = (event, details = {}) => {
 
 const backupFilename = (file) => file.split(/[\\/]/).pop();
 
+function friendlyFileError(error, fallback) {
+  const message = error instanceof Error ? error.message : String(error || "");
+  const lower = message.toLowerCase();
+  if (lower.includes("enospc") || lower.includes("disk full") || lower.includes("not enough space")) {
+    return "There is not enough disk space to complete the operation. Free some space and try again.";
+  }
+  if (lower.includes("eacces") || lower.includes("eperm") || lower.includes("access is denied") || lower.includes("permission denied")) {
+    return "The application does not have permission to access the required database file or folder.";
+  }
+  if (lower.includes("enoent") || lower.includes("no such file")) {
+    return "The selected backup file could not be found. Select an existing backup and try again.";
+  }
+  return fallback;
+}
+
 async function validateBackup(file) {
   const response = await fetch("http://127.0.0.1:" + backendManager.port + "/api/v1/backup/validate", {
     method: "POST",
@@ -148,11 +163,17 @@ ipcMain.handle("backup:restore", async () => {
       throw error;
     }
   } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
     log("restore_rejected", {
       filename: backupFilename(backup),
-      error: error instanceof Error ? error.message : String(error)
+      error: message
     });
-    throw error;
+    const friendly = message.includes("newer application version") || message.includes("cannot be restored")
+      || message.includes("not healthy enough") || message.includes("valid schema version")
+      || message.includes("backup is invalid")
+      ? message
+      : friendlyFileError(error, "The database restore could not be completed. The original database was kept safe where possible.");
+    throw new Error(friendly);
   }
 });
 
@@ -176,7 +197,7 @@ async function createWindow() {
       type: "error",
       title: "Backend startup failed",
       message: "Poultry Farm Manager could not start its local backend.",
-      detail: error instanceof Error ? error.message : String(error)
+      detail: friendlyFileError(error, "The local backend could not start. Check the backend log for the database or migration error.")
     });
     app.quit();
     return;
