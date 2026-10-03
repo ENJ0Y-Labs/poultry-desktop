@@ -72,6 +72,10 @@ class HealthManagementIntegrationTest {
                 });
 
         assertThat(jdbc.queryForObject(
+                "SELECT batch_id FROM expenses WHERE reference_type = 'DRUG_RECORD' AND reference_id = ?",
+                String.class, drug.id())).isEqualTo(batch.id());
+
+        assertThat(jdbc.queryForObject(
                 "SELECT COUNT(*) FROM expenses WHERE category = 'DRUGS' AND reference_type = 'DRUG_RECORD' AND reference_id = ?",
                 Integer.class, drug.id())).isEqualTo(1);
         assertThat(jdbc.queryForObject(
