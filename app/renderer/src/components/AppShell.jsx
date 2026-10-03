@@ -37,6 +37,8 @@ const groups = [
 export default function AppShell({ farm, error, children, startPage = "dashboard" }) {
   const [active, setActive] = useState(startPage);
 
+  useEffect(() => { document.getElementById(startPage)?.scrollIntoView({ behavior: "auto", block: "start" }); }, [startPage]);
+
   function navigate(target) {
     setActive(target);
     document.getElementById(target)?.scrollIntoView({ behavior: "smooth", block: "start" });
