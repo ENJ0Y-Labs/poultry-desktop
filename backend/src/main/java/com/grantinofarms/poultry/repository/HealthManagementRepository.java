@@ -21,7 +21,7 @@ public class HealthManagementRepository {
                 (rs, n) -> rs.getString("farm_id"),
                 batchId
         );
-        return ids.isEmpty() ? null : ids.getFirst();
+        return ids.isEmpty() ? null : ids.get(0);
     }
 
     public String batchStatus(String batchId) {
@@ -30,7 +30,7 @@ public class HealthManagementRepository {
                 (rs, n) -> rs.getString("status"),
                 batchId
         );
-        return statuses.isEmpty() ? null : statuses.getFirst();
+        return statuses.isEmpty() ? null : statuses.get(0);
     }
 
     public LocalDate placementDate(String batchId) {
