@@ -23,7 +23,6 @@ async function request(path, options = {}) {
       "BACKEND_UNAVAILABLE",
       "The local backend is unavailable. Restart the application and try again.",
       503,
-      { cause: error instanceof Error ? error.name : "network_error" },
     );
   }
 
