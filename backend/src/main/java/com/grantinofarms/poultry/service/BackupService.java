@@ -46,15 +46,26 @@ public class BackupService {
             }
             Path dir=directory==null||directory.isBlank()?database.getParent():Path.of(directory).toAbsolutePath().normalize();
             Files.createDirectories(dir);
-            String base="poultry-"+LocalDateTime.now().format(DATE_NAME);
-            Path target=dir.resolve(base+".db");int suffix=2;
-            while(Files.exists(target))target=dir.resolve(base+"-"+suffix+++".db");
+            LocalDateTime now = LocalDateTime.now();
+            String base="poultry-"+now.format(DATE_NAME);
+            Path target=dir.resolve(base+".db");
+            if (Files.exists(target)) {
+                String timestampedBase = "poultry-" + now.format(TIMESTAMP_NAME);
+                target = dir.resolve(timestampedBase + ".db");
+                int suffix = 2;
+                while (Files.exists(target)) {
+                    target = dir.resolve(timestampedBase + "-" + suffix++ + ".db");
+                }
+            }
             String escaped=target.toString().replace("'","''");
             jdbc.execute("VACUUM INTO '"+escaped+"'");
             prune(dir);
             log.info("backup_created filename={} directory={}", target.getFileName(), dir);
             return Map.of("path",target.toString(),"filename",target.getFileName().toString());
+        } catch (ApiException e) {
+            throw e;
         } catch (Exception e) {
+            log.error("backup_creation_failed", e);
             throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR,"BACKUP_FAILED","The database backup could not be created.");
         }
     }

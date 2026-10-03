@@ -1,15 +1,18 @@
 package com.grantinofarms.poultry;
 
 import com.grantinofarms.poultry.service.BackupService;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import org.springframework.mock.env.MockEnvironment;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.SingleConnectionDataSource;
+import org.springframework.mock.env.MockEnvironment;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -20,11 +23,19 @@ class BackupServiceTest {
     @TempDir
     Path tempDir;
 
+    private final List<SingleConnectionDataSource> dataSources = new ArrayList<>();
+
+    @AfterEach
+    void closeDataSources() {
+        dataSources.forEach(SingleConnectionDataSource::destroy);
+    }
+
     private BackupService service(Path database) throws Exception {
         var dataSource = new SingleConnectionDataSource(
                 "jdbc:sqlite:" + database.toAbsolutePath(),
                 true
         );
+        dataSources.add(dataSource);
         var jdbc = new JdbcTemplate(dataSource);
         jdbc.execute("CREATE TABLE farm_data (id INTEGER PRIMARY KEY, name TEXT NOT NULL)");
         jdbc.execute("CREATE TABLE app_metadata (key TEXT PRIMARY KEY, value TEXT NOT NULL)");
@@ -93,6 +104,7 @@ class BackupServiceTest {
                 "jdbc:sqlite:" + database.toAbsolutePath(),
                 true
         );
+        dataSources.add(dataSource);
         var jdbc = new JdbcTemplate(dataSource);
         jdbc.execute("CREATE TABLE unrelated (id INTEGER PRIMARY KEY)");
         var environment = new MockEnvironment()
@@ -107,6 +119,7 @@ class BackupServiceTest {
     @Test
     void rejectsInMemoryDatabaseBackups() {
         var dataSource = new SingleConnectionDataSource("jdbc:sqlite::memory:", true);
+        dataSources.add(dataSource);
         var environment = new MockEnvironment()
                 .withProperty("poultry.database-path", ":memory:");
         var service = new BackupService(new JdbcTemplate(dataSource), environment);
