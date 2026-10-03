@@ -91,7 +91,7 @@ public class ReportExportService {
 
     private String escapeCsv(String value) {
         String safe = value == null ? "" : value;
-        return """ + safe.replace(""", """") + """;
+        return "\"" + safe.replace("\"", "\"\"") + "\"";
     }
 
     @FunctionalInterface

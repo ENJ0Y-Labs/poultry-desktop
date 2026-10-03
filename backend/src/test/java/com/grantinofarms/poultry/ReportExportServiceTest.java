@@ -25,10 +25,10 @@ class ReportExportServiceTest {
         String csv = service.csv(report);
 
         assertThat(csv).startsWith("\uFEFFpath,value\n");
-        assertThat(csv).contains(""dashboard.totalBirds","5000"");
-        assertThat(csv).contains(""dashboard.profitMinor","300000"");
-        assertThat(csv).contains(""sales[0].saleDate","2026-10-03"");
-        assertThat(csv).contains(""sales[0].totalAmountMinor","125000"");
+        assertThat(csv).contains("\"dashboard.totalBirds\",\"5000\"");
+        assertThat(csv).contains("\"dashboard.profitMinor\",\"300000\"");
+        assertThat(csv).contains("\"sales[0].saleDate\",\"2026-10-03\"");
+        assertThat(csv).contains("\"sales[0].totalAmountMinor\",\"125000\"");
         assertThat(csv).doesNotContain("java.util.");
     }
 
