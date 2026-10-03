@@ -66,10 +66,30 @@ public class BackupService {
             return Map.of("path",target.toString(),"filename",target.getFileName().toString());
         } catch (ApiException e) {
             throw e;
+        } catch (AccessDeniedException e) {
+            log.warn("backup_creation_failed reason=access_denied");
+            throw new ApiException(HttpStatus.FORBIDDEN, "STORAGE_ACCESS_DENIED",
+                    "The application does not have permission to write the backup file or folder.");
+        } catch (FileSystemException e) {
+            if (isDiskFull(e)) {
+                log.warn("backup_creation_failed reason=disk_full");
+                throw new ApiException(HttpStatus.INSUFFICIENT_STORAGE, "STORAGE_FULL",
+                        "There is not enough disk space to create the backup.");
+            }
+            log.error("backup_creation_failed", e);
+            throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "BACKUP_FAILED",
+                    "The database backup could not be created.");
         } catch (Exception e) {
             log.error("backup_creation_failed", e);
             throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR,"BACKUP_FAILED","The database backup could not be created.");
         }
+    }
+
+    private boolean isDiskFull(FileSystemException e) {
+        String reason = e.getReason() == null ? "" : e.getReason().toLowerCase();
+        String message = e.getMessage() == null ? "" : e.getMessage().toLowerCase();
+        return reason.contains("space") || reason.contains("disk full")
+                || message.contains("not enough space") || message.contains("disk full");
     }
 
     public Map<String,Object> validate(String file){
