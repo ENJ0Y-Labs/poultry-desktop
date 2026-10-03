@@ -16,13 +16,16 @@ public class SalesService {
     private final SalesRepository repository;
     private final FarmRepository farmRepository;
     private final BatchRepository batchRepository;
+    private final CustomerRepository customerRepository;
 
     public SalesService(SalesRepository repository,
                         FarmRepository farmRepository,
-                        BatchRepository batchRepository) {
+                        BatchRepository batchRepository,
+                        CustomerRepository customerRepository) {
         this.repository = repository;
         this.farmRepository = farmRepository;
         this.batchRepository = batchRepository;
+        this.customerRepository = customerRepository;
     }
 
     public List<SaleResponse> list(String batchId, String customerId, String saleType, LocalDate asOf) {
@@ -33,6 +36,9 @@ public class SalesService {
 
         if (batch != null && !batchRepository.belongsToFarm(batch, farmId)) {
             throw new ApiException(HttpStatus.NOT_FOUND, "BATCH_NOT_FOUND", "Batch not found.");
+        }
+        if (customer != null && customerRepository.findById(farmId, customer) == null) {
+            throw new ApiException(HttpStatus.NOT_FOUND, "CUSTOMER_NOT_FOUND", "Customer not found.");
         }
         if (type != null && !"EGG".equals(type) && !"BROILER".equals(type)) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_SALE_TYPE",
