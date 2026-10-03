@@ -13,8 +13,16 @@ import java.util.Map;
 public class ReportController {
     private final ReportService service;
     public ReportController(ReportService service){this.service=service;}
-    @GetMapping("/farm") public Map<String,Object> farm(@RequestParam(required=false) LocalDate asOf){return Map.of("ok",true,"data",service.farm(asOf));}
-    @GetMapping("/batches/{id}") public Map<String,Object> batch(@PathVariable String id,@RequestParam(required=false) LocalDate asOf){return Map.of("ok",true,"data",service.batch(id,asOf));}
+
+    @GetMapping("/farm")
+    public Map<String,Object> farm(@RequestParam(required=false) LocalDate asOf){
+        return Map.of("ok",true,"data",service.farm(asOf));
+    }
+
+    @GetMapping("/batches/{id}")
+    public Map<String,Object> batch(@PathVariable String id,@RequestParam(required=false) LocalDate asOf){
+        return Map.of("ok",true,"data",service.batch(id,asOf));
+    }
 
     @GetMapping(value="/farm.csv", produces="text/csv")
     public ResponseEntity<String> farmCsv(@RequestParam(required=false) LocalDate asOf) {
@@ -37,7 +45,7 @@ public class ReportController {
             csv.append(row("expense", "record", item));
         }
         return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename="" + filename + """)
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
                 .contentType(MediaType.parseMediaType("text/csv"))
                 .body(csv.toString());
     }
@@ -47,6 +55,6 @@ public class ReportController {
     }
 
     private String escape(String value) {
-        return """ + value.replace(""", """") + """;
+        return "\"" + value.replace("\"", "\"\"") + "\"";
     }
 }
