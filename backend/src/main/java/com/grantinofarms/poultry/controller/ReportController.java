@@ -1,10 +1,13 @@
 package com.grantinofarms.poultry.controller;
 
+import com.grantinofarms.poultry.service.ReportExportService;
 import com.grantinofarms.poultry.service.ReportService;
-import org.springframework.web.bind.annotation.*;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.util.Map;
 
@@ -12,49 +15,61 @@ import java.util.Map;
 @RequestMapping("/api/v1/reports")
 public class ReportController {
     private final ReportService service;
-    public ReportController(ReportService service){this.service=service;}
+    private final ReportExportService exportService;
+
+    public ReportController(ReportService service, ReportExportService exportService) {
+        this.service = service;
+        this.exportService = exportService;
+    }
 
     @GetMapping("/farm")
-    public Map<String,Object> farm(@RequestParam(required=false) LocalDate asOf){
-        return Map.of("ok",true,"data",service.farm(asOf));
+    public Map<String, Object> farm(@RequestParam(required = false) LocalDate asOf) {
+        return Map.of("ok", true, "data", service.farm(asOf));
     }
 
     @GetMapping("/batches/{id}")
-    public Map<String,Object> batch(@PathVariable String id,@RequestParam(required=false) LocalDate asOf){
-        return Map.of("ok",true,"data",service.batch(id,asOf));
+    public Map<String, Object> batch(@PathVariable String id, @RequestParam(required = false) LocalDate asOf) {
+        return Map.of("ok", true, "data", service.batch(id, asOf));
     }
 
-    @GetMapping(value="/farm.csv", produces="text/csv")
-    public ResponseEntity<String> farmCsv(@RequestParam(required=false) LocalDate asOf) {
+    @GetMapping(value = "/farm.csv", produces = "text/csv")
+    public ResponseEntity<byte[]> farmCsv(@RequestParam(required = false) LocalDate asOf) {
         return csvResponse(service.farm(asOf), "farm-report.csv");
     }
 
-    @GetMapping(value="/batches/{id}.csv", produces="text/csv")
-    public ResponseEntity<String> batchCsv(@PathVariable String id,@RequestParam(required=false) LocalDate asOf) {
-        return csvResponse(service.batch(id,asOf), "batch-report.csv");
+    @GetMapping(value = "/batches/{id}.csv", produces = "text/csv")
+    public ResponseEntity<byte[]> batchCsv(
+            @PathVariable String id,
+            @RequestParam(required = false) LocalDate asOf
+    ) {
+        return csvResponse(service.batch(id, asOf), "batch-report.csv");
     }
 
-    private ResponseEntity<String> csvResponse(Map<String,Object> report, String filename) {
-        StringBuilder csv = new StringBuilder("section,key,value\n");
-        Map<String,Object> dashboard = (Map<String,Object>) report.get("dashboard");
-        dashboard.forEach((key,value) -> csv.append(row("dashboard", key, value)));
-        for (Object item : (java.util.List<?>) report.getOrDefault("sales", java.util.List.of())) {
-            csv.append(row("sale", "record", item));
-        }
-        for (Object item : (java.util.List<?>) report.getOrDefault("expenses", java.util.List.of())) {
-            csv.append(row("expense", "record", item));
-        }
+    @GetMapping(value = "/farm.pdf", produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<byte[]> farmPdf(@RequestParam(required = false) LocalDate asOf) {
+        return pdfResponse(service.farm(asOf), "Farm Report", "farm-report.pdf");
+    }
+
+    @GetMapping(value = "/batches/{id}.pdf", produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<byte[]> batchPdf(
+            @PathVariable String id,
+            @RequestParam(required = false) LocalDate asOf
+    ) {
+        return pdfResponse(service.batch(id, asOf), "Batch Report", "batch-report.pdf");
+    }
+
+    private ResponseEntity<byte[]> csvResponse(Map<String, Object> report, String filename) {
+        byte[] body = exportService.csv(report).getBytes(StandardCharsets.UTF_8);
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
-                .contentType(MediaType.parseMediaType("text/csv"))
-                .body(csv.toString());
+                .contentType(MediaType.parseMediaType("text/csv;charset=UTF-8"))
+                .body(body);
     }
 
-    private String row(String section, String key, Object value) {
-        return escape(section) + "," + escape(key) + "," + escape(String.valueOf(value)) + "\n";
-    }
-
-    private String escape(String value) {
-        return "\"" + value.replace("\"", "\"\"") + "\"";
+    private ResponseEntity<byte[]> pdfResponse(Map<String, Object> report, String title, String filename) {
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(exportService.pdf(report, title));
     }
 }
