@@ -184,6 +184,7 @@ export default function App() {
   const [selectedBatchId, setSelectedBatchId] = useState(() => getLastBatchId() || "");
   const [batchDashboard, setBatchDashboard] = useState(null);
   const [farmReport, setFarmReport] = useState(null);
+  const [batchReport, setBatchReport] = useState(null);
 
   async function load() {
     setLoading(true); setError("");
@@ -226,7 +227,17 @@ export default function App() {
       if (err.message !== "No farm has been created yet.") setError(displayApiError(err));
     } finally { setLoading(false); }
   }
-  async function loadReport() { try { setFarmReport(await reportApi.farm()); } catch (err) { setError(displayApiError(err)); } }
+  async function loadReport() {
+    try {
+      setFarmReport(await reportApi.farm());
+      if (selectedBatchId) setBatchReport(await reportApi.batch(selectedBatchId));
+    } catch (err) { setError(displayApiError(err)); }
+  }
+
+  async function loadBatchReport(id = selectedBatchId) {
+    if (!id) { setBatchReport(null); return; }
+    try { setBatchReport(await reportApi.batch(id)); } catch (err) { setError(displayApiError(err)); }
+  }
 
   async function exportCsv(loader, filename) { try { const csv = await loader(); const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" })); const anchor = document.createElement("a"); anchor.href = url; anchor.download = filename; anchor.click(); URL.revokeObjectURL(url); } catch (err) { setError(displayApiError(err)); } }
 
@@ -253,7 +264,14 @@ export default function App() {
 
   useEffect(() => { load(); }, []);
   useEffect(() => { if (farm) { loadDashboard(); loadReport(); } }, [farm, batches.length, inventoryItems.length, sales.length, expenses.length]);
-  useEffect(() => { if (selectedBatchId && batches.some(batch => batch.id === selectedBatchId)) loadBatchDashboard(selectedBatchId); }, [selectedBatchId, batches.length]);
+  useEffect(() => {
+    if (selectedBatchId && batches.some(batch => batch.id === selectedBatchId)) {
+      loadBatchDashboard(selectedBatchId);
+      loadBatchReport(selectedBatchId);
+    } else {
+      setBatchReport(null);
+    }
+  }, [selectedBatchId, batches.length]);
 
   async function submitFarm(event) {
     event.preventDefault(); setSaving(true); setError("");
@@ -1389,20 +1407,78 @@ export default function App() {
         </section>
 
         <section id="reports" className="card full">
-          <div className="section-head"><div><p className="eyebrow">REPORTING</p><h2>Reports</h2></div>
+          <div className="section-head"><div><p className="eyebrow">REPORTING</p><h2>Farm reports</h2></div>
             <div className="inline-form"><button type="button" onClick={loadReport}>Refresh</button><button type="button" onClick={() => exportCsv(() => reportApi.farmCsv(), "farm-report.csv")}>Export CSV</button></div>
           </div>
-          {farmReport ? <div className="dashboard-columns">
-            <div className="dashboard-list">
-              <div><span>Total birds</span><strong>{farmReport.dashboard.totalBirds}</strong></div>
-              <div><span>Mortality</span><strong>{farmReport.dashboard.mortality}</strong></div>
-              <div><span>Egg production</span><strong>{farmReport.dashboard.eggsGood}</strong></div>
-              <div><span>Revenue</span><strong>{formatMoney(farmReport.dashboard.revenueMinor, farm.currency)}</strong></div>
-              <div><span>Expenses</span><strong>{formatMoney(farmReport.dashboard.expensesMinor, farm.currency)}</strong></div>
-              <div><span>Profit</span><strong>{formatMoney(farmReport.dashboard.profitMinor, farm.currency)}</strong></div>
+          {farmReport ? <>
+            <div className="metric-grid">
+              {[
+                ["Total birds", formatCount(farmReport.dashboard?.totalBirds)],
+                ["Mortality", formatCount(farmReport.dashboard?.mortality)],
+                ["Feed types", formatCount(farmReport.feed?.length)],
+                ["Expenses", formatMoney(farmReport.dashboard?.expensesMinor, farm.currency)],
+                ["Revenue", formatMoney(farmReport.dashboard?.revenueMinor, farm.currency)],
+                ["Profit", formatMoney(farmReport.dashboard?.profitMinor, farm.currency)],
+                ["Egg batches", formatCount(farmReport.eggProduction?.length)],
+                ["Broiler batches", formatCount(farmReport.broilerGrowth?.length)],
+                ["Sales records", formatCount(farmReport.sales?.length)],
+                ["Inventory items", formatCount(farmReport.inventory?.length)]
+              ].map(([label,value]) => <div className="metric-card" key={label}><span>{label}</span><strong>{value ?? "—"}</strong></div>)}
             </div>
-            <div className="dashboard-list"><div><span>Sales records</span><strong>{farmReport.sales?.length ?? 0}</strong></div><div><span>Expense records</span><strong>{farmReport.expenses?.length ?? 0}</strong></div><div><span>As of</span><strong>{farmReport.asOf}</strong></div></div>
-          </div> : <p className="muted">Report is loading…</p>}
+            <p className="muted">As of {farmReport.asOf}. All report metrics are assembled from the same calculation services used by the dashboards.</p>
+          </> : <p className="muted">Report is loading…</p>}
+        </section>
+
+        <section id="batch-reports" className="card full">
+          <div className="section-head"><div><p className="eyebrow">REPORTING</p><h2>Batch reports</h2></div>
+            <div className="inline-form">
+              <select aria-label="Batch report" value={selectedBatchId} onChange={e => { setSelectedBatchId(e.target.value); rememberLastBatchId(e.target.value); }}>
+                <option value="">Select a batch</option>{batches.map(batch => <option key={batch.id} value={batch.id}>{batch.code} · {batch.type}</option>)}
+              </select>
+              <button type="button" onClick={() => loadBatchReport()}>Refresh</button>
+              <button type="button" disabled={!selectedBatchId} onClick={() => exportCsv(() => reportApi.batchCsv(selectedBatchId), "batch-report.csv")}>Export CSV</button>
+            </div>
+          </div>
+          {batchReport ? <>
+            <div className="metric-grid">
+              {[
+                ["Initial birds", batchReport.population?.initialBirds],
+                ["Current birds", batchReport.population?.currentBirds],
+                ["Mortality", batchReport.mortality],
+                ["Feed", formatQuantity(batchReport.feed?.totalQuantityMilli)],
+                ["Costs", formatMoney(batchReport.costs?.expensesMinor, farm.currency)],
+                ["Revenue", formatMoney(batchReport.revenueMinor, farm.currency)],
+                ["Profit", formatMoney(batchReport.profitMinor, farm.currency)],
+                ["Health records", batchReport.health?.healthRecords?.length],
+                ["Sales records", batchReport.sales?.length]
+              ].map(([label,value]) => <div className="metric-card" key={label}><span>{label}</span><strong>{value ?? "—"}</strong></div>)}
+            </div>
+            <div className="dashboard-columns">
+              <div className="subsection"><h3>Production</h3>
+                {batchReport.production?.type === "LAYER" ? <>
+                  <div className="dashboard-list">
+                    <div><span>Good eggs</span><strong>{batchReport.production.eggInventory?.goodCollected ?? "—"}</strong></div>
+                    <div><span>Egg inventory</span><strong>{batchReport.production.eggInventory?.goodRemaining ?? "—"}</strong></div>
+                    <div><span>Good egg rate</span><strong>{formatPercent(batchReport.production.eggQuality?.goodRatePercent)}</strong></div>
+                  </div>
+                </> : <>
+                  <div className="dashboard-list">
+                    <div><span>Average weight</span><strong>{formatKg(batchReport.production.growth?.currentAverageWeightKg)}</strong></div>
+                    <div><span>Growth</span><strong>{formatKg(batchReport.production.growth?.liveWeightGainKg)}</strong></div>
+                    <div><span>FCR</span><strong>{formatMetric(batchReport.production.growth?.fcr)}</strong></div>
+                  </div>
+                </>}
+              </div>
+              <div className="subsection"><h3>Health</h3>
+                <div className="dashboard-list">
+                  <div><span>Health records</span><strong>{batchReport.health?.healthRecords?.length ?? 0}</strong></div>
+                  <div><span>Drug records</span><strong>{batchReport.health?.drugs?.length ?? 0}</strong></div>
+                  <div><span>Vaccinations</span><strong>{batchReport.health?.vaccinations?.length ?? 0}</strong></div>
+                </div>
+              </div>
+            </div>
+            <p className="muted">As of {batchReport.asOf}. Population, feed, production, costs, revenue and profit reuse the dashboard calculation services.</p>
+          </> : <p className="muted">{selectedBatchId ? "Batch report is loading…" : "Select a batch to inspect its report."}</p>}
         </section>
 
         <section id="houses" className="card full"><div className="section-head"><h2>Houses / pens</h2><p className="muted">Physical locations that batches belong to.</p></div>
