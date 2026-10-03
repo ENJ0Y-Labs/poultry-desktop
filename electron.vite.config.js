@@ -13,6 +13,9 @@ export default defineConfig({
   },
   renderer: {
     root: resolve("app/renderer"),
+    build: {
+      rollupOptions: { input: resolve("app/renderer/index.html") }
+    },
     resolve: { alias: { "@": resolve("app/renderer/src") } },
     plugins: [react()]
   }
