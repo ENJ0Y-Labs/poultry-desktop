@@ -91,14 +91,14 @@ public class HealthManagementRepository {
                 ), batchId);
     }
 
-    public void insertExpense(String id, String farmId, long amountMinor, LocalDate date,
+    public void insertExpense(String id, String farmId, String batchId, long amountMinor, LocalDate date,
                               String referenceId, String description, String now) {
         jdbc.update("""
                 INSERT INTO expenses
-                    (id, farm_id, category, amount_minor, occurred_date,
+                    (id, farm_id, batch_id, category, amount_minor, occurred_date,
                      reference_type, reference_id, description, created_at)
-                VALUES (?, ?, 'DRUGS', ?, ?, 'DRUG_RECORD', ?, ?, ?)
-                """, id, farmId, amountMinor, date.toString(), referenceId, description, now);
+                VALUES (?, ?, ?, 'DRUGS', ?, ?, 'DRUG_RECORD', ?, ?, ?)
+                """, id, farmId, batchId, amountMinor, date.toString(), referenceId, description, now);
     }
 
     public void insertVaccination(String id, String batchId, LocalDate date, String vaccine,
