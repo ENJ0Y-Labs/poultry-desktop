@@ -31,7 +31,7 @@ export class BackendManager {
   }
 
   async start() {
-    mkdirSync(join(this.userDataPath, "data"), { recursive: true });
+    mkdirSync(join(this.isPackaged ? this.userDataPath : this.appPath, "data"), { recursive: true });
 
     if (!this.isPackaged) {
       const command = process.platform === "win32" ? "mvn.cmd" : "mvn";
