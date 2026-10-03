@@ -37,7 +37,7 @@ class FeedManagementIntegrationTest {
                 type.id(), null, LocalDate.of(2026,1,1), new BigDecimal("20"), "bag", 160_000L));
 
         assertThat(purchase.quantityMilli()).isEqualTo(20_000L);
-        assertThat(feedService.inventory(LocalDate.of(2026,1,1)).getFirst().remainingQuantityMilli())
+        assertThat(feedService.inventory(LocalDate.of(2026,1,1)).get(0).remainingQuantityMilli())
                 .isEqualTo(20_000L);
         assertThat(jdbc.queryForObject(
                 "SELECT COUNT(*) FROM expenses WHERE reference_type = 'FEED_PURCHASE' AND reference_id = ?",
@@ -63,7 +63,7 @@ class FeedManagementIntegrationTest {
         assertThat(usage.quantityMilli()).isEqualTo(25_000L);
         assertThat(usage.feedCostMinor()).isEqualTo(210_000L);
 
-        var inventory = feedService.inventory(LocalDate.of(2026,1,3)).getFirst();
+        var inventory = feedService.inventory(LocalDate.of(2026,1,3)).get(0);
         assertThat(inventory.remainingQuantityMilli()).isEqualTo(25_000L);
         assertThat(inventory.remainingCostMinor()).isEqualTo(250_000L);
         assertThat(inventory.consumedCostMinor()).isEqualTo(210_000L);
