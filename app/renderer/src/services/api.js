@@ -137,6 +137,22 @@ export const expenseApi = {
 };
 
 
+export const inventoryApi = {
+  listItems: () => request("/inventory/items"),
+  createItem: (data) => request("/inventory/items", { method: "POST", body: JSON.stringify(data) }),
+  archiveItem: (id) => request("/inventory/items/" + id + "/archive", { method: "POST" }),
+  listMovements: (itemId, asOf) => {
+    const query = new URLSearchParams();
+    if (itemId) query.set("itemId", itemId);
+    if (asOf) query.set("asOf", asOf);
+    const suffix = query.toString() ? "?" + query.toString() : "";
+    return request("/inventory/movements" + suffix);
+  },
+  recordMovement: (itemId, data) => request("/inventory/items/" + itemId + "/movements", {
+    method: "POST", body: JSON.stringify(data)
+  }),
+};
+
 export const customerApi = {
   list: () => request("/customers"),
   create: (data) => request("/customers", { method: "POST", body: JSON.stringify(data) }),
