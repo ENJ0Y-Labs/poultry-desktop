@@ -21,11 +21,24 @@ public class BackupService {
     public BackupService(JdbcTemplate jdbc,Environment env){
         this.jdbc=jdbc;
         String configured=env.getProperty("poultry.database-path","./data/poultry.db");
-        this.database=Path.of(configured).toAbsolutePath().normalize();
+        this.database = isInMemoryDatabase(configured)
+                ? null
+                : Path.of(configured).toAbsolutePath().normalize();
+    }
+
+    private boolean isInMemoryDatabase(String configured) {
+        return configured == null
+                || configured.isBlank()
+                || ":memory:".equalsIgnoreCase(configured)
+                || "memory".equalsIgnoreCase(configured);
     }
 
     public synchronized Map<String,Object> create(String directory){
         try{
+            if (database == null) {
+                throw new ApiException(HttpStatus.BAD_REQUEST,"BACKUP_UNAVAILABLE",
+                        "Database backups are unavailable for an in-memory database.");
+            }
             Path dir=directory==null||directory.isBlank()?database.getParent():Path.of(directory).toAbsolutePath().normalize();
             Files.createDirectories(dir);
             String base="poultry-"+LocalDateTime.now().format(NAME);
