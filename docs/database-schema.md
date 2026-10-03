@@ -247,3 +247,33 @@ Initial categories remain:
 The migration backfills `batch_id` for existing `DRUGS` expenses generated from `drug_records`.
 
 New general expense records use null `reference_type` and `reference_id`. Automatically generated feed/drug expenses retain their subsystem references.
+
+
+## Stage 15: Customers and sales
+
+### customers
+Farm-scoped reusable customer records:
+- `name` required
+- `phone` optional
+- `notes` optional
+- technical created/updated timestamps
+
+Customers are retained for historical sale references.
+
+### sales
+The common commercial sales ledger stores:
+- farm
+- batch
+- customer
+- business sale date
+- `sale_type`: `EGG` or `BROILER`
+- quantity
+- commercial unit
+- integer minor-unit unit price
+- integer minor-unit total
+- type-specific reference type and ID
+- technical creation timestamp
+
+The common ledger does not replace `egg_sales` or `bird_sales`. Those tables retain their type-specific production rules and authoritative facts. A common sale row is created in the same transaction as the corresponding type-specific sale.
+
+Stage 15 also adds nullable `customer_id` references to `egg_sales` and `bird_sales`. Existing customer names are backfilled into farm-scoped customer records and existing sales are copied into the common ledger.
