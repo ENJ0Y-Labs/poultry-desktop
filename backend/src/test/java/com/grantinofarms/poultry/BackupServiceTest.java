@@ -87,6 +87,24 @@ class BackupServiceTest {
     }
 
     @Test
+    void rejectsSqliteDatabaseWithoutPoultrySchema() throws Exception {
+        Path database = tempDir.resolve("not-poultry.db");
+        var dataSource = new SingleConnectionDataSource(
+                "jdbc:sqlite:" + database.toAbsolutePath(),
+                true
+        );
+        var jdbc = new JdbcTemplate(dataSource);
+        jdbc.execute("CREATE TABLE unrelated (id INTEGER PRIMARY KEY)");
+        var environment = new MockEnvironment()
+                .withProperty("poultry.database-path", database.toString());
+        var service = new BackupService(jdbc, environment);
+
+        assertThatThrownBy(() -> service.validate(database.toString()))
+                .isInstanceOf(com.grantinofarms.poultry.exception.ApiException.class)
+                .hasMessageContaining("not a Poultry Farm Manager database");
+    }
+
+    @Test
     void rejectsInMemoryDatabaseBackups() {
         var dataSource = new SingleConnectionDataSource("jdbc:sqlite::memory:", true);
         var environment = new MockEnvironment()
