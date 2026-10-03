@@ -807,7 +807,7 @@ export default function App() {
   );
 
   return (
-    <AppShell farm={farm} error={error}>
+    <AppShell farm={farm} error={error} startPage={applicationSettings.startPage}>
       <section id="dashboard" className="card full dashboard-page">
         <div className="section-head">
           <div><p className="eyebrow">OVERVIEW</p><h2>Farm dashboard</h2></div>
