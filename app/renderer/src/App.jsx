@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { todayLocalDate, getLastBatchId, rememberLastBatchId } from "./utils/farmUx.js";
 // eslint-disable-next-line no-unused-vars
 import AppShell from "./components/AppShell.jsx";
 function formatMoney(minor, currency = "NGN") { if (minor == null) return "—"; return new Intl.NumberFormat("en-NG", { style: "currency", currency, maximumFractionDigits: 2 }).format(Number(minor) / 100); }
@@ -7,30 +8,40 @@ function formatPercent(value) { return value == null ? "—" : Number(value).toF
 function formatKg(value) { return value == null ? "—" : Number(value).toFixed(2) + " kg"; }
 function formatMetric(value) { return value == null ? "—" : Number(value).toFixed(2); }
 function formatCount(value) { return value == null ? "—" : Number(value).toLocaleString("en-NG"); }
+function displayApiError(err) {
+  if (!err) return "";
+  if (err.details && typeof err.details === "object") {
+    const messages = Object.entries(err.details)
+      .map(([field, message]) => `${field}: ${Array.isArray(message) ? message.join(", ") : message}`)
+      .filter(Boolean);
+    if (messages.length) return messages.join(" • ");
+  }
+  return err.message || "Something went wrong.";
+}
 
 const emptyWeight = {
   batchId: "",
-  date: new Date().toISOString().slice(0, 10),
+  date: todayLocalDate(),
   sampleQuantity: "",
   totalWeightKg: "",
   notes: "",
 };
 const emptyBirdSale = {
   batchId: "",
-  date: new Date().toISOString().slice(0, 10),
+  date: todayLocalDate(),
   quantity: "",
   pricePerBirdMinor: "",
   customer: "",
   customerId: "",
 };
-const emptyPricing = { quantity: "", date: new Date().toISOString().slice(0, 10) };
+const emptyPricing = { quantity: "", date: todayLocalDate() };
 import { batchApi, broilerApi, costApi, dailyApi, eggApi, expenseApi, farmApi, feedApi, populationApi, healthApi, pricingApi, customerApi, salesApi, inventoryApi, dashboardApi, attentionApi, auditApi, backupApi, reportApi } from "./services/api.js";
 
 const emptyFarm = { name: "", location: "", timezone: "Africa/Lagos", currency: "NGN" };
 const emptyHouse = { name: "", code: "", notes: "" };
 const emptyBatch = {
   type: "LAYER",
-  placementDate: new Date().toISOString().slice(0, 10),
+  placementDate: todayLocalDate(),
   houseId: "",
   initialBirdCount: "",
   supplierId: "",
@@ -38,7 +49,7 @@ const emptyBatch = {
 };
 const emptyCost = {
   batchId: "",
-  eventDate: new Date().toISOString().slice(0, 10),
+  eventDate: todayLocalDate(),
   amountMinor: "",
   reason: "",
 };
@@ -46,7 +57,7 @@ const emptyFeedType = { name: "", unit: "bag", applicableType: "BOTH" };
 const emptyFeedPurchase = {
   feedTypeId: "",
   supplierId: "",
-  purchaseDate: new Date().toISOString().slice(0, 10),
+  purchaseDate: todayLocalDate(),
   quantity: "",
   unit: "bag",
   totalCostMinor: "",
@@ -54,34 +65,34 @@ const emptyFeedPurchase = {
 const emptyFeedUsage = {
   batchId: "",
   feedTypeId: "",
-  usageDate: new Date().toISOString().slice(0, 10),
+  usageDate: todayLocalDate(),
   quantity: "",
   unit: "bag",
   reason: "",
 };
 const emptyDaily = {
   batchId: "",
-  date: new Date().toISOString().slice(0, 10),
+  date: todayLocalDate(),
   notes: "",
   water: "25:4, 75:2",
 };
 const emptyPopulationEvent = {
   batchId: "",
-  date: new Date().toISOString().slice(0, 10),
+  date: todayLocalDate(),
   quantity: "",
   reason: "",
   notes: "",
 };
 const emptyHealth = {
   batchId: "",
-  date: new Date().toISOString().slice(0, 10),
+  date: todayLocalDate(),
   conditionProblem: "",
   description: "",
   action: "",
 };
 const emptyDrug = {
   batchId: "",
-  date: new Date().toISOString().slice(0, 10),
+  date: todayLocalDate(),
   drug: "",
   quantity: "",
   costMinor: "",
@@ -89,7 +100,7 @@ const emptyDrug = {
 };
 const emptyVaccination = {
   batchId: "",
-  date: new Date().toISOString().slice(0, 10),
+  date: todayLocalDate(),
   vaccine: "",
   dose: "",
   quantity: "",
@@ -97,7 +108,7 @@ const emptyVaccination = {
 };
 const emptyExpense = {
   batchId: "",
-  occurredDate: new Date().toISOString().slice(0, 10),
+  occurredDate: todayLocalDate(),
   description: "",
   amountMinor: "",
   category: "OTHER",
@@ -105,7 +116,7 @@ const emptyExpense = {
 const emptyCustomer = { name: "", phone: "", notes: "" };
 const emptyInventoryItem = { name: "", category: "SUPPLY", unit: "piece", reorderLevel: "" };
 const emptyInventoryMovement = {
-  itemId: "", date: new Date().toISOString().slice(0, 10), movementType: "RECEIVE",
+  itemId: "", date: todayLocalDate(), movementType: "RECEIVE",
   quantity: "", reason: "", source: "", batchId: ""
 };
 
@@ -155,10 +166,10 @@ export default function App() {
   const [eggCollections, setEggCollections] = useState([]);
   const [eggSales, setEggSales] = useState([]);
   const [eggCollectionForm, setEggCollectionForm] = useState({
-    batchId: "", date: new Date().toISOString().slice(0, 10), good: "", cracked: "", notes: ""
+    batchId: "", date: todayLocalDate(), good: "", cracked: "", notes: ""
   });
   const [eggSaleForm, setEggSaleForm] = useState({
-    batchId: "", date: new Date().toISOString().slice(0, 10), customer: "", customerId: "", crates: "", pricePerCrateMinor: ""
+    batchId: "", date: todayLocalDate(), customer: "", customerId: "", crates: "", pricePerCrateMinor: ""
   });
   const [houseForm, setHouseForm] = useState(emptyHouse);
   const [crateSize, setCrateSize] = useState(30);
@@ -170,7 +181,7 @@ export default function App() {
   const [dashboard, setDashboard] = useState(null);
   const [attention, setAttention] = useState([]);
   const [auditRows, setAuditRows] = useState([]);
-  const [selectedBatchId, setSelectedBatchId] = useState(() => localStorage.getItem("grantino:lastBatchId") || "");
+  const [selectedBatchId, setSelectedBatchId] = useState(() => getLastBatchId() || "");
   const [batchDashboard, setBatchDashboard] = useState(null);
   const [farmReport, setFarmReport] = useState(null);
 
@@ -189,10 +200,10 @@ export default function App() {
       setBatchForm(form => ({ ...form, houseId: form.houseId || currentHouses[0]?.id || "" }));
       const currentBatches = await batchApi.list();
       setBatches(currentBatches);
-      const lastBatchId = localStorage.getItem("grantino:lastBatchId");
+      const lastBatchId = getLastBatchId();
       const preferredBatchId = currentBatches.some(batch => batch.id === lastBatchId) ? lastBatchId : currentBatches[0]?.id || "";
       if (preferredBatchId) {
-        localStorage.setItem("grantino:lastBatchId", preferredBatchId);
+        rememberLastBatchId(preferredBatchId);
         setSelectedBatchId(preferredBatchId);
         setCostForm(form => ({ ...form, batchId: form.batchId || preferredBatchId }));
         setDailyForm(form => ({ ...form, batchId: form.batchId || preferredBatchId }));
@@ -212,16 +223,16 @@ export default function App() {
       setFeedInventory(await feedApi.inventory());
       setPricingSettings(await pricingApi.settings());
     } catch (err) {
-      if (err.message !== "No farm has been created yet.") setError(err.message);
+      if (err.message !== "No farm has been created yet.") setError(displayApiError(err));
     } finally { setLoading(false); }
   }
-  async function loadReport() { try { setFarmReport(await reportApi.farm()); } catch (err) { setError(err.message); } }
+  async function loadReport() { try { setFarmReport(await reportApi.farm()); } catch (err) { setError(displayApiError(err)); } }
 
-  async function exportCsv(loader, filename) { try { const csv = await loader(); const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" })); const anchor = document.createElement("a"); anchor.href = url; anchor.download = filename; anchor.click(); URL.revokeObjectURL(url); } catch (err) { setError(err.message); } }
+  async function exportCsv(loader, filename) { try { const csv = await loader(); const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" })); const anchor = document.createElement("a"); anchor.href = url; anchor.download = filename; anchor.click(); URL.revokeObjectURL(url); } catch (err) { setError(displayApiError(err)); } }
 
   async function loadBatchDashboard(id = selectedBatchId) {
     if (!id) { setBatchDashboard(null); return; }
-    try { setBatchDashboard(await dashboardApi.batch(id)); } catch (err) { setError(err.message); }
+    try { setBatchDashboard(await dashboardApi.batch(id)); } catch (err) { setError(displayApiError(err)); }
   }
 
   async function loadDashboard() {
@@ -236,7 +247,7 @@ export default function App() {
       setAttention(attentionRows);
       setAuditRows(audit);
     } catch (err) {
-      setError(err.message);
+      setError(displayApiError(err));
     }
   }
 
@@ -263,13 +274,13 @@ export default function App() {
       setFeedTypes([]);
       setFeedInventory([]);
       setBatchForm(emptyBatch);
-    } catch (err) { setError(err.message); } finally { setSaving(false); }
+    } catch (err) { setError(displayApiError(err)); } finally { setSaving(false); }
   }
 
   async function saveFarm(event) {
     event.preventDefault(); setSaving(true); setError("");
     try { setFarm(await farmApi.update(farmForm)); }
-    catch (err) { setError(err.message); } finally { setSaving(false); }
+    catch (err) { setError(displayApiError(err)); } finally { setSaving(false); }
   }
 
   async function createBackup() {
@@ -278,12 +289,12 @@ export default function App() {
       const directory = window.poultryDesktop?.chooseBackupDirectory ? await window.poultryDesktop.chooseBackupDirectory() : null;
       if (!directory) return;
       await backupApi.create(directory);
-    } catch (err) { setError(err.message); } finally { setSaving(false); }
+    } catch (err) { setError(displayApiError(err)); } finally { setSaving(false); }
   }
 
   async function restoreBackup() {
     setSaving(true); setError("");
-    try { await window.poultryDesktop?.restoreBackup?.(); await load(); } catch (err) { setError(err.message); } finally { setSaving(false); }
+    try { await window.poultryDesktop?.restoreBackup?.(); await load(); } catch (err) { setError(displayApiError(err)); } finally { setSaving(false); }
   }
 
   async function saveSettings(event) {
@@ -298,17 +309,17 @@ export default function App() {
       setCrateSize(updated.defaultCrateSize);
       setDefaultWater(updated.defaultWaterContainerSize ?? "");
       setWaterSizes(updated.waterContainerSizes.join(", "));
-    } catch (err) { setError(err.message); } finally { setSaving(false); }
+    } catch (err) { setError(displayApiError(err)); } finally { setSaving(false); }
   }
 
   async function loadExpenses(batchId = expenseBatchFilter) {
     try {
       setExpenses(await expenseApi.list(batchId || null));
-    } catch (err) { setError(err.message); }
+    } catch (err) { setError(displayApiError(err)); }
   }
   async function loadSales() {
     try { setSales(await salesApi.list()); }
-    catch (err) { setError(err.message); }
+    catch (err) { setError(displayApiError(err)); }
   }
 
   async function saveCustomer(event) {
@@ -321,7 +332,7 @@ export default function App() {
       });
       setCustomers(current => [...current, created].sort((a, b) => a.name.localeCompare(b.name)));
       setCustomerForm(emptyCustomer);
-    } catch (err) { setError(err.message); } finally { setSaving(false); }
+    } catch (err) { setError(displayApiError(err)); } finally { setSaving(false); }
   }
 
 
@@ -337,13 +348,13 @@ export default function App() {
       setInventoryItems(current => [...current, created].sort((a, b) => a.name.localeCompare(b.name)));
       setInventoryItemForm(emptyInventoryItem);
       setInventoryMovementForm(form => ({ ...form, itemId: created.id }));
-    } catch (err) { setError(err.message); } finally { setSaving(false); }
+    } catch (err) { setError(displayApiError(err)); } finally { setSaving(false); }
   }
 
   async function loadInventoryMovements(itemId = inventoryMovementForm.itemId) {
     if (!itemId) { setInventoryMovements([]); return; }
     try { setInventoryMovements(await inventoryApi.listMovements(itemId)); }
-    catch (err) { setError(err.message); }
+    catch (err) { setError(displayApiError(err)); }
   }
 
   async function saveInventoryMovement(event) {
@@ -360,7 +371,7 @@ export default function App() {
       setInventoryItems(await inventoryApi.listItems());
       setInventoryMovementForm(form => ({ ...emptyInventoryMovement, itemId: form.itemId }));
       await loadInventoryMovements(inventoryMovementForm.itemId);
-    } catch (err) { setError(err.message); } finally { setSaving(false); }
+    } catch (err) { setError(displayApiError(err)); } finally { setSaving(false); }
   }
 
   async function saveExpense(event) {
@@ -375,7 +386,7 @@ export default function App() {
       });
       setExpenses(current => [created, ...current]);
       setExpenseForm(form => ({ ...emptyExpense, batchId: form.batchId }));
-    } catch (err) { setError(err.message); } finally { setSaving(false); }
+    } catch (err) { setError(displayApiError(err)); } finally { setSaving(false); }
   }
 
   async function createBatch(event) {
@@ -390,10 +401,10 @@ export default function App() {
         purchaseCostMinor: batchForm.purchaseCostMinor,
       });
       setBatches(current => [created, ...current]);
-      localStorage.setItem("grantino:lastBatchId", created.id);
+      rememberLastBatchId(created.id);
       setSelectedBatchId(created.id);
       setBatchForm({ ...emptyBatch, houseId: batchForm.houseId });
-    } catch (err) { setError(err.message); } finally { setSaving(false); }
+    } catch (err) { setError(displayApiError(err)); } finally { setSaving(false); }
   }
 
   async function addBirdCost(event) {
@@ -405,7 +416,7 @@ export default function App() {
         reason: costForm.reason.trim() || null,
       });
       setCostForm(form => ({ ...emptyCost, batchId: form.batchId }));
-    } catch (err) { setError(err.message); } finally { setSaving(false); }
+    } catch (err) { setError(displayApiError(err)); } finally { setSaving(false); }
   }
 
   async function createFeedType(event) {
@@ -414,7 +425,7 @@ export default function App() {
       const created = await feedApi.createType(feedTypeForm);
       setFeedTypes(current => [...current, created].sort((a, b) => a.name.localeCompare(b.name)));
       setFeedTypeForm(emptyFeedType);
-    } catch (err) { setError(err.message); } finally { setSaving(false); }
+    } catch (err) { setError(displayApiError(err)); } finally { setSaving(false); }
   }
 
   async function purchaseFeed(event) {
@@ -431,7 +442,7 @@ export default function App() {
       });
       setFeedPurchaseForm(form => ({ ...emptyFeedPurchase, feedTypeId: form.feedTypeId }));
       setFeedInventory(await feedApi.inventory());
-    } catch (err) { setError(err.message); } finally { setSaving(false); }
+    } catch (err) { setError(displayApiError(err)); } finally { setSaving(false); }
   }
 
   async function useFeed(event) {
@@ -447,7 +458,7 @@ export default function App() {
       });
       setFeedUsageForm(form => ({ ...emptyFeedUsage, batchId: form.batchId, feedTypeId: form.feedTypeId }));
       setFeedInventory(await feedApi.inventory());
-    } catch (err) { setError(err.message); } finally { setSaving(false); }
+    } catch (err) { setError(displayApiError(err)); } finally { setSaving(false); }
   }
 
   function feedQuantity(value) {
@@ -473,7 +484,7 @@ export default function App() {
         waterContainers: parseWaterEntries(dailyForm.water),
       });
       setDailyRecord(created);
-    } catch (err) { setError(err.message); } finally { setSaving(false); }
+    } catch (err) { setError(displayApiError(err)); } finally { setSaving(false); }
   }
 
   async function recordPopulationEvent(event, type) {
@@ -491,14 +502,14 @@ export default function App() {
       setDailyRecord(record);
       if (type === "MORTALITY") setMortalityForm({ ...emptyPopulationEvent, batchId: form.batchId });
       else setCullingForm({ ...emptyPopulationEvent, batchId: form.batchId });
-    } catch (err) { setError(err.message); } finally { setSaving(false); }
+    } catch (err) { setError(displayApiError(err)); } finally { setSaving(false); }
   }
 
 
   async function loadPricingForBatch(batchId, quantity, date) {
     if (!batchId || !quantity) { setPricing(null); return; }
     try { setPricing(await pricingApi.price(batchId, Number(quantity), date || undefined)); }
-    catch (err) { setError(err.message); }
+    catch (err) { setError(displayApiError(err)); }
   }
 
   async function savePricingSettings(event) {
@@ -508,7 +519,7 @@ export default function App() {
         targetMarginPercent: pricingSettings.targetMarginPercent === "" ? null : pricingSettings.targetMarginPercent
       });
       setPricingSettings(updated);
-    } catch (err) { setError(err.message); } finally { setSaving(false); }
+    } catch (err) { setError(displayApiError(err)); } finally { setSaving(false); }
   }
 
   async function loadBroilerForBatch(batchId) {
@@ -525,7 +536,7 @@ export default function App() {
       setBroilerGrowth(growth);
       setBroilerWeights(weights);
       setBroilerSales(sales);
-    } catch (err) { setError(err.message); }
+    } catch (err) { setError(displayApiError(err)); }
   }
 
   async function saveWeight(event) {
@@ -540,7 +551,7 @@ export default function App() {
       });
       await loadBroilerForBatch(batchId);
       setWeightForm(form => ({ ...form, sampleQuantity: "", totalWeightKg: "", notes: "" }));
-    } catch (err) { setError(err.message); } finally { setSaving(false); }
+    } catch (err) { setError(displayApiError(err)); } finally { setSaving(false); }
   }
 
   async function saveBirdSale(event) {
@@ -565,7 +576,7 @@ export default function App() {
       setBatches(await batchApi.list());
       setBirdSaleForm(form => ({ ...form, quantity: "", pricePerBirdMinor: "", customer: "", customerId: "" }));
       await loadSales();
-    } catch (err) { setError(err.message); } finally { setSaving(false); }
+    } catch (err) { setError(displayApiError(err)); } finally { setSaving(false); }
   }
 
   async function loadEggsForBatch(batchId) {
@@ -582,7 +593,7 @@ export default function App() {
       setEggInventory(inventory);
       setEggCollections(collections);
       setEggSales(sales);
-    } catch (err) { setError(err.message); }
+    } catch (err) { setError(displayApiError(err)); }
   }
 
   async function saveEggCollection(event) {
@@ -597,7 +608,7 @@ export default function App() {
       });
       await loadEggsForBatch(batchId);
       setEggCollectionForm(form => ({ ...form, good: "", cracked: "", notes: "" }));
-    } catch (err) { setError(err.message); } finally { setSaving(false); }
+    } catch (err) { setError(displayApiError(err)); } finally { setSaving(false); }
   }
 
   async function saveEggSale(event) {
@@ -614,7 +625,7 @@ export default function App() {
       await loadEggsForBatch(batchId);
       setEggSaleForm(form => ({ ...form, customer: "", customerId: "", crates: "", pricePerCrateMinor: "" }));
       await loadSales();
-    } catch (err) { setError(err.message); } finally { setSaving(false); }
+    } catch (err) { setError(displayApiError(err)); } finally { setSaving(false); }
   }
 
   async function saveHealth(event) {
@@ -628,7 +639,7 @@ export default function App() {
       });
       setHealthRecords(await healthApi.listHealth(healthForm.batchId));
       setHealthForm(form => ({ ...emptyHealth, batchId: form.batchId }));
-    } catch (err) { setError(err.message); } finally { setSaving(false); }
+    } catch (err) { setError(displayApiError(err)); } finally { setSaving(false); }
   }
 
   async function saveDrug(event) {
@@ -643,7 +654,7 @@ export default function App() {
       });
       setDrugRecords(await healthApi.listDrugs(drugForm.batchId));
       setDrugForm(form => ({ ...emptyDrug, batchId: form.batchId }));
-    } catch (err) { setError(err.message); } finally { setSaving(false); }
+    } catch (err) { setError(displayApiError(err)); } finally { setSaving(false); }
   }
 
   async function saveVaccination(event) {
@@ -658,7 +669,7 @@ export default function App() {
       });
       setVaccinationRecords(await healthApi.listVaccinations(vaccinationForm.batchId));
       setVaccinationForm(form => ({ ...emptyVaccination, batchId: form.batchId }));
-    } catch (err) { setError(err.message); } finally { setSaving(false); }
+    } catch (err) { setError(displayApiError(err)); } finally { setSaving(false); }
   }
 
   async function loadHealthForBatch(batchId) {
@@ -672,7 +683,7 @@ export default function App() {
       setHealthRecords(health);
       setDrugRecords(drugs);
       setVaccinationRecords(vaccinations);
-    } catch (err) { setError(err.message); }
+    } catch (err) { setError(displayApiError(err)); }
   }
 
   async function markBatchSold(id) {
@@ -680,7 +691,7 @@ export default function App() {
     try {
       const updated = await batchApi.markSold(id);
       setBatches(current => current.map(batch => batch.id === id ? updated : batch));
-    } catch (err) { setError(err.message); } finally { setSaving(false); }
+    } catch (err) { setError(displayApiError(err)); } finally { setSaving(false); }
   }
 
   async function reopenBatch(id) {
@@ -690,13 +701,13 @@ export default function App() {
     try {
       const updated = await batchApi.reopen(id, reason);
       setBatches(current => current.map(batch => batch.id === id ? updated : batch));
-    } catch (err) { setError(err.message); } finally { setSaving(false); }
+    } catch (err) { setError(displayApiError(err)); } finally { setSaving(false); }
   }
 
   async function addHouse(event) {
     event.preventDefault(); setSaving(true); setError("");
     try { await farmApi.createHouse(houseForm); setHouseForm(emptyHouse); setHouses(await farmApi.listHouses()); }
-    catch (err) { setError(err.message); } finally { setSaving(false); }
+    catch (err) { setError(displayApiError(err)); } finally { setSaving(false); }
   }
 
   if (loading) return <main className="shell"><p className="muted">Loading farm...</p></main>;
