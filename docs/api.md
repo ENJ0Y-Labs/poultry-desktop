@@ -256,3 +256,24 @@ Optional batch filter:
 The backend returns expenses newest first. Existing drug expenses are associated with their batch through the Stage 14 expense schema migration.
 
 `POST /api/v1/expenses` creates a financial record. Expenses are not exposed through a delete endpoint.
+
+
+## Stage 15: Customers and sales
+
+### Customers
+
+- `POST /api/v1/customers` creates a customer with `name`, optional `phone`, and optional `notes`.
+- `GET /api/v1/customers` lists customers for the active farm.
+- `PUT /api/v1/customers/{id}` updates a customer.
+
+### Common sales
+
+- `GET /api/v1/sales` lists the common commercial sales ledger.
+- Optional filters: `batchId`, `customerId`, `saleType`, and `asOf`.
+- `saleType` is `EGG` or `BROILER`.
+
+Common sales are not created through a generic POST endpoint. Layer and Broiler sale endpoints remain the authoritative write paths because they enforce their type-specific production rules, and they create the common sale row transactionally.
+
+Layer sale writes continue through `POST /api/v1/batches/{batchId}/eggs/sales` and support a `customerId` alongside the historical customer name.
+
+Broiler sale writes continue through `POST /api/v1/batches/{batchId}/broiler/sales` and support a `customerId` alongside the historical customer name.
