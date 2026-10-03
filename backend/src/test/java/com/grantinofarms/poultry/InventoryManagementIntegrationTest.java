@@ -38,7 +38,7 @@ class InventoryManagementIntegrationTest {
                 LocalDate.of(2026, 10, 2), "ISSUE", new BigDecimal("2"),
                 "Treatment for Layer batch", "HEALTH_TREATMENT", null));
 
-        var current = inventoryService.listItems().getFirst();
+        var current = inventoryService.listItems().get(0);
         assertThat(current.quantityOnHand()).isEqualByComparingTo("8");
         assertThat(current.reorderLevel()).isEqualByComparingTo("5");
 
@@ -77,7 +77,7 @@ class InventoryManagementIntegrationTest {
                 LocalDate.of(2026, 10, 1), "RECEIVE", new BigDecimal("100"),
                 "Initial tray stock", "SUPPLIER_INVOICE: INV-002", batch.id()));
 
-        assertThat(inventoryService.listItems().getFirst().quantityOnHand())
+        assertThat(inventoryService.listItems().get(0).quantityOnHand())
                 .isEqualByComparingTo("100");
     }
 
