@@ -277,3 +277,34 @@ The common commercial sales ledger stores:
 The common ledger does not replace `egg_sales` or `bird_sales`. Those tables retain their type-specific production rules and authoritative facts. A common sale row is created in the same transaction as the corresponding type-specific sale.
 
 Stage 15 also adds nullable `customer_id` references to `egg_sales` and `bird_sales`. Existing customer names are backfilled into farm-scoped customer records and existing sales are copied into the common ledger.
+
+
+## Stage 16: Inventory
+
+### inventory_items
+
+Farm-scoped reusable inventory definitions for non-feed stock:
+
+- name
+- category: DRUG, VACCINE, SUPPLY
+- unit
+- reorder_level
+- status
+- technical timestamps
+
+### inventory_movements
+
+Append-only stock transactions:
+
+- inventory item
+- business date
+- movement type
+- positive quantity
+- reason
+- source
+- optional batch
+- technical creation timestamp
+
+Stock is derived from movements. RECEIVE and ADJUST_IN increase stock. ISSUE, ADJUST_OUT, and WASTE decrease stock. Negative stock is rejected by the service before insertion.
+
+The migration also adds a nullable reason column to feed_usage. New feed usage records always receive a reason; historical feed usage remains readable without rewriting old records.
