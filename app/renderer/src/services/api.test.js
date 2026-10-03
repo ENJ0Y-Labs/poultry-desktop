@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import { authApi, attentionApi, reportApi } from "./api.js";
+import { authApi, attentionApi, reportApi, settingsApi, expenseCategoryApi, accountApi } from "./api.js";
 
 describe("API client", () => {
   beforeEach(() => {
@@ -48,6 +48,22 @@ describe("API client", () => {
       expect.stringContaining("/attention?asOf=2026-10-03"),
       expect.objectContaining({ credentials: "include" })
     );
+  });
+
+  it("loads settings and account endpoints", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ ok: true, data: { enabled: true, directory: "D:/backups", intervalMs: 86400000 } }), { status: 200 })
+    );
+    await settingsApi.backup();
+    expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining("/settings/backup"), expect.objectContaining({ credentials: "include" }));
+
+    fetchMock.mockResolvedValue(new Response(JSON.stringify({ ok: true, data: [{ id: "cat-1", name: "FEED", status: "ACTIVE" }] }), { status: 200 }));
+    const categories = await expenseCategoryApi.list();
+    expect(categories[0].name).toBe("FEED");
+
+    fetchMock.mockResolvedValue(new Response(JSON.stringify({ ok: true, data: { id: "u1", email: "owner@example.com", fullName: "Owner" } }), { status: 200 }));
+    const account = await accountApi.get();
+    expect(account.email).toBe("owner@example.com");
   });
 
   it("downloads a report PDF as a blob", async () => {
