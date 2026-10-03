@@ -18,7 +18,9 @@ export class BackendManager {
   }
 
   get dataDirectory() {
-    return join(this.userDataPath, "data");
+    return this.isPackaged
+      ? join(this.userDataPath, "data")
+      : join(this.appPath, "data");
   }
 
   get databasePath() {
