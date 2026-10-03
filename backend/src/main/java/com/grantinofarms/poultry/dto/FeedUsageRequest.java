@@ -10,5 +10,10 @@ public record FeedUsageRequest(
         @NotBlank String feedTypeId,
         @NotNull LocalDate usageDate,
         @NotNull @Positive BigDecimal quantity,
-        @NotBlank String unit
-) {}
+        @NotBlank String unit,
+        String reason
+) {
+    public FeedUsageRequest(String feedTypeId, LocalDate usageDate, BigDecimal quantity, String unit) {
+        this(feedTypeId, usageDate, quantity, unit, null);
+    }
+}
