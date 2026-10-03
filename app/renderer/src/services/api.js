@@ -114,6 +114,12 @@ export const pricingApi = {
   price: (batchId, quantity, asOf) => request("/pricing/batches/" + batchId + "?quantity=" + encodeURIComponent(quantity) + (asOf ? "&asOf=" + encodeURIComponent(asOf) : "")),
 };
 
+export const expenseCategoryApi = {
+  list: () => request("/expense-categories"),
+  create: (data) => request("/expense-categories", { method: "POST", body: JSON.stringify(data) }),
+  archive: (id) => request("/expense-categories/" + id + "/archive", { method: "POST" }),
+};
+
 export const expenseApi = {
   list: (batchId) => request("/expenses" + (batchId ? "?batchId=" + encodeURIComponent(batchId) : "")),
   create: (data) => request("/expenses", { method: "POST", body: JSON.stringify(data) }),
@@ -153,6 +159,18 @@ export const salesApi = {
     if (params.asOf) query.set("asOf", params.asOf);
     return request("/sales" + (query.toString() ? "?" + query.toString() : ""));
   },
+};
+
+export const accountApi = {
+  get: () => request("/account"),
+  update: (data) => request("/account", { method: "PUT", body: JSON.stringify(data) }),
+};
+
+export const settingsApi = {
+  application: () => request("/settings/application"),
+  updateApplication: (data) => request("/settings/application", { method: "PUT", body: JSON.stringify(data) }),
+  backup: () => request("/settings/backup"),
+  updateBackup: (data) => request("/settings/backup", { method: "PUT", body: JSON.stringify(data) }),
 };
 
 export const authApi = {
