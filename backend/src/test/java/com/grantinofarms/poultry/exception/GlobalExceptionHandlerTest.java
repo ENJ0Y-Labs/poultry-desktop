@@ -1,7 +1,5 @@
 package com.grantinofarms.poultry.exception;
 
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotBlank;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -67,9 +65,11 @@ class GlobalExceptionHandlerTest {
         var response = handler.unreadable(new HttpMessageNotReadableException("bad body"));
 
         assertEquals(400, response.getStatusCode().value());
-        assertEquals("INVALID_REQUEST_BODY", response.getBody().get("error") instanceof Map<?, ?> error
-                ? error.get("code")
-                : null);
+        @SuppressWarnings("unchecked")
+        Map<String, Object> body = (Map<String, Object>) response.getBody();
+        @SuppressWarnings("unchecked")
+        Map<String, Object> error = (Map<String, Object>) body.get("error");
+        assertEquals("INVALID_REQUEST_BODY", error.get("code"));
     }
 
     private static final class ValidRequest {
