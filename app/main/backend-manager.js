@@ -69,7 +69,7 @@ export class BackendManager {
       try {
         const response = await fetch(`http://127.0.0.1:${this.port}/api/v1/health`);
         if (response.ok) return;
-      } catch (error) {
+      } catch {
         this.lastError = null;
       }
 
