@@ -24,7 +24,7 @@ The backend currently evaluates:
 | `VACCINATION_DUE` | Active batch is at least 14 days old and has no vaccination in the previous 28 days |
 | `UNUSUAL_PRODUCTION_DROP` | Layer egg production is down at least 20% versus the previous 7-day period |
 | `BATCH_NEARING_SALE` | Active broiler reaches 35 days; 42 days is the target sale age |
-| `BACKUP_OVERDUE` | No default database backup exists, or the latest one is at least 7 days old |
+| `BACKUP_OVERDUE` | Automatic backups are enabled and no automatic database backup exists, or the latest one is at least 7 days old |
 
 Severity is backend-derived as well:
 
@@ -61,7 +61,7 @@ The current defaults are deliberately conservative and centralized in `Attention
 - minimum vaccination-age check: 14 days
 - broiler target sale age: 42 days
 - sale warning: 35 days
-- backup overdue: 7 days
+- backup overdue: 7 days\n- backup overdue is evaluated only when automatic backups are enabled, using the configured automatic backup directory
 
 These should become farm-configurable only when the product has a real configuration workflow and the farm requirements justify it. Do not scatter these numbers through the React application.
 
