@@ -12,5 +12,10 @@ public record EggSaleRequest(
         @NotNull LocalDate recordDate,
         @NotBlank String customer,
         @NotNull @Positive @DecimalMin(value = "0.001") BigDecimal crates,
-        @NotNull @Positive Long pricePerCrateMinor
-) {}
+        @NotNull @Positive Long pricePerCrateMinor,
+        String customerId
+) {
+    public EggSaleRequest(LocalDate recordDate, String customer, BigDecimal crates, Long pricePerCrateMinor) {
+        this(recordDate, customer, crates, pricePerCrateMinor, null);
+    }
+}
