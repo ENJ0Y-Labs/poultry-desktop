@@ -22,21 +22,21 @@ public class EggManagementRepository {
         List<String> ids = jdbc.query(
                 "SELECT farm_id FROM batches WHERE id = ?",
                 (rs, n) -> rs.getString("farm_id"), batchId);
-        return ids.isEmpty() ? null : ids.getFirst();
+        return ids.isEmpty() ? null : ids.get(0);
     }
 
     public String batchType(String batchId) {
         List<String> types = jdbc.query(
                 "SELECT batch_type FROM batches WHERE id = ?",
                 (rs, n) -> rs.getString("batch_type"), batchId);
-        return types.isEmpty() ? null : types.getFirst();
+        return types.isEmpty() ? null : types.get(0);
     }
 
     public String batchStatus(String batchId) {
         List<String> statuses = jdbc.query(
                 "SELECT status FROM batches WHERE id = ?",
                 (rs, n) -> rs.getString("status"), batchId);
-        return statuses.isEmpty() ? null : statuses.getFirst();
+        return statuses.isEmpty() ? null : statuses.get(0);
     }
 
     public LocalDate placementDate(String batchId) {
