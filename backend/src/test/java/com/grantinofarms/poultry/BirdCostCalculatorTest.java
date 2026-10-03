@@ -23,7 +23,7 @@ class BirdCostCalculatorTest {
                 1_000_000L,
                 List.of(),
                 List.of(),
-                population.getFirst()
+                population.get(0)
         );
 
         var snapshot = BirdCostCalculator.calculate(
@@ -53,7 +53,7 @@ class BirdCostCalculatorTest {
                 1_000_000L,
                 List.of(),
                 costs,
-                population.getFirst()
+                population.get(0)
         );
 
         assertThat(soldCost).isEqualTo(240_000L);
