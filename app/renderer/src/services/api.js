@@ -129,3 +129,9 @@ export const pricingApi = {
     (asOf ? "&asOf=" + encodeURIComponent(asOf) : "")
   ),
 };
+
+
+export const expenseApi = {
+  list: (batchId) => request("/expenses" + (batchId ? "?batchId=" + encodeURIComponent(batchId) : "")),
+  create: (data) => request("/expenses", { method: "POST", body: JSON.stringify(data) }),
+};
