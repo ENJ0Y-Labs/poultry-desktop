@@ -102,4 +102,4 @@ JOIN batches b ON b.id = bs.batch_id
 WHERE bs.customer_id IS NOT NULL;
 
 CREATE INDEX idx_egg_sales_customer ON egg_sales(customer_id);
-CREATE INDEX idx_bird_sales_customer ON bird_sales(customer_id);
+CREATE INDEX idx_bird_sales_customer_id ON bird_sales(customer_id);
