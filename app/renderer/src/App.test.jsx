@@ -40,7 +40,7 @@ describe("App", () => {
     render(<App />);
 
     await waitFor(() => expect(screen.getByRole("heading", { name:"Farm dashboard" })).toBeInTheDocument());
-    expect(screen.getByText("5,000")).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText("5,000")).toBeInTheDocument());
     expect(screen.getByText(/1,000/)).toBeInTheDocument();
     expect(screen.getByText(/300/)).toBeInTheDocument();
   });
