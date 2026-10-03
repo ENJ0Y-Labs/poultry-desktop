@@ -14,7 +14,13 @@ class FcrCalculatorTest {
 
     @Test
     void zeroWeightGainIsUndefined() {
-        assertThatThrownBy(() -> FcrCalculator.calculate(new BigDecimal("400"), BigDecimal.ZERO))
-                .hasMessage("Feed consumed must be non-negative and live weight gain must be positive.");
+        assertThat(FcrCalculator.calculate(new BigDecimal("400"), BigDecimal.ZERO)).isNull();
+        assertThat(FcrCalculator.calculate(BigDecimal.ZERO, BigDecimal.ZERO)).isNull();
+    }
+
+    @Test
+    void negativeWeightGainIsRejected() {
+        assertThatThrownBy(() -> FcrCalculator.calculate(new BigDecimal("400"), new BigDecimal("-1")))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 }
