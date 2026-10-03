@@ -1,6 +1,12 @@
 import { useEffect, useState } from "react";
 // eslint-disable-next-line no-unused-vars
 import AppShell from "./components/AppShell.jsx";
+function formatMoney(minor, currency = "NGN") { if (minor == null) return "—"; return new Intl.NumberFormat("en-NG", { style: "currency", currency, maximumFractionDigits: 2 }).format(Number(minor) / 100); }
+function formatQuantity(milli) { return milli == null ? "—" : (Number(milli) / 1000).toLocaleString() + " units"; }
+function formatPercent(value) { return value == null ? "—" : Number(value).toFixed(2) + "%"; }
+function formatKg(value) { return value == null ? "—" : Number(value).toFixed(2) + " kg"; }
+function formatMetric(value) { return value == null ? "—" : Number(value).toFixed(2); }
+
 const emptyWeight = {
   batchId: "",
   date: new Date().toISOString().slice(0, 10),
@@ -163,6 +169,8 @@ export default function App() {
   const [dashboard, setDashboard] = useState(null);
   const [attention, setAttention] = useState([]);
   const [auditRows, setAuditRows] = useState([]);
+  const [selectedBatchId, setSelectedBatchId] = useState(() => localStorage.getItem("grantino:lastBatchId") || "");
+  const [batchDashboard, setBatchDashboard] = useState(null);
 
   async function load() {
     setLoading(true); setError("");
@@ -190,6 +198,11 @@ export default function App() {
       if (err.message !== "No farm has been created yet.") setError(err.message);
     } finally { setLoading(false); }
   }
+  async function loadBatchDashboard(id = selectedBatchId) {
+    if (!id) { setBatchDashboard(null); return; }
+    try { setBatchDashboard(await dashboardApi.batch(id)); } catch (err) { setError(err.message); }
+  }
+
   async function loadDashboard() {
     if (!farm) return;
     try {
@@ -208,6 +221,7 @@ export default function App() {
 
   useEffect(() => { load(); }, []);
   useEffect(() => { if (farm) loadDashboard(); }, [farm, batches.length, inventoryItems.length, sales.length, expenses.length]);
+  useEffect(() => { if (selectedBatchId && batches.some(batch => batch.id === selectedBatchId)) loadBatchDashboard(selectedBatchId); }, [selectedBatchId, batches.length]);
 
   async function submitFarm(event) {
     event.preventDefault(); setSaving(true); setError("");
@@ -666,39 +680,76 @@ export default function App() {
 
   return (
     <AppShell farm={farm} error={error}>
-      <section id="dashboard" className="card full">
+      <section id="dashboard" className="card full dashboard-page">
         <div className="section-head">
-          <h2>Farm dashboard</h2>
-          <p className="muted">Backend-derived state only. The UI is not allowed to invent poultry mathematics, a surprisingly necessary rule.</p>
+          <div><p className="eyebrow">OVERVIEW</p><h2>Farm dashboard</h2></div>
+          <span className="muted">{dashboard?.asOf || "Loading..."}</span>
         </div>
         {dashboard ? (
           <>
-            <div className="table">
-              <div className="row header"><span>Metric</span><span>Value</span><span>Metric</span><span>Value</span></div>
-              <div className="row"><span>Total birds</span><span>{dashboard.totalBirds}</span><span>Active batches</span><span>{dashboard.activeBatches}</span></div>
-              <div className="row"><span>Layers</span><span>{dashboard.layerBirds}</span><span>Broilers</span><span>{dashboard.broilerBirds}</span></div>
-              <div className="row"><span>Mortality</span><span>{dashboard.mortality}</span><span>Good eggs</span><span>{dashboard.eggsGood}</span></div>
-              <div className="row"><span>Revenue</span><span>{dashboard.revenueMinor}</span><span>Expenses</span><span>{dashboard.expensesMinor}</span></div>
-              <div className="row"><span>Profit</span><span>{dashboard.profitMinor}</span><span>Inventory alerts</span><span>{dashboard.inventoryAlerts}</span></div>
+            <div className="metric-grid">
+              {[
+                ["Total birds", dashboard.totalBirds, ""], ["Layer birds", dashboard.layerBirds, ""],
+                ["Broiler birds", dashboard.broilerBirds, ""], ["Active batches", dashboard.activeBatches, ""],
+                ["Mortality", dashboard.mortality, "birds"], ["Good eggs", dashboard.eggsGood, "eggs"],
+                ["Revenue", formatMoney(dashboard.revenueMinor, farm.currency), ""],
+                ["Expenses", formatMoney(dashboard.expensesMinor, farm.currency), ""],
+                ["Profit", formatMoney(dashboard.profitMinor, farm.currency), ""],
+                ["Inventory alerts", dashboard.inventoryAlerts, ""]
+              ].map(([label,value,unit]) => <div className="metric-card" key={label}><span>{label}</span><strong>{value ?? "—"}</strong>{unit && <small>{unit}</small>}</div>)}
             </div>
-            <div className="subsection">
-              <h3>Attention</h3>
-              {attention.length === 0 ? <p className="muted">Nothing currently requires attention.</p> :
-                <div className="table">
-                  <div className="row header"><span>Severity</span><span>Type</span><span>Message</span></div>
-                  {attention.map((item, index) => <div className="row" key={item.type + index}><span>{item.severity}</span><span>{item.type}</span><span>{item.message}</span></div>)}
-                </div>}
+            <div className="dashboard-columns">
+              <div className="subsection"><h3>Feed</h3><div className="dashboard-list">
+                <div><span>Feed types</span><strong>{dashboard.feedSummary?.typeCount ?? 0}</strong></div>
+                <div><span>Stock remaining</span><strong>{formatQuantity(dashboard.feedSummary?.remainingQuantityMilli)}</strong></div>
+                <div><span>Stock value</span><strong>{formatMoney(dashboard.feedSummary?.remainingCostMinor, farm.currency)}</strong></div>
+                <div><span>Consumed cost</span><strong>{formatMoney(dashboard.feedSummary?.consumedCostMinor, farm.currency)}</strong></div>
+              </div></div>
+              <div className="subsection"><h3>Attention</h3>
+                {attention.length === 0 ? <p className="muted">Nothing currently requires attention.</p> :
+                  <div className="attention-list">{attention.map((item,index) => <div className="attention-item" key={item.type + index}><span className={"severity " + String(item.severity).toLowerCase()}>{item.severity}</span><div><strong>{item.title}</strong><p>{item.message}</p></div></div>)}</div>}
+              </div>
             </div>
-            <div className="subsection">
-              <h3>Recent audit activity</h3>
-              {auditRows.length === 0 ? <p className="muted">No audit records yet.</p> :
-                <div className="table">
-                  <div className="row header"><span>Time</span><span>Action</span><span>Entity</span><span>Reason</span></div>
-                  {auditRows.slice(0, 10).map(row => <div className="row" key={row.id}><span>{row.occurredAt}</span><span>{row.action}</span><span>{row.entityType}</span><span>{row.reason || "—"}</span></div>)}
-                </div>}
-            </div>
+            <div className="subsection"><h3>Recent audit activity</h3>{auditRows.length === 0 ? <p className="muted">No audit records yet.</p> :
+              <div className="table"><div className="row header"><span>Time</span><span>Action</span><span>Entity</span><span>Reason</span></div>
+              {auditRows.slice(0, 8).map(row => <div className="row" key={row.id}><span>{row.occurredAt}</span><span>{row.action}</span><span>{row.entityType}</span><span>{row.reason || "—"}</span></div>)}</div>}</div>
           </>
         ) : <p className="muted">Dashboard is loading…</p>}
+      </section>
+
+      <section id="batch-dashboard" className="card full dashboard-page">
+        <div className="section-head"><div><p className="eyebrow">BATCH</p><h2>Batch dashboard</h2></div>
+          <select aria-label="Batch dashboard" value={selectedBatchId} onChange={e => { setSelectedBatchId(e.target.value); localStorage.setItem("grantino:lastBatchId", e.target.value); }}>
+            <option value="">Select a batch</option>{batches.map(batch => <option key={batch.id} value={batch.id}>{batch.code} · {batch.type}</option>)}
+          </select>
+        </div>
+        {batchDashboard ? <div className="batch-dashboard">
+          <div className="metric-grid">
+            {[
+              ["Initial birds", batchDashboard.population?.initialBirds, ""], ["Current birds", batchDashboard.population?.currentBirds, ""],
+              ["Mortality", batchDashboard.population?.mortality, ""], ["Culling", batchDashboard.population?.culling, ""],
+              ["Sold", batchDashboard.population?.sold, ""], ["Feed used", formatQuantity(batchDashboard.feed?.totalQuantityMilli), ""],
+              ["Feed cost", formatMoney(batchDashboard.feed?.totalCostMinor, farm.currency), ""],
+              ["Expenses", formatMoney(batchDashboard.expensesMinor, farm.currency), ""],
+              ["Revenue", formatMoney(batchDashboard.revenueMinor, farm.currency), ""],
+              ["Profit", formatMoney(batchDashboard.profitMinor, farm.currency), ""]
+            ].map(([label,value]) => <div className="metric-card" key={label}><span>{label}</span><strong>{value ?? "—"}</strong></div>)}
+          </div>
+          <div className="dashboard-columns">
+            <div className="subsection"><h3>Production</h3>{batchDashboard.batch.type === "LAYER" ? <div className="dashboard-list">
+              <div><span>Good eggs</span><strong>{batchDashboard.eggInventory?.goodCollected ?? "—"}</strong></div>
+              <div><span>Cracked eggs</span><strong>{batchDashboard.eggInventory?.cracked ?? "—"}</strong></div>
+              <div><span>Egg inventory</span><strong>{batchDashboard.eggInventory?.goodRemaining ?? "—"}</strong></div>
+              <div><span>Good egg rate</span><strong>{formatPercent(batchDashboard.eggQuality?.goodRatePercent)}</strong></div>
+            </div> : <div className="dashboard-list">
+              <div><span>Average weight</span><strong>{formatKg(batchDashboard.broilerGrowth?.currentAverageWeightKg)}</strong></div>
+              <div><span>Growth</span><strong>{formatKg(batchDashboard.broilerGrowth?.liveWeightGainKg)}</strong></div>
+              <div><span>FCR</span><strong>{formatMetric(batchDashboard.broilerGrowth?.fcr)}</strong></div>
+              <div><span>Sales records</span><strong>{batchDashboard.broilerSales?.length ?? 0}</strong></div>
+            </div>}</div>
+            <div className="subsection"><h3>Status & attention</h3><div className="dashboard-list"><div><span>Status</span><strong>{batchDashboard.batch.status}</strong></div><div><span>Attention items</span><strong>{batchDashboard.attention}</strong></div></div></div>
+          </div>
+        </div> : <p className="muted">{selectedBatchId ? "Loading batch dashboard…" : "Select a batch to inspect its dashboard."}</p>}
       </section>
 
       <div className="grid">
