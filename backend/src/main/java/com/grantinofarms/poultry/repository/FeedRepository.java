@@ -38,7 +38,7 @@ public class FeedRepository {
                         rs.getString("id"), rs.getString("name"), rs.getString("unit"),
                         rs.getString("applicable_type"), rs.getString("status")
                 ), id);
-        return rows.isEmpty() ? null : rows.getFirst();
+        return rows.isEmpty() ? null : rows.get(0);
     }
 
     public String typeFarmId(String id) {
@@ -159,7 +159,7 @@ public class FeedRepository {
         List<String> ids = jdbc.query("SELECT id FROM farms WHERE status = 'ACTIVE' ORDER BY created_at LIMIT 1",
                 (rs, n) -> rs.getString("id"));
         if (ids.isEmpty()) throw new IllegalStateException("No active farm exists.");
-        return ids.getFirst();
+        return ids.get(0);
     }
 
     public boolean supplierBelongsToFarm(String supplierId, String farmId) {
@@ -173,13 +173,13 @@ public class FeedRepository {
         List<String> dates = jdbc.query(
                 "SELECT usage_date FROM feed_usage WHERE feed_type_id = ? ORDER BY usage_date DESC, created_at DESC LIMIT 1",
                 (rs, n) -> rs.getString("usage_date"), feedTypeId);
-        return dates.isEmpty() ? null : LocalDate.parse(dates.getFirst());
+        return dates.isEmpty() ? null : LocalDate.parse(dates.get(0));
     }
 
     public LocalDate latestPurchaseDate(String feedTypeId) {
         List<String> dates = jdbc.query(
                 "SELECT purchase_date FROM feed_purchases WHERE feed_type_id = ? ORDER BY purchase_date DESC, created_at DESC LIMIT 1",
                 (rs, n) -> rs.getString("purchase_date"), feedTypeId);
-        return dates.isEmpty() ? null : LocalDate.parse(dates.getFirst());
+        return dates.isEmpty() ? null : LocalDate.parse(dates.get(0));
     }
 }
