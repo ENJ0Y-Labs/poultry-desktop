@@ -3,6 +3,7 @@ package com.grantinofarms.poultry.service;
 import com.grantinofarms.poultry.exception.ApiException;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
+import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.slf4j.Logger;
@@ -75,6 +76,21 @@ public class BackupService {
                 log.warn("backup_creation_failed reason=disk_full");
                 throw new ApiException(HttpStatus.INSUFFICIENT_STORAGE, "STORAGE_FULL",
                         "There is not enough disk space to create the backup.");
+            }
+            log.error("backup_creation_failed", e);
+            throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "BACKUP_FAILED",
+                    "The database backup could not be created.");
+        } catch (DataAccessException e) {
+            String detail = e.getMessage() == null ? "" : e.getMessage().toLowerCase();
+            if (detail.contains("database or disk is full") || detail.contains("disk is full")) {
+                log.warn("backup_creation_failed reason=disk_full");
+                throw new ApiException(HttpStatus.INSUFFICIENT_STORAGE, "STORAGE_FULL",
+                        "There is not enough disk space to create the backup.");
+            }
+            if (detail.contains("readonly") || detail.contains("read-only")) {
+                log.warn("backup_creation_failed reason=read_only");
+                throw new ApiException(HttpStatus.FORBIDDEN, "DATABASE_READ_ONLY",
+                        "The database is read-only. Check file permissions and try again.");
             }
             log.error("backup_creation_failed", e);
             throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "BACKUP_FAILED",
