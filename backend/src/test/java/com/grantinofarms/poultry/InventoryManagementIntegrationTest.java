@@ -86,9 +86,4 @@ class InventoryManagementIntegrationTest {
                 "Grantino Farms", "Port Harcourt", "Africa/Lagos", "NGN"));
     }
 
-    private record BatchServiceTestHelper() {
-        BatchResponse create(BatchService ignored, String houseId) {
-            throw new UnsupportedOperationException();
-        }
-    }
 }
