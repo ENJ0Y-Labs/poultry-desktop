@@ -20,9 +20,9 @@ Priority order:
 
 A boring screen with correct poultry numbers beats a beautiful dashboard showing agricultural fiction.
 
-**Current stage: 13 — Pricing and margins.**
+**Current stage: 14 — Expenses.**
 
-Stage 8 feed management is implemented. Stage 9 daily farm operations is implemented. Stage 10 health management is implemented. Stage 11 added Layer-only egg production, egg inventory, cracked-egg history, configurable crate conversion, and egg sales. Stage 12 adds Broiler-only weight records, growth calculations, backend-owned FCR, bird sales, and automatic SOLD lifecycle locking. Stage 13 adds cost-based Broiler pricing, configurable target margin, working/latest margin, and audited below-target sale confirmation.
+Stage 8 feed management is implemented. Stage 9 daily farm operations is implemented. Stage 10 health management is implemented. Stage 11 added Layer-only egg production, egg inventory, cracked-egg history, configurable crate conversion, and egg sales. Stage 12 adds Broiler-only weight records, growth calculations, backend-owned FCR, bird sales, and automatic SOLD lifecycle locking. Stage 13 adds cost-based Broiler pricing, configurable target margin, working/latest margin, and audited below-target sale confirmation. Stage 14 adds a simple farm/batch expense ledger.
 
 Do not build later-stage features unless the owner explicitly changes the stage.
 
@@ -541,19 +541,29 @@ Vaccination records store:
 
 Health and vaccination remain operationally separate. Vaccines do not create an expense automatically because the current requirement does not attach a cost to vaccination records.
 
-## 16. Expense scope
+## 16. Expense system
 
-Keep the initial expense model deliberately simple.
+The initial expense system is deliberately simple.
 
-Do not add separate categories for:
-- electricity
-- water
-- transportation
-- equipment
-- repairs
-- miscellaneous transportation/equipment costs
+Each expense records:
+- business date
+- description
+- amount in integer minor currency units
+- category
+- optional batch association
 
-Only include expense categories that reflect what the farm actually needs at this stage.
+An expense with no batch association is a farm-level expense.
+
+The initial categories are:
+- `FEED`
+- `DRUGS`
+- `OTHER`
+
+Drug records continue to create their own shared `DRUGS` expense automatically. Feed purchases continue to create their own `FEED` expense automatically.
+
+Do not add a large category taxonomy yet. Electricity, transport, equipment, repairs, and similar costs remain represented by `OTHER` until the owner explicitly expands the category model.
+
+Expenses are historical financial records. Do not hard-delete them.
 
 ## 17. Suppliers and bird purchase history
 
