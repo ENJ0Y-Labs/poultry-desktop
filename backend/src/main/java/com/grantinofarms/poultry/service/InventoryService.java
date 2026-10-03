@@ -46,7 +46,7 @@ public class InventoryService {
         String name = clean(request.name());
         String category = normalize(request.category());
         String unit = clean(request.unit());
-        BigDecimal reorderLevel = normalizeQuantity(request.reorderLevel() == null ? BigDecimal.ZERO : request.reorderLevel());
+        BigDecimal reorderLevel = normalizeReorderLevel(request.reorderLevel() == null ? BigDecimal.ZERO : request.reorderLevel());
 
         if (!CATEGORIES.contains(category)) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_INVENTORY_CATEGORY",
@@ -143,6 +143,14 @@ public class InventoryService {
         if (quantity == null || quantity.signum() <= 0) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_INVENTORY_QUANTITY",
                     "Inventory quantity must be greater than zero.");
+        }
+        return quantity.stripTrailingZeros();
+    }
+
+    private BigDecimal normalizeReorderLevel(BigDecimal quantity) {
+        if (quantity == null || quantity.signum() < 0) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_REORDER_LEVEL",
+                    "Inventory reorder level cannot be negative.");
         }
         return quantity.stripTrailingZeros();
     }
