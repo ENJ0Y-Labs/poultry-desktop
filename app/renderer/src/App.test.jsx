@@ -241,6 +241,22 @@ describe("App", () => {
     expect(screen.getByText("No expenses recorded.")).toBeInTheDocument();
   });
 
+  it("renders backend-derived attention items on the dashboard", async () => {
+    mockFarmApis();
+    vi.mocked(attentionApi.list).mockResolvedValue([{
+      type: "LOW_FEED_STOCK",
+      severity: "WARNING",
+      title: "Low feed stock",
+      message: "Layer Mash has about 2.0 days of stock."
+    }]);
+
+    render(<App />);
+
+    await waitFor(() => expect(screen.getByRole("heading", { name: "Farm dashboard" })).toBeInTheDocument());
+    expect(await screen.findByText("Low feed stock")).toBeInTheDocument();
+    expect(screen.getByText("Layer Mash has about 2.0 days of stock.")).toBeInTheDocument();
+  });
+
   it("renders an em dash for undefined backend metrics", async () => {
     mockFarmApis({
       dashboardValue: {
