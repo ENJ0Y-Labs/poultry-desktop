@@ -5,6 +5,8 @@ import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.nio.file.*;
 import java.time.LocalDateTime;
@@ -14,6 +16,7 @@ import java.util.stream.Stream;
 
 @Service
 public class BackupService {
+    private static final Logger log = LoggerFactory.getLogger(BackupService.class);
     private static final DateTimeFormatter NAME=DateTimeFormatter.ofPattern("yyyy-MM-dd-HHmm");
     private final JdbcTemplate jdbc;
     private final Path database;
@@ -47,6 +50,7 @@ public class BackupService {
             String escaped=target.toString().replace("'","''");
             jdbc.execute("VACUUM INTO '"+escaped+"'");
             prune(dir);
+            log.info("backup_created filename={} directory={}", target.getFileName(), dir);
             return Map.of("path",target.toString(),"filename",target.getFileName().toString());
         } catch (Exception e) {
             throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR,"BACKUP_FAILED","The database backup could not be created.");
@@ -62,6 +66,7 @@ public class BackupService {
                 if(!"ok".equalsIgnoreCase(integrity))throw new ApiException(HttpStatus.BAD_REQUEST,"INVALID_BACKUP","SQLite integrity check failed.");
                 String version="";
                 try(var rs=connection.createStatement().executeQuery("SELECT version FROM flyway_schema_history ORDER BY installed_rank DESC LIMIT 1")){if(rs.next())version=rs.getString(1);}
+                log.info("backup_validated filename={} schemaVersion={}", path.getFileName(), version);
                 return Map.of("valid",true,"path",path.toString(),"schemaVersion",version);
             }
         }catch(ApiException e){throw e;}catch(Exception e){
