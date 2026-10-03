@@ -128,4 +128,25 @@ class BackupServiceTest {
                 .isInstanceOf(com.grantinofarms.poultry.exception.ApiException.class)
                 .hasMessageContaining("unavailable");
     }
+    @Test
+    void rejectsMissingBackupWithClearNotFoundError() throws Exception {
+        Path database = tempDir.resolve("poultry.db");
+        BackupService service = service(database);
+
+        assertThatThrownBy(() -> service.validate(tempDir.resolve("missing.db").toString()))
+                .isInstanceOf(com.grantinofarms.poultry.exception.ApiException.class)
+                .hasMessage("Backup file was not found.");
+    }
+
+    @Test
+    void rejectsCorruptedBackupWithClearValidationError() throws Exception {
+        Path database = tempDir.resolve("corrupt.db");
+        Files.writeString(database, "this is not a sqlite database");
+        BackupService service = service(tempDir.resolve("poultry.db"));
+
+        assertThatThrownBy(() -> service.validate(database.toString()))
+                .isInstanceOf(com.grantinofarms.poultry.exception.ApiException.class)
+                .hasMessage("The selected file is not a valid Poultry Farm Manager database.");
+    }
+
 }
