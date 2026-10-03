@@ -3,8 +3,9 @@ import { existsSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 
 export class BackendManager {
-  constructor({ userDataPath, isPackaged }) {
+  constructor({ userDataPath, appPath, isPackaged }) {
     this.userDataPath = userDataPath;
+    this.appPath = appPath;
     this.isPackaged = isPackaged;
     this.process = null;
     this.port = Number(process.env.POULTRY_BACKEND_PORT || 18942);
@@ -12,7 +13,8 @@ export class BackendManager {
   }
 
   get databasePath() {
-    return join(this.userDataPath, "data", "poultry.db");
+    const root = this.isPackaged ? this.userDataPath : this.appPath;
+    return join(root, "data", "poultry.db");
   }
 
   get javaPath() {
@@ -31,7 +33,20 @@ export class BackendManager {
   async start() {
     mkdirSync(join(this.userDataPath, "data"), { recursive: true });
 
-    if (this.isPackaged) {
+    if (!this.isPackaged) {
+      const command = process.platform === "win32" ? "mvn.cmd" : "mvn";
+      this.process = spawn(command, [
+        "-f", join(this.appPath, "backend", "pom.xml"),
+        "spring-boot:run",
+        "--server.port=" + this.port,
+        "--poultry.database-path=" + this.databasePath,
+        "--spring.profiles.active=dev"
+      ], { cwd: this.appPath, windowsHide: true, stdio: "ignore" });
+      this.process.on("error", (error) => { this.lastError = error; });
+      this.process.on("exit", (code) => {
+        if (code !== 0 && this.process) this.lastError = new Error("Spring Boot exited with code " + code + ".");
+      });
+    } else {
       if (!existsSync(this.jarPath)) {
         throw new Error(`Packaged backend JAR not found: ${this.jarPath}`);
       }
