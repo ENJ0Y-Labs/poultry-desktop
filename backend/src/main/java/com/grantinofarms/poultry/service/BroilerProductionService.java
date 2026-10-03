@@ -22,15 +22,18 @@ public class BroilerProductionService {
     private final BirdPopulationService populationService;
     private final BatchService batchService;
     private final AuditRepository auditRepository;
+    private final PricingService pricingService;
 
     public BroilerProductionService(BroilerProductionRepository repository,
                                     BirdPopulationService populationService,
                                     BatchService batchService,
-                                    AuditRepository auditRepository) {
+                                    AuditRepository auditRepository,
+                                    PricingService pricingService) {
         this.repository = repository;
         this.populationService = populationService;
         this.batchService = batchService;
         this.auditRepository = auditRepository;
+        this.pricingService = pricingService;
     }
 
     @Transactional
@@ -111,11 +114,21 @@ public class BroilerProductionService {
                     "The bird sale total is too large.");
         }
 
+        String id = UUID.randomUUID().toString();
+
+        pricingService.recordSaleMargin(
+                batchId,
+                request.quantity(),
+                request.pricePerBirdMinor(),
+                request.recordDate(),
+                id,
+                Boolean.TRUE.equals(request.confirmedBelowTarget())
+        );
+
         populationService.addSale(batchId, new BirdPopulationEventRequest(
                 request.recordDate(), request.quantity(), "Bird sale: " + clean(request.customer())
         ));
 
-        String id = UUID.randomUUID().toString();
         String now = Instant.now().toString();
         repository.insertSale(id, batchId, request.recordDate(), request.quantity(),
                 request.pricePerBirdMinor(), total, clean(request.customer()), now);
