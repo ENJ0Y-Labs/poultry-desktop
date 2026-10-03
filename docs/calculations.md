@@ -223,3 +223,19 @@ total sale = quantity × price per bird
 Money remains integer minor units.
 
 When a sale leaves the current live population at zero, the Broiler batch transitions from ACTIVE to SOLD and ordinary writes are locked.
+
+## Stage 13: Pricing and margins
+
+Actual bird cost for a proposed Broiler sale is calculated from the carried-cost pool for the proposed quantity and business date.
+
+Actual sale margin percentage:
+
+`margin % = (sale revenue - attributable bird cost) ÷ sale revenue × 100`
+
+Target price for a margin:
+
+`target price = actual cost ÷ (1 - target margin ÷ 100)`
+
+The backend rounds the required selling price upward to the next whole minor currency unit so the requested margin is not undercut by currency precision.
+
+The target margin is initially null. The working/latest margin is initially null and only moves upward when an actual sale produces a higher margin. A sale below the configured target never lowers the target automatically and requires explicit operator confirmation.
