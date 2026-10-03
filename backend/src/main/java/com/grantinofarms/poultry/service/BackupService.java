@@ -93,6 +93,10 @@ public class BackupService {
     }
 
     public Map<String,Object> validate(String file){
+        if (file == null || file.isBlank()) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "BACKUP_FILE_REQUIRED",
+                    "Backup file is required.");
+        }
         Path path = Path.of(file).toAbsolutePath().normalize();
         try{
             if(!Files.isRegularFile(path))throw new ApiException(HttpStatus.NOT_FOUND,"BACKUP_NOT_FOUND","Backup file was not found.");
