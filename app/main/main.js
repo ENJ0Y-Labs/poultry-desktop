@@ -59,12 +59,14 @@ async function waitForBackendExit(timeoutMs = 5_000) {
   if (backendManager?.process) throw new Error("The local backend did not stop cleanly.");
 }
 
-ipcMain.handle("backup:choose-directory", async () => {
+ipcMain.handle("backup:choose-directory", async (_event, ...args) => {
+  if (args.length !== 0) throw new Error("Invalid IPC message.");
   const result = await dialog.showOpenDialog({ properties: ["openDirectory", "createDirectory"] });
   return result.canceled ? null : result.filePaths[0];
 });
 
-ipcMain.handle("backup:restore", async () => {
+ipcMain.handle("backup:restore", async (_event, ...args) => {
+  if (args.length !== 0) throw new Error("Invalid IPC message.");
   if (!backendManager) throw new Error("Backend is not running.");
 
   const picked = await dialog.showOpenDialog({
