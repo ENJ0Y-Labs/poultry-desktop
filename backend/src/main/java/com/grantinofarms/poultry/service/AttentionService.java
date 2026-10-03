@@ -1,6 +1,7 @@
 package com.grantinofarms.poultry.service;
 
 import com.grantinofarms.poultry.repository.FarmRepository;
+import com.grantinofarms.poultry.repository.BackupSettingsRepository;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowCallbackHandler;
 import org.springframework.stereotype.Service;
@@ -8,6 +9,7 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.InvalidPathException;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.regex.Pattern;
@@ -304,19 +306,20 @@ public class AttentionService {
     }
 
     private void addBackupAlert(List<Map<String, Object>> result) {
-        boolean backupEnabled = Boolean.parseBoolean(
-                environment.getProperty("poultry.backup.enabled", "false"));
-        if (!backupEnabled) return;
+        var farm = farms.findActive();
+        if (farm == null) return;
+        var config = backupSettingsRepository.find(farm.id());
+        if (config == null || !config.enabled()) return;
 
-        String configuredDatabase = environment.getProperty("poultry.database-path", "./data/poultry.db");
-        if (configuredDatabase == null || configuredDatabase.isBlank()
-                || ":memory:".equalsIgnoreCase(configuredDatabase)) return;
-
-        Path database = Path.of(configuredDatabase).toAbsolutePath().normalize();
-        String configuredDirectory = environment.getProperty("poultry.backup.directory", "");
-        Path directory = configuredDirectory == null || configuredDirectory.isBlank()
-                ? database.getParent()
-                : Path.of(configuredDirectory).toAbsolutePath().normalize();
+        String configuredDirectory = config.directory();
+        Path directory;
+        try {
+            directory = configuredDirectory == null || configuredDirectory.isBlank()
+                    ? null : Path.of(configuredDirectory).toAbsolutePath().normalize();
+        } catch (InvalidPathException e) {
+            addBackupOverdue(result, "The automatic backup directory is invalid.");
+            return;
+        }
 
         if (directory == null || !Files.isDirectory(directory)) {
             addBackupOverdue(result, "The automatic backup directory is unavailable.");
@@ -328,23 +331,15 @@ public class AttentionService {
                     .filter(Files::isRegularFile)
                     .filter(path -> BACKUP_NAME.matcher(path.getFileName().toString()).matches())
                     .max(Comparator.comparing(path -> {
-                        try {
-                            return Files.getLastModifiedTime(path).toInstant();
-                        } catch (Exception e) {
-                            return java.time.Instant.EPOCH;
-                        }
+                        try { return Files.getLastModifiedTime(path).toInstant(); }
+                        catch (Exception e) { return java.time.Instant.EPOCH; }
                     }));
-
             if (latest.isEmpty()) {
                 addBackupOverdue(result, "No automatic database backup has been created yet.");
                 return;
             }
-
             long ageDays = java.time.Duration.between(
-                    Files.getLastModifiedTime(latest.get()).toInstant(),
-                    java.time.Instant.now()
-            ).toDays();
-
+                    Files.getLastModifiedTime(latest.get()).toInstant(), java.time.Instant.now()).toDays();
             if (ageDays >= BACKUP_OVERDUE_DAYS) {
                 addBackupOverdue(result, "The latest automatic backup is " + ageDays + " days old.");
             }
