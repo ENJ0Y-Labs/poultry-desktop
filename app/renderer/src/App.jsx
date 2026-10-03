@@ -666,7 +666,6 @@ export default function App() {
   return (
     <AppShell farm={farm} error={error}>
       <section id="dashboard" className="card full">
-      <section className="card full">
         <div className="section-head">
           <h2>Farm dashboard</h2>
           <p className="muted">Backend-derived state only. The UI is not allowed to invent poultry mathematics, a surprisingly necessary rule.</p>
