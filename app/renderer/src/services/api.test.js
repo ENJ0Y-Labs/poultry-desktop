@@ -48,4 +48,15 @@ describe("API client", () => {
       details: { available: 3 },
     });
   });
+  it("turns backend connection failures into a readable recovery error", async () => {
+    vi.spyOn(globalThis, "fetch").mockRejectedValue(new TypeError("Failed to fetch"));
+
+    await expect(authApi.me()).rejects.toMatchObject({
+      name: "ApiError",
+      code: "BACKEND_UNAVAILABLE",
+      status: 503,
+      message: "The local backend is unavailable. Restart the application and try again.",
+    });
+  });
+
 });
