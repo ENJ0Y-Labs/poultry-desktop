@@ -48,6 +48,7 @@ const emptyFeedUsage = {
   usageDate: new Date().toISOString().slice(0, 10),
   quantity: "",
   unit: "bag",
+  reason: "",
 };
 const emptyDaily = {
   batchId: "",
@@ -369,6 +370,7 @@ export default function App() {
         usageDate: feedUsageForm.usageDate,
         quantity: feedUsageForm.quantity,
         unit: type?.unit || feedUsageForm.unit,
+        reason: feedUsageForm.reason.trim() || "Production feed usage",
       });
       setFeedUsageForm(form => ({ ...emptyFeedUsage, batchId: form.batchId, feedTypeId: form.feedTypeId }));
       setFeedInventory(await feedApi.inventory());
@@ -746,6 +748,7 @@ export default function App() {
               </select>
               <input required type="date" value={feedUsageForm.usageDate} onChange={e=>setFeedUsageForm({...feedUsageForm,usageDate:e.target.value})}/>
               <input required min="0.001" step="0.001" type="number" placeholder="Quantity" value={feedUsageForm.quantity} onChange={e=>setFeedUsageForm({...feedUsageForm,quantity:e.target.value})}/>
+              <input placeholder="Reason" value={feedUsageForm.reason} onChange={e=>setFeedUsageForm({...feedUsageForm,reason:e.target.value})}/>
               <button disabled={saving}>Record usage</button>
             </form>
           </div>
