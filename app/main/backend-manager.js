@@ -14,7 +14,7 @@ export class BackendManager {
     return join(this.userDataPath, "data", "poultry.db");
   }
 
-  get jarPath() {
+  get javaPath() {\n    const bundled = join(process.resourcesPath, "runtime", process.platform === "win32" ? "bin/java.exe" : "bin/java");\n    return this.isPackaged && existsSync(bundled) ? bundled : "java";\n  }\n\n  get jarPath() {
     return join(process.resourcesPath, "backend", "poultry-backend.jar");
   }
 
@@ -34,7 +34,7 @@ export class BackendManager {
           `--server.port=${this.port}`,
           `--poultry.database-path=${this.databasePath}`
         ],
-        { windowsHide: true, stdio: "ignore" }
+        { windowsHide: true, stdio: "ignore" }\n      );\n      this.process.on("error", (error) => {\n        this.lastError = error;\n      });\n      this.process.on("exit", (code) => {\n        if (code !== 0 && this.process) this.lastError = new Error(`Spring Boot exited with code ${code}.`);\n      });\n\n      if (this.process === null) throw new Error("Backend process failed to start.");
       );
     }
 
