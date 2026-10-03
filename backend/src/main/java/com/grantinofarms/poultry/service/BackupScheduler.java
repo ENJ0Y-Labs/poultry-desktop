@@ -27,9 +27,12 @@ public class BackupScheduler {
         try {
             java.nio.file.Path directory = java.nio.file.Path.of(config.directory());
             java.nio.file.Files.createDirectories(directory);
-            java.util.Optional<java.nio.file.Path> latest = java.nio.file.Files.list(directory)
-                    .filter(p -> p.getFileName().toString().startsWith("poultry-") && p.getFileName().toString().endsWith(".db"))
-                    .max(java.util.Comparator.comparingLong(p -> p.toFile().lastModified()));
+            java.util.Optional<java.nio.file.Path> latest;
+            try (var stream = java.nio.file.Files.list(directory)) {
+                latest = stream
+                        .filter(p -> p.getFileName().toString().startsWith("poultry-") && p.getFileName().toString().endsWith(".db"))
+                        .max(java.util.Comparator.comparingLong(p -> p.toFile().lastModified()));
+            }
             long last = latest.map(p -> p.toFile().lastModified()).orElse(0L);
             if (last > 0 && System.currentTimeMillis() - last < config.intervalMs()) return;
             backups.create(config.directory());
