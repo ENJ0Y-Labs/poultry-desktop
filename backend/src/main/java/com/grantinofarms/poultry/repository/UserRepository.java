@@ -34,4 +34,25 @@ public class UserRepository {
             return null;
         }
     }
+
+    public Map<String, Object> findById(String id) {
+        try {
+            return jdbc.queryForMap("""
+                    SELECT id, email, password_hash, full_name, role, status
+                    FROM users WHERE id = ?
+                    """, id);
+        } catch (EmptyResultDataAccessException e) {
+            return null;
+        }
+    }
+
+    public void updateProfile(String id, String email, String fullName, String now) {
+        jdbc.update("UPDATE users SET email = ?, full_name = ?, updated_at = ? WHERE id = ?",
+                email, fullName, now, id);
+    }
+
+    public void updatePassword(String id, String passwordHash, String now) {
+        jdbc.update("UPDATE users SET password_hash = ?, updated_at = ? WHERE id = ?",
+                passwordHash, now, id);
+    }
 }
