@@ -20,9 +20,9 @@ Priority order:
 
 A boring screen with correct poultry numbers beats a beautiful dashboard showing agricultural fiction.
 
-**Current stage: 14 — Expenses.**
+**Current stage: 15 — Sales and customers.**
 
-Stage 8 feed management is implemented. Stage 9 daily farm operations is implemented. Stage 10 health management is implemented. Stage 11 added Layer-only egg production, egg inventory, cracked-egg history, configurable crate conversion, and egg sales. Stage 12 adds Broiler-only weight records, growth calculations, backend-owned FCR, bird sales, and automatic SOLD lifecycle locking. Stage 13 adds cost-based Broiler pricing, configurable target margin, working/latest margin, and audited below-target sale confirmation. Stage 14 adds a simple farm/batch expense ledger.
+Stage 8 feed management is implemented. Stage 9 daily farm operations is implemented. Stage 10 health management is implemented. Stage 11 added Layer-only egg production, egg inventory, cracked-egg history, configurable crate conversion, and egg sales. Stage 12 adds Broiler-only weight records, growth calculations, backend-owned FCR, bird sales, and automatic SOLD lifecycle locking. Stage 13 adds cost-based Broiler pricing, configurable target margin, working/latest margin, and audited below-target sale confirmation. Stage 14 adds a simple farm/batch expense ledger. Stage 15 adds reusable customers and a common sales ledger while preserving Layer egg and Broiler bird sale behavior.
 
 Do not build later-stage features unless the owner explicitly changes the stage.
 
@@ -564,6 +564,38 @@ Drug records continue to create their own shared `DRUGS` expense automatically. 
 Do not add a large category taxonomy yet. Electricity, transport, equipment, repairs, and similar costs remain represented by `OTHER` until the owner explicitly expands the category model.
 
 Expenses are historical financial records. Do not hard-delete them.
+
+## 17. Customers and sales
+
+Customers are farm-scoped reference records with:
+- name
+- optional phone
+- optional notes
+
+Customers are retained because sales are historical records. Do not hard-delete a customer that may be referenced by a sale.
+
+The common `sales` ledger is the commercial history shared by Layer and Broiler sales. It records:
+- sale date
+- customer
+- batch
+- sale type
+- quantity
+- unit
+- unit price in integer minor units
+- total amount in integer minor units
+- reference to the type-specific sale record
+
+The type-specific sale tables remain authoritative for production behavior:
+- Layer sales remain egg sales using configured crate conversion and good-egg inventory validation.
+- Broiler sales remain bird sales using population reduction, cost-based pricing, below-target confirmation, and SOLD lifecycle rules.
+
+The common ledger must be written in the same transaction as its type-specific sale. It is a shared commercial view of the sale, not a second source of truth for production calculations.
+
+For common sales:
+- Layer egg sales use `CRATE` as the commercial unit and preserve the exact crate quantity.
+- Broiler bird sales use `BIRD` as the commercial unit and use integer bird quantity.
+
+Existing egg and bird sales are backfilled into customers and the common sales ledger by the Stage 15 migration.
 
 ## 17. Suppliers and bird purchase history
 
