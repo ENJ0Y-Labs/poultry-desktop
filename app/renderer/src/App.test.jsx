@@ -118,8 +118,31 @@ function mockFarmApis({
   vi.spyOn(reportApi, "farm").mockResolvedValue({
     asOf: "2026-10-03",
     dashboard: dashboardValue,
+    feed: [],
+    eggProduction: [],
+    broilerGrowth: [],
+    inventory: [],
     sales: [],
     expenses: [],
+  });
+  vi.spyOn(reportApi, "batch").mockResolvedValue({
+    asOf: "2026-10-03",
+    population: {
+      initialBirds: 3000,
+      currentBirds: 2980,
+      mortality: 20,
+    },
+    feed: { totalQuantityMilli: 10000, totalCostMinor: 50000 },
+    costs: { expensesMinor: 10000 },
+    revenueMinor: 0,
+    profitMinor: -10000,
+    production: {
+      type: "LAYER",
+      eggInventory: { goodCollected: 100, goodRemaining: 100 },
+      eggQuality: { goodRatePercent: 98 },
+    },
+    health: { healthRecords: [], drugs: [], vaccinations: [] },
+    sales: [],
   });
 }
 
