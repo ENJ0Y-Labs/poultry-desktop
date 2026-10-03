@@ -29,7 +29,17 @@ describe("BackendManager", () => {
     globalThis.fetch = vi.fn(async () => ({ ok: true }));
   });
 
-  it("uses the Electron application-data directory for the database", () => {
+  it("uses the project data directory for the development database", () => {
+    const manager = new BackendManager({
+      userDataPath: "C:/Users/test/AppData/Roaming/Poultry Farm Manager",
+      appPath: "C:/project",
+      isPackaged: false,
+    });
+
+    expect(manager.databasePath).toMatch(/C:[\\/]project[\\/]data[\\/]poultry\.db$/);
+  });
+
+  it("uses the Electron application-data directory for the production database", () => {
     const manager = new BackendManager({
       userDataPath: "C:/Users/test/AppData/Roaming/Poultry Farm Manager",
       appPath: "C:/project",
