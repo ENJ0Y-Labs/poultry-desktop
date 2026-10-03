@@ -170,3 +170,34 @@ export const salesApi = {
     return request("/sales" + suffix);
   },
 };
+
+
+export const authApi = {
+  setup: (data) => request("/auth/setup", { method: "POST", body: JSON.stringify(data) }),
+  login: (data) => request("/auth/login", { method: "POST", body: JSON.stringify(data) }),
+  logout: () => request("/auth/logout", { method: "POST" }),
+  me: () => request("/auth/me"),
+};
+
+export const dashboardApi = {
+  farm: (asOf) => request("/dashboard" + (asOf ? "?asOf=" + encodeURIComponent(asOf) : "")),
+  batch: (id, asOf) => request("/batches/" + id + "/dashboard" + (asOf ? "?asOf=" + encodeURIComponent(asOf) : "")),
+};
+
+export const attentionApi = {
+  list: (asOf) => request("/attention" + (asOf ? "?asOf=" + encodeURIComponent(asOf) : "")),
+};
+
+export const reportApi = {
+  farm: (asOf) => request("/reports/farm" + (asOf ? "?asOf=" + encodeURIComponent(asOf) : "")),
+  batch: (id, asOf) => request("/reports/batches/" + id + (asOf ? "?asOf=" + encodeURIComponent(asOf) : "")),
+};
+
+export const auditApi = {
+  list: (limit = 100) => request("/audit?limit=" + encodeURIComponent(limit)),
+};
+
+export const backupApi = {
+  create: (directory) => request("/backup", { method: "POST", body: JSON.stringify({ directory }) }),
+  validate: (file) => request("/backup/validate", { method: "POST", body: JSON.stringify({ file }) }),
+};
