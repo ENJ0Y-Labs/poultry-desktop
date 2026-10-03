@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import { authApi } from "./api.js";
+import { authApi, reportApi } from "./api.js";
 
 describe("API client", () => {
   beforeEach(() => {
@@ -22,6 +22,23 @@ describe("API client", () => {
         credentials: "include",
         headers: expect.objectContaining({ "Content-Type": "application/json" }),
       })
+    );
+  });
+
+  it("downloads a report PDF as a blob", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response("%PDF-test", {
+        status: 200,
+        headers: { "Content-Type": "application/pdf" },
+      })
+    );
+
+    const blob = await reportApi.farmPdf("2026-10-03");
+
+    expect(blob).toBeInstanceOf(Blob);
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining("/reports/farm.pdf?asOf=2026-10-03"),
+      expect.objectContaining({ credentials: "include" })
     );
   });
 
