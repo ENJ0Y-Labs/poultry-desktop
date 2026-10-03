@@ -21,11 +21,13 @@ public class DashboardService {
     private final FeedService feed;
     private final EggManagementService eggs;
     private final BroilerProductionService broilers;
+    private final AttentionService attention;
 
     public DashboardService(JdbcTemplate jdbc, FarmRepository farms, BirdPopulationService population,
-                            FeedService feed, EggManagementService eggs, BroilerProductionService broilers) {
+                            FeedService feed, EggManagementService eggs, BroilerProductionService broilers,
+                            AttentionService attention) {
         this.jdbc = jdbc; this.farms = farms; this.population = population;
-        this.feed = feed; this.eggs = eggs; this.broilers = broilers;
+        this.feed = feed; this.eggs = eggs; this.broilers = broilers; this.attention = attention;
     }
 
     public Map<String, Object> farm(LocalDate asOf) {
@@ -56,7 +58,7 @@ public class DashboardService {
                                              WHEN m.movement_type IN ('ISSUE','ADJUST_OUT','WASTE') THEN -m.quantity ELSE 0 END),0) <= i.reorder_level
                 )
                 """, farm.id()));
-        out.put("attention", attentionCount(farm.id(), date));
+        out.put("attention", attention.list(date).size());
         out.put("feedSummary", feedSummary(date));
         return out;
     }
@@ -140,11 +142,6 @@ public class DashboardService {
         summary.put("consumedCostMinor", consumedCost);
         summary.put("remainingQuantityMilli", remainingQuantityMilli);
         return summary;
-    }
-
-    private long attentionCount(String farmId,LocalDate date){
-        Number n=jdbc.queryForObject("SELECT COUNT(*) FROM batches b WHERE b.farm_id=? AND b.status='ACTIVE' AND NOT EXISTS(SELECT 1 FROM daily_records d WHERE d.batch_id=b.id AND d.record_date=?)",Long.class,farmId,date.toString());
-        return n==null?0:n.longValue();
     }
 
     private long attentionForBatch(String batchId,LocalDate date){
