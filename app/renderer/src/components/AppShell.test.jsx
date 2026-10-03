@@ -36,6 +36,6 @@ describe("AppShell", () => {
     );
 
     fireEvent.click(screen.getByRole("button", { name: "Stock" }));
-    expect(document.getElementById("inventory").scrollIntoView).toBeDefined();
+    expect(document.getElementById("inventory").scrollIntoView).toHaveBeenCalled();
   });
 });
