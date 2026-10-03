@@ -39,6 +39,7 @@ public class DashboardService {
         out.put("layerBirds", populationTotal(farm.id(), date, "LAYER"));
         out.put("broilerBirds", populationTotal(farm.id(), date, "BROILER"));
         out.put("mortality", scalar("SELECT COALESCE(SUM(e.quantity),0) FROM bird_population_events e JOIN batches b ON b.id=e.batch_id WHERE b.farm_id=? AND e.event_type='MORTALITY' AND e.event_date<=?", farm.id(), date.toString()));
+        out.put("feed", feed.inventory(date));
         out.put("eggsGood", scalar("SELECT COALESCE(SUM(good),0) FROM egg_collections e JOIN batches b ON b.id=e.batch_id WHERE b.farm_id=? AND e.record_date<=?", farm.id(), date.toString()));
         out.put("revenueMinor", scalar("SELECT COALESCE(SUM(total_amount_minor),0) FROM sales WHERE farm_id=? AND sale_date<=?", farm.id(), date.toString()));
         out.put("expensesMinor", scalar("SELECT COALESCE(SUM(amount_minor),0) FROM expenses WHERE farm_id=? AND occurred_date<=?", farm.id(), date.toString()));
@@ -56,6 +57,7 @@ public class DashboardService {
                 )
                 """, farm.id()));
         out.put("attention", attentionCount(farm.id(), date));
+        out.put("feedSummary", feedSummary(date));
         return out;
     }
 
@@ -82,10 +84,30 @@ public class DashboardService {
         out.put("revenueMinor",scalar("SELECT COALESCE(SUM(total_amount_minor),0) FROM sales WHERE batch_id=? AND sale_date<=?",batchId,date.toString()));
         long revenue=((Number)out.get("revenueMinor")).longValue(), expenses=((Number)out.get("expensesMinor")).longValue();
         out.put("profitMinor",revenue-expenses);
-        if("LAYER".equals(batch.get("type"))) out.put("eggInventory",eggs.inventory(batchId,date));
-        else out.put("broilerGrowth",broilers.growth(batchId,date));
+        if("LAYER".equals(batch.get("type"))) {
+            out.put("eggInventory", eggs.inventory(batchId,date));
+            out.put("eggQuality", eggQuality(batchId,date));
+        } else {
+            out.put("broilerGrowth", broilers.growth(batchId,date));
+            out.put("broilerSales", broilers.sales(batchId,date));
+        }
         out.put("attention",attentionForBatch(batchId,date));
         return out;
+    }
+
+    private Map<String,Object> eggQuality(String batchId, LocalDate date) {
+        Map<String,Object> quality = new LinkedHashMap<>();
+        Number good = jdbc.queryForObject("SELECT COALESCE(SUM(good),0) FROM egg_collections WHERE batch_id=? AND record_date<=?", Long.class, batchId, date.toString());
+        Number cracked = jdbc.queryForObject("SELECT COALESCE(SUM(cracked),0) FROM egg_collections WHERE batch_id=? AND record_date<=?", Long.class, batchId, date.toString());
+        long goodCount = good == null ? 0 : good.longValue();
+        long crackedCount = cracked == null ? 0 : cracked.longValue();
+        long total = goodCount + crackedCount;
+        quality.put("good", goodCount);
+        quality.put("cracked", crackedCount);
+        quality.put("total", total);
+        quality.put("goodRatePercent", total == 0 ? null : (goodCount * 100.0) / total);
+        quality.put("crackedRatePercent", total == 0 ? null : (crackedCount * 100.0) / total);
+        return quality;
     }
 
     private long populationTotal(String farmId, LocalDate date, String type) {
@@ -105,6 +127,19 @@ public class DashboardService {
                 : new Object[]{date.toString(),date.toString(),date.toString(),date.toString(),date.toString(),farmId,type};
         Number value=jdbc.queryForObject(sql,Long.class,args);
         return value==null?0:value.longValue();
+    }
+
+    private Map<String,Object> feedSummary(LocalDate date) {
+        var rows = feed.inventory(date);
+        long remainingCost = rows.stream().mapToLong(r -> r.remainingCostMinor()).sum();
+        long consumedCost = rows.stream().mapToLong(r -> r.consumedCostMinor()).sum();
+        long remainingQuantityMilli = rows.stream().mapToLong(r -> r.remainingQuantityMilli()).sum();
+        Map<String,Object> summary = new LinkedHashMap<>();
+        summary.put("typeCount", rows.size());
+        summary.put("remainingCostMinor", remainingCost);
+        summary.put("consumedCostMinor", consumedCost);
+        summary.put("remainingQuantityMilli", remainingQuantityMilli);
+        return summary;
     }
 
     private long attentionCount(String farmId,LocalDate date){
