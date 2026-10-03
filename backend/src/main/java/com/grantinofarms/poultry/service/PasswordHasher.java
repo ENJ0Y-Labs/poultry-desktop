@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class PasswordHasher {
-    private static final int ITERATIONS = 120_000;
+    private static final int ITERATIONS = 600_000;
     private static final int KEY_BITS = 256;
     private static final int SALT_BYTES = 16;
     private final SecureRandom random = new SecureRandom();
