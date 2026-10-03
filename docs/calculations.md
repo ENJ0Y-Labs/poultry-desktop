@@ -1,289 +1,280 @@
 # Calculations
 
-Authoritative farm calculations live in the Spring Boot domain/calculation layer.
+The backend is the authoritative calculation engine. The renderer displays API results and does not implement independent farm formulas.
+
+All historical calculations accept an `asOf` business date where the underlying operation supports historical reporting.
 
 ## Bird population
 
-The application never stores a mutable `current_birds` value.
+```
+current birds =
+initial birds
+- mortality
+- culling
+- sold
++ transfers in
+- transfers out
+```
 
-For a batch and business date `asOf`:
+Population is reconstructed from authoritative population events.
 
-`current birds = initial birds - mortality - culling - sold + transfers in - transfers out`
+Before a reducing event is committed, the service checks the population immediately before that event date. This prevents a record from creating a negative historical flock.
 
-The calculation is implemented once in `BirdPopulationCalculator` and reused by the population service.
+Reference vector:
 
-### Historical calculation
+```
+5,000 - 83 - 20 - 70 + 25 - 10 = 4,842
+```
 
-Every population calculation accepts an `asOf` date. Only events whose business date is on or before that date participate.
+## Livability and mortality
 
-### Validation
+For the standard dashboard population vector:
 
-For every population-reducing event, the backend calculates the birds available immediately before that event date. It rejects the event when:
+```
+livability % = current birds / initial birds × 100
+```
 
-`quantity > available birds`
+Mortality rate is calculated from mortality events against the relevant initial/current flock population according to the service's reporting context.
 
-This prevents:
-- mortality greater than available birds
-- culling greater than available birds
-- sales greater than available birds
-- transfer-out greater than available birds
-- negative historical populations
-
-Back-dated events are validated against the complete ordered event history, so a new record cannot make a historical balance impossible.
-
-### Transfers
-
-A transfer-out reduces the source batch and a transfer-in increases the target batch. Both records are committed in one transaction.
-
-### Reference vector
-
-For:
-
-`5,000 - 83 - 20 - 70 + 25 - 10`
-
-the current population is **4,842 birds**.
-
-Stage 6 does not implement egg, weight, or financial calculations.
-
-
-A BROILER batch is eligible for the `SOLD` terminal lifecycle only when its calculated current population is zero.
+The calculation layer is covered by unit and integration tests.
 
 ## Bird cost accounting
 
-Money is integer minor units. For NGN:
+Money is stored as integer minor units. For NGN:
 
-`₦500 = 50,000 kobo`
-
-The cost engine uses a carried-cost pool rather than storing a mutable cost per bird.
-
-### Initial purchase
-
-A batch starts with:
-
-`initial carried cost = original purchase cost`
-
-The purchase is also preserved in `bird_purchases` with quantity, supplier/source, purchase date, unit cost, and total cost.
-
-### Attributable cost allocation
-
-The accounting rule for the current stage is deterministic weighted-average cost.
+```
+₦500 = 50,000 kobo
+```
 
 For a population reduction:
 
-`allocated cost = carried cost × birds leaving ÷ birds available`
+```
+allocated cost =
+carried cost × birds leaving / birds available
+```
 
-The calculation is performed with integer arithmetic. The proportional quotient is kept in minor units. Any remainder remains in the carried pool. If all available birds leave, the entire remaining carried cost is allocated.
+Integer arithmetic is used. Remainders remain in the carried cost pool until the relevant population is fully allocated.
 
-Example:
+A batch cost reconciliation is:
 
-`100 birds, ₦10,000 total`
+```
+initial purchase cost
++ attributable additions
++ transfer-in cost
+= allocated reduction cost
++ carried cost
+```
 
-`20 sold → ₦2,000 attributable cost`
+## Feed inventory and FIFO
 
-`80 remaining → ₦8,000 carried cost`
+Feed quantity is stored as integer thousandths of the configured feed unit.
 
-The same rule applies to mortality, culling, and transfer-out because their birds leave the source batch and must carry their attributable cost.
+Feed purchases form cost lots. Usage consumes the oldest available lot first.
 
-### Additional attributable costs
+For a partial lot:
 
-A dated additional cost is added to the carried pool before population changes on the same business date.
+```
+allocated feed cost =
+remaining lot cost × quantity consumed / remaining lot quantity
+```
 
-Example:
+A feed purchase creates one FEED expense. Later feed usage does not create another expense. Its FIFO cost is allocated to the consuming batch's bird-cost pool.
 
-`100 birds, ₦10,000 carried cost`
+Feed chronology rules prevent historical inserts from silently changing already-accounted FIFO costs.
 
-`+ ₦2,000 attributable cost`
+## Daily operations
 
-`20 sold → 20% of ₦12,000 = ₦2,400 sold-bird cost`
+Daily bird count comes from the population calculation for that date.
 
-`80 remaining → ₦9,600 carried cost`
+Water is calculated from recorded containers:
 
-### Transfers
+```
+water units =
+container capacity × container count
+```
 
-Transfer-out calculates the source birds' attributable cost using the same weighted-average rule. That cost is recorded as a transfer-in cost on the target batch in the same transaction as the population transfer.
+The UI does not invent a measured volume when the worker only recorded container counts.
 
-### Historical cost
+## Health and drugs
 
-Cost calculations support `asOf(date)`. Only population and cost events dated on or before the requested business date participate.
+Health and vaccination records are operational history.
 
-### Reconciliation invariant
+A drug record creates one DRUGS expense:
 
-For a batch at a date:
+```
+drug expense = recorded drug cost
+```
 
-`initial purchase cost + attributable additions + transfer-in cost = allocated reduction cost + carried cost`
+The same drug cost is not charged again when reports are read.
 
-This is tested with partial sales, additional costs, mortality/culling, transfers, historical dates, and integer-remainder cases.
-\n## Stage 8: Feed management\n\n### Quantity representation\n\nFeed quantities are stored as integer thousandths of the configured feed unit. For example, 12.5 kg is stored as 12,500 thousandths of kg. This avoids floating-point quantity arithmetic while still supporting fractional quantities.\n\n### FIFO\n\nFor each feed type, purchases are ordered by purchase date and creation timestamp. Usage is ordered the same way. Each usage consumes the oldest available purchase lot first.\n\nFor a partial consumption of a lot:\n\n`allocated cost = remaining lot cost × quantity consumed ÷ remaining lot quantity`\n\nThe quotient is integer minor currency units. When a lot is exhausted, its entire remaining cost is allocated so no money disappears through repeated rounding.\n\nExample:\n\n- 20 bags at ₦8,000\n- 30 bags at ₦10,000\n- 25 bags consumed\n\nFIFO allocates the cost of all 20 bags from the first lot and 5 bags from the second lot.\n\n### Feed purchase accounting\n\nA feed purchase does two things in one transaction:\n\n1. increases derived feed inventory by the purchased quantity\n2. creates exactly one `FEED` expense for the purchase total\n\nLater feed usage does not create another expense. It only allocates the original purchase cost to consumed feed and adds that attributable cost once to the batch bird-cost pool.\n\n### Feed cost per bird\n\nBatch feed cost is the FIFO-attributed cost of feed used by that batch as of the requested date.\n\n`feed cost per current bird = feed cost ÷ current birds`\n\nIf current birds are zero, the per-bird value is undefined and the API returns `null`.\n\n### Chronology invariant\n\nFeed purchase or usage records cannot be backdated before an existing record for the same feed type. This prevents a newly inserted historical fact from changing the FIFO cost of an already-recorded feed usage whose cost has already been carried into bird-cost accounting.\n
+## Layer egg production
 
-## Daily operations calculations
-
-Daily bird count is the authoritative BirdPopulationCalculator result as of the requested business date. Mortality and culling for a day are the quantities of those event types dated on that business date.
-
-Daily feed is read from feed usage records for the batch and date. Feed quantities remain integer thousandths of the configured unit and are presented as decimal quantities for convenience.
-
-Water total is calculated per recorded container entry:
-
-total water units = container capacity units × container count
-
-The UI must not invent a precise measured volume when workers only recorded container counts.
-
-
-## Stage 10: Health management
-
-Health, drug, and vaccination records do not introduce a derived production formula.
-
-Drug accounting is direct:
-
-`DRUGS expense = recorded drug costMinor`
-
-Each drug record creates exactly one shared `DRUGS` expense. The same drug cost is not recorded again when the record is read or reported.
-
-Health and vaccination records remain operational history. Vaccination does not create an accounting expense automatically because no vaccination cost field is part of the current contract.
-
-
-## Stage 11: Egg production and inventory
-
-Eggs are stored internally as individual eggs.
-
+```
 total collected = good collected + cracked collected
-
 good remaining = good collected - good sold
+```
 
-Cracked eggs are historical production records and never enter the sellable balance.
+Cracked eggs are not sellable inventory.
 
 ### Crate conversion
 
-The farm's configurable default crate size is used when an egg sale is recorded.
+The farm's configured crate size is used at sale time:
 
-sold eggs = crates sold × configured crate size
+```
+sold eggs = crates sold × crate size
+```
 
-The conversion must produce a whole number of individual eggs. For example, with a 30-egg crate:
+The sale stores the crate size used at that time.
 
-- 1 crate = 30 eggs
-- 0.5 crate = 15 eggs
-- 2.5 crates = 75 eggs
+### Egg sale amount
 
-The sale stores the crate size used at that time so later settings changes do not rewrite historical sales.
-
-### Egg sale money
-
-total sale = sold eggs × price per crate ÷ crate size
-
-The result must be an exact integer minor-unit amount. No floating-point money is used.
-
-The egg ledger is replayed chronologically when a sale is recorded. A back-dated sale is rejected if it would make the good-egg balance negative on that date or any later historical date.
-
-
-## Stage 12: Broiler production
-
-### Weight records
-
-Weight records store the measured total weight of a sample and the number of sampled birds. Weight is stored internally in grams and exposed in kilograms.
-
-average weight = total sample weight / sampled birds
-
-The first recorded average weight is the baseline for the batch's growth series.
-
-For each later record:
-
-weight gain per bird = current average weight - previous recorded average weight
-
-For the batch-level cumulative growth summary:
-
-current live biomass = current live birds × latest average weight
-starting live biomass = initial birds × first recorded average weight
-live-weight gain = current live biomass - starting live biomass
-
-If live-weight gain is not positive, FCR is undefined and the API returns null.
-
-### FCR
-
-The authoritative Broiler FCR formula is:
-
-FCR = feed consumed (kg) / live-weight gain (kg)
-
-The Spring Boot FcrCalculator is the only implementation. The frontend never calculates FCR.
-
-The known vector is:
-
-400 kg feed / 200 kg live-weight gain = 2.0
-
-Only feed usage whose configured feed unit is kg contributes to the Broiler FCR until a canonical conversion between other feed units and kilograms is introduced.
-
-### Bird sales
-
-Bird sales are SOLD population events, not mortality or culling:
-
-current birds = initial birds - mortality - culling - sold + transfers in - transfers out
-
-The sale total is:
-
-total sale = quantity × price per bird
+```
+sale amount =
+sold eggs × price per crate / crate size
+```
 
 Money remains integer minor units.
 
-When a sale leaves the current live population at zero, the Broiler batch transitions from ACTIVE to SOLD and ordinary writes are locked.
+Back-dated sales are validated against the chronological egg ledger so a sale cannot create a negative historical sellable balance.
 
-## Stage 13: Pricing and margins
+## Broiler weights and growth
 
-Actual bird cost for a proposed Broiler sale is calculated from the carried-cost pool for the proposed quantity and business date.
+Weight records store total sample weight in grams and sampled bird count.
 
-Actual sale margin percentage:
+```
+average weight = total sample weight / sampled birds
+```
 
-`margin % = (sale revenue - attributable bird cost) ÷ sale revenue × 100`
+For the batch-level live biomass summary:
 
-Target price for a margin:
+```
+current live biomass =
+current live birds × latest average weight
 
-`target price = actual cost ÷ (1 - target margin ÷ 100)`
+starting live biomass =
+initial birds × first recorded average weight
 
-The backend rounds the required selling price upward to the next whole minor currency unit so the requested margin is not undercut by currency precision.
+live-weight gain =
+current live biomass - starting live biomass
+```
 
-The target margin is initially null. The working/latest margin is initially null and only moves upward when an actual sale produces a higher margin. A sale below the configured target never lowers the target automatically and requires explicit operator confirmation.
+## FCR
 
-## Stage 14: Expense handling
+The authoritative broiler FCR is:
 
-Expenses are stored as integer minor currency units.
+```
+FCR = feed consumed (kg) / live-weight gain (kg)
+```
 
-No expense amount is calculated from floating-point values.
+Known vector:
 
-Farm-level expense:
-- `batch_id = null`
+```
+400 kg / 200 kg = 2.0
+```
 
-Batch-associated expense:
-- `batch_id = target batch id`
+If live-weight gain is zero or negative, FCR is undefined and the API returns null.
 
-The expense ledger does not create derived totals in the database. Farm and batch expense totals must be calculated from the authoritative expense rows when those reports are implemented.
+Only feed usage whose configured unit is kg contributes to FCR until a canonical conversion for other units exists.
 
+## Broiler sales and revenue
 
-## Stage 15: Sales infrastructure
+Broiler population reduction from a sale is represented by a SOLD population event.
 
-The common sales ledger does not introduce a second revenue calculation. Type-specific sale records remain authoritative.
+```
+sale revenue = quantity × price per bird
+```
 
-For both sale types:
+When the calculated current population reaches zero, an active Broiler batch transitions to SOLD and ordinary production/population writes are locked.
 
-`revenue = quantity × unit price`
+## Pricing and margins
 
-Layer commercial quantity is stored as crates in the common ledger, with the existing egg sale retaining individual sold-egg quantity and configured crate size. Broiler commercial quantity is birds.
+Actual margin:
 
-Money remains integer minor units. Quantities may be decimal for crate sales, but monetary values are never stored as floating-point values.
+```
+margin % =
+(sale revenue - attributable bird cost)
+÷ sale revenue × 100
+```
 
+Target price for a target margin:
 
-## Stage 16: Inventory
+```
+target price =
+actual cost
+÷ (1 - target margin / 100)
+```
 
-For a non-feed inventory item:
+The backend rounds the required selling price upward to the next whole minor currency unit so currency precision does not undercut the requested margin.
 
-stock on hand = received + adjustment in - issued - adjustment out - waste
+A below-target Broiler sale requires explicit operator confirmation.
 
-Every movement quantity is positive. Direction comes from movement type, so a quantity cannot become ambiguous because someone typed a minus sign into a form.
+## Expenses and profit
 
-A stock-reducing movement is valid only when:
+Expenses are integer minor currency amounts.
 
-quantity <= current stock on hand
+Farm-level expenses have no batch association. Batch expenses carry a batch ID.
 
-The service checks this before writing the movement. The database stores the transaction history, while current stock is derived from that history.
+Profit is derived from authoritative revenue and cost/expense records rather than stored as a mutable database balance:
 
-Reorder attention is descriptive rather than a hidden stock mutation:
+```
+profit = revenue - attributable costs - relevant expenses
+```
 
-low stock = stock on hand <= reorder level
+The exact report/dashboard breakdown is assembled by backend services.
 
-Feed remains governed by the existing feed inventory/FIFO calculation because changing it into the generic inventory ledger would duplicate the authoritative feed-cost path.
+## Inventory
+
+For non-feed inventory:
+
+```
+stock =
+received
++ adjustment in
+- issued
+- adjustment out
+- waste
+```
+
+Every movement quantity is positive. The movement type supplies the direction.
+
+Stock-reducing movements are rejected when:
+
+```
+quantity > current stock
+```
+
+Low stock is descriptive:
+
+```
+low stock when stock on hand <= reorder level
+```
+
+Feed remains on the dedicated FIFO path.
+
+## Dashboard and reports
+
+Dashboards and reports do not duplicate formulas.
+
+The farm report and batch report reuse the same calculation/domain services as the dashboard services. Exporting CSV or PDF therefore does not create a second financial or production calculation path.
+
+## Attention thresholds
+
+Backend-derived attention rules currently include:
+
+- Low feed stock: roughly three days of recent usage cover or less
+- Insufficient inventory: zero/negative stock
+- Low inventory: stock at or below reorder level
+- High mortality: 5% warning, 10% critical
+- Missing daily record: active batch has no record for the requested date
+- Vaccination due: active batch is at least 14 days old with no vaccination in the prior 28 days
+- Unusual production drop: 20% warning, 30% critical compared with the previous seven-day production period
+- Broiler nearing sale: warning at 35 days, target sale age 42 days, critical at 49 days
+- Backup overdue: automatic backup enabled and no recent backup within seven days
+
+These thresholds are centralized in the backend attention service. The frontend does not invent alerts.
+
+## Settings and calculation integrity
+
+Settings that affect calculations are audited. Historical records preserve values needed to interpret the record at the time it was created, such as the crate size used for an egg sale.
+
+Changing configuration must not rewrite historical transactions.
