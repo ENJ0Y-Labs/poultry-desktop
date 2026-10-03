@@ -117,3 +117,15 @@ export const broilerApi = {
   }),
   sales: (batchId, asOf) => request("/batches/" + batchId + "/broiler/sales" + (asOf ? "?asOf=" + asOf : "")),
 };
+
+
+export const pricingApi = {
+  settings: () => request("/pricing/settings"),
+  updateSettings: (data) => request("/pricing/settings", {
+    method: "PUT", body: JSON.stringify(data)
+  }),
+  price: (batchId, quantity, asOf) => request(
+    "/pricing/batches/" + batchId + "?quantity=" + encodeURIComponent(quantity) +
+    (asOf ? "&asOf=" + encodeURIComponent(asOf) : "")
+  ),
+};
