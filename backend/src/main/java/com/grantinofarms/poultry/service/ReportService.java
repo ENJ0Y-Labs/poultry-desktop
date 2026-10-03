@@ -79,9 +79,7 @@ public class ReportService {
                 })
                 .toList();
 
-        List<ExpenseResponse> expenseRows = expenses.list(null).stream()
-                .filter(expense -> !expense.occurredDate().isAfter(date))
-                .toList();
+        List<ExpenseResponse> expenseRows = expenses.list(null, date);
 
         Map<String, Object> report = new LinkedHashMap<>();
         report.put("reportType", "FARM_SUMMARY");
