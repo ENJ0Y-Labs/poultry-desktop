@@ -7,6 +7,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import java.io.IOException;
+
 @Component
 public class BackupScheduler {
     private static final Logger log = LoggerFactory.getLogger(BackupScheduler.class);
@@ -37,6 +39,6 @@ public class BackupScheduler {
             if (last > 0 && System.currentTimeMillis() - last < config.intervalMs()) return;
             backups.create(config.directory());
         }
-        catch (RuntimeException e) { log.error("scheduled_backup_failed", e); }
+        catch (IOException | RuntimeException e) { log.error("scheduled_backup_failed", e); }
     }
 }

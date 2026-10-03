@@ -54,7 +54,7 @@ public class ExpenseService {
         }
 
         String description = request.description().trim();
-        String category = request.category().trim().toUpperCase();
+        String category = request.category().trim();
         if (!categoryService.isActive(farm.id(), category)) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_EXPENSE_CATEGORY",
                     "The expense category is not active for this farm.");

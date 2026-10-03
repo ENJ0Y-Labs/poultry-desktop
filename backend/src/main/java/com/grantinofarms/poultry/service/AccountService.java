@@ -1,5 +1,7 @@
 package com.grantinofarms.poultry.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.grantinofarms.poultry.dto.AccountUpdateRequest;
 import com.grantinofarms.poultry.exception.ApiException;
 import com.grantinofarms.poultry.repository.*;
@@ -17,12 +19,15 @@ public class AccountService {
     private final PasswordHasher passwords;
     private final FarmRepository farms;
     private final AuditRepository audit;
+    private final ObjectMapper objectMapper;
 
-    public AccountService(UserRepository users, PasswordHasher passwords, FarmRepository farms, AuditRepository audit) {
+    public AccountService(UserRepository users, PasswordHasher passwords, FarmRepository farms,
+                          AuditRepository audit, ObjectMapper objectMapper) {
         this.users = users;
         this.passwords = passwords;
         this.farms = farms;
         this.audit = audit;
+        this.objectMapper = objectMapper;
     }
 
     public Map<String,Object> current() {
@@ -62,9 +67,17 @@ public class AccountService {
         String now = Instant.now().toString();
         audit.append(farm == null ? null : farm.id(), "UPDATE", "USER_ACCOUNT", id,
                 "User account settings changed",
-                String.format("{\"email\":\"%s\",\"fullName\":\"%s\"}", oldEmail, oldName.replace(""", "\\"")),
-                String.format("{\"email\":\"%s\",\"fullName\":\"%s\"}", email, fullName.replace(""", "\\"")), now);
+                auditJson(oldEmail, oldName),
+                auditJson(email, fullName), now);
         return current();
+    }
+
+    private String auditJson(String email, String fullName) {
+        try {
+            return objectMapper.writeValueAsString(Map.of("email", email, "fullName", fullName));
+        } catch (JsonProcessingException e) {
+            throw new IllegalStateException("Could not serialize account audit details.", e);
+        }
     }
 
     private String requireUserId() {
