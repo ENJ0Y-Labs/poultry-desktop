@@ -52,6 +52,14 @@ public class BatchRepository {
         return count != null && count == 1;
     }
 
+    public boolean belongsToFarm(String batchId, String farmId) {
+        Integer count = jdbc.queryForObject(
+                "SELECT COUNT(*) FROM batches WHERE id = ? AND farm_id = ?",
+                Integer.class, batchId, farmId
+        );
+        return count != null && count == 1;
+    }
+
     public void insert(String id, String farmId, String houseId, String supplierId,
                        String code, String type, LocalDate placementDate,
                        int initialBirdCount, Long purchaseCostMinor, String now) {
