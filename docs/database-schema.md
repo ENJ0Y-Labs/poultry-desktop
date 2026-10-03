@@ -227,3 +227,23 @@ Broiler batches become SOLD when all current birds have been sold. Once SOLD, or
 Append-only pricing/margin change history. It records target changes and working-margin increases with references and reasons. The general `audit_logs` table also records operator-visible pricing changes and below-target confirmations.
 
 Pricing calculations are derived from the existing bird-cost and bird-sale records. No stored sale price is treated as an authoritative future cost.
+
+## Stage 14: Expenses
+
+The existing `expenses` table remains the shared financial ledger.
+
+Stage 14 adds:
+
+- `batch_id TEXT REFERENCES batches(id)` nullable
+- index on `(farm_id, batch_id, occurred_date)`
+
+A null `batch_id` means farm-level expense. A non-null `batch_id` associates the expense with that batch.
+
+Initial categories remain:
+- `FEED`
+- `DRUGS`
+- `OTHER`
+
+The migration backfills `batch_id` for existing `DRUGS` expenses generated from `drug_records`.
+
+New general expense records use null `reference_type` and `reference_id`. Automatically generated feed/drug expenses retain their subsystem references.
