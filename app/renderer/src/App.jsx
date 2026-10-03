@@ -23,7 +23,7 @@ const emptyBirdSale = {
   customerId: "",
 };
 const emptyPricing = { quantity: "", date: new Date().toISOString().slice(0, 10) };
-import { batchApi, broilerApi, costApi, dailyApi, eggApi, expenseApi, farmApi, feedApi, populationApi, healthApi, pricingApi, customerApi, salesApi, inventoryApi, dashboardApi, attentionApi, auditApi } from "./services/api.js";
+import { batchApi, broilerApi, costApi, dailyApi, eggApi, expenseApi, farmApi, feedApi, populationApi, healthApi, pricingApi, customerApi, salesApi, inventoryApi, dashboardApi, attentionApi, auditApi, backupApi } from "./services/api.js";
 
 const emptyFarm = { name: "", location: "", timezone: "Africa/Lagos", currency: "NGN" };
 const emptyHouse = { name: "", code: "", notes: "" };
@@ -249,6 +249,20 @@ export default function App() {
     event.preventDefault(); setSaving(true); setError("");
     try { setFarm(await farmApi.update(farmForm)); }
     catch (err) { setError(err.message); } finally { setSaving(false); }
+  }
+
+  async function createBackup() {
+    setSaving(true); setError("");
+    try {
+      const directory = window.poultryDesktop?.chooseBackupDirectory ? await window.poultryDesktop.chooseBackupDirectory() : null;
+      if (!directory) return;
+      await backupApi.create(directory);
+    } catch (err) { setError(err.message); } finally { setSaving(false); }
+  }
+
+  async function restoreBackup() {
+    setSaving(true); setError("");
+    try { await window.poultryDesktop?.restoreBackup?.(); await load(); } catch (err) { setError(err.message); } finally { setSaving(false); }
   }
 
   async function saveSettings(event) {
@@ -767,6 +781,8 @@ export default function App() {
           <label>Water container sizes<input value={waterSizes} onChange={e=>setWaterSizes(e.target.value)}/><small>Comma-separated, e.g. 25, 75.</small></label>
           <button disabled={saving}>Save defaults</button>
         </form></section>
+
+        <section className="card"><h2>Backup & restore</h2><div className="form-grid"><p className="muted">Backups are created by the backend using SQLite-safe snapshotting. Restore is handled by Electron so the renderer never replaces the database.</p><div className="inline-form"><button type="button" disabled={saving} onClick={createBackup}>Create backup</button><button type="button" disabled={saving || !window.poultryDesktop} onClick={restoreBackup}>Restore backup</button></div><small>Default retention: 30 backup files. A safety copy is created before restore.</small></div></section>
 
         <section className="card"><h2>Pricing & margins</h2><form className="form-grid" onSubmit={savePricingSettings}>
           <label>Target margin %<input type="number" min="0" max="99.999999" step="0.01" placeholder="e.g. 25" value={pricingSettings.targetMarginPercent ?? ""} onChange={e=>setPricingSettings({...pricingSettings,targetMarginPercent:e.target.value})}/><small>Leave empty for no target. A sale never silently lowers it.</small></label>
