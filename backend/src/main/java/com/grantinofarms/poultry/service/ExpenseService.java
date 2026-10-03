@@ -23,15 +23,18 @@ public class ExpenseService {
     private final FarmRepository farmRepository;
     private final BatchRepository batchRepository;
     private final AuditRepository auditRepository;
+    private final ExpenseCategoryService categoryService;
 
     public ExpenseService(ExpenseRepository expenseRepository,
                           FarmRepository farmRepository,
                           BatchRepository batchRepository,
-                          AuditRepository auditRepository) {
+                          AuditRepository auditRepository,
+                          ExpenseCategoryService categoryService) {
         this.expenseRepository = expenseRepository;
         this.farmRepository = farmRepository;
         this.batchRepository = batchRepository;
         this.auditRepository = auditRepository;
+        this.categoryService = categoryService;
     }
 
     @Transactional
@@ -52,6 +55,10 @@ public class ExpenseService {
 
         String description = request.description().trim();
         String category = request.category().trim().toUpperCase();
+        if (!categoryService.isActive(farm.id(), category)) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_EXPENSE_CATEGORY",
+                    "The expense category is not active for this farm.");
+        }
         String id = UUID.randomUUID().toString();
         String now = Instant.now().toString();
 
