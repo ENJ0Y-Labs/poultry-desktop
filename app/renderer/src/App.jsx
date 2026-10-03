@@ -188,6 +188,8 @@ export default function App() {
       setHouses([]);
       setBatches([]);
       setExpenses([]);
+      setCustomers([]);
+      setSales([]);
       setFeedTypes([]);
       setFeedInventory([]);
       setBatchForm(emptyBatch);
