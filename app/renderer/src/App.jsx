@@ -216,6 +216,8 @@ export default function App() {
   }
   async function loadReport() { try { setFarmReport(await reportApi.farm()); } catch (err) { setError(err.message); } }
 
+  async function exportCsv(loader, filename) { try { const csv = await loader(); const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" })); const anchor = document.createElement("a"); anchor.href = url; anchor.download = filename; anchor.click(); URL.revokeObjectURL(url); } catch (err) { setError(err.message); } }
+
   async function loadBatchDashboard(id = selectedBatchId) {
     if (!id) { setBatchDashboard(null); return; }
     try { setBatchDashboard(await dashboardApi.batch(id)); } catch (err) { setError(err.message); }
@@ -1372,6 +1374,23 @@ export default function App() {
               {expenses.length===0 && <p className="muted empty">No expenses recorded.</p>}
             </div>
           </div>
+        </section>
+
+        <section id="reports" className="card full">
+          <div className="section-head"><div><p className="eyebrow">REPORTING</p><h2>Reports</h2></div>
+            <div className="inline-form"><button type="button" onClick={loadReport}>Refresh</button><button type="button" onClick={() => exportCsv(() => reportApi.farmCsv(), "farm-report.csv")}>Export CSV</button></div>
+          </div>
+          {farmReport ? <div className="dashboard-columns">
+            <div className="dashboard-list">
+              <div><span>Total birds</span><strong>{farmReport.dashboard.totalBirds}</strong></div>
+              <div><span>Mortality</span><strong>{farmReport.dashboard.mortality}</strong></div>
+              <div><span>Egg production</span><strong>{farmReport.dashboard.eggsGood}</strong></div>
+              <div><span>Revenue</span><strong>{formatMoney(farmReport.dashboard.revenueMinor, farm.currency)}</strong></div>
+              <div><span>Expenses</span><strong>{formatMoney(farmReport.dashboard.expensesMinor, farm.currency)}</strong></div>
+              <div><span>Profit</span><strong>{formatMoney(farmReport.dashboard.profitMinor, farm.currency)}</strong></div>
+            </div>
+            <div className="dashboard-list"><div><span>Sales records</span><strong>{farmReport.sales?.length ?? 0}</strong></div><div><span>Expense records</span><strong>{farmReport.expenses?.length ?? 0}</strong></div><div><span>As of</span><strong>{farmReport.asOf}</strong></div></div>
+          </div> : <p className="muted">Report is loading…</p>}
         </section>
 
         <section id="houses" className="card full"><div className="section-head"><h2>Houses / pens</h2><p className="muted">Physical locations that batches belong to.</p></div>
