@@ -1,5 +1,15 @@
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:18942/api/v1";
 
+export class ApiError extends Error {
+  constructor(code, message, status, details) {
+    super(message);
+    this.name = "ApiError";
+    this.code = code;
+    this.status = status;
+    this.details = details;
+  }
+}
+
 async function request(path, options = {}) {
   const response = await fetch(API_BASE + path, {
     credentials: "include",
@@ -9,7 +19,12 @@ async function request(path, options = {}) {
 
   const body = await response.json().catch(() => ({}));
   if (!response.ok) {
-    throw new Error(body?.error?.message || "Request failed.");
+    throw new ApiError(
+      body?.error?.code || "REQUEST_FAILED",
+      body?.error?.message || "Request failed.",
+      response.status,
+      body?.error?.details,
+    );
   }
   return body.data;
 }
