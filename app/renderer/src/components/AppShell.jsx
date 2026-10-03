@@ -34,8 +34,8 @@ const groups = [
   { label: "Settings", items: [{ label: "Settings", target: "settings" }] },
 ];
 
-export default function AppShell({ farm, error, children }) {
-  const [active, setActive] = useState("dashboard");
+export default function AppShell({ farm, error, children, startPage = "dashboard" }) {
+  const [active, setActive] = useState(startPage);
 
   function navigate(target) {
     setActive(target);
