@@ -1,2 +1,6 @@
-import { contextBridge } from "electron";
-contextBridge.exposeInMainWorld("poultry",{version:"0.1.0"});
+import { contextBridge, ipcRenderer } from "electron";
+
+contextBridge.exposeInMainWorld("poultryDesktop", {
+  restoreBackup: () => ipcRenderer.invoke("backup:restore"),
+  chooseBackupDirectory: () => ipcRenderer.invoke("backup:choose-directory"),
+});
