@@ -30,7 +30,7 @@ const groups = [
     { label: "Customers", target: "customers" },
     { label: "Expenses", target: "expenses" },
   ]},
-  { label: "Reports", items: [{ label: "Reports", target: "dashboard" }] },
+  { label: "Reports", items: [{ label: "Reports", target: "reports" }] },
   { label: "Settings", items: [{ label: "Settings", target: "settings" }] },
 ];
 
@@ -99,6 +99,9 @@ export default function AppShell({ farm, error, children }) {
           </header>
           {error && <div className="error">{error}</div>}
           {children}
+          <section id="reports" className="card full shell-placeholder">
+            <div className="section-head"><h2>Reports</h2><p className="muted">Report pages are reserved for Phase 22+ report views. The shell is ready for backend-backed reporting without inventing figures in the renderer.</p></div>
+          </section>
         </div>
       </main>
     </div>
