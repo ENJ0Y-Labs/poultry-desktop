@@ -109,8 +109,11 @@ public class PricingService {
                     "This sale is below the configured target margin. Confirmation is required.");
         }
 
-        BigDecimal newWorking = PricingCalculator.raiseWorkingMargin(
-                settings.workingMarginPercent(), actualMargin);
+        boolean saleBeatsTarget = settings.targetMarginPercent() == null
+                || actualMargin.compareTo(settings.targetMarginPercent()) >= 0;
+        BigDecimal newWorking = saleBeatsTarget
+                ? PricingCalculator.raiseWorkingMargin(settings.workingMarginPercent(), actualMargin)
+                : settings.workingMarginPercent();
 
         if (!java.util.Objects.equals(settings.workingMarginPercent(), newWorking)) {
             String now = Instant.now().toString();
