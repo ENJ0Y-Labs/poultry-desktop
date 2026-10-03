@@ -47,7 +47,9 @@ class DatabaseSchemaTest {
                 "egg_sales",
                 "weight_records",
                 "bird_sales",
-                "pricing_margin_history"
+                "pricing_margin_history",
+                "customers",
+                "sales"
         );
 
         for (String table : expectedTables) {
@@ -63,7 +65,7 @@ class DatabaseSchemaTest {
                 "SELECT COUNT(*) FROM flyway_schema_history WHERE success = 1",
                 Integer.class
         );
-        assertThat(flywaySuccess).isGreaterThanOrEqualTo(13);
+        assertThat(flywaySuccess).isGreaterThanOrEqualTo(14);
     }
 
     @Test
@@ -73,6 +75,21 @@ class DatabaseSchemaTest {
                 (rs, rowNum) -> rs.getString("name")
         );
         assertThat(columns).contains("batch_id");
+    }
+
+    @Test
+    void salesSupportCustomerAndTypeSpecificReferences() {
+        List<String> salesColumns = jdbcTemplate.query(
+                "PRAGMA table_info(sales)",
+                (rs, rowNum) -> rs.getString("name")
+        );
+        assertThat(salesColumns).contains("customer_id", "batch_id", "quantity", "unit", "unit_price_minor", "total_amount_minor", "reference_type", "reference_id");
+
+        List<String> customerColumns = jdbcTemplate.query(
+                "PRAGMA table_info(customers)",
+                (rs, rowNum) -> rs.getString("name")
+        );
+        assertThat(customerColumns).contains("name", "phone", "notes");
     }
 
     @Test
