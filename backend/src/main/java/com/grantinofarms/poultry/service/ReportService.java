@@ -18,7 +18,15 @@ public class ReportService {
         report.put("sales",jdbc.query("SELECT sale_date,sale_type,quantity,unit,total_amount_minor FROM sales WHERE sale_date<=? ORDER BY sale_date DESC LIMIT 1000",
                 (rs,n)->Map.of("date",rs.getString("sale_date"),"type",rs.getString("sale_type"),"quantity",rs.getBigDecimal("quantity"),"unit",rs.getString("unit"),"totalMinor",rs.getLong("total_amount_minor")),date.toString()));
         report.put("expenses",jdbc.query("SELECT occurred_date,category,description,amount_minor,batch_id FROM expenses WHERE occurred_date<=? ORDER BY occurred_date DESC LIMIT 1000",
-                (rs,n)->Map.of("date",rs.getString("occurred_date"),"category",rs.getString("category"),"description",rs.getString("description"),"amountMinor",rs.getLong("amount_minor"),"batchId",rs.getString("batch_id")),date.toString()));
+                (rs,n)->{
+                    Map<String,Object> expense = new LinkedHashMap<>();
+                    expense.put("date",rs.getString("occurred_date"));
+                    expense.put("category",rs.getString("category"));
+                    expense.put("description",rs.getString("description"));
+                    expense.put("amountMinor",rs.getLong("amount_minor"));
+                    expense.put("batchId",rs.getString("batch_id"));
+                    return expense;
+                },date.toString()));
         return report;
     }
 

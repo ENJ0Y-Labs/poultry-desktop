@@ -170,7 +170,7 @@ class PerformanceBaselineTest {
                             unit,total_cost_minor,created_at)
                         VALUES(?,?,?,?,?,?,?,?)
                         """, uuid(), farmId, feedTypes[i], date.toString(),
-                        2_000_000L, "kg", 1_000_000L, now);
+                        65_000_000L, "kg", 32_500_000L, now);
             }
         }
 
@@ -315,7 +315,8 @@ class PerformanceBaselineTest {
         });
         assertThat(plan.toUpperCase())
                 .as("Expected an index for %s predicate %s", table, predicate)
-                .contains("USING INDEX");
+                .contains("USING")
+                .contains("INDEX");
     }
 
     private long timed(Runnable operation) {

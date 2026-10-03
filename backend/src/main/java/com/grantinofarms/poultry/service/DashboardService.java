@@ -40,7 +40,7 @@ public class DashboardService {
         out.put("broilerBirds", populationTotal(farm.id(), date, "BROILER"));
         out.put("mortality", scalar("SELECT COALESCE(SUM(e.quantity),0) FROM bird_population_events e JOIN batches b ON b.id=e.batch_id WHERE b.farm_id=? AND e.event_type='MORTALITY' AND e.event_date<=?", farm.id(), date.toString()));
         out.put("feed", feed.inventory(date));
-        out.put("eggsGood", scalar("SELECT COALESCE(SUM(good),0) FROM egg_collections e JOIN batches b ON b.id=e.batch_id WHERE b.farm_id=? AND e.record_date<=?", farm.id(), date.toString()));
+        out.put("eggsGood", scalar("SELECT COALESCE(SUM(good_eggs),0) FROM egg_collections e JOIN batches b ON b.id=e.batch_id WHERE b.farm_id=? AND e.record_date<=?", farm.id(), date.toString()));
         out.put("revenueMinor", scalar("SELECT COALESCE(SUM(total_amount_minor),0) FROM sales WHERE farm_id=? AND sale_date<=?", farm.id(), date.toString()));
         out.put("expensesMinor", scalar("SELECT COALESCE(SUM(amount_minor),0) FROM expenses WHERE farm_id=? AND occurred_date<=?", farm.id(), date.toString()));
         long revenue = ((Number) out.get("revenueMinor")).longValue();
@@ -97,8 +97,8 @@ public class DashboardService {
 
     private Map<String,Object> eggQuality(String batchId, LocalDate date) {
         Map<String,Object> quality = new LinkedHashMap<>();
-        Number good = jdbc.queryForObject("SELECT COALESCE(SUM(good),0) FROM egg_collections WHERE batch_id=? AND record_date<=?", Long.class, batchId, date.toString());
-        Number cracked = jdbc.queryForObject("SELECT COALESCE(SUM(cracked),0) FROM egg_collections WHERE batch_id=? AND record_date<=?", Long.class, batchId, date.toString());
+        Number good = jdbc.queryForObject("SELECT COALESCE(SUM(good_eggs),0) FROM egg_collections WHERE batch_id=? AND record_date<=?", Long.class, batchId, date.toString());
+        Number cracked = jdbc.queryForObject("SELECT COALESCE(SUM(cracked_eggs),0) FROM egg_collections WHERE batch_id=? AND record_date<=?", Long.class, batchId, date.toString());
         long goodCount = good == null ? 0 : good.longValue();
         long crackedCount = cracked == null ? 0 : cracked.longValue();
         long total = goodCount + crackedCount;
