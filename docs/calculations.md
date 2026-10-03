@@ -253,3 +253,16 @@ Batch-associated expense:
 - `batch_id = target batch id`
 
 The expense ledger does not create derived totals in the database. Farm and batch expense totals must be calculated from the authoritative expense rows when those reports are implemented.
+
+
+## Stage 15: Sales infrastructure
+
+The common sales ledger does not introduce a second revenue calculation. Type-specific sale records remain authoritative.
+
+For both sale types:
+
+`revenue = quantity × unit price`
+
+Layer commercial quantity is stored as crates in the common ledger, with the existing egg sale retaining individual sold-egg quantity and configured crate size. Broiler commercial quantity is birds.
+
+Money remains integer minor units. Quantities may be decimal for crate sales, but monetary values are never stored as floating-point values.
