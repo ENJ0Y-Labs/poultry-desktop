@@ -14,7 +14,7 @@ const emptyBirdSale = {
   customer: "",
 };
 const emptyPricing = { quantity: "", date: new Date().toISOString().slice(0, 10) };
-import { batchApi, broilerApi, costApi, dailyApi, eggApi, farmApi, feedApi, populationApi, healthApi, pricingApi } from "./services/api.js";
+import { batchApi, broilerApi, costApi, dailyApi, eggApi, expenseApi, farmApi, feedApi, populationApi, healthApi, pricingApi } from "./services/api.js";
 
 const emptyFarm = { name: "", location: "", timezone: "Africa/Lagos", currency: "NGN" };
 const emptyHouse = { name: "", code: "", notes: "" };
@@ -84,6 +84,13 @@ const emptyVaccination = {
   quantity: "",
   notes: "",
 };
+const emptyExpense = {
+  batchId: "",
+  occurredDate: new Date().toISOString().slice(0, 10),
+  description: "",
+  amountMinor: "",
+  category: "OTHER",
+};
 
 export default function App() {
   const [farm, setFarm] = useState(null);
@@ -107,6 +114,9 @@ export default function App() {
   const [healthRecords, setHealthRecords] = useState([]);
   const [drugRecords, setDrugRecords] = useState([]);
   const [vaccinationRecords, setVaccinationRecords] = useState([]);
+  const [expenseForm, setExpenseForm] = useState(emptyExpense);
+  const [expenses, setExpenses] = useState([]);
+  const [expenseBatchFilter, setExpenseBatchFilter] = useState("");
   const [eggBatchId, setEggBatchId] = useState("");
   const [broilerBatchId, setBroilerBatchId] = useState("");
   const [broilerGrowth, setBroilerGrowth] = useState(null);
@@ -147,7 +157,9 @@ export default function App() {
       const currentHouses = await farmApi.listHouses();
       setHouses(currentHouses);
       setBatchForm(form => ({ ...form, houseId: form.houseId || currentHouses[0]?.id || "" }));
-      setBatches(await batchApi.list());
+      const currentBatches = await batchApi.list();
+      setBatches(currentBatches);
+      setExpenses(await expenseApi.list());
       setFeedTypes(await feedApi.listTypes());
       setFeedInventory(await feedApi.inventory());
       setPricingSettings(await pricingApi.settings());
@@ -168,6 +180,7 @@ export default function App() {
       setWaterSizes(settings.waterContainerSizes.join(", "));
       setHouses([]);
       setBatches([]);
+      setExpenses([]);
       setFeedTypes([]);
       setFeedInventory([]);
       setBatchForm(emptyBatch);
@@ -192,6 +205,27 @@ export default function App() {
       setCrateSize(updated.defaultCrateSize);
       setDefaultWater(updated.defaultWaterContainerSize ?? "");
       setWaterSizes(updated.waterContainerSizes.join(", "));
+    } catch (err) { setError(err.message); } finally { setSaving(false); }
+  }
+
+  async function loadExpenses(batchId = expenseBatchFilter) {
+    try {
+      setExpenses(await expenseApi.list(batchId || null));
+    } catch (err) { setError(err.message); }
+  }
+
+  async function saveExpense(event) {
+    event.preventDefault(); setSaving(true); setError("");
+    try {
+      const created = await expenseApi.create({
+        occurredDate: expenseForm.occurredDate,
+        description: expenseForm.description.trim(),
+        amountMinor: Number(expenseForm.amountMinor),
+        category: expenseForm.category,
+        batchId: expenseForm.batchId || null,
+      });
+      setExpenses(current => [created, ...current]);
+      setExpenseForm(form => ({ ...emptyExpense, batchId: form.batchId }));
     } catch (err) { setError(err.message); } finally { setSaving(false); }
   }
 
@@ -945,6 +979,49 @@ export default function App() {
               </div>
             </>
           )}
+        </section>
+
+        <section className="card full">
+          <div className="section-head">
+            <h2>Expenses</h2>
+            <p className="muted">Record farm-level or batch-associated expenses. Amounts use integer minor currency units.</p>
+          </div>
+          <form className="inline-form" onSubmit={saveExpense}>
+            <input required type="date" value={expenseForm.occurredDate} onChange={e=>setExpenseForm({...expenseForm,occurredDate:e.target.value})}/>
+            <input required placeholder="Description" value={expenseForm.description} onChange={e=>setExpenseForm({...expenseForm,description:e.target.value})}/>
+            <input required min="1" step="1" type="number" placeholder="Amount (minor units)" value={expenseForm.amountMinor} onChange={e=>setExpenseForm({...expenseForm,amountMinor:e.target.value})}/>
+            <select required value={expenseForm.category} onChange={e=>setExpenseForm({...expenseForm,category:e.target.value})}>
+              <option value="OTHER">Other</option>
+              <option value="FEED">Feed</option>
+              <option value="DRUGS">Drugs</option>
+            </select>
+            <select value={expenseForm.batchId} onChange={e=>setExpenseForm({...expenseForm,batchId:e.target.value})}>
+              <option value="">Farm-level</option>
+              {batches.map(b=><option key={b.id} value={b.id}>{b.code}</option>)}
+            </select>
+            <button disabled={saving}>Record expense</button>
+          </form>
+
+          <div className="subsection">
+            <div className="section-head">
+              <h3>Expense history</h3>
+              <select value={expenseBatchFilter} onChange={e=>{setExpenseBatchFilter(e.target.value);loadExpenses(e.target.value);}}>
+                <option value="">All farm expenses</option>
+                {batches.map(b=><option key={b.id} value={b.id}>{b.code}</option>)}
+              </select>
+            </div>
+            <div className="table">
+              <div className="row header"><span>Date</span><span>Description</span><span>Amount</span><span>Category</span><span>Association</span></div>
+              {expenses.map(row=><div className="row" key={row.id}>
+                <span>{row.occurredDate}</span>
+                <span>{row.description}</span>
+                <span>{row.amountMinor}</span>
+                <span>{row.category}</span>
+                <span>{row.batchId ? (batches.find(b=>b.id===row.batchId)?.code || row.batchId) : "Farm"}</span>
+              </div>)}
+              {expenses.length===0 && <p className="muted empty">No expenses recorded.</p>}
+            </div>
+          </div>
         </section>
 
         <section className="card full"><div className="section-head"><h2>Houses / pens</h2><p className="muted">Physical locations that batches belong to.</p></div>
