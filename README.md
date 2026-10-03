@@ -1,116 +1,261 @@
 # Poultry Farm Manager
 
-Local-first Windows desktop poultry management for Layer and Broiler farms.
+Poultry Farm Manager is a local-first Windows desktop application for managing Layer and Broiler poultry operations. It records farm facts, calculates derived farm state, tracks production and costs, provides dashboards and reports, and supports SQLite backup and restore.
+
+The application is designed for farm use without a cloud dependency. The packaged application runs its own Electron shell, React renderer, Spring Boot backend, SQLite database, and bundled Java runtime.
+
+## What it does
+
+- Farm, house, supplier, customer and batch management
+- Layer and Broiler flock tracking
+- Mortality, culling, transfers and bird sales
+- Daily farm operations and water usage
+- Feed types, purchases, usage, inventory and FIFO costing
+- Health, drug and vaccination records
+- Egg collection, inventory and sales
+- Broiler weights, growth, FCR and sales
+- Expenses and configurable expense categories
+- Inventory and stock movements
+- Pricing and margin calculations
+- Farm and batch dashboards
+- Backend-derived attention alerts
+- Farm and batch reports
+- CSV and PDF report export
+- User authentication and account management
+- Append-only audit history
+- SQLite-safe backup, validation and desktop restore
+- Farm, application and backup settings
+
+The core design rule is simple: records are facts, derived state is calculated, and historical transactions are not silently rewritten.
 
 ## Architecture
 
-Electron → React/JavaScript → REST API → Spring Boot → SQLite.
+```
+Electron desktop shell
+        |
+        v
+React renderer
+        |
+        | HTTP, localhost only
+        v
+Spring Boot REST API
+        |
+        +--> validation / authorization
+        +--> calculation services
+        +--> transactions / audit
+        +--> Flyway migrations
+        |
+        v
+SQLite database
+```
 
-The renderer never accesses SQLite or Node.js directly. Spring Boot owns validation, calculations, persistence, transactions, audit records and database migrations.
+The renderer does not access SQLite or Node.js directly. Electron owns the desktop lifecycle, native file dialogs, backend startup/shutdown and restore orchestration. Spring Boot owns business rules, calculations, persistence, migrations and database access.
 
-## Current implementation
-
-The repository contains the farm domain through inventory plus production-foundation work for authentication, audit, farm and batch dashboards, attention, reports, SQLite-safe backups, Electron lifecycle integration, calculation tests, CI and Windows packaging. Restore orchestration is performed by Electron so the renderer never replaces the live database.
-
-The important rule remains: records are facts, derived state is calculated, and historical transactions are not silently deleted.
+See [docs/architecture.md](docs/architecture.md).
 
 ## Requirements
 
 Development:
+
+- Windows is the primary supported desktop platform.
 - Node.js 20+
 - npm
-- Java 17 JDK
-- Maven wrapper included in the repository
+- JDK 17
+- Git
+- The repository includes Maven Wrapper, so Maven does not need to be installed separately.
 
-The packaged Windows application is designed to include its own Java runtime. The farmer should not need Node.js, Maven or Java installed.
+For packaging, `JAVA_HOME` must point to a JDK 17 installation containing `jlink`.
 
-## Development
+End users of a packaged Windows installer do not need Node.js, npm, Maven or Java installed separately. The installer includes the application and a trimmed Java runtime.
 
-Install dependencies:
+## Development setup
+
+Clone the repository and enter it:
+
+```bash
+git clone https://github.com/ENJ0Y-Labs/poultry-desktop.git
+cd poultry-desktop
+```
+
+Install Java 17 and set `JAVA_HOME`. Verify:
+
+```powershell
+java -version
+$env:JAVA_HOME
+```
+
+Install JavaScript dependencies:
 
 ```bash
 npm install
 ```
 
-Run the desktop app and local Spring Boot backend:
+The backend uses SQLite and Flyway. No PostgreSQL, MySQL or cloud database is required.
+
+## Run locally
+
+Start the Electron desktop application:
 
 ```bash
 npm run dev
 ```
 
-Run frontend tests:
+Development Electron starts Spring Boot with the Maven Wrapper and uses the development database path:
+
+```
+project/data/poultry.db
+```
+
+The local backend listens on:
+
+```
+http://127.0.0.1:18942
+```
+
+The renderer talks to the same localhost API.
+
+## Testing and quality checks
+
+Frontend tests:
 
 ```bash
 npm test
 ```
 
-Run backend tests:
+Frontend lint:
+
+```bash
+npm run lint
+```
+
+Backend tests:
 
 ```bash
 npm run backend:test
 ```
 
-Run the full backend verification:
+Backend verification:
 
 ```bash
 npm run backend:verify
 ```
 
-Build the Electron application:
+Frontend production build:
 
 ```bash
 npm run build
 ```
 
-Create a production Windows package:
+A useful pre-release sequence is:
 
 ```bash
+npm test
+npm run lint
+npm run backend:verify
+npm run build
+```
+
+Tests must be run locally or by CI before a release is declared healthy. Documentation never substitutes for actually running the test suite, a depressing but necessary fact.
+
+## Building
+
+Build the Electron application without creating an installer:
+
+```bash
+npm run build
+```
+
+This produces the Electron/Vite build output used by packaging.
+
+## Packaging
+
+Create the production Windows package:
+
+```powershell
+$env:JAVA_HOME="C:\Path\To\JDK-17"
 npm run package
 ```
 
-Packaging requires a JDK with `JAVA_HOME` set because the build creates a local Java runtime with `jlink`.
+Packaging performs these major steps:
 
-## Local backend
+1. Creates a trimmed Java runtime with `jlink`.
+2. Builds the React/Electron application.
+3. Packages the Spring Boot backend JAR.
+4. Runs Electron Builder.
+5. Produces the Windows NSIS installer under `release/`.
 
-Development defaults to:
+The production package contains the Electron application, renderer assets, Spring Boot JAR and bundled Java runtime. The development database is not packaged.
 
-`http://127.0.0.1:18942`
+## Database location
 
-Production binds to localhost only.
+Development:
 
-## Data
+```
+project/data/poultry.db
+```
 
-Development data belongs to the repository workspace:
+Production:
 
-`project/data/poultry.db`
+```
+%APPDATA%/Poultry Farm Manager/data/poultry.db
+```
 
-When running `npm run dev`, Electron passes that project-local path to Spring Boot. This keeps development data easy to inspect and prevents it from being confused with a user's installed application data.
+Electron chooses the path based on whether the application is packaged and passes the absolute path to Spring Boot.
 
-Production data belongs under Electron's application-data directory:
+SQLite is configured for:
 
-`%APPDATA%/Poultry Farm Manager/data/poultry.db`
+- foreign-key enforcement
+- WAL journaling
+- FULL synchronous mode
+- one database connection in the Hikari pool
 
-When packaged, Electron creates the production data directory before starting Spring Boot and passes the absolute production database path to the backend. The Electron Builder package includes only application files, the backend JAR and the bundled runtime. The development `data/` directory is never part of the production package.
+Flyway owns schema migrations. Never edit an already-applied migration. Add a new migration.
 
-Do not commit databases, backups, WAL files, or real farm data.
+Do not commit databases, SQLite WAL/SHM files, backups, credentials or real farm data.
 
-## Backup
+## Backup location
 
-Backups are created by the backend using SQLite `VACUUM INTO`, not by blindly copying a live SQLite file. See `docs/backup-restore.md`.
+Automatic backups are configured per farm under Settings. The default automatic-backup state is disabled and no directory is assumed until the operator configures one.
+
+Manual backups can be written to a directory selected by the operator.
+
+Backups use SQLite `VACUUM INTO` to create a consistent database snapshot. Restore also creates a temporary pre-restore safety copy before replacing the live database.
+
+See [docs/backup-restore.md](docs/backup-restore.md).
+
+## Release process
+
+A release should pass all of these gates:
+
+1. Update the application version consistently in `package.json` and `backend/pom.xml`.
+2. Run frontend tests and lint.
+3. Run backend verification.
+4. Build the Electron application.
+5. Generate the bundled Java runtime with `jlink`.
+6. Build the Windows NSIS installer.
+7. Test a fresh Windows installation.
+8. Test an upgrade using an existing database.
+9. Confirm Flyway migrates the existing database successfully.
+10. Create and validate a backup.
+11. Perform a restore drill and verify recovery.
+12. Test realistic Layer and Broiler farm data.
+13. Verify reports, exports and calculations against independently expected results.
+14. Confirm no database, backup, secret or real farm data is included in Git.
+15. Publish the installer only after the release gates pass.
+
+See [docs/release.md](docs/release.md).
 
 ## Documentation
 
-- `docs/architecture.md`
-- `docs/database-schema.md`
-- `docs/api.md`
-- `docs/calculations.md`
-- `docs/backup-restore.md`
-- `docs/development.md`
-- `docs/release.md`
-- `docs/audit.md`
+- [Architecture](docs/architecture.md)
+- [Database schema](docs/database-schema.md)
+- [API](docs/api.md)
+- [Calculations](docs/calculations.md)
+- [Backup and restore](docs/backup-restore.md)
+- [Development](docs/development.md)
+- [Release](docs/release.md)
+- [Audit](docs/audit.md)
 
-## CI
+## License
 
-GitHub Actions runs frontend lint/tests/build, backend tests/verification and an Electron build on pushes and pull requests.
-
-This project is not considered production-ready merely because it compiles. Real farm acceptance, upgrade testing, backup/restore drills and installer testing are release gates.
+See [LICENSE](LICENSE).
