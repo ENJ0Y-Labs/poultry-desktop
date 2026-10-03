@@ -65,10 +65,14 @@ public class FeedService {
     @Transactional
     public FeedTypeResponse archiveType(String id) {
         FeedTypeResponse type = requireType(id);
-        repository.archiveType(id, Instant.now().toString());
+        String now = Instant.now().toString();
+        repository.archiveType(id, now);
+        auditRepository.append(repository.farmId(), "ARCHIVE", "FEED_TYPE", id,
+                "Feed type archived",
+                String.format("{\"name\":\"%s\",\"unit\":\"%s\",\"applicableType\":\"%s\",\"status\":\"ACTIVE\"}", type.name(), type.unit(), type.applicableType()),
+                String.format("{\"name\":\"%s\",\"unit\":\"%s\",\"applicableType\":\"%s\",\"status\":\"ARCHIVED\"}", type.name(), type.unit(), type.applicableType()), now);
         return new FeedTypeResponse(type.id(), type.name(), type.unit(), type.applicableType(), "ARCHIVED");
     }
-
     @Transactional
     public FeedPurchaseResponse purchase(FeedPurchaseRequest request) {
         FeedTypeResponse type = requireType(request.feedTypeId());
