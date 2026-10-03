@@ -4,7 +4,7 @@ import App from "./App.jsx";
 import {
   farmApi, batchApi, expenseApi, customerApi, salesApi, inventoryApi,
   feedApi, pricingApi, dashboardApi, attentionApi, auditApi,
-  eggApi, broilerApi, reportApi,
+  eggApi, broilerApi, reportApi, expenseCategoryApi, accountApi, settingsApi,
 } from "./services/api.js";
 
 const farm = {
@@ -72,6 +72,18 @@ function mockFarmApis({
   vi.spyOn(inventoryApi, "listItems").mockResolvedValue([]);
   vi.spyOn(feedApi, "listTypes").mockResolvedValue([]);
   vi.spyOn(feedApi, "inventory").mockResolvedValue([]);
+  vi.spyOn(expenseCategoryApi, "list").mockResolvedValue([
+    { id: "cat-1", name: "OTHER", status: "ACTIVE" }
+  ]);
+  vi.spyOn(accountApi, "get").mockResolvedValue({
+    id: "user-1", email: "owner@example.com", fullName: "Farm Owner", role: "OWNER"
+  });
+  vi.spyOn(settingsApi, "application").mockResolvedValue({
+    startPage: "dashboard", dateFormat: "YYYY-MM-DD"
+  });
+  vi.spyOn(settingsApi, "backup").mockResolvedValue({
+    enabled: false, directory: "", intervalMs: 86400000
+  });
   vi.spyOn(pricingApi, "settings").mockResolvedValue({
     targetMarginPercent: null,
     workingMarginPercent: null,
