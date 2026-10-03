@@ -75,7 +75,7 @@ public class EggManagementRepository {
     }
 
     public void insertSale(String id, String batchId, LocalDate date, String customer,
-                           int soldEggs, int crateSize, long pricePerCrateMinor,
+                           String customerId, int soldEggs, int crateSize, long pricePerCrateMinor,
                            long totalAmountMinor, String now) {
         jdbc.update("""
                 INSERT INTO egg_sales
