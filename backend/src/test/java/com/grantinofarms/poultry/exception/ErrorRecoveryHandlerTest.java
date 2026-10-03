@@ -2,6 +2,7 @@ package com.grantinofarms.poultry.exception;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.dao.DataAccessResourceFailureException;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.http.HttpStatus;
 
 import java.nio.file.AccessDeniedException;
@@ -93,4 +94,17 @@ class ErrorRecoveryHandlerTest {
                         ? error.get("code")
                         : null);
     }
+    @Test
+    void malformedRequestGetsReadableBadRequest() {
+        var response = handler.unreadable(
+                new HttpMessageNotReadableException("malformed JSON", new RuntimeException("parser detail"))
+        );
+
+        assertEquals(400, response.getStatusCode().value());
+        assertEquals("INVALID_REQUEST_BODY",
+                ((Map<?, ?>) response.getBody()).get("error") instanceof Map<?, ?> error
+                        ? error.get("code")
+                        : null);
+    }
+
 }
