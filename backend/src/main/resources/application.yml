@@ -22,3 +22,7 @@ poultry:
 logging:
   level:
     root: ${LOG_LEVEL:INFO}
+  structured:
+    format:
+      console: logstash
+      file: logstash
