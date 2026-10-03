@@ -1021,7 +1021,7 @@ export default function App() {
         <section className="card full">
           <div className="section-head">
             <h2>Customers</h2>
-            <p className="muted">Keep reusable customer records for egg and broiler sales. Existing sales remain tied to their historical customer snapshot.</p>
+            <p className="muted">Keep reusable customer records for egg and broiler sales. Type-specific sale records also retain the customer name used when the sale was recorded.</p>
           </div>
           <form className="inline-form" onSubmit={saveCustomer}>
             <input required placeholder="Customer name" value={customerForm.name} onChange={e=>setCustomerForm({...customerForm,name:e.target.value})}/>
