@@ -1,27 +1,134 @@
 # Backup and restore
 
-Backups are created by the Spring Boot backend using SQLite `VACUUM INTO`, which produces a consistent snapshot of a live database. The default naming pattern is `poultry-YYYY-MM-DD.db`. If that file already exists, the backup uses `poultry-YYYY-MM-DD-HHmm.db`; a further collision gets a numeric suffix. A maximum of 30 managed backup files is retained.
+Poultry Farm Manager uses SQLite locally. Backup and restore are designed around SQLite's consistency requirements rather than treating the database as an ordinary static file.
 
-API:
-- POST `/api/v1/backup` with optional `{"directory":"C:\\path\\to\\backups"}`
-- POST `/api/v1/backup/validate` with `{"file":"C:\\path\\to\\backup.db"}`
+## Backup creation
 
-Validation runs SQLite `PRAGMA integrity_check` and reads the latest Flyway schema version. A production restore must stop the Spring Boot process before replacing the live database, then restart it and perform the health check. The backend intentionally does not replace its own live database file while its JDBC pool is active.
+The backend creates backups with SQLite `VACUUM INTO`.
 
+This is preferable to blindly copying a live SQLite file because the database may be using WAL mode.
 
-## Desktop restore orchestration
+The default filename pattern is:
 
-The renderer does not replace database files. Electron owns the restore IPC flow:
+```
+poultry-YYYY-MM-DD.db
+```
 
-1. The user selects a database backup through the native file picker.
-2. Spring Boot validates SQLite integrity and reports the backup Flyway version.
-3. Electron compares the backup schema version with the running schema and rejects newer backups.
-4. Electron stops Spring Boot.
-5. Electron creates a pre-restore safety copy of the live database.
-6. Electron replaces the database file.
-7. Electron starts Spring Boot again and waits for the health check.
-8. If restart fails, the safety copy is restored and the backend is started again.
+Collisions receive a timestamp and, if necessary, a numeric suffix.
 
-Manual backup destination selection is also performed through the native Electron dialog, while the actual snapshot remains backend-controlled.
+Managed automatic backups retain up to 30 backup files.
 
-Automatic scheduled backups and a persisted backup-settings screen remain a release-hardening item.
+## Manual backup
+
+The application can request a backup through:
+
+```
+POST /api/v1/backup
+```
+
+with an optional directory:
+
+```json
+{"directory":"C:\\farm-backups"}
+```
+
+The renderer can choose the directory through a native Electron folder picker.
+
+## Automatic backup settings
+
+Each farm has persisted backup settings:
+
+- enabled
+- directory
+- interval
+
+Settings are stored in `backup_settings`.
+
+Automatic backups are disabled by default. When enabled, the scheduler checks the configured directory and creates a new backup once the configured interval has elapsed since the latest managed backup.
+
+The scheduler polls hourly so settings can change without requiring a backend restart. The configured interval is still the source of truth.
+
+## Backup validation
+
+Validation is available through:
+
+```
+POST /api/v1/backup/validate
+```
+
+The backend checks the selected database for SQLite integrity and Grantino/Flyway schema compatibility.
+
+A valid backup must have a usable successful schema version and must not represent a schema newer than the running application during restore.
+
+## Restore architecture
+
+The renderer does not replace database files.
+
+Electron owns the destructive part of restore:
+
+```
+select backup
+    ↓
+backend validates backup
+    ↓
+compare schema versions
+    ↓
+operator confirmation
+    ↓
+stop Spring Boot
+    ↓
+create pre-restore safety backup
+    ↓
+copy selected backup to temporary file
+    ↓
+replace live database
+    ↓
+start Spring Boot
+    ↓
+health check
+    ↓
+resume application
+```
+
+The backend is stopped before the live database is replaced because its JDBC pool must not still have the database open.
+
+## Restore failure recovery
+
+If replacement has started and the restarted backend cannot become healthy, Electron attempts to restore the pre-restore safety database and starts the backend again.
+
+The restore flow also removes stale SQLite WAL/SHM files associated with the replaced database so old journal state cannot be mixed with the restored database.
+
+## Safety considerations
+
+- Never restore the active database file over itself.
+- Newer-schema backups are rejected.
+- Restore requires explicit operator confirmation.
+- A safety copy is made before replacement.
+- Restore is not exposed as an arbitrary renderer filesystem API.
+- Backup and restore errors are surfaced without exposing secrets.
+- Real backups must not be committed to Git.
+
+## Locations
+
+The live production database is:
+
+```
+%APPDATA%/Poultry Farm Manager/data/poultry.db
+```
+
+Automatic backup location is whatever is configured under Settings. Manual backups can be placed in any accessible operator-selected directory.
+
+The pre-restore safety copy is created beside the live database during restore.
+
+## Recommended farm procedure
+
+For a production farm:
+
+1. Enable automatic backups.
+2. Select a backup destination on a different physical drive when practical.
+3. Keep an additional manual/off-machine copy.
+4. Periodically validate a backup.
+5. Perform a restore drill before trusting the backup process with irreplaceable records.
+6. Do not edit backup database files manually.
+
+A backup that has never been restored is a hypothesis, not a backup.
