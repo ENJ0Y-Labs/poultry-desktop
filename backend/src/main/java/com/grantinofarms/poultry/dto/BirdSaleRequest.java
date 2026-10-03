@@ -11,9 +11,15 @@ public record BirdSaleRequest(
         @NotNull @Positive Integer quantity,
         @NotNull @Positive Long pricePerBirdMinor,
         @NotBlank String customer,
-        Boolean confirmedBelowTarget
+        Boolean confirmedBelowTarget,
+        String customerId
 ) {
     public BirdSaleRequest(LocalDate recordDate, Integer quantity, Long pricePerBirdMinor, String customer) {
-        this(recordDate, quantity, pricePerBirdMinor, customer, false);
+        this(recordDate, quantity, pricePerBirdMinor, customer, false, null);
+    }
+
+    public BirdSaleRequest(LocalDate recordDate, Integer quantity, Long pricePerBirdMinor,
+                           String customer, Boolean confirmedBelowTarget) {
+        this(recordDate, quantity, pricePerBirdMinor, customer, confirmedBelowTarget, null);
     }
 }
