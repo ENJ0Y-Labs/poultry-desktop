@@ -66,7 +66,7 @@ class DailyOperationsIntegrationTest {
         assertThat(response.mortality()).isEqualTo(12);
         assertThat(response.culling()).isEqualTo(3);
         assertThat(response.feed()).hasSize(1);
-        assertThat(response.feed().getFirst().quantity()).isEqualByComparingTo("2.000");
+        assertThat(response.feed().get(0).quantity()).isEqualByComparingTo("2.000");
         assertThat(response.totalWaterUnits()).isEqualTo(250);
         assertThat(response.water()).hasSize(2);
         assertThat(response.notes()).isEqualTo("Morning operational notes");
