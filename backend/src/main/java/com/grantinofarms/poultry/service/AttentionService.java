@@ -139,12 +139,7 @@ public class AttentionService {
                                 remaining <= 0 ? "CRITICAL" : "WARNING",
                                 "Low feed stock",
                                 message,
-                                Map.of(
-                                        "item", rs.getString("name"),
-                                        "stockQuantityMilli", remaining,
-                                        "unit", rs.getString("unit"),
-                                        "daysOfCover", daysCover == Double.POSITIVE_INFINITY ? null : daysCover
-                                )
+                                feedDetails(rs.getString("name"), remaining, rs.getString("unit"), daysCover)
                         ));
                     }
                 }, date.toString(), date.toString(), date.toString(), date.toString(), farmId);
@@ -355,6 +350,15 @@ public class AttentionService {
                 message + " Create a fresh backup.",
                 Map.of("overdueAfterDays", BACKUP_OVERDUE_DAYS)
         ));
+    }
+
+    private Map<String, Object> feedDetails(String item, long stock, String unit, double daysCover) {
+        Map<String, Object> details = new LinkedHashMap<>();
+        details.put("item", item);
+        details.put("stockQuantityMilli", stock);
+        details.put("unit", unit);
+        details.put("daysOfCover", daysCover == Double.POSITIVE_INFINITY ? null : daysCover);
+        return details;
     }
 
     private Map<String, Object> alert(String type, String severity, String title, String message,
