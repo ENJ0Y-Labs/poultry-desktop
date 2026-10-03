@@ -18,7 +18,7 @@ public class LoggingFlywayMigrationStrategy implements FlywayMigrationStrategy {
             var result = flyway.migrate();
             log.info("database_migration_completed migrationsApplied={} schemaVersion={}",
                     result.migrationsExecuted,
-                    result.targetSchemaVersion == null ? "none" : result.targetSchemaVersion.getVersion());
+                    result.targetSchemaVersion == null ? "none" : result.targetSchemaVersion);
         } catch (RuntimeException e) {
             log.error("database_migration_failed", e);
             throw e;

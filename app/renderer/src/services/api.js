@@ -18,7 +18,7 @@ async function request(path, options = {}) {
       headers: { "Content-Type": "application/json", ...(options.headers || {}) },
       ...options,
     });
-  } catch (error) {
+  } catch {
     throw new ApiError(
       "BACKEND_UNAVAILABLE",
       "The local backend is unavailable. Restart the application and try again.",

@@ -209,8 +209,8 @@ describe("App", () => {
 
     await waitFor(() => expect(screen.getByRole("heading", { name: "Farm dashboard" })).toBeInTheDocument());
     await waitFor(() => expect(screen.getByText("5,000")).toBeInTheDocument());
-    await waitFor(() => expect(screen.getByText("₦1,000.00")).toBeInTheDocument());
-    await waitFor(() => expect(screen.getByText("₦300.00")).toBeInTheDocument());
+    await waitFor(() => expect(screen.getAllByText("₦1,000.00")).toHaveLength(2));
+    await waitFor(() => expect(screen.getAllByText("₦300.00")).toHaveLength(2));
     expect(screen.getByText("Nothing currently requires attention.")).toBeInTheDocument();
     expect(screen.getByText("No audit records yet.")).toBeInTheDocument();
     expect(screen.getByText("No batches yet.")).toBeInTheDocument();
