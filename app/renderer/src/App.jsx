@@ -1,4 +1,4 @@
-im
+import { useEffect, useState } from "react";
 const emptyWeight = {
   batchId: "",
   date: new Date().toISOString().slice(0, 10),
@@ -13,7 +13,7 @@ const emptyBirdSale = {
   pricePerBirdMinor: "",
   customer: "",
 };
-port { useEffect, useState } from "react";
+const emptyPricing = { quantity: "", date: new Date().toISOString().slice(0, 10) };
 import { batchApi, broilerApi, costApi, dailyApi, eggApi, farmApi, feedApi, populationApi, healthApi, pricingApi } from "./services/api.js";
 
 const emptyFarm = { name: "", location: "", timezone: "Africa/Lagos", currency: "NGN" };
