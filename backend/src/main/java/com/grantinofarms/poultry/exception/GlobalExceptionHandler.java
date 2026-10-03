@@ -2,6 +2,7 @@ package com.grantinofarms.poultry.exception;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,6 +16,10 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.io.IOException;
+import java.nio.file.AccessDeniedException;
+import java.nio.file.FileSystemException;
+import java.sql.SQLException;
 import java.util.stream.Collectors;
 
 @RestControllerAdvice
@@ -70,10 +75,83 @@ public class GlobalExceptionHandler {
         return error(HttpStatus.CONFLICT, "DATA_CONFLICT", "The operation conflicts with existing farm data.");
     }
 
+    @ExceptionHandler(AccessDeniedException.class)
+    ResponseEntity<?> accessDenied(AccessDeniedException e) {
+        log.warn("storage_access_denied");
+        return error(HttpStatus.FORBIDDEN, "STORAGE_ACCESS_DENIED",
+                "The application does not have permission to access the required file or folder.");
+    }
+
+    @ExceptionHandler(FileSystemException.class)
+    ResponseEntity<?> fileSystem(FileSystemException e) {
+        if (isDiskFull(e)) {
+            log.warn("storage_full");
+            return error(HttpStatus.INSUFFICIENT_STORAGE, "STORAGE_FULL",
+                    "There is not enough disk space to complete the operation.");
+        }
+        log.warn("file_system_error reason={}", safeReason(e));
+        return error(HttpStatus.INTERNAL_SERVER_ERROR, "FILE_OPERATION_FAILED",
+                "The file operation could not be completed.");
+    }
+
+    @ExceptionHandler(DataAccessException.class)
+    ResponseEntity<?> database(DataAccessException e) {
+        Throwable cause = rootCause(e);
+        String detail = cause.getMessage() == null ? "" : cause.getMessage().toLowerCase();
+        if (detail.contains("database or disk is full") || detail.contains("disk is full")) {
+            log.warn("storage_full");
+            return error(HttpStatus.INSUFFICIENT_STORAGE, "STORAGE_FULL",
+                    "There is not enough disk space to complete the operation.");
+        }
+        if (detail.contains("readonly") || detail.contains("read-only")) {
+            log.warn("database_read_only");
+            return error(HttpStatus.FORBIDDEN, "DATABASE_READ_ONLY",
+                    "The database is read-only. Check file permissions and try again.");
+        }
+        if (detail.contains("malformed") || detail.contains("not a database")) {
+            log.error("database_corrupt", e);
+            return error(HttpStatus.INTERNAL_SERVER_ERROR, "DATABASE_CORRUPTED",
+                    "The database appears to be damaged. Restore a valid backup before continuing.");
+        }
+        log.error("database_operation_failed", e);
+        return error(HttpStatus.INTERNAL_SERVER_ERROR, "DATABASE_OPERATION_FAILED",
+                "The database operation could not be completed.");
+    }
+
+    @ExceptionHandler(SQLException.class)
+    ResponseEntity<?> sql(SQLException e) {
+        String detail = e.getMessage() == null ? "" : e.getMessage().toLowerCase();
+        if (detail.contains("database or disk is full") || detail.contains("disk is full")) {
+            log.warn("storage_full");
+            return error(HttpStatus.INSUFFICIENT_STORAGE, "STORAGE_FULL",
+                    "There is not enough disk space to complete the operation.");
+        }
+        log.error("database_sql_error", e);
+        return error(HttpStatus.INTERNAL_SERVER_ERROR, "DATABASE_OPERATION_FAILED",
+                "The database operation could not be completed.");
+    }
+
     @ExceptionHandler(Exception.class)
     ResponseEntity<?> unexpected(Exception e) {
         log.error("unexpected_backend_error", e);
         return error(HttpStatus.INTERNAL_SERVER_ERROR, "INTERNAL_ERROR", "The operation could not be completed.");
+    }
+
+    private boolean isDiskFull(FileSystemException e) {
+        String reason = safeReason(e).toLowerCase();
+        String message = e.getMessage() == null ? "" : e.getMessage().toLowerCase();
+        return reason.contains("space") || reason.contains("disk full")
+                || message.contains("not enough space") || message.contains("disk full");
+    }
+
+    private String safeReason(FileSystemException e) {
+        return e.getReason() == null ? "unknown" : e.getReason();
+    }
+
+    private Throwable rootCause(Throwable error) {
+        Throwable current = error;
+        while (current.getCause() != null && current.getCause() != current) current = current.getCause();
+        return current;
     }
 
     private ResponseEntity<Map<String, Object>> error(HttpStatus status, String code, String message) {
