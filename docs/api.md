@@ -222,3 +222,37 @@ Broiler pricing preview:
 The response contains actual attributable cost, target/working margins, and backend-calculated target/working price per bird. Pricing is currently Broiler-only.
 
 Broiler sale requests may include `confirmedBelowTarget: true`. If the configured target exists and the proposed sale margin is below it, the backend returns `BELOW_TARGET_CONFIRMATION_REQUIRED` unless explicit confirmation is supplied. The target is not lowered. Confirmed below-target sales and working-margin changes are audited.
+
+## Stage 14: Expenses
+
+### Create expense
+
+`POST /api/v1/expenses`
+
+Request:
+
+```json
+{
+  "occurredDate": "2026-10-03",
+  "description": "Generator fuel",
+  "amountMinor": 30000,
+  "category": "OTHER",
+  "batchId": null
+}
+```
+
+`batchId` is optional. When omitted, the expense is farm-level. When supplied, the batch must belong to the active farm.
+
+Initial categories are `FEED`, `DRUGS`, and `OTHER`.
+
+### List expenses
+
+`GET /api/v1/expenses`
+
+Optional batch filter:
+
+`GET /api/v1/expenses?batchId={batchId}`
+
+The backend returns expenses newest first. Existing drug expenses are associated with their batch through the Stage 14 expense schema migration.
+
+`POST /api/v1/expenses` creates a financial record. Expenses are not exposed through a delete endpoint.
