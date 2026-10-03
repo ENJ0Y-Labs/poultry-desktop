@@ -589,21 +589,6 @@ Changes to target/working margin are audited.
 
 If a recalculation is triggered by a new cost, bird count, feed allocation, or sale, calculate again from the underlying records rather than editing a stored derived price.
 
-## 18. Broiler pricing and target margin
-
-Broiler pricing is based on actual carried bird cost, not a manually entered cost guess.
-
-Pricing rules:
-- actual cost is calculated by the backend from the authoritative bird-cost ledger
-- target margin is configurable and initially null
-- target selling price is derived as `actual cost / (1 - target margin)`
-- working/latest margin starts null and may increase when an actual sale achieves a higher margin
-- a sale below the configured target margin does not lower the target automatically
-- a below-target sale requires explicit confirmation from the operator
-- below-target confirmation and working-margin changes are audited
-- margin percentages are not money and may use decimal precision; monetary prices remain integer minor units
-- frontend code displays backend pricing results and never calculates authoritative pricing or margin
-
 ## 19. Money
 
 Money is integer minor units. Never use JS or Java floating-point types for money.
