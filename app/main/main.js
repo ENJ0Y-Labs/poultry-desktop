@@ -88,10 +88,12 @@ ipcMain.handle("backup:restore", async () => {
   await backendManager.stop();
   await waitForBackendExit();
 
+  let replacementStarted = false;
   try {
     if (existsSync(database)) copyFileSync(database, safety);
 
     copyFileSync(backup, temporary);
+    replacementStarted = true;
     rmSync(database, { force: true });
     rmSync(wal, { force: true });
     rmSync(shm, { force: true });
@@ -108,8 +110,10 @@ ipcMain.handle("backup:restore", async () => {
     console.error("Database restore failed; attempting safety restore:", error);
 
     rmSync(temporary, { force: true });
-    rmSync(database, { force: true });
-    if (existsSync(safety)) copyFileSync(safety, database);
+    if (replacementStarted) {
+      rmSync(database, { force: true });
+      if (existsSync(safety)) copyFileSync(safety, database);
+    }
 
     try {
       await backendManager.start();
