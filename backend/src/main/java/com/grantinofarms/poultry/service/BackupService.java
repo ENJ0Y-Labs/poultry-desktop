@@ -48,8 +48,6 @@ public class BackupService {
             jdbc.execute("VACUUM INTO '"+escaped+"'");
             prune(dir);
             return Map.of("path",target.toString(),"filename",target.getFileName().toString());
-        } catch (ApiException e) {
-            throw e;
         } catch (Exception e) {
             throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR,"BACKUP_FAILED","The database backup could not be created.");
         }
