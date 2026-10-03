@@ -20,9 +20,9 @@ Priority order:
 
 A boring screen with correct poultry numbers beats a beautiful dashboard showing agricultural fiction.
 
-**Current stage: 15 — Sales and customers.**
+**Current stage: 16 — Inventory.**
 
-Stage 8 feed management is implemented. Stage 9 daily farm operations is implemented. Stage 10 health management is implemented. Stage 11 added Layer-only egg production, egg inventory, cracked-egg history, configurable crate conversion, and egg sales. Stage 12 adds Broiler-only weight records, growth calculations, backend-owned FCR, bird sales, and automatic SOLD lifecycle locking. Stage 13 adds cost-based Broiler pricing, configurable target margin, working/latest margin, and audited below-target sale confirmation. Stage 14 adds a simple farm/batch expense ledger. Stage 15 adds reusable customers and a common sales ledger while preserving Layer egg and Broiler bird sale behavior.
+Stage 8 feed management is implemented. Stage 9 daily farm operations is implemented. Stage 10 health management is implemented. Stage 11 added Layer-only egg production, egg inventory, cracked-egg history, configurable crate conversion, and egg sales. Stage 12 adds Broiler-only weight records, growth calculations, backend-owned FCR, bird sales, and automatic SOLD lifecycle locking. Stage 13 adds cost-based Broiler pricing, configurable target margin, working/latest margin, and audited below-target sale confirmation. Stage 14 adds a simple farm/batch expense ledger. Stage 15 adds reusable customers and a common sales ledger while preserving Layer egg and Broiler bird sale behavior. Stage 16 adds a transaction-based inventory system for drugs, vaccines, and farm supplies, while the existing feed subsystem remains authoritative for feed stock and FIFO costing.
 
 Do not build later-stage features unless the owner explicitly changes the stage.
 
@@ -597,7 +597,39 @@ For common sales:
 
 Existing egg and bird sales are backfilled into customers and the common sales ledger by the Stage 15 migration.
 
-## 18. Suppliers and bird purchase history
+## 18. Inventory management
+
+Inventory is transaction-based. Never store a mutable stock balance.
+
+Stage 16 tracks:
+- drugs
+- vaccines
+- farm supplies
+
+Each inventory item has a farm-scoped name, category, unit, reorder level, and active/archived status.
+
+Each inventory movement records:
+- business date
+- positive quantity
+- movement type
+- reason
+- source
+- optional batch association
+
+Supported movement types:
+- RECEIVE
+- ISSUE
+- ADJUST_IN
+- ADJUST_OUT
+- WASTE
+
+Stock is calculated as receipts and positive adjustments minus issues, negative adjustments, and waste. Stock cannot become negative.
+
+Feed remains under the existing feed subsystem because feed inventory is coupled to FIFO purchase lots, feed consumption, and bird-cost allocation. Feed usage now also stores a movement reason; older feed rows may have a null reason for historical compatibility.
+
+Inventory records are not hard-deleted. Items are archived. Movements are append-only.
+
+## 19. Suppliers and bird purchase history
 
 Supplier records are important for tracing purchases.
 
