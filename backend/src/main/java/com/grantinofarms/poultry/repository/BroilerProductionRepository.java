@@ -88,12 +88,12 @@ public class BroilerProductionRepository {
 
     public void insertSale(String id, String batchId, LocalDate date, int quantity,
                            long pricePerBirdMinor, long totalAmountMinor,
-                           String customer, String createdAt) {
+                           String customer, String customerId, String createdAt) {
         jdbc.update("""
                 INSERT INTO bird_sales
                     (id, batch_id, record_date, quantity, price_per_bird_minor,
-                     total_amount_minor, customer, created_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                     total_amount_minor, customer, customer_id, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 id, batchId, date.toString(), quantity, pricePerBirdMinor,
                 totalAmountMinor, customer, createdAt);
