@@ -914,7 +914,7 @@ export default function App() {
             <div className="table">
               <div className="row header"><span>Feed</span><span>Purchased</span><span>Used</span><span>Remaining</span><span>Remaining cost</span></div>
               {feedInventory.map(item=><div className="row" key={item.feedTypeId}>
-                <span>{item.feedTypeName}</span><span>{feedQuantity(item.purchasedQuantityMilli)} {item.unit}</span><span>{feedQuantity(item.consumedQuantityMilli)} {item.unit}</span><span>{feedQuantity(item.remainingQuantityMilli)} {item.unit}</span><span>{item.remainingCostMinor}</span>
+                <span>{item.feedTypeName}</span><span>{feedQuantity(item.purchasedQuantityMilli)} {item.unit}</span><span>{feedQuantity(item.consumedQuantityMilli)} {item.unit}</span><span>{feedQuantity(item.remainingQuantityMilli)} {item.unit}</span><span>{formatMoney(item.remainingCostMinor, farm.currency)}</span>
               </div>)}
               {feedInventory.length===0 && <p className="muted empty">No feed inventory yet.</p>}
             </div>
@@ -1033,7 +1033,7 @@ export default function App() {
             </form>
             <div className="table">
               <div className="row header"><span>Date</span><span>Drug</span><span>Quantity</span><span>Cost</span><span>Reason</span></div>
-              {drugRecords.map(row=><div className="row" key={row.id}><span>{row.recordDate}</span><span>{row.drug}</span><span>{row.quantity}</span><span>{row.costMinor}</span><span>{row.reason}</span></div>)}
+              {drugRecords.map(row=><div className="row" key={row.id}><span>{row.recordDate}</span><span>{row.drug}</span><span>{row.quantity}</span><span>{formatMoney(row.costMinor, farm.currency)}</span><span>{row.reason}</span></div>)}
               {drugRecords.length===0 && <p className="muted empty">No drug records for the selected batch.</p>}
             </div>
           </div>
@@ -1127,7 +1127,7 @@ export default function App() {
                 </form>
                 <div className="table">
                   <div className="row header"><span>Date</span><span>Customer</span><span>Crates</span><span>Eggs</span><span>Price / crate</span><span>Total</span></div>
-                  {eggSales.map(row=><div className="row" key={row.id}><span>{row.recordDate}</span><span>{row.customer}</span><span>{row.crates.toString()}</span><span>{row.soldEggs}</span><span>{row.pricePerCrateMinor}</span><span>{row.totalAmountMinor}</span></div>)}
+                  {eggSales.map(row=><div className="row" key={row.id}><span>{row.recordDate}</span><span>{row.customer}</span><span>{row.crates.toString()}</span><span>{row.soldEggs}</span><span>{formatMoney(row.pricePerCrateMinor, farm.currency)}</span><span>{formatMoney(row.totalAmountMinor, farm.currency)}</span></div>)}
                   {eggSales.length===0 && <p className="muted empty">No egg sales recorded.</p>}
                 </div>
               </div>
@@ -1201,7 +1201,7 @@ export default function App() {
                 </form>
                 {pricing && <div className="table">
                   <div className="row header"><span>Actual cost</span><span>Target margin</span><span>Target price / bird</span><span>Working margin</span><span>Working price / bird</span></div>
-                  <div className="row"><span>{pricing.actualCostMinor}</span><span>{pricing.targetMarginPercent ?? "—"}%</span><span>{pricing.targetPricePerBirdMinor ?? "—"}</span><span>{pricing.workingMarginPercent ?? "—"}%</span><span>{pricing.workingPricePerBirdMinor ?? "—"}</span></div>
+                  <div className="row"><span>{formatMoney(pricing.actualCostMinor, farm.currency)}</span><span>{pricing.targetMarginPercent ?? "—"}%</span><span>{formatMoney(pricing.targetPricePerBirdMinor, farm.currency)}</span><span>{pricing.workingMarginPercent ?? "—"}%</span><span>{formatMoney(pricing.workingPricePerBirdMinor, farm.currency)}</span></div>
                 </div>}
               </div>
 
@@ -1219,7 +1219,7 @@ export default function App() {
                 </form>
                 <div className="table">
                   <div className="row header"><span>Date</span><span>Quantity</span><span>Price / bird</span><span>Total</span><span>Customer</span></div>
-                  {broilerSales.map(row=><div className="row" key={row.id}><span>{row.recordDate}</span><span>{row.quantity}</span><span>{row.pricePerBirdMinor}</span><span>{row.totalAmountMinor}</span><span>{row.customer}</span></div>)}
+                  {broilerSales.map(row=><div className="row" key={row.id}><span>{row.recordDate}</span><span>{row.quantity}</span><span>{formatMoney(row.pricePerBirdMinor, farm.currency)}</span><span>{formatMoney(row.totalAmountMinor, farm.currency)}</span><span>{row.customer}</span></div>)}
                   {broilerSales.length===0 && <p className="muted empty">No bird sales recorded.</p>}
                 </div>
               </div>
@@ -1337,8 +1337,8 @@ export default function App() {
                 <span>{batches.find(b=>b.id===row.batchId)?.code || row.batchId}</span>
                 <span>{row.quantity?.toString()}</span>
                 <span>{row.unit}</span>
-                <span>{row.unitPriceMinor}</span>
-                <span>{row.totalAmountMinor}</span>
+                <span>{formatMoney(row.unitPriceMinor, farm.currency)}</span>
+                <span>{formatMoney(row.totalAmountMinor, farm.currency)}</span>
               </div>)}
               {sales.length===0 && <p className="muted empty">No sales recorded.</p>}
             </div>
