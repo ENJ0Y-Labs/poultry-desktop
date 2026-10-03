@@ -4,7 +4,7 @@ import App from "./App.jsx";
 import {
   farmApi, batchApi, expenseApi, customerApi, salesApi, inventoryApi,
   feedApi, pricingApi, dashboardApi, attentionApi, auditApi,
-  eggApi, broilerApi,
+  eggApi, broilerApi, reportApi,
 } from "./services/api.js";
 
 const farm = {
@@ -115,6 +115,12 @@ function mockFarmApis({
     trend: [],
   });
   vi.spyOn(broilerApi, "sales").mockResolvedValue([]);
+  vi.spyOn(reportApi, "farm").mockResolvedValue({
+    asOf: "2026-10-03",
+    dashboard: dashboardValue,
+    sales: [],
+    expenses: [],
+  });
 }
 
 afterEach(() => vi.restoreAllMocks());
