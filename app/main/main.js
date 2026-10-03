@@ -5,6 +5,7 @@ import { BackendManager } from "./backend-manager.js";
 
 let mainWindow;
 let backendManager;
+let shutdownInProgress = false;
 
 async function validateBackup(file) {
   const response = await fetch("http://127.0.0.1:" + backendManager.port + "/api/v1/backup/validate", {
@@ -37,7 +38,6 @@ ipcMain.handle("backup:restore", async () => {
 
   const database = backendManager.databasePath;
   const safety = database.replace(/\\.db$/, "") + "-pre-restore-" + new Date().toISOString().replace(/[:.]/g, "-") + ".db";
-  backendManager.lastError = null;
   await backendManager.stop();
   try {
     if (existsSync(database)) copyFileSync(database, safety);
@@ -95,10 +95,24 @@ async function createWindow() {
   else await mainWindow.loadFile(join(__dirname, "../renderer/index.html"));
 }
 
+async function shutdown() {
+  if (shutdownInProgress) return;
+  shutdownInProgress = true;
+
+  try {
+    if (mainWindow && !mainWindow.isDestroyed()) mainWindow.destroy();
+    if (backendManager) await backendManager.stop();
+  } finally {
+    app.quit();
+  }
+}
+
 app.whenReady().then(createWindow);
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") app.quit();
 });
-app.on("before-quit", async () => {
-  if (backendManager) await backendManager.stop();
+app.on("before-quit", (event) => {
+  if (shutdownInProgress) return;
+  event.preventDefault();
+  void shutdown();
 });
