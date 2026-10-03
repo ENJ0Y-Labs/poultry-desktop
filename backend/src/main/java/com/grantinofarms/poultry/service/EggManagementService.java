@@ -24,15 +24,21 @@ public class EggManagementService {
     private final FarmRepository farmRepository;
     private final FarmSettingsRepository settingsRepository;
     private final AuditRepository auditRepository;
+    private final CustomerService customerService;
+    private final SalesRepository salesRepository;
 
     public EggManagementService(EggManagementRepository repository,
                                 FarmRepository farmRepository,
                                 FarmSettingsRepository settingsRepository,
-                                AuditRepository auditRepository) {
+                                AuditRepository auditRepository,
+                                CustomerService customerService,
+                                SalesRepository salesRepository) {
         this.repository = repository;
         this.farmRepository = farmRepository;
         this.settingsRepository = settingsRepository;
         this.auditRepository = auditRepository;
+        this.customerService = customerService;
+        this.salesRepository = salesRepository;
     }
 
     @Transactional
@@ -105,9 +111,13 @@ public class EggManagementService {
 
         String id = UUID.randomUUID().toString();
         String now = Instant.now().toString();
-        String customer = request.customer().trim();
-        repository.insertSale(id, batchId, request.recordDate(), customer, soldEggs,
+        var customerRecord = customerService.requireForSale(request.customerId(), request.customer());
+        String customer = customerRecord.name();
+        repository.insertSale(id, batchId, request.recordDate(), customer, customerRecord.id(), soldEggs,
                 crateSize, price, total, now);
+        salesRepository.insert(
+                id, farmId, batchId, customerRecord.id(), request.recordDate(), "EGG",
+                crates, "CRATE", price, total, "EGG_SALE", id, now);
         auditRepository.append(farmId, "CREATE", "EGG_SALE", id, customer, null,
                 String.format("{\"batchId\":\"%s\",\"recordDate\":\"%s\",\"customer\":\"%s\",\"soldEggs\":%d,\"crateSize\":%d,\"totalMinor\":%d}",
                         batchId, request.recordDate(), customer, soldEggs, crateSize, total), now);
