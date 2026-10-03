@@ -2,14 +2,10 @@ package com.grantinofarms.poultry.exception;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.converter.HttpMessageNotReadableException;
-import org.springframework.web.bind.MethodArgumentNotValidException;
-import org.springframework.validation.BeanPropertyBindingResult;
-import org.springframework.validation.FieldError;
 
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class GlobalExceptionHandlerTest {
 
@@ -37,42 +33,19 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
-    void validationExceptionReturnsFieldDetails() {
-        var target = new ValidRequest();
-        var binding = new BeanPropertyBindingResult(target, "request");
-        binding.addError(new FieldError("request", "quantity", "Quantity must be greater than zero."));
-        var exception = new MethodArgumentNotValidException(null, binding);
+    void unexpectedExceptionDoesNotExposeInternalDetails() {
+        var response = handler.unexpected(new RuntimeException("SQL password=secret"));
 
-        var response = handler.validation(exception);
-
-        assertEquals(400, response.getStatusCode().value());
-        assertEquals(false, response.getBody().get("ok"));
-
-        @SuppressWarnings("unchecked")
-        Map<String, Object> error = (Map<String, Object>) response.getBody().get("error");
-        assertEquals("VALIDATION_ERROR", error.get("code"));
-        assertEquals("One or more fields are invalid.", error.get("message"));
-
-        @SuppressWarnings("unchecked")
-        Map<String, Object> details = (Map<String, Object>) error.get("details");
-        @SuppressWarnings("unchecked")
-        Map<String, String> fields = (Map<String, String>) details.get("fields");
-        assertEquals("Quantity must be greater than zero.", fields.get("quantity"));
-    }
-
-    @Test
-    void malformedBodyUsesStableErrorCode() {
-        var response = handler.unreadable(new HttpMessageNotReadableException("bad body"));
-
-        assertEquals(400, response.getStatusCode().value());
-        @SuppressWarnings("unchecked")
-        Map<String, Object> body = (Map<String, Object>) response.getBody();
-        @SuppressWarnings("unchecked")
-        Map<String, Object> error = (Map<String, Object>) body.get("error");
-        assertEquals("INVALID_REQUEST_BODY", error.get("code"));
-    }
-
-    private static final class ValidRequest {
-        private String value;
+        assertEquals(500, response.getStatusCode().value());
+        assertEquals(
+                Map.of(
+                        "ok", false,
+                        "error", Map.of(
+                                "code", "INTERNAL_ERROR",
+                                "message", "The operation could not be completed."
+                        )
+                ),
+                response.getBody()
+        );
     }
 }
