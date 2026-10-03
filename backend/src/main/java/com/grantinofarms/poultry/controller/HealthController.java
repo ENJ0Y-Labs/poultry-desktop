@@ -27,13 +27,15 @@ public class HealthController {
             boolean flywayHistoryExists = tableExists("flyway_schema_history");
             boolean applicationMetadataExists = tableExists("app_metadata");
             boolean schemaValid = flywayHistoryExists && applicationMetadataExists;
+            String schemaVersion = flywayHistoryExists ? jdbcTemplate.queryForObject("SELECT version FROM flyway_schema_history WHERE success=1 ORDER BY installed_rank DESC LIMIT 1", String.class) : "";
 
             if (!schemaValid) {
                 return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(Map.of(
                         "ok", false,
                         "status", "DEGRADED",
                         "database", "UP",
-                        "schema", "INVALID"
+                        "schema", "INVALID",
+                        "schemaVersion", schemaVersion
                 ));
             }
 
@@ -41,7 +43,8 @@ public class HealthController {
                     "ok", true,
                     "status", "UP",
                     "database", "UP",
-                    "schema", "VALID"
+                    "schema", "VALID",
+                    "schemaVersion", schemaVersion
             ));
         } catch (Exception exception) {
             return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(Map.of(
