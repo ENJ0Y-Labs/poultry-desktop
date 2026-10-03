@@ -12,9 +12,10 @@ const emptyBirdSale = {
   quantity: "",
   pricePerBirdMinor: "",
   customer: "",
+  customerId: "",
 };
 const emptyPricing = { quantity: "", date: new Date().toISOString().slice(0, 10) };
-import { batchApi, broilerApi, costApi, dailyApi, eggApi, expenseApi, farmApi, feedApi, populationApi, healthApi, pricingApi } from "./services/api.js";
+import { batchApi, broilerApi, costApi, dailyApi, eggApi, expenseApi, farmApi, feedApi, populationApi, healthApi, pricingApi, customerApi, salesApi } from "./services/api.js";
 
 const emptyFarm = { name: "", location: "", timezone: "Africa/Lagos", currency: "NGN" };
 const emptyHouse = { name: "", code: "", notes: "" };
@@ -91,6 +92,7 @@ const emptyExpense = {
   amountMinor: "",
   category: "OTHER",
 };
+const emptyCustomer = { name: "", phone: "", notes: "" };
 
 export default function App() {
   const [farm, setFarm] = useState(null);
@@ -117,6 +119,9 @@ export default function App() {
   const [expenseForm, setExpenseForm] = useState(emptyExpense);
   const [expenses, setExpenses] = useState([]);
   const [expenseBatchFilter, setExpenseBatchFilter] = useState("");
+  const [customers, setCustomers] = useState([]);
+  const [customerForm, setCustomerForm] = useState(emptyCustomer);
+  const [sales, setSales] = useState([]);
   const [eggBatchId, setEggBatchId] = useState("");
   const [broilerBatchId, setBroilerBatchId] = useState("");
   const [broilerGrowth, setBroilerGrowth] = useState(null);
@@ -160,6 +165,8 @@ export default function App() {
       const currentBatches = await batchApi.list();
       setBatches(currentBatches);
       setExpenses(await expenseApi.list());
+      setCustomers(await customerApi.list());
+      setSales(await salesApi.list());
       setFeedTypes(await feedApi.listTypes());
       setFeedInventory(await feedApi.inventory());
       setPricingSettings(await pricingApi.settings());
@@ -213,6 +220,24 @@ export default function App() {
       setExpenses(await expenseApi.list(batchId || null));
     } catch (err) { setError(err.message); }
   }
+  async function loadSales() {
+    try { setSales(await salesApi.list()); }
+    catch (err) { setError(err.message); }
+  }
+
+  async function saveCustomer(event) {
+    event.preventDefault(); setSaving(true); setError("");
+    try {
+      const created = await customerApi.create({
+        name: customerForm.name.trim(),
+        phone: customerForm.phone.trim() || null,
+        notes: customerForm.notes.trim() || null,
+      });
+      setCustomers(current => [...current, created].sort((a, b) => a.name.localeCompare(b.name)));
+      setCustomerForm(emptyCustomer);
+    } catch (err) { setError(err.message); } finally { setSaving(false); }
+  }
+
 
   async function saveExpense(event) {
     event.preventDefault(); setSaving(true); setError("");
@@ -400,6 +425,7 @@ export default function App() {
         quantity: Number(birdSaleForm.quantity),
         pricePerBirdMinor: birdSaleForm.pricePerBirdMinor,
         customer: birdSaleForm.customer.trim(),
+        customerId: birdSaleForm.customerId || null,
       };
       try {
         await broilerApi.addSale(batchId, sale);
@@ -410,7 +436,8 @@ export default function App() {
       }
       await loadBroilerForBatch(batchId);
       setBatches(await batchApi.list());
-      setBirdSaleForm(form => ({ ...form, quantity: "", pricePerBirdMinor: "", customer: "" }));
+      setBirdSaleForm(form => ({ ...form, quantity: "", pricePerBirdMinor: "", customer: "", customerId: "" }));
+      await loadSales();
     } catch (err) { setError(err.message); } finally { setSaving(false); }
   }
 
@@ -453,11 +480,13 @@ export default function App() {
       await eggApi.addSale(batchId, {
         recordDate: eggSaleForm.date,
         customer: eggSaleForm.customer.trim(),
+        customerId: eggSaleForm.customerId || null,
         crates: eggSaleForm.crates,
         pricePerCrateMinor: eggSaleForm.pricePerCrateMinor,
       });
       await loadEggsForBatch(batchId);
-      setEggSaleForm(form => ({ ...form, customer: "", crates: "", pricePerCrateMinor: "" }));
+      setEggSaleForm(form => ({ ...form, customer: "", customerId: "", crates: "", pricePerCrateMinor: "" }));
+      await loadSales();
     } catch (err) { setError(err.message); } finally { setSaving(false); }
   }
 
@@ -877,7 +906,10 @@ export default function App() {
                 <p className="muted">Current crate size: {crateSize} eggs. The sale stores the crate size used at the time, so changing settings does not rewrite history.</p>
                 <form className="inline-form" onSubmit={saveEggSale}>
                   <input required type="date" value={eggSaleForm.date} onChange={e=>setEggSaleForm({...eggSaleForm,date:e.target.value})}/>
-                  <input required placeholder="Customer" value={eggSaleForm.customer} onChange={e=>setEggSaleForm({...eggSaleForm,customer:e.target.value})}/>
+                  <select required value={eggSaleForm.customerId} onChange={e=>{const id=e.target.value;const customer=customers.find(c=>c.id===id);setEggSaleForm({...eggSaleForm,customerId:id,customer:customer?.name||""});}}>
+                    <option value="">Customer</option>
+                    {customers.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}
+                  </select>
                   <input required min="0.001" step="0.001" type="number" placeholder="Crates e.g. 0.5 or 2.5" value={eggSaleForm.crates} onChange={e=>setEggSaleForm({...eggSaleForm,crates:e.target.value})}/>
                   <input required min="1" step="1" type="number" placeholder="Price / crate (minor units)" value={eggSaleForm.pricePerCrateMinor} onChange={e=>setEggSaleForm({...eggSaleForm,pricePerCrateMinor:e.target.value})}/>
                   <button disabled={saving}>Record sale</button>
@@ -968,7 +1000,10 @@ export default function App() {
                   <input required type="date" value={birdSaleForm.date} onChange={e=>setBirdSaleForm({...birdSaleForm,date:e.target.value})}/>
                   <input required min="1" type="number" placeholder="Quantity" value={birdSaleForm.quantity} onChange={e=>setBirdSaleForm({...birdSaleForm,quantity:e.target.value})}/>
                   <input required min="1" step="1" type="number" placeholder="Price / bird (minor units)" value={birdSaleForm.pricePerBirdMinor} onChange={e=>setBirdSaleForm({...birdSaleForm,pricePerBirdMinor:e.target.value})}/>
-                  <input required placeholder="Customer" value={birdSaleForm.customer} onChange={e=>setBirdSaleForm({...birdSaleForm,customer:e.target.value})}/>
+                  <select required value={birdSaleForm.customerId} onChange={e=>{const id=e.target.value;const customer=customers.find(c=>c.id===id);setBirdSaleForm({...birdSaleForm,customerId:id,customer:customer?.name||""});}}>
+                    <option value="">Customer</option>
+                    {customers.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}
+                  </select>
                   <button disabled={saving}>Record bird sale</button>
                 </form>
                 <div className="table">
@@ -979,6 +1014,47 @@ export default function App() {
               </div>
             </>
           )}
+        </section>
+
+        <section className="card full">
+          <div className="section-head">
+            <h2>Customers</h2>
+            <p className="muted">Keep reusable customer records for egg and broiler sales. Existing sales remain tied to their historical customer snapshot.</p>
+          </div>
+          <form className="inline-form" onSubmit={saveCustomer}>
+            <input required placeholder="Customer name" value={customerForm.name} onChange={e=>setCustomerForm({...customerForm,name:e.target.value})}/>
+            <input placeholder="Phone" value={customerForm.phone} onChange={e=>setCustomerForm({...customerForm,phone:e.target.value})}/>
+            <input placeholder="Notes" value={customerForm.notes} onChange={e=>setCustomerForm({...customerForm,notes:e.target.value})}/>
+            <button disabled={saving}>Add customer</button>
+          </form>
+          <div className="table">
+            <div className="row header"><span>Name</span><span>Phone</span><span>Notes</span></div>
+            {customers.map(row=><div className="row" key={row.id}><span>{row.name}</span><span>{row.phone || "—"}</span><span>{row.notes || "—"}</span></div>)}
+            {customers.length===0 && <p className="muted empty">No customers yet.</p>}
+          </div>
+        </section>
+
+        <section className="card full">
+          <div className="section-head">
+            <h2>Sales</h2>
+            <p className="muted">Common commercial ledger for Layer egg and Broiler bird sales. Type-specific rules remain in their production modules.</p>
+          </div>
+          <div className="subsection">
+            <div className="table">
+              <div className="row header"><span>Date</span><span>Type</span><span>Customer</span><span>Batch</span><span>Quantity</span><span>Unit</span><span>Unit price</span><span>Total</span></div>
+              {sales.map(row=><div className="row" key={row.id}>
+                <span>{row.saleDate}</span>
+                <span>{row.saleType}</span>
+                <span>{row.customerName}</span>
+                <span>{batches.find(b=>b.id===row.batchId)?.code || row.batchId}</span>
+                <span>{row.quantity?.toString()}</span>
+                <span>{row.unit}</span>
+                <span>{row.unitPriceMinor}</span>
+                <span>{row.totalAmountMinor}</span>
+              </div>)}
+              {sales.length===0 && <p className="muted empty">No sales recorded.</p>}
+            </div>
+          </div>
         </section>
 
         <section className="card full">
