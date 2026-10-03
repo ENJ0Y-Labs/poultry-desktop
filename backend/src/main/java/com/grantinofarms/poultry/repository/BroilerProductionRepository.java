@@ -96,7 +96,7 @@ public class BroilerProductionRepository {
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 id, batchId, date.toString(), quantity, pricePerBirdMinor,
-                totalAmountMinor, customer, createdAt);
+                totalAmountMinor, customer, customerId, createdAt);
     }
 
     public List<BirdSaleResponse> findSales(String batchId, LocalDate asOf) {
