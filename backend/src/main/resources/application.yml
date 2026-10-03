@@ -14,6 +14,10 @@ spring:
 
 poultry:
   database-path: ${DATABASE_PATH:./data/poultry.db}
+  backup:
+    enabled: ${BACKUP_ENABLED:false}
+    directory: ${BACKUP_DIRECTORY:}
+    interval-ms: ${BACKUP_INTERVAL_MS:86400000}
 
 logging:
   level:
