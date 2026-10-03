@@ -187,6 +187,21 @@ export default function App() {
       setBatchForm(form => ({ ...form, houseId: form.houseId || currentHouses[0]?.id || "" }));
       const currentBatches = await batchApi.list();
       setBatches(currentBatches);
+      const lastBatchId = localStorage.getItem("grantino:lastBatchId");
+      const preferredBatchId = currentBatches.some(batch => batch.id === lastBatchId) ? lastBatchId : currentBatches[0]?.id || "";
+      if (preferredBatchId) {
+        localStorage.setItem("grantino:lastBatchId", preferredBatchId);
+        setSelectedBatchId(preferredBatchId);
+        setCostForm(form => ({ ...form, batchId: form.batchId || preferredBatchId }));
+        setDailyForm(form => ({ ...form, batchId: form.batchId || preferredBatchId }));
+        setMortalityForm(form => ({ ...form, batchId: form.batchId || preferredBatchId }));
+        setCullingForm(form => ({ ...form, batchId: form.batchId || preferredBatchId }));
+        setHealthForm(form => ({ ...form, batchId: form.batchId || preferredBatchId }));
+        setDrugForm(form => ({ ...form, batchId: form.batchId || preferredBatchId }));
+        setVaccinationForm(form => ({ ...form, batchId: form.batchId || preferredBatchId }));
+        setExpenseForm(form => ({ ...form, batchId: form.batchId || preferredBatchId }));
+        setFeedUsageForm(form => ({ ...form, batchId: form.batchId || preferredBatchId }));
+      }
       setExpenses(await expenseApi.list());
       setCustomers(await customerApi.list());
       setSales(await salesApi.list());
@@ -369,6 +384,8 @@ export default function App() {
         purchaseCostMinor: batchForm.purchaseCostMinor,
       });
       setBatches(current => [created, ...current]);
+      localStorage.setItem("grantino:lastBatchId", created.id);
+      setSelectedBatchId(created.id);
       setBatchForm({ ...emptyBatch, houseId: batchForm.houseId });
     } catch (err) { setError(err.message); } finally { setSaving(false); }
   }
