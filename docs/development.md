@@ -44,11 +44,21 @@ Money is integer minor units.
 
 Audit records are append-only.
 
-## Production data
+## Database locations
 
-Never use the development database as the packaged application's database.
+Development uses the repository-local database:
 
-Electron supplies the production database path under the user's application-data directory.
+```text
+project/data/poultry.db
+```
+
+Production uses Electron's application-data directory:
+
+```text
+%APPDATA%/Poultry Farm Manager/data/poultry.db
+```
+
+Never use the development database as the packaged application's database. Electron selects the path from `app.isPackaged`, and the production package does not include the repository `data/` directory.
 
 ## Security
 
