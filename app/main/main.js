@@ -1,6 +1,7 @@
 import { app, BrowserWindow, dialog, ipcMain } from "electron";
 import { copyFileSync, existsSync, renameSync, rmSync } from "node:fs";
 import { join } from "node:path";
+import { pathToFileURL } from "node:url";
 import { BackendManager } from "./backend-manager.js";
 
 let mainWindow;
@@ -218,12 +219,29 @@ async function createWindow() {
 
   mainWindow.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
   mainWindow.webContents.on("will-navigate", (event, url) => {
-    const allowed = url.startsWith("file://") || url.startsWith("http://localhost:") || url.startsWith("http://127.0.0.1:");
+    const rendererFile = pathToFileURL(join(__dirname, "../renderer/index.html")).href;
+    let allowed = url === rendererFile;
+    if (process.env.ELECTRON_RENDERER_URL) {
+      try {
+        allowed = allowed || new URL(url).origin === new URL(process.env.ELECTRON_RENDERER_URL).origin;
+      } catch {
+        allowed = false;
+      }
+    }
     if (!allowed) event.preventDefault();
   });
 
-  if (process.env.ELECTRON_RENDERER_URL) await mainWindow.loadURL(process.env.ELECTRON_RENDERER_URL);
-  else await mainWindow.loadFile(join(__dirname, "../renderer/index.html"));
+  mainWindow.webContents.on("will-redirect", (event) => event.preventDefault());
+
+  if (process.env.ELECTRON_RENDERER_URL) {
+    const rendererUrl = new URL(process.env.ELECTRON_RENDERER_URL);
+    if (rendererUrl.protocol !== "http:" || !["localhost", "127.0.0.1"].includes(rendererUrl.hostname)) {
+      throw new Error("The Electron renderer must use a local development URL.");
+    }
+    await mainWindow.loadURL(rendererUrl.href);
+  } else {
+    await mainWindow.loadFile(join(__dirname, "../renderer/index.html"));
+  }
 }
 
 async function shutdown() {
