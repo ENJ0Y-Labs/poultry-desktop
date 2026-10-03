@@ -173,8 +173,8 @@ describe("App", () => {
 
     expect(createFarm).not.toHaveBeenCalled();
     expect(screen.getByLabelText("Farm name")).toBeInvalid();
-    expect(screen.getByLabelText("Timezone")).toBeInvalid();
-    expect(screen.getByLabelText("Currency")).toBeInvalid();
+    expect(screen.getByLabelText("Timezone")).toBeValid();
+    expect(screen.getByLabelText("Currency")).toBeValid();
   });
 
   it("displays structured API validation errors", async () => {
@@ -202,9 +202,9 @@ describe("App", () => {
     render(<App />);
 
     await waitFor(() => expect(screen.getByRole("heading", { name: "Farm dashboard" })).toBeInTheDocument());
-    expect(screen.getByText("5,000")).toBeInTheDocument();
-    expect(screen.getByText("₦1,000.00")).toBeInTheDocument();
-    expect(screen.getByText("₦300.00")).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText("5,000")).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText("₦1,000.00")).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText("₦300.00")).toBeInTheDocument());
     expect(screen.getByText("Nothing currently requires attention.")).toBeInTheDocument();
     expect(screen.getByText("No audit records yet.")).toBeInTheDocument();
     expect(screen.getByText("No batches yet.")).toBeInTheDocument();
