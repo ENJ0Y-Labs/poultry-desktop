@@ -1,7 +1,14 @@
 import js from "@eslint/js";
 import globals from "globals";
+
 export default [
-  { ignores: ["dist/**","release/**","node_modules/**","backend/target/**"] },
+  { ignores: ["dist/**", "release/**", "node_modules/**", "backend/target/**", "runtime/**"] },
   js.configs.recommended,
-  { files: ["**/*.js","**/*.jsx"], languageOptions: { globals: { ...globals.browser, ...globals.node } } }
+  {
+    files: ["**/*.js", "**/*.jsx", "**/*.mjs"],
+    languageOptions: {
+      globals: { ...globals.browser, ...globals.node },
+      parserOptions: { ecmaVersion: "latest", sourceType: "module", ecmaFeatures: { jsx: true } }
+    }
+  }
 ];
