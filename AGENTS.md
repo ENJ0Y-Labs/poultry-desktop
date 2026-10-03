@@ -20,9 +20,9 @@ Priority order:
 
 A boring screen with correct poultry numbers beats a beautiful dashboard showing agricultural fiction.
 
-**Current stage: 12 — Broiler production.**
+**Current stage: 13 — Pricing and margins.**
 
-Stage 8 feed management is implemented. Stage 9 daily farm operations is implemented. Stage 10 health management is implemented. Stage 11 added Layer-only egg production, egg inventory, cracked-egg history, configurable crate conversion, and egg sales. Stage 12 adds Broiler-only weight records, growth calculations, backend-owned FCR, bird sales, and automatic SOLD lifecycle locking.
+Stage 8 feed management is implemented. Stage 9 daily farm operations is implemented. Stage 10 health management is implemented. Stage 11 added Layer-only egg production, egg inventory, cracked-egg history, configurable crate conversion, and egg sales. Stage 12 adds Broiler-only weight records, growth calculations, backend-owned FCR, bird sales, and automatic SOLD lifecycle locking. Stage 13 adds cost-based Broiler pricing, configurable target margin, working/latest margin, and audited below-target sale confirmation.
 
 Do not build later-stage features unless the owner explicitly changes the stage.
 
@@ -588,6 +588,21 @@ If a new sale is below the configured target, do not silently lower the target. 
 Changes to target/working margin are audited.
 
 If a recalculation is triggered by a new cost, bird count, feed allocation, or sale, calculate again from the underlying records rather than editing a stored derived price.
+
+## 18. Broiler pricing and target margin
+
+Broiler pricing is based on actual carried bird cost, not a manually entered cost guess.
+
+Pricing rules:
+- actual cost is calculated by the backend from the authoritative bird-cost ledger
+- target margin is configurable and initially null
+- target selling price is derived as `actual cost / (1 - target margin)`
+- working/latest margin starts null and may increase when an actual sale achieves a higher margin
+- a sale below the configured target margin does not lower the target automatically
+- a below-target sale requires explicit confirmation from the operator
+- below-target confirmation and working-margin changes are audited
+- margin percentages are not money and may use decimal precision; monetary prices remain integer minor units
+- frontend code displays backend pricing results and never calculates authoritative pricing or margin
 
 ## 19. Money
 
