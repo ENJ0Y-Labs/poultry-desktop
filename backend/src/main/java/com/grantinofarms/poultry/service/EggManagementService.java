@@ -7,6 +7,7 @@ import com.grantinofarms.poultry.repository.AuditRepository;
 import com.grantinofarms.poultry.repository.EggManagementRepository;
 import com.grantinofarms.poultry.repository.FarmRepository;
 import com.grantinofarms.poultry.repository.FarmSettingsRepository;
+import com.grantinofarms.poultry.repository.SalesRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
