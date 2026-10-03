@@ -14,7 +14,7 @@ const emptyBirdSale = {
   customer: "",
 };
 port { useEffect, useState } from "react";
-import { batchApi, broilerApi, costApi, dailyApi, eggApi, farmApi, feedApi, populationApi, healthApi } from "./services/api.js";
+import { batchApi, broilerApi, costApi, dailyApi, eggApi, farmApi, feedApi, populationApi, healthApi, pricingApi } from "./services/api.js";
 
 const emptyFarm = { name: "", location: "", timezone: "Africa/Lagos", currency: "NGN" };
 const emptyHouse = { name: "", code: "", notes: "" };
@@ -114,6 +114,9 @@ export default function App() {
   const [broilerSales, setBroilerSales] = useState([]);
   const [weightForm, setWeightForm] = useState(emptyWeight);
   const [birdSaleForm, setBirdSaleForm] = useState(emptyBirdSale);
+  const [pricingSettings, setPricingSettings] = useState({ targetMarginPercent: null, workingMarginPercent: null });
+  const [pricing, setPricing] = useState(null);
+  const [pricingForm, setPricingForm] = useState(emptyPricing);
   const [eggInventory, setEggInventory] = useState(null);
   const [eggCollections, setEggCollections] = useState([]);
   const [eggSales, setEggSales] = useState([]);
@@ -147,6 +150,7 @@ export default function App() {
       setBatches(await batchApi.list());
       setFeedTypes(await feedApi.listTypes());
       setFeedInventory(await feedApi.inventory());
+      setPricingSettings(await pricingApi.settings());
     } catch (err) {
       if (err.message !== "No farm has been created yet.") setError(err.message);
     } finally { setLoading(false); }
@@ -305,6 +309,22 @@ export default function App() {
   }
 
 
+  async function loadPricingForBatch(batchId, quantity, date) {
+    if (!batchId || !quantity) { setPricing(null); return; }
+    try { setPricing(await pricingApi.price(batchId, Number(quantity), date || undefined)); }
+    catch (err) { setError(err.message); }
+  }
+
+  async function savePricingSettings(event) {
+    event.preventDefault(); setSaving(true); setError("");
+    try {
+      const updated = await pricingApi.updateSettings({
+        targetMarginPercent: pricingSettings.targetMarginPercent === "" ? null : pricingSettings.targetMarginPercent
+      });
+      setPricingSettings(updated);
+    } catch (err) { setError(err.message); } finally { setSaving(false); }
+  }
+
   async function loadBroilerForBatch(batchId) {
     if (!batchId) {
       setBroilerGrowth(null); setBroilerWeights([]); setBroilerSales([]);
@@ -341,12 +361,19 @@ export default function App() {
     event.preventDefault(); setSaving(true); setError("");
     try {
       const batchId = birdSaleForm.batchId;
-      await broilerApi.addSale(batchId, {
+      const sale = {
         recordDate: birdSaleForm.date,
         quantity: Number(birdSaleForm.quantity),
         pricePerBirdMinor: birdSaleForm.pricePerBirdMinor,
         customer: birdSaleForm.customer.trim(),
-      });
+      };
+      try {
+        await broilerApi.addSale(batchId, sale);
+      } catch (err) {
+        if (!err.message.includes("below the configured target margin")) throw err;
+        if (!window.confirm("This sale is below the configured target margin. Record it anyway? The target margin will not be lowered.")) throw err;
+        await broilerApi.addSale(batchId, { ...sale, confirmedBelowTarget: true });
+      }
       await loadBroilerForBatch(batchId);
       setBatches(await batchApi.list());
       setBirdSaleForm(form => ({ ...form, quantity: "", pricePerBirdMinor: "", customer: "" }));
@@ -516,6 +543,12 @@ export default function App() {
           <label>Default water container<input type="number" min="1" value={defaultWater} onChange={e=>setDefaultWater(e.target.value)}/><small>Must match one configured size.</small></label>
           <label>Water container sizes<input value={waterSizes} onChange={e=>setWaterSizes(e.target.value)}/><small>Comma-separated, e.g. 25, 75.</small></label>
           <button disabled={saving}>Save defaults</button>
+        </form></section>
+
+        <section className="card"><h2>Pricing & margins</h2><form className="form-grid" onSubmit={savePricingSettings}>
+          <label>Target margin %<input type="number" min="0" max="99.999999" step="0.01" placeholder="e.g. 25" value={pricingSettings.targetMarginPercent ?? ""} onChange={e=>setPricingSettings({...pricingSettings,targetMarginPercent:e.target.value})}/><small>Leave empty for no target. A sale never silently lowers it.</small></label>
+          <label>Working/latest margin %<input readOnly value={pricingSettings.workingMarginPercent ?? ""}/><small>Updated from actual sale results.</small></label>
+          <button disabled={saving}>Save pricing target</button>
         </form></section>
 
         <section className="card full"><div className="section-head"><h2>Batches</h2><p className="muted">Opening a batch creates a permanent flock record and generates its code automatically.</p></div>
@@ -839,6 +872,7 @@ export default function App() {
               setBroilerBatchId(id);
               setWeightForm(form => ({ ...form, batchId: id }));
               setBirdSaleForm(form => ({ ...form, batchId: id }));
+              setPricingForm(form => ({ ...form, quantity: "" }));
               loadBroilerForBatch(id);
             }}>
               <option value="">Select a broiler batch</option>
@@ -878,6 +912,20 @@ export default function App() {
                   {broilerWeights.map(row=><div className="row" key={row.id}><span>{row.recordDate}</span><span>{row.sampleQuantity}</span><span>{row.totalWeightKg}</span><span>{row.averageWeightKg}</span><span>{row.weightGainKg}</span></div>)}
                   {broilerWeights.length===0 && <p className="muted empty">No weight records yet.</p>}
                 </div>
+              </div>
+
+              <div className="subsection">
+                <h3>Cost-based pricing</h3>
+                <p className="muted">Actual cost comes from the backend bird-cost ledger. Prices are calculated by Spring Boot.</p>
+                <form className="inline-form" onSubmit={e=>{e.preventDefault(); loadPricingForBatch(broilerBatchId, pricingForm.quantity, pricingForm.date);}}>
+                  <input required min="1" type="number" placeholder="Bird quantity" value={pricingForm.quantity} onChange={e=>setPricingForm({...pricingForm,quantity:e.target.value})}/>
+                  <input required type="date" value={pricingForm.date} onChange={e=>setPricingForm({...pricingForm,date:e.target.value})}/>
+                  <button disabled={saving}>Calculate price</button>
+                </form>
+                {pricing && <div className="table">
+                  <div className="row header"><span>Actual cost</span><span>Target margin</span><span>Target price / bird</span><span>Working margin</span><span>Working price / bird</span></div>
+                  <div className="row"><span>{pricing.actualCostMinor}</span><span>{pricing.targetMarginPercent ?? "—"}%</span><span>{pricing.targetPricePerBirdMinor ?? "—"}</span><span>{pricing.workingMarginPercent ?? "—"}%</span><span>{pricing.workingPricePerBirdMinor ?? "—"}</span></div>
+                </div>}
               </div>
 
               <div className="subsection">
