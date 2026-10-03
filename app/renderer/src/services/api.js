@@ -135,3 +135,22 @@ export const expenseApi = {
   list: (batchId) => request("/expenses" + (batchId ? "?batchId=" + encodeURIComponent(batchId) : "")),
   create: (data) => request("/expenses", { method: "POST", body: JSON.stringify(data) }),
 };
+
+
+export const customerApi = {
+  list: () => request("/customers"),
+  create: (data) => request("/customers", { method: "POST", body: JSON.stringify(data) }),
+  update: (id, data) => request("/customers/" + id, { method: "PUT", body: JSON.stringify(data) }),
+};
+
+export const salesApi = {
+  list: (params = {}) => {
+    const query = new URLSearchParams();
+    if (params.batchId) query.set("batchId", params.batchId);
+    if (params.customerId) query.set("customerId", params.customerId);
+    if (params.saleType) query.set("saleType", params.saleType);
+    if (params.asOf) query.set("asOf", params.asOf);
+    const suffix = query.toString() ? "?" + query.toString() : "";
+    return request("/sales" + suffix);
+  },
+};
