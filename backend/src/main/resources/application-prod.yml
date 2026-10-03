@@ -1,3 +1,12 @@
 server:
   address: 127.0.0.1
-  port: ${PORT:18942}
+  port: 18942
+  servlet:
+    session:
+      cookie:
+        http-only: true
+        same-site: strict
+        secure: false
+
+poultry:
+  auth-required: true

@@ -1,3 +1,6 @@
 server:
   address: localhost
-  port: ${PORT:18942}
+  port: 18942
+
+poultry:
+  auth-required: false
