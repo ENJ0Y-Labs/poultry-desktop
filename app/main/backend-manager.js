@@ -112,7 +112,7 @@ export class BackendManager {
       await new Promise((resolve) => setTimeout(resolve, intervalMs));
     }
 
-    throw new Error(`Local Spring Boot backend did not become ready on port ${this.port} within ${timeoutMs}ms.`);
+    throw new Error(`The local backend could not become ready on port ${this.port}. Another application may be using that port, the database may be unavailable, or a migration may have failed. Check the backend log for details.`);
   }
 
   async stop() {
