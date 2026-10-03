@@ -15,7 +15,7 @@ const emptyBirdSale = {
   customerId: "",
 };
 const emptyPricing = { quantity: "", date: new Date().toISOString().slice(0, 10) };
-import { batchApi, broilerApi, costApi, dailyApi, eggApi, expenseApi, farmApi, feedApi, populationApi, healthApi, pricingApi, customerApi, salesApi } from "./services/api.js";
+import { batchApi, broilerApi, costApi, dailyApi, eggApi, expenseApi, farmApi, feedApi, populationApi, healthApi, pricingApi, customerApi, salesApi, inventoryApi } from "./services/api.js";
 
 const emptyFarm = { name: "", location: "", timezone: "Africa/Lagos", currency: "NGN" };
 const emptyHouse = { name: "", code: "", notes: "" };
@@ -93,6 +93,11 @@ const emptyExpense = {
   category: "OTHER",
 };
 const emptyCustomer = { name: "", phone: "", notes: "" };
+const emptyInventoryItem = { name: "", category: "SUPPLY", unit: "piece", reorderLevel: "" };
+const emptyInventoryMovement = {
+  itemId: "", date: new Date().toISOString().slice(0, 10), movementType: "RECEIVE",
+  quantity: "", reason: "", source: "", batchId: ""
+};
 
 export default function App() {
   const [farm, setFarm] = useState(null);
@@ -119,6 +124,10 @@ export default function App() {
   const [expenseForm, setExpenseForm] = useState(emptyExpense);
   const [expenses, setExpenses] = useState([]);
   const [expenseBatchFilter, setExpenseBatchFilter] = useState("");
+  const [inventoryItems, setInventoryItems] = useState([]);
+  const [inventoryItemForm, setInventoryItemForm] = useState(emptyInventoryItem);
+  const [inventoryMovementForm, setInventoryMovementForm] = useState(emptyInventoryMovement);
+  const [inventoryMovements, setInventoryMovements] = useState([]);
   const [customers, setCustomers] = useState([]);
   const [customerForm, setCustomerForm] = useState(emptyCustomer);
   const [sales, setSales] = useState([]);
@@ -167,6 +176,7 @@ export default function App() {
       setExpenses(await expenseApi.list());
       setCustomers(await customerApi.list());
       setSales(await salesApi.list());
+      setInventoryItems(await inventoryApi.listItems());
       setFeedTypes(await feedApi.listTypes());
       setFeedInventory(await feedApi.inventory());
       setPricingSettings(await pricingApi.settings());
@@ -190,6 +200,8 @@ export default function App() {
       setExpenses([]);
       setCustomers([]);
       setSales([]);
+      setInventoryItems([]);
+      setInventoryMovements([]);
       setFeedTypes([]);
       setFeedInventory([]);
       setBatchForm(emptyBatch);
@@ -240,6 +252,44 @@ export default function App() {
     } catch (err) { setError(err.message); } finally { setSaving(false); }
   }
 
+
+  async function saveInventoryItem(event) {
+    event.preventDefault(); setSaving(true); setError("");
+    try {
+      const created = await inventoryApi.createItem({
+        name: inventoryItemForm.name.trim(),
+        category: inventoryItemForm.category,
+        unit: inventoryItemForm.unit.trim(),
+        reorderLevel: inventoryItemForm.reorderLevel === "" ? 0 : Number(inventoryItemForm.reorderLevel),
+      });
+      setInventoryItems(current => [...current, created].sort((a, b) => a.name.localeCompare(b.name)));
+      setInventoryItemForm(emptyInventoryItem);
+      setInventoryMovementForm(form => ({ ...form, itemId: created.id }));
+    } catch (err) { setError(err.message); } finally { setSaving(false); }
+  }
+
+  async function loadInventoryMovements(itemId = inventoryMovementForm.itemId) {
+    if (!itemId) { setInventoryMovements([]); return; }
+    try { setInventoryMovements(await inventoryApi.listMovements(itemId)); }
+    catch (err) { setError(err.message); }
+  }
+
+  async function saveInventoryMovement(event) {
+    event.preventDefault(); setSaving(true); setError("");
+    try {
+      await inventoryApi.recordMovement(inventoryMovementForm.itemId, {
+        movementDate: inventoryMovementForm.date,
+        movementType: inventoryMovementForm.movementType,
+        quantity: Number(inventoryMovementForm.quantity),
+        reason: inventoryMovementForm.reason.trim(),
+        source: inventoryMovementForm.source.trim(),
+        batchId: inventoryMovementForm.batchId || null,
+      });
+      setInventoryItems(await inventoryApi.listItems());
+      setInventoryMovementForm(form => ({ ...emptyInventoryMovement, itemId: form.itemId }));
+      await loadInventoryMovements(inventoryMovementForm.itemId);
+    } catch (err) { setError(err.message); } finally { setSaving(false); }
+  }
 
   async function saveExpense(event) {
     event.preventDefault(); setSaving(true); setError("");
@@ -1016,6 +1066,68 @@ export default function App() {
               </div>
             </>
           )}
+        </section>
+
+        <section className="card full">
+          <div className="section-head">
+            <h2>Inventory</h2>
+            <p className="muted">Track drugs, vaccines, and farm supplies with explicit stock movements. Feed remains in the dedicated Feed module because its FIFO cost ledger is authoritative.</p>
+          </div>
+
+          <div className="subsection">
+            <h3>Inventory items</h3>
+            <form className="inline-form" onSubmit={saveInventoryItem}>
+              <input required placeholder="Item name" value={inventoryItemForm.name} onChange={e=>setInventoryItemForm({...inventoryItemForm,name:e.target.value})}/>
+              <select value={inventoryItemForm.category} onChange={e=>setInventoryItemForm({...inventoryItemForm,category:e.target.value})}>
+                <option value="SUPPLY">Farm supply</option>
+                <option value="DRUG">Drug</option>
+                <option value="VACCINE">Vaccine</option>
+              </select>
+              <input required placeholder="Unit e.g. bottle, piece, dose" value={inventoryItemForm.unit} onChange={e=>setInventoryItemForm({...inventoryItemForm,unit:e.target.value})}/>
+              <input min="0" step="0.001" type="number" placeholder="Reorder level" value={inventoryItemForm.reorderLevel} onChange={e=>setInventoryItemForm({...inventoryItemForm,reorderLevel:e.target.value})}/>
+              <button disabled={saving}>Add item</button>
+            </form>
+            <div className="table">
+              <div className="row header"><span>Item</span><span>Category</span><span>Stock</span><span>Reorder</span><span>Unit</span><span>Status</span></div>
+              {inventoryItems.map(row=><div className="row" key={row.id}>
+                <span>{row.name}</span><span>{row.category}</span><span>{row.quantityOnHand}</span><span>{row.reorderLevel}</span><span>{row.unit}</span><span>{row.status}</span>
+              </div>)}
+              {inventoryItems.length===0 && <p className="muted empty">No non-feed inventory items yet.</p>}
+            </div>
+          </div>
+
+          <div className="subsection">
+            <h3>Record inventory movement</h3>
+            <form className="inline-form" onSubmit={saveInventoryMovement}>
+              <select required value={inventoryMovementForm.itemId} onChange={e=>{const id=e.target.value;setInventoryMovementForm({...inventoryMovementForm,itemId:id});loadInventoryMovements(id);}}>
+                <option value="">Select item</option>
+                {inventoryItems.filter(i=>i.status==="ACTIVE").map(i=><option key={i.id} value={i.id}>{i.name}</option>)}
+              </select>
+              <input required type="date" value={inventoryMovementForm.date} onChange={e=>setInventoryMovementForm({...inventoryMovementForm,date:e.target.value})}/>
+              <select value={inventoryMovementForm.movementType} onChange={e=>setInventoryMovementForm({...inventoryMovementForm,movementType:e.target.value})}>
+                <option value="RECEIVE">Receive</option>
+                <option value="ISSUE">Issue</option>
+                <option value="ADJUST_IN">Adjustment in</option>
+                <option value="ADJUST_OUT">Adjustment out</option>
+                <option value="WASTE">Waste</option>
+              </select>
+              <input required min="0.001" step="0.001" type="number" placeholder="Quantity" value={inventoryMovementForm.quantity} onChange={e=>setInventoryMovementForm({...inventoryMovementForm,quantity:e.target.value})}/>
+              <input required placeholder="Reason" value={inventoryMovementForm.reason} onChange={e=>setInventoryMovementForm({...inventoryMovementForm,reason:e.target.value})}/>
+              <input required placeholder="Source e.g. supplier invoice, treatment" value={inventoryMovementForm.source} onChange={e=>setInventoryMovementForm({...inventoryMovementForm,source:e.target.value})}/>
+              <select value={inventoryMovementForm.batchId} onChange={e=>setInventoryMovementForm({...inventoryMovementForm,batchId:e.target.value})}>
+                <option value="">Farm-level</option>
+                {batches.map(b=><option key={b.id} value={b.id}>{b.code}</option>)}
+              </select>
+              <button disabled={saving || !inventoryMovementForm.itemId}>Record movement</button>
+            </form>
+            {inventoryMovementForm.itemId && <div className="table">
+              <div className="row header"><span>Date</span><span>Movement</span><span>Quantity</span><span>Reason</span><span>Source</span><span>Batch</span></div>
+              {inventoryMovements.map(row=><div className="row" key={row.id}>
+                <span>{row.movementDate}</span><span>{row.movementType}</span><span>{row.quantity} {row.category==="SUPPLY" ? "" : ""}</span><span>{row.reason}</span><span>{row.source}</span><span>{row.batchId ? (batches.find(b=>b.id===row.batchId)?.code || row.batchId) : "Farm"}</span>
+              </div>)}
+              {inventoryMovements.length===0 && <p className="muted empty">No movements for this item.</p>}
+            </div>}
+          </div>
         </section>
 
         <section className="card full">
