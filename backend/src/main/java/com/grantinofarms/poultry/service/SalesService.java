@@ -28,8 +28,8 @@ public class SalesService {
     public List<SaleResponse> list(String batchId, String customerId, String saleType, LocalDate asOf) {
         String farmId = requireFarm();
         String batch = cleanNullable(batchId);
-        String customer = cleanNullable(customerId);
-        String type = cleanNullable(saleType);
+        String customer = customerId == null || customerId.isBlank() ? null : customerId.trim();
+        String type = saleType == null || saleType.isBlank() ? null : saleType.trim().toUpperCase();
 
         if (batch != null && !batchRepository.belongsToFarm(batch, farmId)) {
             throw new ApiException(HttpStatus.NOT_FOUND, "BATCH_NOT_FOUND", "Batch not found.");
