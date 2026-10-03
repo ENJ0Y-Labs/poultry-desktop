@@ -1100,6 +1100,21 @@ export default function App() {
           </div>
 
           <div className="subsection">
+            <h3>Feed stock</h3>
+            <p className="muted">Feed is shown here from the dedicated FIFO feed ledger. Do not create a second generic item for feed.</p>
+            <div className="table">
+              <div className="row header"><span>Feed</span><span>Remaining</span><span>Used</span><span>Remaining cost</span></div>
+              {feedInventory.map(item=><div className="row" key={item.feedTypeId}>
+                <span>{item.feedTypeName}</span>
+                <span>{feedQuantity(item.remainingQuantityMilli)} {item.unit}</span>
+                <span>{feedQuantity(item.consumedQuantityMilli)} {item.unit}</span>
+                <span>{item.remainingCostMinor}</span>
+              </div>)}
+              {feedInventory.length===0 && <p className="muted empty">No feed stock yet.</p>}
+            </div>
+          </div>
+
+          <div className="subsection">
             <h3>Record inventory movement</h3>
             <form className="inline-form" onSubmit={saveInventoryMovement}>
               <select required value={inventoryMovementForm.itemId} onChange={e=>{const id=e.target.value;setInventoryMovementForm({...inventoryMovementForm,itemId:id});loadInventoryMovements(id);}}>
