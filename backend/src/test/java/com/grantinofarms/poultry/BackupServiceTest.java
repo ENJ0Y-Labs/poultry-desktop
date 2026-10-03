@@ -3,7 +3,7 @@ package com.grantinofarms.poultry;
 import com.grantinofarms.poultry.service.BackupService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import org.springframework.core.env.MockEnvironment;
+import org.springframework.mock.env.MockEnvironment;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.SingleConnectionDataSource;
 
