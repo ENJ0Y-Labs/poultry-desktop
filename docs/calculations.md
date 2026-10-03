@@ -239,3 +239,17 @@ Target price for a margin:
 The backend rounds the required selling price upward to the next whole minor currency unit so the requested margin is not undercut by currency precision.
 
 The target margin is initially null. The working/latest margin is initially null and only moves upward when an actual sale produces a higher margin. A sale below the configured target never lowers the target automatically and requires explicit operator confirmation.
+
+## Stage 14: Expense handling
+
+Expenses are stored as integer minor currency units.
+
+No expense amount is calculated from floating-point values.
+
+Farm-level expense:
+- `batch_id = null`
+
+Batch-associated expense:
+- `batch_id = target batch id`
+
+The expense ledger does not create derived totals in the database. Farm and batch expense totals must be calculated from the authoritative expense rows when those reports are implemented.
