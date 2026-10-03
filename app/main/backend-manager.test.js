@@ -122,4 +122,22 @@ describe("BackendManager", () => {
       rmSync(userDataPath, { recursive: true, force: true });
     }
   });
+  it("reports actionable startup recovery guidance when health never becomes ready", async () => {
+    globalThis.fetch.mockRejectedValue(new Error("connection refused"));
+    const manager = new BackendManager({
+      userDataPath: createTempUserDataPath(),
+      appPath: "C:/project",
+      isPackaged: true,
+      port: 19123,
+      resourcesPath,
+      spawnProcess: spawnMock,
+    });
+
+    const child = fakeChild();
+    spawnMock.mockReturnValue(child);
+
+    await expect(manager.waitForHealth({ timeoutMs: 1, intervalMs: 0 }))
+      .rejects.toThrow(/port 19123.*database may be unavailable.*migration may have failed/i);
+  });
+
 });
