@@ -597,7 +597,7 @@ For common sales:
 
 Existing egg and bird sales are backfilled into customers and the common sales ledger by the Stage 15 migration.
 
-## 17. Suppliers and bird purchase history
+## 18. Suppliers and bird purchase history
 
 Supplier records are important for tracing purchases.
 
@@ -612,7 +612,7 @@ Historical purchase price must remain attached to the original purchase/batch da
 
 Do not silently replace it with today's price.
 
-## 18. Broiler pricing and target margin
+## 19. Broiler pricing and target margin
 
 Broiler pricing must be calculatable from actual bird costs.
 
@@ -631,7 +631,7 @@ Changes to target/working margin are audited.
 
 If a recalculation is triggered by a new cost, bird count, feed allocation, or sale, calculate again from the underlying records rather than editing a stored derived price.
 
-## 19. Money
+## 20. Money
 
 Money is integer minor units. Never use JS or Java floating-point types for money.
 
@@ -649,7 +649,7 @@ Round only at the appropriate line-total boundary.
 
 Profit must account for the attributable cost of sold birds/eggs and relevant expenses.
 
-## 20. Core calculations
+## 21. Core calculations
 
 All formulas live once in the shared domain/calculation layer, preferably under the Spring Boot domain package.
 
@@ -672,7 +672,7 @@ Round for presentation only.
 
 The frontend must never become a second source of truth for these calculations.
 
-## 21. API design
+## 22. API design
 
 Use REST endpoints under a versioned API prefix such as `/api/v1`.
 
@@ -699,7 +699,7 @@ Use explicit DTOs. Do not expose database entities directly as public API contra
 
 API error responses must be stable, user-safe, and actionable.
 
-## 22. Authentication and user model
+## 23. Authentication and user model
 
 Stage 1 has one primary owner/operator account.
 
@@ -718,7 +718,7 @@ For local-only operation:
 
 Multi-user roles and permissions are future work.
 
-## 23. Audit trail
+## 24. Audit trail
 
 Audit every material create/update/void/restore/status/cost/stock/bird-count/money action.
 
@@ -736,7 +736,7 @@ Audit logs are append-only. Normal application code must never update/delete the
 
 Reopening a SOLD batch always records a reason.
 
-## 24. Database rules
+## 25. Database rules
 
 Use SQLite for the local-first database.
 
@@ -762,7 +762,7 @@ Transactions are voided rather than hard-deleted.
 
 Reference data such as houses, suppliers, and customers is archived when historical references require preservation.
 
-## 25. Migrations
+## 26. Migrations
 
 Use **Flyway** for schema migrations.
 
@@ -776,7 +776,7 @@ Tests apply all migrations to a clean database.
 
 Do not mix Flyway migration ownership with ad-hoc schema creation in application startup.
 
-## 26. Backup and restore
+## 27. Backup and restore
 
 The database lives on a user's PC, so backups are mandatory.
 
@@ -809,7 +809,7 @@ Restore:
 
 Because the backend owns the database connection, restore must be coordinated through the Spring Boot lifecycle. The Electron renderer must never replace database files directly.
 
-## 27. UI rules
+## 28. UI rules
 
 The app is designed for farm workers.
 
@@ -830,7 +830,7 @@ All null metrics display **—**.
 
 The UI presents data returned by the backend. It does not own authoritative farm calculations.
 
-## 28. Navigation
+## 29. Navigation
 
 Main navigation:
 
@@ -862,7 +862,7 @@ Main navigation:
 
 Batch-specific modules must follow `flockCapabilities`.
 
-## 29. Testing
+## 30. Testing
 
 ### Backend
 
@@ -915,7 +915,7 @@ Reference vectors:
 
 `0 / 0 = null`
 
-## 30. Delivery plan
+## 31. Delivery plan
 
 ### Stage 1 — Farm foundation
 
@@ -1042,7 +1042,7 @@ Build:
 
 Every report must use the same calculations as the batch/farm screens.
 
-## 31. Working agreement
+## 32. Working agreement
 
 Before coding:
 1. Read this file and relevant `docs/`.
@@ -1071,7 +1071,7 @@ Keep commits small and focused.
 
 If code and documentation disagree, stop and flag it.
 
-## 32. Owner decisions already made
+## 33. Owner decisions already made
 
 These decisions are intentional and should not be changed casually:
 
@@ -1112,7 +1112,7 @@ These decisions are intentional and should not be changed casually:
 - Frontend source uses JavaScript/JSX, not TypeScript.
 - Electron renderer never accesses SQLite or backend internals directly.
 
-## 33. Guiding principle
+## 34. Guiding principle
 
 This is farm software, not a spreadsheet wearing an Electron costume.
 
