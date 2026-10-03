@@ -134,7 +134,6 @@ describe("App", () => {
     render(<App />);
     expect(screen.getByText("Loading farm...")).toBeInTheDocument();
 
-    resolveFarm(farm);
     vi.spyOn(farmApi, "getSettings").mockResolvedValue(settings);
     vi.spyOn(farmApi, "listHouses").mockResolvedValue([]);
     vi.spyOn(batchApi, "list").mockResolvedValue([]);
@@ -149,6 +148,7 @@ describe("App", () => {
     vi.spyOn(attentionApi, "list").mockResolvedValue([]);
     vi.spyOn(auditApi, "list").mockResolvedValue([]);
 
+    resolveFarm(farm);
     await waitFor(() => expect(screen.getByRole("heading", { name: "Farm dashboard" })).toBeInTheDocument());
   });
 
@@ -257,12 +257,12 @@ describe("App", () => {
 
     await waitFor(() => expect(screen.getByRole("heading", { name: "Farm dashboard" })).toBeInTheDocument());
 
-    const eggBatch = screen.getByRole("combobox", { name: "Layer batch" });
+    const eggBatch = screen.getByRole("option", { name: "Select a layer batch" }).parentElement;
     fireEvent.change(eggBatch, { target: { value: "layer-1" } });
     await waitFor(() => expect(screen.getByRole("heading", { name: "Record egg production" })).toBeInTheDocument());
     expect(screen.getByRole("option", { name: "L-2026-001" })).toBeInTheDocument();
 
-    const broilerBatch = screen.getByRole("combobox", { name: "Broiler batch" });
+    const broilerBatch = screen.getByRole("option", { name: "Select a broiler batch" }).parentElement;
     fireEvent.change(broilerBatch, { target: { value: "broiler-1" } });
     await waitFor(() => expect(screen.getByRole("heading", { name: "Record weight" })).toBeInTheDocument());
     expect(screen.getByRole("option", { name: /B-2026-001/ })).toBeInTheDocument();
