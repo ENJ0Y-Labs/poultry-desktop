@@ -4,7 +4,7 @@ import com.grantinofarms.poultry.service.DashboardService;
 import com.grantinofarms.poultry.service.ReportService;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.datasource.DriverManagerDataSource;
+import org.springframework.jdbc.datasource.SingleConnectionDataSource;
 
 import java.time.LocalDate;
 import java.util.Map;
@@ -17,7 +17,7 @@ class ReportServiceTest {
 
     @Test
     void farmReportOnlyIncludesSalesAndExpensesOnOrBeforeAsOfDate() {
-        var dataSource = new DriverManagerDataSource("jdbc:sqlite::memory:");
+        var dataSource = new SingleConnectionDataSource("jdbc:sqlite::memory:", true);
         var jdbc = new JdbcTemplate(dataSource);
         jdbc.execute("""
                 CREATE TABLE sales (
