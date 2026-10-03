@@ -302,13 +302,22 @@ public class AttentionService {
     }
 
     private void addBackupAlert(List<Map<String, Object>> result) {
-        String configured = environment.getProperty("poultry.database-path", "./data/poultry.db");
-        if (configured == null || configured.isBlank() || ":memory:".equalsIgnoreCase(configured)) return;
+        boolean backupEnabled = Boolean.parseBoolean(
+                environment.getProperty("poultry.backup.enabled", "false"));
+        if (!backupEnabled) return;
 
-        Path database = Path.of(configured).toAbsolutePath().normalize();
-        Path directory = database.getParent();
+        String configuredDatabase = environment.getProperty("poultry.database-path", "./data/poultry.db");
+        if (configuredDatabase == null || configuredDatabase.isBlank()
+                || ":memory:".equalsIgnoreCase(configuredDatabase)) return;
+
+        Path database = Path.of(configuredDatabase).toAbsolutePath().normalize();
+        String configuredDirectory = environment.getProperty("poultry.backup.directory", "");
+        Path directory = configuredDirectory == null || configuredDirectory.isBlank()
+                ? database.getParent()
+                : Path.of(configuredDirectory).toAbsolutePath().normalize();
+
         if (directory == null || !Files.isDirectory(directory)) {
-            addBackupOverdue(result, "No backup has been created in the default database directory.");
+            addBackupOverdue(result, "The automatic backup directory is unavailable.");
             return;
         }
 
@@ -325,7 +334,7 @@ public class AttentionService {
                     }));
 
             if (latest.isEmpty()) {
-                addBackupOverdue(result, "No database backup has been created yet.");
+                addBackupOverdue(result, "No automatic database backup has been created yet.");
                 return;
             }
 
@@ -335,10 +344,10 @@ public class AttentionService {
             ).toDays();
 
             if (ageDays >= BACKUP_OVERDUE_DAYS) {
-                addBackupOverdue(result, "The latest default backup is " + ageDays + " days old.");
+                addBackupOverdue(result, "The latest automatic backup is " + ageDays + " days old.");
             }
         } catch (Exception e) {
-            addBackupOverdue(result, "The default backup directory could not be checked.");
+            addBackupOverdue(result, "The automatic backup directory could not be checked.");
         }
     }
 
