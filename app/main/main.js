@@ -37,7 +37,7 @@ ipcMain.handle("backup:restore", async () => {
   if (backupVersion > currentVersion) throw new Error("This backup was created by a newer application version.");
 
   const database = backendManager.databasePath;
-  const safety = database.replace(/\\.db$/, "") + "-pre-restore-" + new Date().toISOString().replace(/[:.]/g, "-") + ".db";
+  const safety = database.replace(/\.db$/, "") + "-pre-restore-" + new Date().toISOString().replace(/[:.]/g, "-") + ".db";
   await backendManager.stop();
   try {
     if (existsSync(database)) copyFileSync(database, safety);
