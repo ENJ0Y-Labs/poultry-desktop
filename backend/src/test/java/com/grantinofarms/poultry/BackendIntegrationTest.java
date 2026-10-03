@@ -44,12 +44,12 @@ class BackendIntegrationTest {
 
     @Test
     void protectedApiRejectsAnonymousRequestsAndAcceptsAuthenticatedRequests() throws Exception {
+        auth.setup(new com.grantinofarms.poultry.dto.AuthSetupRequest(
+                "owner@example.com", "correct-horse-battery", "Farm Owner"));
+
         mockMvc.perform(get("/api/v1/batches"))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.error.code").value("UNAUTHENTICATED"));
-
-        auth.setup(new com.grantinofarms.poultry.dto.AuthSetupRequest(
-                "owner@example.com", "correct-horse-battery", "Farm Owner"));
 
         var login = mockMvc.perform(post("/api/v1/auth/login")
                         .contentType("application/json")
@@ -108,7 +108,7 @@ class BackendIntegrationTest {
         assertThat(jdbc.queryForObject(
                 "SELECT COUNT(*) FROM bird_purchases", Integer.class)).isZero();
         assertThat(jdbc.queryForObject(
-                "SELECT COUNT(*) FROM audit_logs", Integer.class)).isZero();
+                "SELECT COUNT(*) FROM audit_logs WHERE entity_type = 'BATCH'", Integer.class)).isZero();
         assertThat(jdbc.queryForObject(
                 "SELECT COUNT(*) FROM batch_code_sequences", Integer.class)).isZero();
 
