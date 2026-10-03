@@ -40,7 +40,7 @@ public class CustomerService {
 
         repository.insert(id, farmId, name, phone, notes, now);
         auditRepository.append(farmId, "CREATE", "CUSTOMER", id, null, null,
-                String.format("{"name":"%s","phone":"%s"}", name, phone == null ? "" : phone), now);
+                String.format("{\"name\":\"%s\",\"phone\":\"%s\"}", name, phone == null ? "" : phone), now);
         return repository.findById(farmId, id);
     }
 
@@ -62,7 +62,7 @@ public class CustomerService {
         String now = Instant.now().toString();
         repository.update(farmId, id, name, phone, notes, now);
         auditRepository.append(farmId, "UPDATE", "CUSTOMER", id, null,
-                current.name(), String.format("{"name":"%s","phone":"%s","notes":"%s"}",
+                current.name(), String.format("{\"name\":\"%s\",\"phone\":\"%s\",\"notes\":\"%s\"}",
                         name, phone == null ? "" : phone, notes == null ? "" : notes), now);
         return repository.findById(farmId, id);
     }
@@ -87,7 +87,7 @@ public class CustomerService {
         String id = UUID.randomUUID().toString();
         repository.insert(id, farmId, name, null, null, now);
         auditRepository.append(farmId, "CREATE", "CUSTOMER", id, null, null,
-                String.format("{"name":"%s","source":"SALE"}", name), now);
+                String.format("{\"name\":\"%s\",\"source\":\"SALE\"}", name), now);
         return repository.findById(farmId, id);
     }
 
