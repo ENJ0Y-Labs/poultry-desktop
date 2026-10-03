@@ -23,17 +23,23 @@ public class BroilerProductionService {
     private final BatchService batchService;
     private final AuditRepository auditRepository;
     private final PricingService pricingService;
+    private final CustomerService customerService;
+    private final SalesRepository salesRepository;
 
     public BroilerProductionService(BroilerProductionRepository repository,
                                     BirdPopulationService populationService,
                                     BatchService batchService,
                                     AuditRepository auditRepository,
-                                    PricingService pricingService) {
+                                    PricingService pricingService,
+                                    CustomerService customerService,
+                                    SalesRepository salesRepository) {
         this.repository = repository;
         this.populationService = populationService;
         this.batchService = batchService;
         this.auditRepository = auditRepository;
         this.pricingService = pricingService;
+        this.customerService = customerService;
+        this.salesRepository = salesRepository;
     }
 
     @Transactional
@@ -115,6 +121,8 @@ public class BroilerProductionService {
         }
 
         String id = UUID.randomUUID().toString();
+        var customerRecord = customerService.requireForSale(request.customerId(), request.customer());
+        String customer = customerRecord.name();
 
         pricingService.recordSaleMargin(
                 batchId,
@@ -126,18 +134,23 @@ public class BroilerProductionService {
         );
 
         populationService.addSale(batchId, new BirdPopulationEventRequest(
-                request.recordDate(), request.quantity(), "Bird sale: " + clean(request.customer())
+                request.recordDate(), request.quantity(), "Bird sale: " + customer
         ));
 
         String now = Instant.now().toString();
         repository.insertSale(id, batchId, request.recordDate(), request.quantity(),
-                request.pricePerBirdMinor(), total, clean(request.customer()), now);
+                request.pricePerBirdMinor(), total, customer, customerRecord.id(), now);
+        salesRepository.insert(
+                id, repository.batchFarmId(batchId), batchId, customerRecord.id(),
+                request.recordDate(), "BROILER",
+                BigDecimal.valueOf(request.quantity()), "BIRD",
+                request.pricePerBirdMinor(), total, "BIRD_SALE", id, now);
 
         auditRepository.append(repository.batchFarmId(batchId), "CREATE", "BIRD_SALE",
                 id, null, null,
                 String.format("{\"batchId\":\"%s\",\"recordDate\":\"%s\",\"quantity\":%d,\"pricePerBirdMinor\":%d,\"totalAmountMinor\":%d,\"customer\":\"%s\"}",
                         batchId, request.recordDate(), request.quantity(),
-                        request.pricePerBirdMinor(), total, clean(request.customer())),
+                        request.pricePerBirdMinor(), total, customer),
                 now);
 
         BirdSaleResponse response = new BirdSaleResponse(
