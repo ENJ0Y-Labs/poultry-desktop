@@ -28,17 +28,26 @@ public class FarmService {
     private final WaterContainerSizeRepository waterRepository;
     private final AuditRepository auditRepository;
     private final ObjectMapper objectMapper;
+    private final ApplicationSettingsRepository applicationSettingsRepository;
+    private final BackupSettingsRepository backupSettingsRepository;
+    private final ExpenseCategoryRepository expenseCategoryRepository;
 
     public FarmService(FarmRepository farmRepository,
                        FarmSettingsRepository settingsRepository,
                        WaterContainerSizeRepository waterRepository,
                        AuditRepository auditRepository,
-                       ObjectMapper objectMapper) {
+                       ObjectMapper objectMapper,
+                       ApplicationSettingsRepository applicationSettingsRepository,
+                       BackupSettingsRepository backupSettingsRepository,
+                       ExpenseCategoryRepository expenseCategoryRepository) {
         this.farmRepository = farmRepository;
         this.settingsRepository = settingsRepository;
         this.waterRepository = waterRepository;
         this.auditRepository = auditRepository;
         this.objectMapper = objectMapper;
+        this.applicationSettingsRepository = applicationSettingsRepository;
+        this.backupSettingsRepository = backupSettingsRepository;
+        this.expenseCategoryRepository = expenseCategoryRepository;
     }
 
     @Transactional
@@ -53,6 +62,11 @@ public class FarmService {
         farmRepository.insert(id, request.name().trim(), clean(request.location()),
                 request.timezone().trim(), request.currency().trim().toUpperCase(), now);
         settingsRepository.insert(id, 30, null, now);
+        applicationSettingsRepository.insert(id, now);
+        backupSettingsRepository.insert(id, now);
+        expenseCategoryRepository.insert(UUID.randomUUID().toString(), id, "FEED", now);
+        expenseCategoryRepository.insert(UUID.randomUUID().toString(), id, "DRUGS", now);
+        expenseCategoryRepository.insert(UUID.randomUUID().toString(), id, "OTHER", now);
 
         auditRepository.append(id, "CREATE", "FARM", id, null, null,
                 json(Map.of("name", request.name().trim())), now);
