@@ -67,7 +67,7 @@ describe("App", () => {
     render(<App />);
 
     await waitFor(() => expect(screen.getByRole("heading", { name:"Farm dashboard" })).toBeInTheDocument());
-    expect(screen.getAllByText("—").length).toBeGreaterThan(0);
+    await waitFor(() => expect(screen.getAllByText("—").length).toBeGreaterThan(0));
   });
 
 });
