@@ -1,7 +1,6 @@
 package com.grantinofarms.poultry.service;
 
 import com.grantinofarms.poultry.repository.FarmRepository;
-import org.springframework.core.env.Environment;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowCallbackHandler;
 import org.springframework.stereotype.Service;
@@ -30,12 +29,12 @@ public class AttentionService {
 
     private final JdbcTemplate jdbc;
     private final FarmRepository farms;
-    private final Environment environment;
+    private final BackupSettingsRepository backupSettingsRepository;
 
-    public AttentionService(JdbcTemplate jdbc, FarmRepository farms, Environment environment) {
+    public AttentionService(JdbcTemplate jdbc, FarmRepository farms, BackupSettingsRepository backupSettingsRepository) {
         this.jdbc = jdbc;
         this.farms = farms;
-        this.environment = environment;
+        this.backupSettingsRepository = backupSettingsRepository;
     }
 
     public List<Map<String, Object>> list(LocalDate asOf) {
