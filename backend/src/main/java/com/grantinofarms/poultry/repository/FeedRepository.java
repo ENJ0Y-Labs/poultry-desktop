@@ -120,12 +120,12 @@ public class FeedRepository {
     }
 
     public void insertUsage(String id, String batchId, String feedTypeId,
-                            LocalDate date, long quantityMilli, String now) {
+                            LocalDate date, long quantityMilli, String reason, String now) {
         jdbc.update("""
                 INSERT INTO feed_usage
-                    (id, batch_id, feed_type_id, usage_date, quantity_milli, created_at)
-                VALUES (?, ?, ?, ?, ?, ?)
-                """, id, batchId, feedTypeId, date.toString(), quantityMilli, now);
+                    (id, batch_id, feed_type_id, usage_date, quantity_milli, reason, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                """, id, batchId, feedTypeId, date.toString(), quantityMilli, reason, now);
     }
 
     public void insertExpense(String id, String farmId, long amountMinor, LocalDate date,
