@@ -49,3 +49,21 @@ jobs:
       - run: npm ci
       - run: bash ./mvnw -f backend/pom.xml package -DskipTests
       - run: npm run build
+
+  windows-package:
+    runs-on: windows-latest
+    needs: [frontend, backend]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: maven
+      - run: npm ci
+      - run: ./mvnw -f backend/pom.xml package -DskipTests
+      - run: npm run package
