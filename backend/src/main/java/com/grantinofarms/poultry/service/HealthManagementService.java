@@ -44,8 +44,14 @@ public class HealthManagementService {
     }
 
     public List<HealthRecordResponse> health(String batchId) {
+        return health(batchId, null);
+    }
+
+    public List<HealthRecordResponse> health(String batchId, LocalDate asOf) {
         requireBatch(batchId);
-        return repository.findHealth(batchId);
+        return repository.findHealth(batchId).stream()
+                .filter(record -> asOf == null || !record.recordDate().isAfter(asOf))
+                .toList();
     }
 
     @Transactional
@@ -73,8 +79,14 @@ public class HealthManagementService {
     }
 
     public List<DrugRecordResponse> drugs(String batchId) {
+        return drugs(batchId, null);
+    }
+
+    public List<DrugRecordResponse> drugs(String batchId, LocalDate asOf) {
         requireBatch(batchId);
-        return repository.findDrugs(batchId);
+        return repository.findDrugs(batchId).stream()
+                .filter(record -> asOf == null || !record.recordDate().isAfter(asOf))
+                .toList();
     }
 
     @Transactional
@@ -100,8 +112,14 @@ public class HealthManagementService {
     }
 
     public List<VaccinationRecordResponse> vaccinations(String batchId) {
+        return vaccinations(batchId, null);
+    }
+
+    public List<VaccinationRecordResponse> vaccinations(String batchId, LocalDate asOf) {
         requireBatch(batchId);
-        return repository.findVaccinations(batchId);
+        return repository.findVaccinations(batchId).stream()
+                .filter(record -> asOf == null || !record.recordDate().isAfter(asOf))
+                .toList();
     }
 
     private String requireActiveBatch(String batchId) {
