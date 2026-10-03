@@ -1,5 +1,7 @@
 package com.grantinofarms.poultry.repository;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.grantinofarms.poultry.service.CurrentUserContext;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
@@ -13,7 +15,12 @@ import java.util.UUID;
 @Repository
 public class AuditRepository {
     private final JdbcTemplate jdbc;
-    public AuditRepository(JdbcTemplate jdbc) { this.jdbc = jdbc; }
+    private final ObjectMapper mapper;
+
+    public AuditRepository(JdbcTemplate jdbc, ObjectMapper mapper) {
+        this.jdbc = jdbc;
+        this.mapper = mapper;
+    }
 
     public void append(String farmId, String action, String entityType, String entityId,
                        String reason, String beforeJson, String afterJson, String now) {
@@ -23,7 +30,7 @@ public class AuditRepository {
                      reason, changed_fields_json, before_json, after_json)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """, UUID.randomUUID().toString(), CurrentUserContext.get(), farmId, now,
-                action, entityType, entityId, reason, null, beforeJson, afterJson);
+                action, entityType, entityId, reason, changedFields(beforeJson, afterJson), beforeJson, afterJson);
     }
 
     public List<Map<String, Object>> find(String farmId, int limit) {
@@ -51,5 +58,25 @@ public class AuditRepository {
             row.put("after", rs.getString("after_json"));
             return row;
         }, farmId, safeLimit);
+    }
+
+    private String changedFields(String beforeJson, String afterJson) {
+        try {
+            if (beforeJson == null && afterJson == null) return null;
+            JsonNode before = beforeJson == null ? mapper.createObjectNode() : mapper.readTree(beforeJson);
+            JsonNode after = afterJson == null ? mapper.createObjectNode() : mapper.readTree(afterJson);
+            List<String> fields = new ArrayList<>();
+            java.util.Set<String> names = new java.util.TreeSet<>();
+            before.fieldNames().forEachRemaining(names::add);
+            after.fieldNames().forEachRemaining(names::add);
+            for (String name : names) {
+                JsonNode left = before.get(name);
+                JsonNode right = after.get(name);
+                if (left == null ? right != null : !left.equals(right)) fields.add(name);
+            }
+            return mapper.writeValueAsString(fields);
+        } catch (Exception e) {
+            return null;
+        }
     }
 }
