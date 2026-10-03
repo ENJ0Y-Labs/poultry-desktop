@@ -150,7 +150,7 @@ public class PricingService {
         requireBroiler(batchId);
         try {
             BirdPopulationEvent proposed = new BirdPopulationEvent(
-                    date, "SOLD", quantity, null, "Pricing preview", null
+                    date, "SOLD", quantity
             );
             return com.grantinofarms.poultry.domain.BirdCostCalculator.costForReduction(
                     populationRepository.initialBirds(batchId),
