@@ -35,7 +35,7 @@ const emptyBirdSale = {
   customerId: "",
 };
 const emptyPricing = { quantity: "", date: todayLocalDate() };
-import { batchApi, broilerApi, costApi, dailyApi, eggApi, expenseApi, farmApi, feedApi, populationApi, healthApi, pricingApi, customerApi, salesApi, inventoryApi, dashboardApi, attentionApi, auditApi, backupApi, reportApi } from "./services/api.js";
+import { batchApi, broilerApi, costApi, dailyApi, eggApi, expenseApi, farmApi, feedApi, populationApi, healthApi, pricingApi, customerApi, salesApi, inventoryApi, dashboardApi, attentionApi, auditApi, backupApi, reportApi, expenseCategoryApi, accountApi, settingsApi } from "./services/api.js";
 
 const emptyFarm = { name: "", location: "", timezone: "Africa/Lagos", currency: "NGN" };
 const emptyHouse = { name: "", code: "", notes: "" };
@@ -181,6 +181,12 @@ export default function App() {
   const [dashboard, setDashboard] = useState(null);
   const [attention, setAttention] = useState([]);
   const [auditRows, setAuditRows] = useState([]);
+  const [expenseCategories, setExpenseCategories] = useState([]);
+  const [expenseCategoryForm, setExpenseCategoryForm] = useState("");
+  const [account, setAccount] = useState(null);
+  const [accountForm, setAccountForm] = useState({ email: "", fullName: "", currentPassword: "", newPassword: "" });
+  const [applicationSettings, setApplicationSettings] = useState({ startPage: "dashboard", dateFormat: "YYYY-MM-DD" });
+  const [backupSettings, setBackupSettings] = useState({ enabled: false, directory: "", intervalMs: 86400000 });
   const [selectedBatchId, setSelectedBatchId] = useState(() => getLastBatchId() || "");
   const [batchDashboard, setBatchDashboard] = useState(null);
   const [farmReport, setFarmReport] = useState(null);
@@ -324,6 +330,36 @@ export default function App() {
   async function saveFarm(event) {
     event.preventDefault(); setSaving(true); setError("");
     try { setFarm(await farmApi.update(farmForm)); }
+    catch (err) { setError(displayApiError(err)); } finally { setSaving(false); }
+  }
+
+  async function createExpenseCategory(event) {
+    event.preventDefault(); setSaving(true); setError("");
+    try { const created = await expenseCategoryApi.create({ name: expenseCategoryForm.trim() }); setExpenseCategories(rows => [...rows, created].sort((a,b) => a.name.localeCompare(b.name))); setExpenseCategoryForm(""); }
+    catch (err) { setError(displayApiError(err)); } finally { setSaving(false); }
+  }
+  async function archiveExpenseCategory(id) {
+    setSaving(true); setError("");
+    try { await expenseCategoryApi.archive(id); setExpenseCategories(rows => rows.filter(row => row.id !== id)); }
+    catch (err) { setError(displayApiError(err)); } finally { setSaving(false); }
+  }
+  async function saveAccount(event) {
+    event.preventDefault(); setSaving(true); setError("");
+    try { const updated = await accountApi.update(accountForm); setAccount(updated); setAccountForm({ email: updated.email, fullName: updated.fullName, currentPassword: "", newPassword: "" }); }
+    catch (err) { setError(displayApiError(err)); } finally { setSaving(false); }
+  }
+  async function saveApplicationSettings(event) {
+    event.preventDefault(); setSaving(true); setError("");
+    try { setApplicationSettings(await settingsApi.updateApplication(applicationSettings)); }
+    catch (err) { setError(displayApiError(err)); } finally { setSaving(false); }
+  }
+  async function chooseBackupSettingsDirectory() {
+    try { const directory = window.poultryDesktop?.chooseBackupDirectory ? await window.poultryDesktop.chooseBackupDirectory() : null; if (directory) setBackupSettings(s => ({ ...s, directory })); }
+    catch (err) { setError(displayApiError(err)); }
+  }
+  async function saveBackupSettings(event) {
+    event.preventDefault(); setSaving(true); setError("");
+    try { setBackupSettings(await settingsApi.updateBackup(backupSettings)); }
     catch (err) { setError(displayApiError(err)); } finally { setSaving(false); }
   }
 
@@ -861,6 +897,18 @@ export default function App() {
         </form></section>
 
         <section className="card"><h2>Backup & restore</h2><div className="form-grid"><p className="muted">Backups are created by the backend using SQLite-safe snapshotting. Restore is handled by Electron so the renderer never replaces the database.</p><div className="inline-form"><button type="button" disabled={saving} onClick={createBackup}>Create backup</button><button type="button" disabled={saving || !window.poultryDesktop} onClick={restoreBackup}>Restore backup</button></div><small>Default retention: 30 backup files. A safety copy is created before restore.</small></div></section>
+
+        <section className="card full"><div className="section-head"><h2>Configuration</h2><p className="muted">Settings that control farm behavior are stored locally and audited when changed.</p></div>
+          <div className="dashboard-columns">
+            <div className="subsection"><h3>Feed types</h3><div className="table"><div className="row header"><span>Name</span><span>Unit</span><span>Applies to</span><span>Status</span></div>{feedTypes.map(t=><div className="row" key={t.id}><span>{t.name}</span><span>{t.unit}</span><span>{t.applicableType}</span><span>{t.status}</span></div>)}</div></div>
+            <div className="subsection"><h3>Expense categories</h3><form className="inline-form" onSubmit={createExpenseCategory}><input required maxLength="80" placeholder="New category" value={expenseCategoryForm} onChange={e=>setExpenseCategoryForm(e.target.value)}/><button disabled={saving}>Add</button></form><div className="table">{expenseCategories.map(cat=><div className="row" key={cat.id}><span>{cat.name}</span><span>{cat.status}</span><button type="button" disabled={saving} onClick={()=>archiveExpenseCategory(cat.id)}>Archive</button></div>)}</div></div>
+          </div>
+          <div className="dashboard-columns">
+            <div className="subsection"><h3>Application settings</h3><form className="form-grid" onSubmit={saveApplicationSettings}><label>Start page<select value={applicationSettings.startPage} onChange={e=>setApplicationSettings({...applicationSettings,startPage:e.target.value})}><option value="dashboard">Dashboard</option><option value="operations">Daily operations</option><option value="reports">Reports</option><option value="settings">Settings</option></select></label><label>Date format<select value={applicationSettings.dateFormat} onChange={e=>setApplicationSettings({...applicationSettings,dateFormat:e.target.value})}><option>YYYY-MM-DD</option><option>DD/MM/YYYY</option><option>DD-MM-YYYY</option></select></label><button disabled={saving}>Save application settings</button></form></div>
+            <div className="subsection"><h3>Backup settings</h3><form className="form-grid" onSubmit={saveBackupSettings}><label><input type="checkbox" checked={backupSettings.enabled} onChange={e=>setBackupSettings({...backupSettings,enabled:e.target.checked})}/> Enable automatic backups</label><label>Backup directory<input value={backupSettings.directory} onChange={e=>setBackupSettings({...backupSettings,directory:e.target.value})}/><button type="button" onClick={chooseBackupSettingsDirectory}>Choose folder</button></label><label>Interval (hours)<input type="number" min="1" value={Math.max(1,Math.round(backupSettings.intervalMs/3600000))} onChange={e=>setBackupSettings({...backupSettings,intervalMs:Math.max(1,Number(e.target.value))*3600000})}/></label><button disabled={saving}>Save backup settings</button></form></div>
+          </div>
+          <div className="subsection"><h3>User / account</h3>{account ? <form className="form-grid" onSubmit={saveAccount}><label>Full name<input required value={accountForm.fullName} onChange={e=>setAccountForm({...accountForm,fullName:e.target.value})}/></label><label>Email<input required type="email" value={accountForm.email} onChange={e=>setAccountForm({...accountForm,email:e.target.value})}/></label><label>Current password<input type="password" value={accountForm.currentPassword} onChange={e=>setAccountForm({...accountForm,currentPassword:e.target.value})}/></label><label>New password<input type="password" minLength="10" value={accountForm.newPassword} onChange={e=>setAccountForm({...accountForm,newPassword:e.target.value})}/><small>Leave password fields blank to change only profile information.</small></label><button disabled={saving}>Save account</button></form> : <p className="muted">Account unavailable.</p>}</div>
+        </section>
 
         <section className="card"><h2>Pricing & margins</h2><form className="form-grid" onSubmit={savePricingSettings}>
           <label>Target margin %<input type="number" min="0" max="99.999999" step="0.01" placeholder="e.g. 25" value={pricingSettings.targetMarginPercent ?? ""} onChange={e=>setPricingSettings({...pricingSettings,targetMarginPercent:e.target.value})}/><small>Leave empty for no target. A sale never silently lowers it.</small></label>
