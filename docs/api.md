@@ -209,3 +209,16 @@ The known test vector is 400 kg feed and 200 kg live-weight gain, producing FCR 
 Request fields: recordDate, quantity, pricePerBirdMinor, customer.
 
 A bird sale creates a SOLD population event and is never recorded as mortality. When a sale leaves zero current birds, the backend transitions the batch to SOLD and subsequent ordinary writes are rejected.
+
+## Stage 13: Pricing and margins
+
+Pricing settings:
+- `GET /api/v1/pricing/settings`
+- `PUT /api/v1/pricing/settings` with `{ "targetMarginPercent": 25 }` or null
+
+Broiler pricing preview:
+- `GET /api/v1/pricing/batches/{batchId}?quantity=50&asOf=YYYY-MM-DD`
+
+The response contains actual attributable cost, target/working margins, and backend-calculated target/working price per bird. Pricing is currently Broiler-only.
+
+Broiler sale requests may include `confirmedBelowTarget: true`. If the configured target exists and the proposed sale margin is below it, the backend returns `BELOW_TARGET_CONFIRMATION_REQUIRED` unless explicit confirmation is supplied. The target is not lowered. Confirmed below-target sales and working-margin changes are audited.
