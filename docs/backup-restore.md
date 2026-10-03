@@ -1,6 +1,6 @@
 # Backup and restore
 
-Backups are created by the Spring Boot backend using SQLite `VACUUM INTO`, which produces a consistent snapshot of a live database. The default naming pattern is `poultry-YYYY-MM-DD-HHmm.db`, with a maximum of 30 retained backup files.
+Backups are created by the Spring Boot backend using SQLite `VACUUM INTO`, which produces a consistent snapshot of a live database. The default naming pattern is `poultry-YYYY-MM-DD.db`. If that file already exists, the backup uses `poultry-YYYY-MM-DD-HHmm.db`; a further collision gets a numeric suffix. A maximum of 30 managed backup files is retained.
 
 API:
 - POST `/api/v1/backup` with optional `{"directory":"C:\\path\\to\\backups"}`
