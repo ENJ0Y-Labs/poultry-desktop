@@ -173,16 +173,20 @@ public class FeedService {
             throw new ApiException(HttpStatus.CONFLICT, "INSUFFICIENT_FEED", e.getMessage());
         }
 
+        String reason = request.reason() == null || request.reason().isBlank()
+                ? "Production feed usage"
+                : request.reason().trim();
+
         repository.insertUsage(proposed.id(), batchId, type.id(), request.usageDate(),
-                quantityMilli, proposed.createdAt().toString());
+                quantityMilli, reason, proposed.createdAt().toString());
         if (feedCost > 0) {
             birdCostService.addAdditionalCost(batchId,
                     new BirdAdditionalCostRequest(request.usageDate(), feedCost, "Feed usage: " + type.name()));
         }
 
         auditRepository.append(farmId, "CREATE", "FEED_USAGE", proposed.id(), null, null,
-                String.format("{\"batchId\":\"%s\",\"feedTypeId\":\"%s\",\"quantityMilli\":%d,\"feedCostMinor\":%d}",
-                        batchId, type.id(), quantityMilli, feedCost), proposed.createdAt().toString());
+                String.format("{\"batchId\":\"%s\",\"feedTypeId\":\"%s\",\"quantityMilli\":%d,\"feedCostMinor\":%d,\"reason\":\"%s\"}",
+                        batchId, type.id(), quantityMilli, feedCost, reason), proposed.createdAt().toString());
 
         return new FeedUsageResponse(proposed.id(), batchId, type.id(), type.name(), type.unit(),
                 request.usageDate(), quantityMilli, feedCost);
