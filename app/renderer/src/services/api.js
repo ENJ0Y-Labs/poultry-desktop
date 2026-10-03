@@ -162,9 +162,17 @@ export const attentionApi = {
   list: (asOf) => request("/attention" + (asOf ? "?asOf=" + encodeURIComponent(asOf) : "")),
 };
 
+async function downloadText(path) {
+  const response = await fetch(API_BASE + path, { credentials: "include" });
+  if (!response.ok) throw new ApiError("EXPORT_FAILED", "Report export failed.", response.status);
+  return response.text();
+}
+
 export const reportApi = {
   farm: (asOf) => request("/reports/farm" + (asOf ? "?asOf=" + encodeURIComponent(asOf) : "")),
   batch: (id, asOf) => request("/reports/batches/" + id + (asOf ? "?asOf=" + encodeURIComponent(asOf) : "")),
+  farmCsv: (asOf) => downloadText("/reports/farm.csv" + (asOf ? "?asOf=" + encodeURIComponent(asOf) : "")),
+  batchCsv: (id, asOf) => downloadText("/reports/batches/" + id + ".csv" + (asOf ? "?asOf=" + encodeURIComponent(asOf) : "")),
 };
 
 export const auditApi = {
