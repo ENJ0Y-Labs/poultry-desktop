@@ -139,7 +139,7 @@ export default function App() {
     batchId: "", date: new Date().toISOString().slice(0, 10), good: "", cracked: "", notes: ""
   });
   const [eggSaleForm, setEggSaleForm] = useState({
-    batchId: "", date: new Date().toISOString().slice(0, 10), customer: "", crates: "", pricePerCrateMinor: ""
+    batchId: "", date: new Date().toISOString().slice(0, 10), customer: "", customerId: "", crates: "", pricePerCrateMinor: ""
   });
   const [houseForm, setHouseForm] = useState(emptyHouse);
   const [crateSize, setCrateSize] = useState(30);
