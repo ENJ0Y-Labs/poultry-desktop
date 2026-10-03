@@ -1,5 +1,5 @@
 import { EventEmitter } from "node:events";
-import { mkdtempSync, rmSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -11,13 +11,6 @@ vi.mock("node:child_process", async importOriginal => {
   return { ...actual, spawn: spawnMock };
 });
 
-vi.mock("node:fs", async importOriginal => {
-  const actual = await importOriginal();
-  return {
-    ...actual,
-    existsSync: vi.fn(() => true),
-  };
-});
 
 import { BackendManager } from "./backend-manager.js";
 
@@ -38,14 +31,26 @@ function createTempUserDataPath() {
 }
 
 describe("BackendManager", () => {
+  let resourcesPath;
+
   beforeEach(() => {
     spawnMock.mockReset();
     globalThis.fetch = vi.fn(async () => ({ ok: true }));
 
+    resourcesPath = mkdtempSync(join(tmpdir(), "poultry-electron-resources-"));
+    mkdirSync(join(resourcesPath, "backend"), { recursive: true });
+    mkdirSync(join(resourcesPath, "runtime", "bin"), { recursive: true });
+    writeFileSync(join(resourcesPath, "backend", "poultry-backend.jar"), "");
+    writeFileSync(join(resourcesPath, "runtime", "bin", "java.exe"), "");
+
     Object.defineProperty(process, "resourcesPath", {
       configurable: true,
-      value: "C:/test/resources",
+      value: resourcesPath,
     });
+  });
+
+  afterEach(() => {
+    rmSync(resourcesPath, { recursive: true, force: true });
   });
 
   it("uses the project data directory for the development database", () => {
