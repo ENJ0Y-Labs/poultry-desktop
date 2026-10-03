@@ -1016,6 +1016,18 @@ Feed purchase and usage dates are chronological within each feed type. Backdatin
 
 Done when feed purchases increase inventory and record one FEED expense, feed usage consumes the oldest stock first, no usage creates a second expense, and feed cost reconciles with attributable bird cost.
 
+
+### Stage 15 — Sales and customers
+
+Build:
+- reusable farm-scoped customers with name, phone, and notes
+- common sales ledger
+- customer references on Layer and Broiler sales
+- common sales history/filtering
+- migration of existing sale customer names into customer records
+
+Done when every new Layer or Broiler sale preserves its existing type-specific rules while also appearing exactly once in the common sales ledger with date, customer, batch, quantity, unit, unit price, and total.
+
 ### Stage 4 — Management
 
 Build:
