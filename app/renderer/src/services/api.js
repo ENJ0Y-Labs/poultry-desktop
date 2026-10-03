@@ -177,11 +177,19 @@ async function downloadText(path) {
   return response.text();
 }
 
+async function downloadBlob(path) {
+  const response = await fetch(API_BASE + path, { credentials: "include" });
+  if (!response.ok) throw new ApiError("EXPORT_FAILED", "Report export failed.", response.status);
+  return response.blob();
+}
+
 export const reportApi = {
   farm: (asOf) => request("/reports/farm" + (asOf ? "?asOf=" + encodeURIComponent(asOf) : "")),
   batch: (id, asOf) => request("/reports/batches/" + id + (asOf ? "?asOf=" + encodeURIComponent(asOf) : "")),
   farmCsv: (asOf) => downloadText("/reports/farm.csv" + (asOf ? "?asOf=" + encodeURIComponent(asOf) : "")),
   batchCsv: (id, asOf) => downloadText("/reports/batches/" + id + ".csv" + (asOf ? "?asOf=" + encodeURIComponent(asOf) : "")),
+  farmPdf: (asOf) => downloadBlob("/reports/farm.pdf" + (asOf ? "?asOf=" + encodeURIComponent(asOf) : "")),
+  batchPdf: (id, asOf) => downloadBlob("/reports/batches/" + id + ".pdf" + (asOf ? "?asOf=" + encodeURIComponent(asOf) : "")),
 };
 
 export const auditApi = {
