@@ -216,3 +216,14 @@ Stores Broiler bird-sale facts:
 A corresponding SOLD population event remains the authoritative population change. The sale table preserves the commercial details.
 
 Broiler batches become SOLD when all current birds have been sold. Once SOLD, ordinary Broiler production and population writes are rejected. Reopening remains the existing exceptional audited lifecycle action.
+
+## Stage 13: Pricing and margins
+
+### farm_settings additions
+- `target_margin_percent`: optional configurable target margin percentage, initially null.
+- `working_margin_percent`: optional latest/working margin reference, initially null.
+
+### pricing_margin_history
+Append-only pricing/margin change history. It records target changes and working-margin increases with references and reasons. The general `audit_logs` table also records operator-visible pricing changes and below-target confirmations.
+
+Pricing calculations are derived from the existing bird-cost and bird-sale records. No stored sale price is treated as an authoritative future cost.
