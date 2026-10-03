@@ -10,7 +10,7 @@ The renderer never accesses SQLite or Node.js directly. Spring Boot owns validat
 
 ## Current implementation
 
-The repository now contains the Stage 1–16 farm domain plus the production-foundation work for audit, authentication, dashboards, attention, reports, backup validation and CI.
+The repository contains the farm domain through inventory plus production-foundation work for authentication, audit, farm and batch dashboards, attention, reports, SQLite-safe backups, Electron lifecycle integration, calculation tests, CI and Windows packaging. Restore orchestration is performed by Electron so the renderer never replaces the live database.
 
 The important rule remains: records are facts, derived state is calculated, and historical transactions are not silently deleted.
 
