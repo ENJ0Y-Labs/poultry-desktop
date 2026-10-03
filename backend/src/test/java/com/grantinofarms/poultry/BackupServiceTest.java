@@ -27,6 +27,10 @@ class BackupServiceTest {
         );
         var jdbc = new JdbcTemplate(dataSource);
         jdbc.execute("CREATE TABLE farm_data (id INTEGER PRIMARY KEY, name TEXT NOT NULL)");
+        jdbc.execute("CREATE TABLE app_metadata (key TEXT PRIMARY KEY, value TEXT NOT NULL)");
+        jdbc.execute("CREATE TABLE flyway_schema_history (installed_rank INTEGER PRIMARY KEY, version TEXT, success INTEGER NOT NULL)");
+        jdbc.update("INSERT INTO app_metadata(key, value) VALUES (?, ?)", "schema_initialized", "true");
+        jdbc.update("INSERT INTO flyway_schema_history(installed_rank, version, success) VALUES (?, ?, ?)", 18, "18", 1);
         jdbc.update("INSERT INTO farm_data(name) VALUES (?)", "Grantino Farms");
 
         var environment = new MockEnvironment()
