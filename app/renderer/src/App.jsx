@@ -23,7 +23,7 @@ const emptyBirdSale = {
   customerId: "",
 };
 const emptyPricing = { quantity: "", date: new Date().toISOString().slice(0, 10) };
-import { batchApi, broilerApi, costApi, dailyApi, eggApi, expenseApi, farmApi, feedApi, populationApi, healthApi, pricingApi, customerApi, salesApi, inventoryApi, dashboardApi, attentionApi, auditApi, backupApi } from "./services/api.js";
+import { batchApi, broilerApi, costApi, dailyApi, eggApi, expenseApi, farmApi, feedApi, populationApi, healthApi, pricingApi, customerApi, salesApi, inventoryApi, dashboardApi, attentionApi, auditApi, backupApi, reportApi } from "./services/api.js";
 
 const emptyFarm = { name: "", location: "", timezone: "Africa/Lagos", currency: "NGN" };
 const emptyHouse = { name: "", code: "", notes: "" };
@@ -171,6 +171,7 @@ export default function App() {
   const [auditRows, setAuditRows] = useState([]);
   const [selectedBatchId, setSelectedBatchId] = useState(() => localStorage.getItem("grantino:lastBatchId") || "");
   const [batchDashboard, setBatchDashboard] = useState(null);
+  const [farmReport, setFarmReport] = useState(null);
 
   async function load() {
     setLoading(true); setError("");
@@ -213,6 +214,8 @@ export default function App() {
       if (err.message !== "No farm has been created yet.") setError(err.message);
     } finally { setLoading(false); }
   }
+  async function loadReport() { try { setFarmReport(await reportApi.farm()); } catch (err) { setError(err.message); } }
+
   async function loadBatchDashboard(id = selectedBatchId) {
     if (!id) { setBatchDashboard(null); return; }
     try { setBatchDashboard(await dashboardApi.batch(id)); } catch (err) { setError(err.message); }
@@ -235,7 +238,7 @@ export default function App() {
   }
 
   useEffect(() => { load(); }, []);
-  useEffect(() => { if (farm) loadDashboard(); }, [farm, batches.length, inventoryItems.length, sales.length, expenses.length]);
+  useEffect(() => { if (farm) { loadDashboard(); loadReport(); } }, [farm, batches.length, inventoryItems.length, sales.length, expenses.length]);
   useEffect(() => { if (selectedBatchId && batches.some(batch => batch.id === selectedBatchId)) loadBatchDashboard(selectedBatchId); }, [selectedBatchId, batches.length]);
 
   async function submitFarm(event) {
