@@ -34,6 +34,16 @@ public final class PricingCalculator {
                 .longValueExact();
     }
 
+    public static long pricePerUnitForMargin(long totalActualCostMinor, int quantity, BigDecimal marginPercent) {
+        if (quantity <= 0) {
+            throw new IllegalArgumentException("Quantity must be positive.");
+        }
+        long totalPrice = priceForMargin(totalActualCostMinor, marginPercent);
+        return BigDecimal.valueOf(totalPrice)
+                .divide(BigDecimal.valueOf(quantity), 0, RoundingMode.CEILING)
+                .longValueExact();
+    }
+
     public static boolean isBelowTarget(BigDecimal actualMargin, BigDecimal targetMargin) {
         return targetMargin != null
                 && actualMargin.compareTo(targetMargin) < 0;
