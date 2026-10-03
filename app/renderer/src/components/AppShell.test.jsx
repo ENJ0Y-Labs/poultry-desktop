@@ -1,11 +1,11 @@
 import { render, screen, fireEvent } from "@testing-library/react";
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import AppShell from "./AppShell.jsx";
+// eslint-disable-next-line no-unused-vars\nimport AppShell from "./AppShell.jsx";
 
 describe("AppShell", () => {
   beforeEach(() => {
     document.body.innerHTML = "";
-    vi.spyOn(Element.prototype, "scrollIntoView").mockImplementation(() => {});
+    Element.prototype.scrollIntoView = vi.fn();
   });
 
   it("renders the complete primary navigation", () => {
