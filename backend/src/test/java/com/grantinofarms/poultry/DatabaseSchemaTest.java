@@ -49,7 +49,9 @@ class DatabaseSchemaTest {
                 "bird_sales",
                 "pricing_margin_history",
                 "customers",
-                "sales"
+                "sales",
+                "inventory_items",
+                "inventory_movements"
         );
 
         for (String table : expectedTables) {
@@ -65,7 +67,22 @@ class DatabaseSchemaTest {
                 "SELECT COUNT(*) FROM flyway_schema_history WHERE success = 1",
                 Integer.class
         );
-        assertThat(flywaySuccess).isGreaterThanOrEqualTo(14);
+        assertThat(flywaySuccess).isGreaterThanOrEqualTo(15);
+    }
+
+    @Test
+    void inventorySupportsItemsAndMovementReasons() {
+        List<String> itemColumns = jdbcTemplate.query(
+                "PRAGMA table_info(inventory_items)",
+                (rs, rowNum) -> rs.getString("name")
+        );
+        assertThat(itemColumns).contains("name", "category", "unit", "reorder_level", "status");
+
+        List<String> movementColumns = jdbcTemplate.query(
+                "PRAGMA table_info(inventory_movements)",
+                (rs, rowNum) -> rs.getString("name")
+        );
+        assertThat(movementColumns).contains("movement_date", "movement_type", "quantity", "reason", "source", "batch_id");
     }
 
     @Test
