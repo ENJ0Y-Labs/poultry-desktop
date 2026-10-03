@@ -46,7 +46,7 @@ public class BackupService {
             }
             Path dir=directory==null||directory.isBlank()?database.getParent():Path.of(directory).toAbsolutePath().normalize();
             Files.createDirectories(dir);
-            String base="poultry-"+LocalDateTime.now().format(NAME);
+            String base="poultry-"+LocalDateTime.now().format(DATE_NAME);
             Path target=dir.resolve(base+".db");int suffix=2;
             while(Files.exists(target))target=dir.resolve(base+"-"+suffix+++".db");
             String escaped=target.toString().replace("'","''");
