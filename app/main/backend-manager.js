@@ -36,6 +36,10 @@ export class BackendManager {
     return join(this.dataDirectory, "poultry.db");
   }
 
+  get logFilePath() {
+    return join(this.isPackaged ? this.userDataPath : this.appPath, "logs", "backend.log");
+  }
+
   get javaPath() {
     const bundled = join(this.resourcesPath, "runtime", process.platform === "win32" ? "bin/java.exe" : "bin/java");
     return this.isPackaged && existsSync(bundled) ? bundled : "java";
@@ -50,7 +54,8 @@ export class BackendManager {
       "--server.address=127.0.0.1",
       `--server.port=${this.port}`,
       `--poultry.database-path=${this.databasePath}`,
-      `--spring.profiles.active=${this.isPackaged ? "prod" : "dev"}`
+      `--spring.profiles.active=${this.isPackaged ? "prod" : "dev"}`,
+      `--logging.file.name=${this.logFilePath}`
     ];
   }
 
@@ -58,6 +63,7 @@ export class BackendManager {
     if (this.process) return;
 
     mkdirSync(this.dataDirectory, { recursive: true });
+    mkdirSync(join(this.isPackaged ? this.userDataPath : this.appPath, "logs"), { recursive: true });
     this.lastError = null;
 
     if (!this.isPackaged) {
