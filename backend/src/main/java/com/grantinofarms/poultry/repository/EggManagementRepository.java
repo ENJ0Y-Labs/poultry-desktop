@@ -79,10 +79,10 @@ public class EggManagementRepository {
                            long totalAmountMinor, String now) {
         jdbc.update("""
                 INSERT INTO egg_sales
-                    (id, batch_id, record_date, customer, sold_eggs, crate_size,
+                    (id, batch_id, record_date, customer, customer_id, sold_eggs, crate_size,
                      price_per_crate_minor, total_amount_minor, created_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """, id, batchId, date.toString(), customer, soldEggs, crateSize,
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, id, batchId, date.toString(), customer, customerId, soldEggs, crateSize,
                 pricePerCrateMinor, totalAmountMinor, now);
     }
 
