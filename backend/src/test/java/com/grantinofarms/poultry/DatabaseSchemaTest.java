@@ -63,7 +63,16 @@ class DatabaseSchemaTest {
                 "SELECT COUNT(*) FROM flyway_schema_history WHERE success = 1",
                 Integer.class
         );
-        assertThat(flywaySuccess).isGreaterThanOrEqualTo(12);
+        assertThat(flywaySuccess).isGreaterThanOrEqualTo(13);
+    }
+
+    @Test
+    void expensesSupportOptionalBatchAssociation() {
+        List<String> columns = jdbcTemplate.query(
+                "PRAGMA table_info(expenses)",
+                (rs, rowNum) -> rs.getString("name")
+        );
+        assertThat(columns).contains("batch_id");
     }
 
     @Test
