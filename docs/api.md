@@ -277,3 +277,23 @@ Common sales are not created through a generic POST endpoint. Layer and Broiler 
 Layer sale writes continue through `POST /api/v1/batches/{batchId}/eggs/sales` and support a `customerId` alongside the historical customer name.
 
 Broiler sale writes continue through `POST /api/v1/batches/{batchId}/broiler/sales` and support a `customerId` alongside the historical customer name.
+
+
+## Stage 16: Inventory
+
+Inventory items:
+
+- GET /api/v1/inventory/items
+- POST /api/v1/inventory/items
+- POST /api/v1/inventory/items/{id}/archive
+
+Inventory movements:
+
+- GET /api/v1/inventory/movements?itemId=...&asOf=YYYY-MM-DD
+- POST /api/v1/inventory/items/{id}/movements
+
+Item categories are DRUG, VACCINE, and SUPPLY.
+
+Movement types are RECEIVE, ISSUE, ADJUST_IN, ADJUST_OUT, and WASTE. Every new movement requires a business date, positive quantity, reason, source, and may optionally reference a batch. The backend rejects a stock-reducing movement that would make calculated stock negative.
+
+Feed keeps its existing dedicated API because feed inventory is coupled to FIFO costing and bird-cost allocation. Feed usage now accepts an optional reason and persists a default reason when omitted for backwards compatibility.
