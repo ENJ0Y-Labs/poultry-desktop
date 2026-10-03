@@ -69,7 +69,9 @@ export class BackendManager {
       try {
         const response = await fetch(`http://127.0.0.1:${this.port}/api/v1/health`);
         if (response.ok) return;
-      } catch (error) {\n        this.lastError = null;\n      }
+      } catch (error) {
+        this.lastError = null;
+      }
 
       await new Promise((resolve) => setTimeout(resolve, intervalMs));
     }
