@@ -7,10 +7,14 @@ vi.mock("node:child_process", async importOriginal => {
   const actual = await importOriginal();
   return { ...actual, spawn: spawnMock };
 });
-vi.mock("node:fs", () => ({
-  existsSync: vi.fn(() => true),
-  mkdirSync: vi.fn(),
-}));
+vi.mock("node:fs", async importOriginal => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    existsSync: vi.fn(() => true),
+    mkdirSync: vi.fn(),
+  };
+});
 
 import { BackendManager } from "./backend-manager.js";
 
