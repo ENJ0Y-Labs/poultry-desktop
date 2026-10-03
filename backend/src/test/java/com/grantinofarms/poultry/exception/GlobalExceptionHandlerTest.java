@@ -73,8 +73,6 @@ class GlobalExceptionHandlerTest {
     }
 
     private static final class ValidRequest {
-        @Valid
-        @NotBlank
         private String value;
     }
 }
