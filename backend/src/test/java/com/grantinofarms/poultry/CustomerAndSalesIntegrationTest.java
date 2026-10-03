@@ -57,10 +57,10 @@ class CustomerAndSalesIntegrationTest {
 
         var common = salesService.list(null, customer.id(), "EGG", LocalDate.of(2026, 2, 1));
         assertThat(common).hasSize(1);
-        assertThat(common.getFirst().quantity()).isEqualByComparingTo("0.5");
-        assertThat(common.getFirst().unit()).isEqualTo("CRATE");
-        assertThat(common.getFirst().unitPriceMinor()).isEqualTo(300_000L);
-        assertThat(common.getFirst().totalAmountMinor()).isEqualTo(150_000L);
+        assertThat(common.get(0).quantity()).isEqualByComparingTo("0.5");
+        assertThat(common.get(0).unit()).isEqualTo("CRATE");
+        assertThat(common.get(0).unitPriceMinor()).isEqualTo(300_000L);
+        assertThat(common.get(0).totalAmountMinor()).isEqualTo(150_000L);
     }
 
     @Test
@@ -76,9 +76,9 @@ class CustomerAndSalesIntegrationTest {
 
         var common = salesService.list(null, customer.id(), "BROILER", LocalDate.of(2026, 1, 10));
         assertThat(common).hasSize(1);
-        assertThat(common.getFirst().quantity()).isEqualByComparingTo("10");
-        assertThat(common.getFirst().unit()).isEqualTo("BIRD");
-        assertThat(common.getFirst().totalAmountMinor()).isEqualTo(250_000L);
+        assertThat(common.get(0).quantity()).isEqualByComparingTo("10");
+        assertThat(common.get(0).unit()).isEqualTo("BIRD");
+        assertThat(common.get(0).totalAmountMinor()).isEqualTo(250_000L);
     }
 
     @Test
@@ -116,7 +116,7 @@ class CustomerAndSalesIntegrationTest {
 
         var common = salesService.list(null, "legacy-customer", "EGG", LocalDate.of(2026, 1, 2));
         assertThat(common).hasSize(1);
-        assertThat(common.getFirst().customerName()).isEqualTo("Legacy Buyer");
+        assertThat(common.get(0).customerName()).isEqualTo("Legacy Buyer");
     }
 
     private BatchResponse setupLayer() {
