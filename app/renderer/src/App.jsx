@@ -1455,9 +1455,7 @@ export default function App() {
             <input required placeholder="Description" value={expenseForm.description} onChange={e=>setExpenseForm({...expenseForm,description:e.target.value})}/>
             <input required min="1" step="1" type="number" placeholder="Amount (minor units)" value={expenseForm.amountMinor} onChange={e=>setExpenseForm({...expenseForm,amountMinor:e.target.value})}/>
             <select required value={expenseForm.category} onChange={e=>setExpenseForm({...expenseForm,category:e.target.value})}>
-              <option value="OTHER">Other</option>
-              <option value="FEED">Feed</option>
-              <option value="DRUGS">Drugs</option>
+              {expenseCategories.map(category => <option key={category.id} value={category.name}>{category.name}</option>)}
             </select>
             <select value={expenseForm.batchId} onChange={e=>setExpenseForm({...expenseForm,batchId:e.target.value})}>
               <option value="">Farm-level</option>
