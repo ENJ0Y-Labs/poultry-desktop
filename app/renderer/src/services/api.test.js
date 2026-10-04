@@ -76,7 +76,10 @@ describe("API client", () => {
 
     const blob = await reportApi.farmPdf("2026-10-03");
 
-    expect(blob).toBeInstanceOf(Blob);
+    expect(blob).toMatchObject({
+      size: 9,
+      type: "application/pdf",
+    });
     expect(fetchMock).toHaveBeenCalledWith(
       expect.stringContaining("/reports/farm.pdf?asOf=2026-10-03"),
       expect.objectContaining({ credentials: "include" })
