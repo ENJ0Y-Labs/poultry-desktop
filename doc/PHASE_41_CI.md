@@ -19,7 +19,6 @@ Backend:
   mvnw verify
 
 Electron:
-  backend package
   npm run package
 ```
 
