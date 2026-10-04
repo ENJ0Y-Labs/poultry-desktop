@@ -88,6 +88,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: poultry-farm-manager-windows-installer
-          path: release/Poultry Farm Manager Setup *.exe
+          path: release/PoultrySetup.exe
           if-no-files-found: error
           retention-days: 14
