@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "description": "Local-first poultry farm management desktop application.",
-  "main": "app/main/main.js",
+  "main": "dist/main/main.js",
   "scripts": {
     "dev": "electron-vite dev",
     "build": "electron-vite build",
