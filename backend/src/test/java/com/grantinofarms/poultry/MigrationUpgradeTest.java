@@ -2,6 +2,7 @@ package com.grantinofarms.poultry;
 
 import org.flywaydb.core.Flyway;
 import org.flywaydb.core.api.MigrationInfo;
+import org.flywaydb.core.api.MigrationVersion;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -47,8 +48,10 @@ class MigrationUpgradeTest {
             Path database = tempDir.resolve("upgrade-from-" + sourceVersion.replace('.', '_') + ".db");
             String databaseUrl = sqliteUrl(database);
 
-            configuredFlyway(databaseUrl)
-                    .getConfiguration().target(sourceVersion)
+            Flyway.configure()
+                    .dataSource(databaseUrl, "", "")
+                    .locations(LOCATIONS)
+                    .target(MigrationVersion.fromVersion(sourceVersion))
                     .load()
                     .migrate();
 
@@ -82,8 +85,10 @@ class MigrationUpgradeTest {
         Path database = tempDir.resolve("failed-migration.db");
         String databaseUrl = sqliteUrl(database);
 
-        configuredFlyway(databaseUrl)
-                .getConfiguration().target("1")
+        Flyway.configure()
+                .dataSource(databaseUrl, "", "")
+                .locations(LOCATIONS)
+                .target(MigrationVersion.fromVersion("1"))
                 .load()
                 .migrate();
 
