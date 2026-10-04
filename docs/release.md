@@ -49,7 +49,11 @@ Packaging performs:
 3. `npm run backend:package`
 4. `electron-builder`
 
-The runtime preparation uses `jlink` and creates the `runtime/` directory. Electron Builder then includes the backend JAR and runtime as extra resources.
+The runtime preparation uses `jlink` and creates the ignored `runtime/` directory.
+It includes `java.desktop` for Spring Boot property binding, plus the HTTP, security,
+database, and supporting modules required by the backend. `npm run package:verify`
+checks the generated runtime's module list before Electron Builder includes the backend
+JAR and runtime as extra resources.
 
 The Windows installer is emitted under:
 

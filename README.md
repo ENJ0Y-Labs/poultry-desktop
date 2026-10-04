@@ -184,6 +184,10 @@ Packaging performs these major steps:
 4. Runs Electron Builder.
 5. Produces the Windows NSIS installer under `release/`.
 
+The bundled runtime includes `java.desktop`, which Spring Boot requires for property
+binding, along with the HTTP, security, database, and supporting Java modules.
+Packaging verifies these modules before creating the installer.
+
 The production package contains the Electron application, renderer assets, Spring Boot JAR and bundled Java runtime. The development database is not packaged.
 
 ## Database location

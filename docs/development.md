@@ -11,7 +11,10 @@
 
 The Maven Wrapper is included, so a separate Maven installation is not required.
 
-Packaging additionally requires a valid `JAVA_HOME` containing `jlink`.
+Packaging additionally requires a valid `JAVA_HOME` containing `jlink`. The trimmed
+runtime includes `java.desktop` (required by Spring Boot property binding) and the
+HTTP, security, database, and other runtime modules needed by the packaged backend.
+`npm run package:verify` checks that all required modules are present in the generated runtime.
 
 ## Setup
 
