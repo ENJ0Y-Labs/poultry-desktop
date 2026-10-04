@@ -3,18 +3,19 @@
   "version": "0.1.0",
   "private": true,
   "description": "Local-first poultry farm management desktop application.",
-  "main": "app/main/main.js",
+  "main": "dist/main/main.js",
   "scripts": {
     "dev": "electron-vite dev",
     "build": "electron-vite build",
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "eslint .",
-    "package": "npm run package:runtime && npm run build && npm run backend:package && electron-builder",
+    "package": "npm run package:runtime && npm run build && npm run backend:package && npm run package:verify && electron-builder",
     "backend:test": "mvnw.cmd -f backend/pom.xml test",
     "backend:verify": "mvnw.cmd -f backend/pom.xml verify",
     "backend:package": "mvnw.cmd -f backend/pom.xml package",
-    "package:runtime": "node scripts/prepare-runtime.mjs"
+    "package:runtime": "node scripts/prepare-runtime.mjs",
+    "package:verify": "node scripts/verify-production-inputs.mjs"
   },
   "dependencies": {
     "react": "^19.1.1",
@@ -61,7 +62,15 @@
         "from": "runtime",
         "to": "runtime"
       }
-    ]
+    ],
+    "artifactName": "${productName} Setup ${version}.${ext}",
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Poultry Farm Manager"
+    }
   },
   "allowScripts": {
     "electron": true,
