@@ -10,7 +10,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "eslint .",
-    "package": "npm run package:runtime && npm run build && npm run backend:package && npm run package:verify && electron-builder",
+    "package": "npm run package:runtime && npm run build && npm run backend:package && npm run package:verify && electron-builder --publish never",
     "backend:test": "mvnw.cmd -f backend/pom.xml test",
     "backend:verify": "mvnw.cmd -f backend/pom.xml verify",
     "backend:package": "mvnw.cmd -f backend/pom.xml package",
