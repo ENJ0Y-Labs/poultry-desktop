@@ -64,7 +64,7 @@
         "to": "runtime"
       }
     ],
-    "artifactName": "${productName} Setup ${version}.${ext}",
+    "artifactName": "PoultrySetup.${ext}",
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
