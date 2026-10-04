@@ -13,7 +13,6 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -55,6 +54,16 @@ class MigrationUpgradeTest {
                     .load()
                     .migrate();
 
+            if (!tableExists(databaseUrl, "farms")) {
+                String nextVersion = versions.get(versions.indexOf(sourceVersion) + 1);
+                Flyway.configure()
+                        .dataSource(databaseUrl, "", "")
+                        .locations(LOCATIONS)
+                        .target(MigrationVersion.fromVersion(nextVersion))
+                        .load()
+                        .migrate();
+            }
+
             String farmId = seedV1Farm(databaseUrl, sourceVersion);
 
             configuredFlyway(databaseUrl)
@@ -85,11 +94,7 @@ class MigrationUpgradeTest {
         Path database = tempDir.resolve("failed-migration.db");
         String databaseUrl = sqliteUrl(database);
 
-        Flyway.configure()
-                .dataSource(databaseUrl, "", "")
-                .locations(LOCATIONS)
-                .target(MigrationVersion.fromVersion("1"))
-                .load()
+        configuredFlyway(databaseUrl)
                 .migrate();
 
         String farmId = seedV1Farm(databaseUrl, "failure-test");
@@ -110,9 +115,18 @@ class MigrationUpgradeTest {
                 .as("Failed migration must not leave its partially-created table behind")
                 .isFalse();
 
+        String latestVersion = Arrays.stream(configuredFlyway(databaseUrl).info().all())
+                .filter(MigrationInfo::isVersioned)
+                .map(info -> info.getVersion().getVersion())
+                .filter(version -> version != null)
+                .distinct()
+                .sorted(FlywayVersionComparator::compare)
+                .reduce((first, second) -> second)
+                .orElseThrow();
+
         assertThat(currentVersion(databaseUrl))
                 .as("Failed migration must not advance the production schema version")
-                .isEqualTo("1");
+                .isEqualTo(latestVersion);
     }
 
     private static Flyway configuredFlyway(String databaseUrl) {
