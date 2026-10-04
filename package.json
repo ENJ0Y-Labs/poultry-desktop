@@ -15,7 +15,8 @@
     "backend:verify": "mvnw.cmd -f backend/pom.xml verify",
     "backend:package": "mvnw.cmd -f backend/pom.xml package",
     "package:runtime": "node scripts/prepare-runtime.mjs",
-    "package:verify": "node scripts/verify-production-inputs.mjs"
+    "package:verify": "node scripts/verify-production-inputs.mjs",
+    "installer:verify": "node scripts/verify-installer.mjs"
   },
   "dependencies": {
     "react": "^19.1.1",
@@ -69,7 +70,9 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "Poultry Farm Manager"
+      "shortcutName": "Poultry Farm Manager",
+      "runAfterFinish": true,
+      "deleteAppDataOnUninstall": false
     }
   },
   "allowScripts": {
