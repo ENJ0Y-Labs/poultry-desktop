@@ -1,9 +1,7 @@
 import { existsSync, readdirSync, statSync } from "node:fs";
-import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 
 const releaseDir = join(process.cwd(), "release");
-const packageJson = JSON.parse(await readFile(join(process.cwd(), "package.json"), "utf8"));
 
 if (!existsSync(releaseDir)) {
   console.error("Installer verification failed: release directory is missing.");
