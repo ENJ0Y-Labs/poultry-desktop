@@ -48,7 +48,7 @@ class MigrationUpgradeTest {
             String databaseUrl = sqliteUrl(database);
 
             configuredFlyway(databaseUrl)
-                    .target(sourceVersion)
+                    .getConfiguration().target(sourceVersion)
                     .load()
                     .migrate();
 
@@ -82,17 +82,8 @@ class MigrationUpgradeTest {
         Path database = tempDir.resolve("failed-migration.db");
         String databaseUrl = sqliteUrl(database);
 
-        Flyway productionFlyway = configuredFlyway(databaseUrl);
-        String latestVersion = Arrays.stream(productionFlyway.info().all())
-                .filter(MigrationInfo::isVersioned)
-                .map(info -> info.getVersion().getVersion())
-                .filter(version -> version != null)
-                .max(FlywayVersionComparator::compare)
-                .orElseThrow();
-
-        String latestBeforeFailure = latestVersion;
         configuredFlyway(databaseUrl)
-                .target("1")
+                .getConfiguration().target("1")
                 .load()
                 .migrate();
 
@@ -116,7 +107,7 @@ class MigrationUpgradeTest {
 
         assertThat(currentVersion(databaseUrl))
                 .as("Failed migration must not advance the production schema version")
-                .isEqualTo(latestBeforeFailure);
+                .isEqualTo("1");
     }
 
     private static Flyway configuredFlyway(String databaseUrl) {
