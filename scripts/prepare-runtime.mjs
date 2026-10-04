@@ -9,9 +9,24 @@ if (!existsSync(jlink)) throw new Error("jlink was not found in JAVA_HOME.");
 
 const output = join(process.cwd(), "runtime");
 if (existsSync(output)) rmSync(output, { recursive: true, force: true });
+const modules = [
+  "java.base",
+  "java.desktop",
+  "java.instrument",
+  "java.logging",
+  "java.management",
+  "java.naming",
+  "java.net.http",
+  "java.security.jgss",
+  "java.sql",
+  "java.xml",
+  "jdk.crypto.ec",
+  "jdk.unsupported"
+];
+
 execFileSync(jlink, [
   "--add-modules",
-  "java.base,java.sql,java.logging,java.naming,java.management,java.instrument,java.xml,java.desktop,jdk.crypto.ec,jdk.unsupported",
+  modules.join(","),
   "--strip-debug",
   "--no-header-files",
   "--no-man-pages",

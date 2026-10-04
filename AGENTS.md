@@ -82,6 +82,7 @@ Do not build later-stage features unless the owner explicitly changes the stage.
 - React is responsible for presentation and user interaction, not authoritative farm calculations.
 - Keep the backend capable of running locally on the same PC as the Electron application.
 - Prefer a packaged/local Spring Boot process launched and supervised by Electron for the desktop distribution.
+- The jlink runtime shipped with the desktop app must include `java.desktop` and the backend's required modules; `package:verify` checks the generated runtime before packaging.
 - The user must not need to install or manually operate Java/Spring Boot separately in the production desktop app.
 - Development may run Electron and Spring Boot as separate processes.
 
