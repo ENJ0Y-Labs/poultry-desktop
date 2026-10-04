@@ -11,7 +11,7 @@ const output = join(process.cwd(), "runtime");
 if (existsSync(output)) rmSync(output, { recursive: true, force: true });
 execFileSync(jlink, [
   "--add-modules",
-  "java.base,java.sql,java.logging,java.naming,java.management,java.instrument,java.xml,jdk.crypto.ec,jdk.unsupported",
+  "java.base,java.sql,java.logging,java.naming,java.management,java.instrument,java.xml,java.desktop,jdk.crypto.ec,jdk.unsupported",
   "--strip-debug",
   "--no-header-files",
   "--no-man-pages",
