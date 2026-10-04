@@ -1,21 +1,22 @@
 import { existsSync, readdirSync, statSync } from "node:fs";
+import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 
 const releaseDir = join(process.cwd(), "release");
-const packageJson = JSON.parse(await import("node:fs/promises").then(fs => fs.readFile(join(process.cwd(), "package.json"), "utf8")));
+const packageJson = JSON.parse(await readFile(join(process.cwd(), "package.json"), "utf8"));
 
 if (!existsSync(releaseDir)) {
   console.error("Installer verification failed: release directory is missing.");
   process.exit(1);
 }
 
-const expected = `Poultry Farm Manager Setup ${packageJson.version}.exe`;
-const installers = readdirSync(releaseDir).filter(file => /^Poultry Farm Manager Setup .*\.exe$/i.test(file));
+const expected = `PoultrySetup.exe`;
+const installers = readdirSync(releaseDir).filter(file => /^PoultrySetup\.exe$/i.test(file));
 
 if (!installers.includes(expected)) {
   console.error("Installer verification failed:");
   console.error(`- expected: release/${expected}`);
-  console.error(`- found: ${installers.length ? installers.join(", ") : "no Poultry Farm Manager Setup *.exe"}`);
+  console.error(`- found: ${installers.length ? installers.join(", ") : "PoultrySetup.exe not found"}`);
   process.exit(1);
 }
 
