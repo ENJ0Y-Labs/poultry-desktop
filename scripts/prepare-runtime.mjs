@@ -1,4 +1,4 @@
-import { existsSync, rmSync, mkdirSync } from "node:fs";
+import { existsSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { execFileSync } from "node:child_process";
 
@@ -9,8 +9,6 @@ if (!existsSync(jlink)) throw new Error("jlink was not found in JAVA_HOME.");
 
 const output = join(process.cwd(), "runtime");
 if (existsSync(output)) rmSync(output, { recursive: true, force: true });
-mkdirSync(output, { recursive: true });
-
 execFileSync(jlink, [
   "--add-modules",
   "java.base,java.sql,java.logging,java.naming,java.management,java.instrument,java.xml,jdk.crypto.ec,jdk.unsupported",
