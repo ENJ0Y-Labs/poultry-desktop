@@ -131,6 +131,7 @@ export default function AppShell({ farm, error, children, startPage = "dashboard
                   key={item.label}
                   onClick={() => navigate(item.target)}
                   title={item.shortcut ? `${item.label} · ${item.shortcut}` : item.label}
+                  aria-label={item.label}
                 >
                   <span className="nav-icon-wrap">{Icon({ name: item.icon })}</span>
                   <span className="nav-label">{item.label}</span>
