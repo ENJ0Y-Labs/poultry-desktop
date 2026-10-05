@@ -132,7 +132,7 @@ export default function AppShell({ farm, error, children, startPage = "dashboard
                   onClick={() => navigate(item.target)}
                   title={item.shortcut ? `${item.label} · ${item.shortcut}` : item.label}
                 >
-                  <span className="nav-icon-wrap"><Icon name={item.icon} /></span>
+                  <span className="nav-icon-wrap">{Icon({ name: item.icon })}</span>
                   <span className="nav-label">{item.label}</span>
                   {item.shortcut && <kbd>{item.shortcut.replace("Ctrl", "⌃")}</kbd>}
                 </button>
