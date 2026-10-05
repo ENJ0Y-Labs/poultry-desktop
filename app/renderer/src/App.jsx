@@ -954,7 +954,7 @@ export default function App() {
           </div>
         </section>
 
-        <section className="card full">
+        <section id="feed" className="card full">
           <div className="section-head"><h2>Feed management</h2><p className="muted">Purchases create inventory and one expense. Usage consumes FIFO stock and adds its cost to the batch once.</p></div>
           <div className="subsection">
             <h3>Feed types</h3>
@@ -1091,7 +1091,7 @@ export default function App() {
           )}
         </section>
 
-        <section className="card full">
+        <section id="health" className="card full">
           <div className="section-head">
             <h2>Health management</h2>
             <p className="muted">Keep health observations, treatments, and vaccinations as separate operational records. Drug costs enter the shared Drugs expense category.</p>
