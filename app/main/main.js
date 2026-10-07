@@ -113,19 +113,33 @@ ipcMain.handle("backup:restore", async (_event, ...args) => {
       return { canceled: true };
     }
 
-    const safety = database.replace(/\.db$/, "") +
-      "-pre-restore-" + new Date().toISOString().replace(/[:.]/g, "-") + ".db";
     const temporary = database + ".restore-" + Date.now() + ".tmp";
     const wal = database + "-wal";
     const shm = database + "-shm";
+
+    // The backend owns SQLite and is still running here. Ask it to create a
+    // consistent VACUUM INTO snapshot before the process is stopped. A raw
+    // copy of the live database can miss committed WAL frames.
+    const safetyResponse = await fetch(
+      "http://127.0.0.1:" + backendManager.port + "/api/v1/backup",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ directory: backendManager.dataDirectory })
+      }
+    );
+    const safetyBody = await safetyResponse.json().catch(() => ({}));
+    if (!safetyResponse.ok || !safetyBody?.data?.path) {
+      throw new Error(safetyBody?.error?.message || "The pre-restore safety backup could not be created.");
+    }
+    const safety = safetyBody.data.path;
+    log("restore_safety_backup_created", { filename: backupFilename(safety) });
 
     await backendManager.stop();
     await waitForBackendExit();
 
     let replacementStarted = false;
     try {
-      if (existsSync(database)) copyFileSync(database, safety);
-
       copyFileSync(backup, temporary);
       replacementStarted = true;
       rmSync(database, { force: true });
