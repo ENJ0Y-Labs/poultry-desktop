@@ -75,6 +75,28 @@ class BackupServiceTest {
     }
 
     @Test
+    void vacuumIntoSnapshotIncludesCommittedDataWhileWalModeIsEnabled() throws Exception {
+        Path database = tempDir.resolve("poultry.db");
+        BackupService service = service(database);
+
+        var dataSource = dataSources.get(dataSources.size() - 1);
+        var jdbc = new JdbcTemplate(dataSource);
+        jdbc.execute("PRAGMA journal_mode=WAL");
+        jdbc.execute("PRAGMA synchronous=FULL");
+        jdbc.update("INSERT INTO farm_data(name) VALUES (?)", "WAL-visible farm record");
+
+        var result = service.create(tempDir.toString());
+        Path backup = Path.of(result.get("path").toString());
+
+        try (var connection = java.sql.DriverManager.getConnection("jdbc:sqlite:" + backup)) {
+            String name = connection.createStatement()
+                    .executeQuery("SELECT name FROM farm_data WHERE name = 'WAL-visible farm record'")
+                    .getString(1);
+            assertThat(name).isEqualTo("WAL-visible farm record");
+        }
+    }
+
+    @Test
     void retainsOnlyThirtyManagedBackups() throws Exception {
         Path database = tempDir.resolve("poultry.db");
         BackupService service = service(database);

@@ -75,9 +75,9 @@ compare schema versions
     ↓
 operator confirmation
     ↓
-stop Spring Boot
+backend creates pre-restore safety snapshot with VACUUM INTO
     ↓
-create pre-restore safety backup
+stop Spring Boot
     ↓
 copy selected backup to temporary file
     ↓
@@ -90,7 +90,7 @@ health check
 resume application
 ```
 
-The backend is stopped before the live database is replaced because its JDBC pool must not still have the database open.
+The safety snapshot is created while Spring Boot still owns the SQLite connection, so any committed WAL data is included. Spring Boot is then stopped before the live database is replaced because its JDBC pool must not still have the database open.
 
 ## Restore failure recovery
 
@@ -103,7 +103,7 @@ The restore flow also removes stale SQLite WAL/SHM files associated with the rep
 - Never restore the active database file over itself.
 - Newer-schema backups are rejected.
 - Restore requires explicit operator confirmation.
-- A safety copy is made before replacement.
+- The pre-restore safety copy is created through the backend's SQLite `VACUUM INTO` backup path before Spring Boot is stopped. Electron never raw-copies the live database for the safety snapshot.
 - Restore is not exposed as an arbitrary renderer filesystem API.
 - Backup and restore errors are surfaced without exposing secrets.
 - Real backups must not be committed to Git.
