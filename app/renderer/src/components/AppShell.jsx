@@ -32,6 +32,51 @@ function resolvePage(hash, startPage = "dashboard") {
   return "dashboard";
 }
 
+const pageTabs = {
+  flocks: [
+    { id: "batch-dashboard", label: "Batch dashboard" },
+    { id: "flocks", label: "Batches & bird costs" },
+    { id: "houses", label: "Houses / pens" },
+    { id: "pricing", label: "Pricing" },
+  ],
+  "feed-stock": [
+    { id: "feed", label: "Feed & purchases" },
+    { id: "inventory", label: "Other stock" },
+  ],
+  production: [
+    { id: "eggs", label: "Egg production" },
+    { id: "broiler", label: "Weight & growth" },
+  ],
+  "sales-money": [
+    { id: "customers", label: "Customers" },
+    { id: "sales", label: "Sales" },
+    { id: "expenses", label: "Expenses" },
+  ],
+  reports: [
+    { id: "farm-report", label: "Farm report" },
+    { id: "batch-report", label: "Batch report" },
+  ],
+  settings: [
+    { id: "farm", label: "Farm profile" },
+    { id: "farm-defaults", label: "Farm defaults" },
+    { id: "application", label: "App, appearance & account" },
+    { id: "backup", label: "Backup & restore" },
+    { id: "pricing", label: "Pricing" },
+  ],
+};
+const defaultTabs = {
+  dashboard: "overview", flocks: "batch-dashboard", "daily-work": "daily-work",
+  "feed-stock": "feed", health: "health", production: "eggs",
+  "sales-money": "customers", reports: "farm-report", settings: "farm",
+};
+
+function resolveTab(hash, page) {
+  const requested = String(hash || "").replace(/^#\/?/, "").split("/")[1];
+  const tabs = pageTabs[page] || [];
+  if (tabs.some(tab => tab.id === requested)) return requested;
+  return defaultTabs[page] || "overview";
+}
+
 function Icon({ name }) {
   const paths = {
     dashboard: <><rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" /></>,
@@ -65,6 +110,7 @@ function localDateLabel() {
 
 export default function AppShell({ farm, error, children, startPage = "dashboard" }) {
   const [active, setActive] = useState(() => resolvePage(window.location.hash, startPage));
+  const [activeTab, setActiveTab] = useState(() => resolveTab(window.location.hash, resolvePage(window.location.hash, startPage)));
   const [theme, setTheme] = useState(getThemePreference);
 
   function changeTheme(event) {
@@ -75,14 +121,27 @@ export default function AppShell({ farm, error, children, startPage = "dashboard
 
   function navigate(target) {
     const page = resolvePage(`#${target}`, startPage);
-    if (window.location.hash !== `#${page}`) window.location.hash = page;
+    const tab = defaultTabs[page] || "overview";
+    if (window.location.hash !== `#${page}/${tab}`) window.location.hash = `${page}/${tab}`;
     setActive(page);
+    setActiveTab(tab);
+  }
+
+  function navigateTab(tab) {
+    const nextHash = `${active}/${tab}`;
+    if (window.location.hash !== `#${nextHash}`) window.location.hash = nextHash;
+    setActiveTab(tab);
   }
 
   useEffect(() => {
-    const syncRoute = () => setActive(resolvePage(window.location.hash, startPage));
+    const syncRoute = () => {
+      const page = resolvePage(window.location.hash, startPage);
+      setActive(page);
+      setActiveTab(resolveTab(window.location.hash, page));
+    };
     window.addEventListener("hashchange", syncRoute);
-    if (!window.location.hash) window.location.hash = resolvePage("", startPage);
+    if (!window.location.hash) window.location.hash = `${resolvePage("", startPage)}/${defaultTabs[resolvePage("", startPage)] || "overview"}`;
+    else syncRoute();
     return () => window.removeEventListener("hashchange", syncRoute);
   }, [startPage]);
 
@@ -93,7 +152,9 @@ export default function AppShell({ farm, error, children, startPage = "dashboard
       const target = shortcuts[event.key];
       if (!target) return;
       event.preventDefault();
-      navigate(target);
+      window.location.hash = `${target}/${defaultTabs[target] || "overview"}`;
+      setActive(target);
+      setActiveTab(defaultTabs[target] || "overview");
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
@@ -163,7 +224,24 @@ export default function AppShell({ farm, error, children, startPage = "dashboard
             </div>
           </header>
           {error && <div className="error">{error}</div>}
-          <NavigationContext.Provider value={{ activePage: active }}>{children}</NavigationContext.Provider>
+          {(pageTabs[active] || []).length > 0 && (
+            <nav className="page-tabs" aria-label={`${active} sections`}>
+              {pageTabs[active].map(tab => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  className={activeTab === tab.id ? "page-tab active" : "page-tab"}
+                  aria-current={activeTab === tab.id ? "page" : undefined}
+                  onClick={() => navigateTab(tab.id)}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </nav>
+          )}
+          <NavigationContext.Provider value={{ activePage: active, activeTab }}>
+            {children}
+          </NavigationContext.Provider>
         </div>
       </main>
 
