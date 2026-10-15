@@ -817,7 +817,7 @@ export default function App() {
 
   return (
     <AppShell farm={farm} error={error} startPage={applicationSettings.startPage}>
-      <PageSection page="dashboard"><section id="dashboard" className="card full dashboard-page">
+      <PageSection page="dashboard" tab="overview"><section id="dashboard" className="card full dashboard-page">
         <div className="section-head">
           <div><p className="eyebrow">OVERVIEW</p><h2>Farm dashboard</h2></div>
           <span className="muted">{dashboard?.asOf || "Loading..."}</span>
@@ -854,7 +854,7 @@ export default function App() {
         ) : <p className="muted">Dashboard is loading…</p>}
       </section></PageSection>
 
-      <PageSection page="flocks"><section id="batch-dashboard" className="card full dashboard-page">
+      <PageSection page="flocks" tab="batch-dashboard"><section id="batch-dashboard" className="card full dashboard-page">
         <div className="section-head"><div><p className="eyebrow">BATCH</p><h2>Batch dashboard</h2></div>
           <select aria-label="Batch dashboard" value={selectedBatchId} onChange={e => { setSelectedBatchId(e.target.value); rememberLastBatchId(e.target.value); }}>
             <option value="">Select a batch</option>{batches.map(batch => <option key={batch.id} value={batch.id}>{batch.code} · {batch.type}</option>)}
@@ -890,7 +890,7 @@ export default function App() {
       </section></PageSection>
 
       <div className="grid">
-        <PageSection page="settings"><section id="settings" className="card"><h2>Farm profile</h2><form className="form-grid" onSubmit={saveFarm}>
+        <PageSection page="settings" tab="farm"><section id="settings" className="card"><h2>Farm profile</h2><form className="form-grid" onSubmit={saveFarm}>
           <label>Farm name<input required value={farmForm.name} onChange={e=>setFarmForm({...farmForm,name:e.target.value})}/></label>
           <label>Location<input value={farmForm.location} onChange={e=>setFarmForm({...farmForm,location:e.target.value})}/></label>
           <label>Timezone<input required value={farmForm.timezone} onChange={e=>setFarmForm({...farmForm,timezone:e.target.value})}/></label>
@@ -898,16 +898,16 @@ export default function App() {
           <button disabled={saving}>Save profile</button>
         </form></section></PageSection>
 
-        <PageSection page="settings"><section className="card"><h2>Farm defaults</h2><form className="form-grid" onSubmit={saveSettings}>
+        <PageSection page="settings" tab="farm-defaults"><section className="card"><h2>Farm defaults</h2><form className="form-grid" onSubmit={saveSettings}>
           <label>Egg crate size<input type="number" min="1" value={crateSize} onChange={e=>setCrateSize(e.target.value)}/><small>Stored as individual eggs internally.</small></label>
           <label>Default water container<input type="number" min="1" value={defaultWater} onChange={e=>setDefaultWater(e.target.value)}/><small>Must match one configured size.</small></label>
           <label>Water container sizes<input value={waterSizes} onChange={e=>setWaterSizes(e.target.value)}/><small>Comma-separated, e.g. 25, 75.</small></label>
           <button disabled={saving}>Save defaults</button>
         </form></section></PageSection>
 
-        <PageSection page="settings"><section className="card"><h2>Backup & restore</h2><div className="form-grid"><p className="muted">Backups are created by the backend using SQLite-safe snapshotting. Restore is handled by Electron so the renderer never replaces the database.</p><div className="inline-form"><button type="button" disabled={saving} onClick={createBackup}>Create backup</button><button type="button" disabled={saving || !window.poultryDesktop} onClick={restoreBackup}>Restore backup</button></div><small>Default retention: 30 backup files. A safety copy is created before restore.</small></div></section></PageSection>
+        <PageSection page="settings" tab="backup"><section className="card"><h2>Backup & restore</h2><div className="form-grid"><p className="muted">Backups are created by the backend using SQLite-safe snapshotting. Restore is handled by Electron so the renderer never replaces the database.</p><div className="inline-form"><button type="button" disabled={saving} onClick={createBackup}>Create backup</button><button type="button" disabled={saving || !window.poultryDesktop} onClick={restoreBackup}>Restore backup</button></div><small>Default retention: 30 backup files. A safety copy is created before restore.</small></div></section></PageSection>
 
-        <PageSection page="settings"><section className="card full"><div className="section-head"><h2>Configuration</h2><p className="muted">Settings that control farm behavior are stored locally and audited when changed.</p></div>
+        <PageSection page="settings" tab="application"><section className="card full"><div className="section-head"><h2>Configuration</h2><p className="muted">Settings that control farm behavior are stored locally and audited when changed.</p></div>
           <div className="dashboard-columns">
             <div className="subsection"><h3>Feed types</h3><div className="table"><div className="row header"><span>Name</span><span>Unit</span><span>Applies to</span><span>Status</span></div>{feedTypes.map(t=><div className="row" key={t.id}><span>{t.name}</span><span>{t.unit}</span><span>{t.applicableType}</span><span>{t.status}</span></div>)}</div></div>
             <div className="subsection"><h3>Expense categories</h3><form className="inline-form" onSubmit={createExpenseCategory}><input required maxLength="80" placeholder="New category" value={expenseCategoryForm} onChange={e=>setExpenseCategoryForm(e.target.value)}/><button disabled={saving}>Add</button></form><div className="table">{expenseCategories.map(cat=><div className="row" key={cat.id}><span>{cat.name}</span><span>{cat.status}</span><button type="button" disabled={saving} onClick={()=>archiveExpenseCategory(cat.id)}>Archive</button></div>)}</div></div>
@@ -919,13 +919,13 @@ export default function App() {
           <div className="subsection"><h3>User / account</h3>{account ? <form className="form-grid" onSubmit={saveAccount}><label>Full name<input required value={accountForm.fullName} onChange={e=>setAccountForm({...accountForm,fullName:e.target.value})}/></label><label>Email<input required type="email" value={accountForm.email} onChange={e=>setAccountForm({...accountForm,email:e.target.value})}/></label><label>Current password<input type="password" value={accountForm.currentPassword} onChange={e=>setAccountForm({...accountForm,currentPassword:e.target.value})}/></label><label>New password<input type="password" minLength="10" value={accountForm.newPassword} onChange={e=>setAccountForm({...accountForm,newPassword:e.target.value})}/><small>Leave password fields blank to change only profile information.</small></label><button disabled={saving}>Save account</button></form> : <p className="muted">Account unavailable.</p>}</div>
         </section></PageSection>
 
-        <PageSection page="flocks"><section className="card"><h2>Pricing & margins</h2><form className="form-grid" onSubmit={savePricingSettings}>
+        <PageSection page="flocks" tab="pricing"><section className="card"><h2>Pricing & margins</h2><form className="form-grid" onSubmit={savePricingSettings}>
           <label>Target margin %<input type="number" min="0" max="99.999999" step="0.01" placeholder="e.g. 25" value={pricingSettings.targetMarginPercent ?? ""} onChange={e=>setPricingSettings({...pricingSettings,targetMarginPercent:e.target.value})}/><small>Leave empty for no target. A sale never silently lowers it.</small></label>
           <label>Working/latest margin %<input readOnly value={pricingSettings.workingMarginPercent ?? ""}/><small>Updated from actual sale results.</small></label>
           <button disabled={saving}>Save pricing target</button>
         </form></section></PageSection>
 
-        <PageSection page="flocks"><section id="batches" className="card full"><div className="section-head"><h2>Batches</h2><p className="muted">Opening a batch creates a permanent flock record and generates its code automatically.</p></div>
+        <PageSection page="flocks" tab="flocks"><section id="batches" className="card full"><div className="section-head"><h2>Batches</h2><p className="muted">Opening a batch creates a permanent flock record and generates its code automatically.</p></div>
           <form className="inline-form" onSubmit={createBatch}>
             <select value={batchForm.type} onChange={e=>setBatchForm({...batchForm,type:e.target.value})}><option value="LAYER">Layer</option><option value="BROILER">Broiler</option></select>
             <input required type="date" value={batchForm.placementDate} onChange={e=>setBatchForm({...batchForm,placementDate:e.target.value})}/>
@@ -955,7 +955,7 @@ export default function App() {
           </div>
         </section></PageSection>
 
-        <PageSection page="feed-stock"><section id="feed" className="card full">
+        <PageSection page="feed-stock" tab="feed"><section id="feed" className="card full">
           <div className="section-head"><h2>Feed management</h2><p className="muted">Purchases create inventory and one expense. Usage consumes FIFO stock and adds its cost to the batch once.</p></div>
           <div className="subsection">
             <h3>Feed types</h3>
@@ -1022,7 +1022,7 @@ export default function App() {
           </div>
         </section></PageSection>
 
-        <PageSection page="daily-work"><section id="operations" className="card full">
+        <PageSection page="daily-work" tab="daily-work"><section id="operations" className="card full">
           <div className="section-head">
             <h2>Daily farm operations</h2>
             <p className="muted">Record the day without making workers pretend they measured 143.73 litres of water with a laboratory.</p>
@@ -1092,7 +1092,7 @@ export default function App() {
           )}
         </section></PageSection>
 
-        <PageSection page="health"><section id="health" className="card full">
+        <PageSection page="health" tab="health"><section id="health" className="card full">
           <div className="section-head">
             <h2>Health management</h2>
             <p className="muted">Keep health observations, treatments, and vaccinations as separate operational records. Drug costs enter the shared Drugs expense category.</p>
@@ -1161,7 +1161,7 @@ export default function App() {
           </div>
         </section></PageSection>
 
-        <PageSection page="production"><section id="eggs" className="card full">
+        <PageSection page="production" tab="eggs"><section id="eggs" className="card full">
           <div className="section-head">
             <h2>Layer egg production</h2>
             <p className="muted">Only LAYER batches can record eggs. Good and cracked eggs are stored as individual eggs. Cracked eggs remain historical and are never sellable.</p>
@@ -1237,7 +1237,7 @@ export default function App() {
         </section></PageSection>
 
 
-        <PageSection page="production"><section className="card full">
+        <PageSection page="production" tab="broiler"><section className="card full">
           <div className="section-head">
             <h2>Broiler production</h2>
             <p className="muted">Only BROILER batches expose weights, growth, FCR, and bird sales. FCR is calculated by the backend from feed consumed and live-weight gain.</p>
@@ -1328,7 +1328,7 @@ export default function App() {
           )}
         </section></PageSection>
 
-        <PageSection page="feed-stock"><section id="inventory" className="card full">
+        <PageSection page="feed-stock" tab="inventory"><section id="inventory" className="card full">
           <div className="section-head">
             <h2>Inventory</h2>
             <p className="muted">Track drugs, vaccines, and farm supplies with explicit stock movements. Feed remains in the dedicated Feed module because its FIFO cost ledger is authoritative.</p>
@@ -1405,7 +1405,7 @@ export default function App() {
           </div>
         </section></PageSection>
 
-        <PageSection page="sales-money"><section id="customers" className="card full">
+        <PageSection page="sales-money" tab="customers"><section id="customers" className="card full">
           <div className="section-head">
             <h2>Customers</h2>
             <p className="muted">Keep reusable customer records for egg and broiler sales. Type-specific sale records also retain the customer name used when the sale was recorded.</p>
@@ -1423,7 +1423,7 @@ export default function App() {
           </div>
         </section></PageSection>
 
-        <PageSection page="sales-money"><section id="sales" className="card full">
+        <PageSection page="sales-money" tab="sales"><section id="sales" className="card full">
           <div className="section-head">
             <h2>Sales</h2>
             <p className="muted">Common commercial ledger for Layer egg and Broiler bird sales. Type-specific rules remain in their production modules.</p>
@@ -1446,7 +1446,7 @@ export default function App() {
           </div>
         </section></PageSection>
 
-        <PageSection page="sales-money"><section id="expenses" className="card full">
+        <PageSection page="sales-money" tab="expenses"><section id="expenses" className="card full">
           <div className="section-head">
             <h2>Expenses</h2>
             <p className="muted">Record farm-level or batch-associated expenses. Amounts use integer minor currency units.</p>
@@ -1487,7 +1487,7 @@ export default function App() {
           </div>
         </section></PageSection>
 
-        <PageSection page="reports"><section id="reports" className="card full">
+        <PageSection page="reports" tab="farm-report"><section id="reports" className="card full">
           <div className="section-head"><div><p className="eyebrow">REPORTING</p><h2>Farm reports</h2></div>
             <div className="inline-form"><button type="button" onClick={loadReport}>Refresh</button><button type="button" onClick={() => exportCsv(() => reportApi.farmCsv(), "farm-report.csv")}>Export CSV</button><button type="button" onClick={() => exportPdf(() => reportApi.farmPdf(), "farm-report.pdf")}>Export PDF</button></div>
           </div>
@@ -1510,7 +1510,7 @@ export default function App() {
           </> : <p className="muted">Report is loading…</p>}
         </section></PageSection>
 
-        <PageSection page="reports"><section id="batch-reports" className="card full">
+        <PageSection page="reports" tab="batch-report"><section id="batch-reports" className="card full">
           <div className="section-head"><div><p className="eyebrow">REPORTING</p><h2>Batch reports</h2></div>
             <div className="inline-form">
               <select aria-label="Batch report" value={selectedBatchId} onChange={e => { setSelectedBatchId(e.target.value); rememberLastBatchId(e.target.value); }}>
@@ -1563,7 +1563,7 @@ export default function App() {
           </> : <p className="muted">{selectedBatchId ? "Batch report is loading…" : "Select a batch to inspect its report."}</p>}
         </section></PageSection>
 
-        <PageSection page="flocks"><section id="houses" className="card full"><div className="section-head"><h2>Houses / pens</h2><p className="muted">Physical locations that batches belong to.</p></div>
+        <PageSection page="flocks" tab="houses"><section id="houses" className="card full"><div className="section-head"><h2>Houses / pens</h2><p className="muted">Physical locations that batches belong to.</p></div>
           <form className="inline-form" onSubmit={addHouse}><input required placeholder="Name" value={houseForm.name} onChange={e=>setHouseForm({...houseForm,name:e.target.value})}/><input required placeholder="Code" value={houseForm.code} onChange={e=>setHouseForm({...houseForm,code:e.target.value})}/><input placeholder="Notes" value={houseForm.notes} onChange={e=>setHouseForm({...houseForm,notes:e.target.value})}/><button disabled={saving}>Add house</button></form>
           <div className="table"><div className="row header"><span>Name</span><span>Code</span><span>Status</span><span>Notes</span></div>
             {houses.map(h=><div className="row" key={h.id}><span>{h.name}</span><span>{h.code}</span><span>{h.status}</span><span>{h.notes||"—"}</span></div>)}
