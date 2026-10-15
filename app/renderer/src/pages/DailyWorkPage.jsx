@@ -3,7 +3,7 @@ import { FarmManagerContext } from "../components/FarmManagerContext.jsx";
 import PageSection from "../components/PageSection.jsx";
 
 export default function DailyWorkPage() {
-  const { dailyForm, mortalityForm, cullingForm, saving, saveDailyRecord } = useContext(FarmManagerContext);
+  const { batches, dailyForm, setDailyForm, dailyRecord, mortalityForm, setMortalityForm, cullingForm, setCullingForm, saving, saveDailyRecord, recordPopulationEvent } = useContext(FarmManagerContext);
 
   return (
     <div className="grid">
