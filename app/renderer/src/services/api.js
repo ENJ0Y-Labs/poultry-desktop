@@ -1,5 +1,5 @@
 const configuredApiBase = import.meta.env?.VITE_API_BASE_URL || window.poultryDesktop?.apiBaseUrl || "http://127.0.0.1:18942";
-const normalizedApiBase = configuredApiBase.replace(/\\/+$/, "");
+const normalizedApiBase = configuredApiBase.replace(/\/+$/, "");
 const API_BASE = normalizedApiBase.endsWith("/api/v1") ? normalizedApiBase : normalizedApiBase + "/api/v1";
 
 export const connectionApi = {
