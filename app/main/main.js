@@ -1,4 +1,4 @@
-import { app, BrowserWindow, dialog, ipcMain } from "electron";
+import { app, BrowserWindow, dialog, ipcMain, nativeTheme } from "electron";
 import { copyFileSync, existsSync, renameSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -7,6 +7,22 @@ import { BackendManager } from "./backend-manager.js";
 let mainWindow;
 let backendManager;
 let shutdownInProgress = false;
+
+const themeBackground = () => nativeTheme.shouldUseDarkColors ? "#0b0f14" : "#f5f7fa";
+
+ipcMain.handle("theme:set", async (_event, theme) => {
+  if (!["auto", "light", "dark"].includes(theme)) throw new Error("Invalid theme preference.");
+  nativeTheme.themeSource = theme === "auto" ? "system" : theme;
+  const backgroundColor = themeBackground();
+  if (mainWindow && !mainWindow.isDestroyed()) mainWindow.setBackgroundColor(backgroundColor);
+  return { theme, backgroundColor };
+});
+
+nativeTheme.on("updated", () => {
+  if (mainWindow && !mainWindow.isDestroyed() && nativeTheme.themeSource === "system") {
+    mainWindow.setBackgroundColor(themeBackground());
+  }
+});
 
 const log = (event, details = {}) => {
   console.info(JSON.stringify({
@@ -221,6 +237,7 @@ async function createWindow() {
   }
 
   mainWindow = new BrowserWindow({
+    backgroundColor: themeBackground(),
     width: 1366,
     height: 768,
     minWidth: 1100,
