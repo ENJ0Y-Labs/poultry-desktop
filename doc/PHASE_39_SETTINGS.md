@@ -112,3 +112,8 @@ Added:
 - App-test mocks for persisted settings
 
 GitHub currently reports no CI status/workflow run for the latest commit, so tests have not been claimed as passing from the remote repository.
+
+
+## Display theme
+
+The renderer supports Auto, Light, and Dark appearance preferences. The preference is stored in renderer localStorage and applied before React mounts; it does not change farm data or require a database migration. Electron receives the validated preference through a narrow preload IPC method, updates nativeTheme, and sets the BrowserWindow background to reduce startup/theme-change flashes. Recharts series colors must remain readable in both themes and should be verified when chart screens are added or changed.
