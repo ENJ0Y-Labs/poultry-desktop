@@ -890,7 +890,7 @@ export default function App() {
       </section></PageSection>
 
       <div className="grid">
-        <PageSection page="settings" tab="farm"><section id="settings" className="card"><h2>Farm profile</h2><form className="form-grid" onSubmit={saveFarm}>
+        <PageSection page="settings" tab="farm"><section id="settings" className="card full"><h2>Farm profile</h2><form className="form-grid" onSubmit={saveFarm}>
           <label>Farm name<input required value={farmForm.name} onChange={e=>setFarmForm({...farmForm,name:e.target.value})}/></label>
           <label>Location<input value={farmForm.location} onChange={e=>setFarmForm({...farmForm,location:e.target.value})}/></label>
           <label>Timezone<input required value={farmForm.timezone} onChange={e=>setFarmForm({...farmForm,timezone:e.target.value})}/></label>
@@ -898,14 +898,14 @@ export default function App() {
           <button disabled={saving}>Save profile</button>
         </form></section></PageSection>
 
-        <PageSection page="settings" tab="farm-defaults"><section className="card"><h2>Farm defaults</h2><form className="form-grid" onSubmit={saveSettings}>
+        <PageSection page="settings" tab="farm-defaults"><section className="card full"><h2>Farm defaults</h2><form className="form-grid" onSubmit={saveSettings}>
           <label>Egg crate size<input type="number" min="1" value={crateSize} onChange={e=>setCrateSize(e.target.value)}/><small>Stored as individual eggs internally.</small></label>
           <label>Default water container<input type="number" min="1" value={defaultWater} onChange={e=>setDefaultWater(e.target.value)}/><small>Must match one configured size.</small></label>
           <label>Water container sizes<input value={waterSizes} onChange={e=>setWaterSizes(e.target.value)}/><small>Comma-separated, e.g. 25, 75.</small></label>
           <button disabled={saving}>Save defaults</button>
         </form></section></PageSection>
 
-        <PageSection page="settings" tab="backup"><section className="card"><h2>Backup & restore</h2><div className="form-grid"><p className="muted">Backups are created by the backend using SQLite-safe snapshotting. Restore is handled by Electron so the renderer never replaces the database.</p><div className="inline-form"><button type="button" disabled={saving} onClick={createBackup}>Create backup</button><button type="button" disabled={saving || !window.poultryDesktop} onClick={restoreBackup}>Restore backup</button></div><small>Default retention: 30 backup files. A safety copy is created before restore.</small></div></section></PageSection>
+        <PageSection page="settings" tab="backup"><section className="card full"><h2>Backup & restore</h2><div className="form-grid"><p className="muted">Backups are created by the backend using SQLite-safe snapshotting. Restore is handled by Electron so the renderer never replaces the database.</p><div className="inline-form"><button type="button" disabled={saving} onClick={createBackup}>Create backup</button><button type="button" disabled={saving || !window.poultryDesktop} onClick={restoreBackup}>Restore backup</button></div><small>Default retention: 30 backup files. A safety copy is created before restore.</small></div></section></PageSection>
 
         <PageSection page="settings" tab="application"><section className="card full"><div className="section-head"><h2>Configuration</h2><p className="muted">Settings that control farm behavior are stored locally and audited when changed.</p></div>
           <div className="dashboard-columns">
@@ -919,7 +919,7 @@ export default function App() {
           <div className="subsection"><h3>User / account</h3>{account ? <form className="form-grid" onSubmit={saveAccount}><label>Full name<input required value={accountForm.fullName} onChange={e=>setAccountForm({...accountForm,fullName:e.target.value})}/></label><label>Email<input required type="email" value={accountForm.email} onChange={e=>setAccountForm({...accountForm,email:e.target.value})}/></label><label>Current password<input type="password" value={accountForm.currentPassword} onChange={e=>setAccountForm({...accountForm,currentPassword:e.target.value})}/></label><label>New password<input type="password" minLength="10" value={accountForm.newPassword} onChange={e=>setAccountForm({...accountForm,newPassword:e.target.value})}/><small>Leave password fields blank to change only profile information.</small></label><button disabled={saving}>Save account</button></form> : <p className="muted">Account unavailable.</p>}</div>
         </section></PageSection>
 
-        <PageSection page="settings" tab="pricing"><section className="card"><h2>Pricing & margins</h2><form className="form-grid" onSubmit={savePricingSettings}>
+        <PageSection page="settings" tab="pricing"><section className="card full"><h2>Pricing & margins</h2><form className="form-grid" onSubmit={savePricingSettings}>
           <label>Target margin %<input type="number" min="0" max="99.999999" step="0.01" placeholder="e.g. 25" value={pricingSettings.targetMarginPercent ?? ""} onChange={e=>setPricingSettings({...pricingSettings,targetMarginPercent:e.target.value})}/><small>Leave empty for no target. A sale never silently lowers it.</small></label>
           <label>Working/latest margin %<input readOnly value={pricingSettings.workingMarginPercent ?? ""}/><small>Updated from actual sale results.</small></label>
           <button disabled={saving}>Save pricing target</button>
