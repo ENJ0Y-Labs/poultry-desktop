@@ -1174,3 +1174,11 @@ And never sacrifice poultry math for dashboard cosmetics.
 - Water total is calculated as the sum of configured container capacity × container count.
 - Feed usage continues to be recorded through the feed module and is aggregated into daily records rather than creating a second feed ledger.
 - One daily-record header is allowed per batch/date.
+
+
+## 21. Display theme
+
+- Support Auto, Light, and Dark appearance preferences without changing farm records or adding a database migration.
+- Persist the renderer preference in localStorage and apply it before React mounts; keep all component colors in CSS tokens with explicit light-theme values.
+- Keep native theme changes behind a validated preload IPC method. Set the Electron window background before showing the window to minimize theme flashes.
+- Verify status/severity/error contrast in both themes. If charts are introduced or modified, verify their series, grid, axis, tooltip, and legend colors in both themes.
