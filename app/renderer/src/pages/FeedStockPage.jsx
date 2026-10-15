@@ -3,7 +3,7 @@ import { FarmManagerContext } from "../components/FarmManagerContext.jsx";
 import PageSection from "../components/PageSection.jsx";
 
 export default function FeedStockPage() {
-  const { feedTypes, feedTypeForm, feedPurchaseForm, feedUsageForm, inventoryItemForm, inventoryMovementForm, saving, saveInventoryItem, saveInventoryMovement, createFeedType, purchaseFeed, useFeed } = useContext(FarmManagerContext);
+  const { formatMoney, farm, batches, feedTypes, feedInventory, feedTypeForm, setFeedTypeForm, feedPurchaseForm, setFeedPurchaseForm, feedUsageForm, setFeedUsageForm, inventoryItems, inventoryItemForm, setInventoryItemForm, inventoryMovementForm, setInventoryMovementForm, inventoryMovements, saving, saveInventoryItem, loadInventoryMovements, saveInventoryMovement, createFeedType, purchaseFeed, useFeed, feedQuantity } = useContext(FarmManagerContext);
 
   return (
     <div className="grid">
