@@ -1,6 +1,7 @@
 import { useContext } from "react";
 import { FarmManagerContext } from "../components/FarmManagerContext.jsx";
 // eslint-disable-next-line no-unused-vars
+// eslint-disable-next-line no-unused-vars
 import PageSection from "../components/PageSection.jsx";
 
 export default function DailyWorkPage() {
