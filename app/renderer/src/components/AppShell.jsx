@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { getThemePreference, setThemePreference } from "../utils/theme.js";
 
 const groups = [
   { label: "Overview", items: [{ label: "Dashboard", target: "dashboard", icon: "dashboard", shortcut: "Ctrl+1" }] },
@@ -69,6 +70,12 @@ function localDateLabel() {
 
 export default function AppShell({ farm, error, children, startPage = "dashboard" }) {
   const [active, setActive] = useState(startPage);
+  const [theme, setTheme] = useState(getThemePreference);
+
+  function changeTheme(event) {
+    const nextTheme = setThemePreference(event.target.value);
+    setTheme(nextTheme);
+  }
   const today = useMemo(localDateLabel, []);
 
   function navigate(target) {
@@ -160,6 +167,7 @@ export default function AppShell({ farm, error, children, startPage = "dashboard
               <p className="muted">{farm.location || "Farm profile"} · {farm.currency} · {farm.timezone}</p>
             </div>
             <div className="topbar-actions">
+              <label className="theme-control">Theme<select aria-label="Theme" value={theme} onChange={changeTheme}><option value="auto">Auto</option><option value="light">Light</option><option value="dark">Dark</option></select></label>
               <div className="system-pill"><span className="status-dot online" /> BACKEND ONLINE</div>
               <div className="system-pill"><span className="status-dot cyan" /> OFFLINE-FIRST</div>
               <div className="date-chip">{today}</div>

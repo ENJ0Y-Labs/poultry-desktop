@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, within } from "@testing-library/react";
 import { describe, expect, it, vi, beforeEach } from "vitest";
 // eslint-disable-next-line no-unused-vars
 import AppShell from "./AppShell.jsx";
@@ -26,6 +26,21 @@ describe("AppShell", () => {
     expect(screen.getByRole("button", { name: "Sales" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Reports" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Settings" })).toBeInTheDocument();
+  });
+
+  it("offers Auto, Light, and Dark theme preferences", () => {
+    render(
+      <AppShell farm={{ name: "Grantino", location: "", currency: "NGN", timezone: "Africa/Lagos" }}>
+        <section id="dashboard">Dashboard</section>
+      </AppShell>
+    );
+    const selector = screen.getByRole("combobox", { name: "Theme" });
+    expect(selector).toHaveValue("auto");
+    expect(within(selector).getByRole("option", { name: "Light" })).toBeInTheDocument();
+    expect(within(selector).getByRole("option", { name: "Dark" })).toBeInTheDocument();
+    fireEvent.change(selector, { target: { value: "light" } });
+    expect(localStorage.getItem("grantino:theme")).toBe("light");
+    expect(document.documentElement.dataset.theme).toBe("light");
   });
 
   it("scrolls to the selected module", () => {

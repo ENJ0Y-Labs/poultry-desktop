@@ -1,5 +1,5 @@
-import { app, BrowserWindow, dialog, ipcMain } from "electron";
-import { copyFileSync, existsSync, renameSync, rmSync } from "node:fs";
+import { app, BrowserWindow, dialog, ipcMain, nativeTheme } from "electron";
+import { copyFileSync, existsSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { BackendManager } from "./backend-manager.js";
@@ -7,6 +7,38 @@ import { BackendManager } from "./backend-manager.js";
 let mainWindow;
 let backendManager;
 let shutdownInProgress = false;
+
+const themePreferencePath = () => join(app.getPath("userData"), "theme-preference.json");
+
+function readThemePreference() {
+  try {
+    const saved = JSON.parse(readFileSync(themePreferencePath(), "utf8"))?.theme;
+    return ["auto", "light", "dark"].includes(saved) ? saved : "auto";
+  } catch {
+    return "auto";
+  }
+}
+
+function applyNativeTheme(theme) {
+  nativeTheme.themeSource = theme === "auto" ? "system" : theme;
+  return nativeTheme.shouldUseDarkColors ? "#0b0f14" : "#f5f7fa";
+}
+
+const themeBackground = () => nativeTheme.shouldUseDarkColors ? "#0b0f14" : "#f5f7fa";
+
+ipcMain.handle("theme:set", async (_event, theme) => {
+  if (!["auto", "light", "dark"].includes(theme)) throw new Error("Invalid theme preference.");
+  writeFileSync(themePreferencePath(), JSON.stringify({ theme }, null, 2), "utf8");
+  const backgroundColor = applyNativeTheme(theme);
+  if (mainWindow && !mainWindow.isDestroyed()) mainWindow.setBackgroundColor(backgroundColor);
+  return { theme, backgroundColor };
+});
+
+nativeTheme.on("updated", () => {
+  if (mainWindow && !mainWindow.isDestroyed() && nativeTheme.themeSource === "system") {
+    mainWindow.setBackgroundColor(themeBackground());
+  }
+});
 
 const log = (event, details = {}) => {
   console.info(JSON.stringify({
@@ -195,6 +227,9 @@ ipcMain.handle("backup:restore", async (_event, ...args) => {
 });
 
 async function createWindow() {
+  const initialTheme = readThemePreference();
+  const initialBackground = applyNativeTheme(initialTheme);
+
   backendManager = new BackendManager({
     userDataPath: app.getPath("userData"),
     appPath: app.getAppPath(),
@@ -221,6 +256,7 @@ async function createWindow() {
   }
 
   mainWindow = new BrowserWindow({
+    backgroundColor: initialBackground,
     width: 1366,
     height: 768,
     minWidth: 1100,
