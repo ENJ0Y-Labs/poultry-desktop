@@ -92,6 +92,7 @@ function resolveTab(hash, page) {
   return defaultTabs[page] || "overview";
 }
 
+// eslint-disable-next-line no-unused-vars
 function Icon({ name }) {
   const paths = {
     dashboard: <><rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" /></>,
@@ -117,6 +118,11 @@ function Icon({ name }) {
     settings: <><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.8 1.8 0 0 0 .3 2l.1.1-1.7 1.7-.1-.1a1.8 1.8 0 0 0-2-.3 1.8 1.8 0 0 0-1 1.7v.2h-2.4v-.2a1.8 1.8 0 0 0-1-1.7 1.8 1.8 0 0 0-2 .3l-.1.1-1.7-1.7.1-.1a1.8 1.8 0 0 0 .3-2 1.8 1.8 0 0 0-1.7-1H6v-2.4h.2a1.8 1.8 0 0 0 1.7-1 1.8 1.8 0 0 0-.3-2l-.1-.1 1.7-1.7.1.1a1.8 1.8 0 0 0 2 .3 1.8 1.8 0 0 0 1-1.7V5h2.4v.2a1.8 1.8 0 0 0 1 1.7 1.8 1.8 0 0 0 2-.3l.1-.1 1.7 1.7-.1.1a1.8 1.8 0 0 0-.3 2 1.8 1.8 0 0 0 1.7 1h.2v2.4h-.2a1.8 1.8 0 0 0-1.7 1Z" /></>,
   };
   return <svg className="nav-glyph" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">{paths[name] || paths.dashboard}</svg>;
+}
+
+function farmInitials(name) {
+  const words = String(name || "").trim().split(/\s+/).filter(Boolean);
+  return words.slice(0, 2).map(word => word[0]).join("").toUpperCase() || "GF";
 }
 
 function localDateLabel() {
@@ -200,9 +206,9 @@ export default function AppShell({ farm, error, children, startPage = "dashboard
     <div className="app-shell">
       <aside className="sidebar">
         <div className="brand">
-          <div className="brand-mark" aria-hidden="true"><span>GF</span></div>
+          <div className="brand-mark" aria-hidden="true"><span>{farmInitials(farm.name)}</span></div>
           <div className="brand-copy">
-            <strong>Grantino Farms</strong>
+            <strong>{farm.name || "Local farm"}</strong>
             <small>Poultry Farm Manager</small>
           </div>
         </div>
@@ -226,7 +232,7 @@ export default function AppShell({ farm, error, children, startPage = "dashboard
                   title={item.shortcut ? `${item.label} · ${item.shortcut}` : item.label}
                   aria-label={item.label}
                 >
-                  <span className="nav-icon-wrap">{Icon({ name: item.icon })}</span>
+                  <span className="nav-icon-wrap"><Icon name={item.icon} /></span>
                   <span className="nav-label">{item.label}</span>
                   {item.shortcut && <kbd>{item.shortcut.replace("Ctrl", "⌃")}</kbd>}
                 </button>
@@ -247,7 +253,7 @@ export default function AppShell({ farm, error, children, startPage = "dashboard
         <div className="shell">
           <header className="app-topbar">
             <div className="topbar-title">
-              <p className="eyebrow">GRANTINO FARMS / POULTRY MANAGER</p>
+              <p className="eyebrow">{farm.name || "LOCAL FARM"} / POULTRY MANAGER</p>
               <h1>{farm.name}</h1>
               <p className="muted">{farm.location || "Farm profile"} · {farm.currency} · {farm.timezone}</p>
             </div>

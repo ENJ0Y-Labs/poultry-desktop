@@ -14,9 +14,9 @@ export default function SalesMoneyPage() {
             <p className="muted">Keep reusable customer records for egg and broiler sales. Type-specific sale records also retain the customer name used when the sale was recorded.</p>
           </div>
           <form className="inline-form" onSubmit={saveCustomer}>
-            <input required placeholder="Customer name" value={customerForm.name} onChange={e=>setCustomerForm({...customerForm,name:e.target.value})}/>
-            <input placeholder="Phone" value={customerForm.phone} onChange={e=>setCustomerForm({...customerForm,phone:e.target.value})}/>
-            <input placeholder="Notes" value={customerForm.notes} onChange={e=>setCustomerForm({...customerForm,notes:e.target.value})}/>
+            <label className="field"><span>Customer name</span><input required value={customerForm.name} onChange={e=>setCustomerForm({...customerForm,name:e.target.value})}/></label>
+            <label className="field"><span>Phone</span><input value={customerForm.phone} onChange={e=>setCustomerForm({...customerForm,phone:e.target.value})}/></label>
+            <label className="field"><span>Notes</span><input value={customerForm.notes} onChange={e=>setCustomerForm({...customerForm,notes:e.target.value})}/></label>
             <button disabled={saving}>Add customer</button>
           </form>
           <div className="table">
@@ -52,29 +52,29 @@ export default function SalesMoneyPage() {
       <PageSection page="sales-money" tab="expenses"><section id="expenses" className="card full">
           <div className="section-head">
             <h2>Expenses</h2>
-            <p className="muted">Record farm-level or batch-associated expenses. Amounts use integer minor currency units.</p>
+            <p className="muted">Record farm-level or batch-associated expenses. Enter amounts in naira (₦); the app stores exact kobo values.</p>
           </div>
           <form className="inline-form" onSubmit={saveExpense}>
-            <input required type="date" value={expenseForm.occurredDate} onChange={e=>setExpenseForm({...expenseForm,occurredDate:e.target.value})}/>
-            <input required placeholder="Description" value={expenseForm.description} onChange={e=>setExpenseForm({...expenseForm,description:e.target.value})}/>
-            <input required min="1" step="1" type="number" placeholder="Amount (minor units)" value={expenseForm.amountMinor} onChange={e=>setExpenseForm({...expenseForm,amountMinor:e.target.value})}/>
-            <select required value={expenseForm.category} onChange={e=>setExpenseForm({...expenseForm,category:e.target.value})}>
+            <label className="field"><span>Expense date</span><input required type="date" value={expenseForm.occurredDate} onChange={e=>setExpenseForm({...expenseForm,occurredDate:e.target.value})}/></label>
+            <label className="field"><span>Description</span><input required value={expenseForm.description} onChange={e=>setExpenseForm({...expenseForm,description:e.target.value})}/></label>
+            <label className="field"><span>Amount (₦)</span><input required type="text" inputMode="decimal" value={expenseForm.amountMinor} onChange={e=>setExpenseForm({...expenseForm,amountMinor:e.target.value})}/></label>
+            <label className="field"><span>Category</span><select required value={expenseForm.category} onChange={e=>setExpenseForm({...expenseForm,category:e.target.value})}>
               {expenseCategories.map(category => <option key={category.id} value={category.name}>{category.name}</option>)}
-            </select>
-            <select value={expenseForm.batchId} onChange={e=>setExpenseForm({...expenseForm,batchId:e.target.value})}>
+            </select></label>
+            <label className="field"><span>Batch association</span><select value={expenseForm.batchId} onChange={e=>setExpenseForm({...expenseForm,batchId:e.target.value})}>
               <option value="">Farm-level</option>
               {batches.map(b=><option key={b.id} value={b.id}>{b.code}</option>)}
-            </select>
+            </select></label>
             <button disabled={saving}>Record expense</button>
           </form>
 
           <div className="subsection">
             <div className="section-head">
               <h3>Expense history</h3>
-              <select value={expenseBatchFilter} onChange={e=>{setExpenseBatchFilter(e.target.value);loadExpenses(e.target.value);}}>
+              <label className="field"><span>Filter by batch</span><select value={expenseBatchFilter} onChange={e=>{setExpenseBatchFilter(e.target.value);loadExpenses(e.target.value);}}>
                 <option value="">All farm expenses</option>
                 {batches.map(b=><option key={b.id} value={b.id}>{b.code}</option>)}
-              </select>
+              </select></label>
             </div>
             <div className="table">
               <div className="row header"><span>Date</span><span>Description</span><span>Amount</span><span>Category</span><span>Association</span></div>

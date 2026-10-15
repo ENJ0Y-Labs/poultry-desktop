@@ -5,7 +5,7 @@ import PageSection from "../components/PageSection.jsx";
 import { rememberLastBatchId } from "../utils/farmUx.js";
 
 export default function FlocksPage() {
-  const { formatMoney, formatQuantity, formatPercent, formatKg, formatMetric, farm, houses, batches, batchForm, setBatchForm, costForm, setCostForm, houseForm, setHouseForm, saving, selectedBatchId, setSelectedBatchId, batchDashboard, createBatch, addBirdCost, markBatchSold, reopenBatch, addHouse } = useContext(FarmManagerContext);
+  const { formatMoney, formatQuantity, formatPercent, formatKg, formatMetric, farm, houses, batches, suppliers, batchForm, setBatchForm, costForm, setCostForm, houseForm, setHouseForm, saving, selectedBatchId, setSelectedBatchId, batchDashboard, createBatch, addBirdCost, markBatchSold, reopenBatch, addHouse } = useContext(FarmManagerContext);
 
   return (
     <div className="grid">
@@ -46,12 +46,12 @@ export default function FlocksPage() {
 
       <PageSection page="flocks" tab="flocks"><section id="batches" className="card full"><div className="section-head"><h2>Batches</h2><p className="muted">Opening a batch creates a permanent flock record and generates its code automatically.</p></div>
           <form className="inline-form" onSubmit={createBatch}>
-            <select value={batchForm.type} onChange={e=>setBatchForm({...batchForm,type:e.target.value})}><option value="LAYER">Layer</option><option value="BROILER">Broiler</option></select>
-            <input required type="date" value={batchForm.placementDate} onChange={e=>setBatchForm({...batchForm,placementDate:e.target.value})}/>
-            <select required value={batchForm.houseId} onChange={e=>setBatchForm({...batchForm,houseId:e.target.value})}><option value="">House / pen</option>{houses.filter(h=>h.status==="ACTIVE").map(h=><option key={h.id} value={h.id}>{h.name} ({h.code})</option>)}</select>
-            <input required min="1" type="number" placeholder="Initial birds" value={batchForm.initialBirdCount} onChange={e=>setBatchForm({...batchForm,initialBirdCount:e.target.value})}/>
-            <input placeholder="Supplier/source ID (optional)" value={batchForm.supplierId} onChange={e=>setBatchForm({...batchForm,supplierId:e.target.value})}/>
-            <input required min="0" step="1" type="number" placeholder="Purchase cost (minor units)" value={batchForm.purchaseCostMinor} onChange={e=>setBatchForm({...batchForm,purchaseCostMinor:e.target.value})}/>
+            <label className="field"><span>Batch type</span><select value={batchForm.type} onChange={e=>setBatchForm({...batchForm,type:e.target.value})}><option value="LAYER">Layer</option><option value="BROILER">Broiler</option></select></label>
+            <label className="field"><span>Placement date</span><input required type="date" value={batchForm.placementDate} onChange={e=>setBatchForm({...batchForm,placementDate:e.target.value})}/></label>
+            <label className="field"><span>House / pen</span><select required value={batchForm.houseId} onChange={e=>setBatchForm({...batchForm,houseId:e.target.value})}><option value="">House / pen</option>{houses.filter(h=>h.status==="ACTIVE").map(h=><option key={h.id} value={h.id}>{h.name} ({h.code})</option>)}</select></label>
+            <label className="field"><span>Initial birds</span><input required min="1" type="number" value={batchForm.initialBirdCount} onChange={e=>setBatchForm({...batchForm,initialBirdCount:e.target.value})}/></label>
+            <label className="field"><span>Supplier / source (optional)</span><select value={batchForm.supplierId} onChange={e=>setBatchForm({...batchForm,supplierId:e.target.value})}><option value="">Unknown / not recorded</option>{suppliers.filter(supplier=>supplier.status!=="ARCHIVED").map(supplier=><option key={supplier.id} value={supplier.id}>{supplier.name}</option>)}</select></label>
+            <label className="field"><span>Purchase cost (₦)</span><input required type="text" inputMode="decimal" value={batchForm.purchaseCostMinor} onChange={e=>setBatchForm({...batchForm,purchaseCostMinor:e.target.value})}/></label>
             <button disabled={saving || houses.length===0}>Create batch</button>
           </form>
           <div className="table">
@@ -60,22 +60,22 @@ export default function FlocksPage() {
             {batches.length===0 && <p className="muted empty">No batches yet.</p>}
           </div>
           <div className="subsection">
-            <div className="section-head"><h3>Additional attributable bird cost</h3><p className="muted">Enter integer minor units only. The backend carries this cost with the live birds.</p></div>
+            <div className="section-head"><h3>Additional attributable bird cost</h3><p className="muted">Enter the amount in naira. The app converts it to integer kobo before saving.</p></div>
             <form className="inline-form" onSubmit={addBirdCost}>
-              <select required value={costForm.batchId} onChange={e=>setCostForm({...costForm,batchId:e.target.value})}>
+              <label className="field"><span>Batch</span><select required value={costForm.batchId} onChange={e=>setCostForm({...costForm,batchId:e.target.value})}>
                 <option value="">Batch</option>
                 {batches.filter(batch => batch.status === "ACTIVE").map(batch=><option key={batch.id} value={batch.id}>{batch.code}</option>)}
-              </select>
-              <input required type="date" value={costForm.eventDate} onChange={e=>setCostForm({...costForm,eventDate:e.target.value})}/>
-              <input required min="1" step="1" type="number" placeholder="Amount (minor units)" value={costForm.amountMinor} onChange={e=>setCostForm({...costForm,amountMinor:e.target.value})}/>
-              <input placeholder="Reason" value={costForm.reason} onChange={e=>setCostForm({...costForm,reason:e.target.value})}/>
+              </select></label>
+              <label className="field"><span>Cost date</span><input required type="date" value={costForm.eventDate} onChange={e=>setCostForm({...costForm,eventDate:e.target.value})}/></label>
+              <label className="field"><span>Amount (₦)</span><input required type="text" inputMode="decimal" value={costForm.amountMinor} onChange={e=>setCostForm({...costForm,amountMinor:e.target.value})}/></label>
+              <label className="field"><span>Reason</span><input value={costForm.reason} onChange={e=>setCostForm({...costForm,reason:e.target.value})}/></label>
               <button disabled={saving || batches.filter(batch => batch.status === "ACTIVE").length===0}>Add cost</button>
             </form>
           </div>
         </section></PageSection>
 
       <PageSection page="flocks" tab="houses"><section id="houses" className="card full"><div className="section-head"><h2>Houses / pens</h2><p className="muted">Physical locations that batches belong to.</p></div>
-          <form className="inline-form" onSubmit={addHouse}><input required placeholder="Name" value={houseForm.name} onChange={e=>setHouseForm({...houseForm,name:e.target.value})}/><input required placeholder="Code" value={houseForm.code} onChange={e=>setHouseForm({...houseForm,code:e.target.value})}/><input placeholder="Notes" value={houseForm.notes} onChange={e=>setHouseForm({...houseForm,notes:e.target.value})}/><button disabled={saving}>Add house</button></form>
+          <form className="inline-form" onSubmit={addHouse}><label className="field"><span>Name</span><input required value={houseForm.name} onChange={e=>setHouseForm({...houseForm,name:e.target.value})}/></label><label className="field"><span>Code</span><input required value={houseForm.code} onChange={e=>setHouseForm({...houseForm,code:e.target.value})}/></label><label className="field"><span>Notes</span><input value={houseForm.notes} onChange={e=>setHouseForm({...houseForm,notes:e.target.value})}/></label><button disabled={saving}>Add house</button></form>
           <div className="table"><div className="row header"><span>Name</span><span>Code</span><span>Status</span><span>Notes</span></div>
             {houses.map(h=><div className="row" key={h.id}><span>{h.name}</span><span>{h.code}</span><span>{h.status}</span><span>{h.notes||"—"}</span></div>)}
             {houses.length===0 && <p className="muted empty">No houses or pens yet.</p>}

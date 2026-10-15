@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { todayLocalDate, getLastBatchId, rememberLastBatchId } from "./utils/farmUx.js";
+import { parseNairaToKobo } from "./utils/moneyInput.js";
 // eslint-disable-next-line no-unused-vars
 import AppShell from "./components/AppShell.jsx";
 // eslint-disable-next-line no-unused-vars
@@ -517,7 +518,7 @@ export default function App() {
       const created = await expenseApi.create({
         occurredDate: expenseForm.occurredDate,
         description: expenseForm.description.trim(),
-        amountMinor: Number(expenseForm.amountMinor),
+        amountMinor: parseNairaToKobo(expenseForm.amountMinor),
         category: expenseForm.category,
         batchId: expenseForm.batchId || null,
       });
@@ -535,7 +536,7 @@ export default function App() {
         houseId: batchForm.houseId,
         initialBirdCount: Number(batchForm.initialBirdCount),
         supplierId: batchForm.supplierId.trim() || null,
-        purchaseCostMinor: batchForm.purchaseCostMinor,
+        purchaseCostMinor: parseNairaToKobo(batchForm.purchaseCostMinor, { allowZero: true }),
       });
       setBatches(current => [created, ...current]);
       rememberLastBatchId(created.id);
@@ -549,7 +550,7 @@ export default function App() {
     try {
       await costApi.add(costForm.batchId, {
         eventDate: costForm.eventDate,
-        amountMinor: costForm.amountMinor,
+        amountMinor: parseNairaToKobo(costForm.amountMinor),
         reason: costForm.reason.trim() || null,
       });
       setCostForm(form => ({ ...emptyCost, batchId: form.batchId }));
@@ -575,7 +576,7 @@ export default function App() {
         purchaseDate: feedPurchaseForm.purchaseDate,
         quantity: feedPurchaseForm.quantity,
         unit: type?.unit || feedPurchaseForm.unit,
-        totalCostMinor: feedPurchaseForm.totalCostMinor,
+        totalCostMinor: parseNairaToKobo(feedPurchaseForm.totalCostMinor),
       });
       setFeedPurchaseForm(form => ({ ...emptyFeedPurchase, feedTypeId: form.feedTypeId }));
       setFeedInventory(await feedApi.inventory());
@@ -698,7 +699,7 @@ export default function App() {
       const sale = {
         recordDate: birdSaleForm.date,
         quantity: Number(birdSaleForm.quantity),
-        pricePerBirdMinor: birdSaleForm.pricePerBirdMinor,
+        pricePerBirdMinor: parseNairaToKobo(birdSaleForm.pricePerBirdMinor),
         customer: birdSaleForm.customer.trim(),
         customerId: birdSaleForm.customerId || null,
       };
@@ -757,7 +758,7 @@ export default function App() {
         customer: eggSaleForm.customer.trim(),
         customerId: eggSaleForm.customerId || null,
         crates: eggSaleForm.crates,
-        pricePerCrateMinor: eggSaleForm.pricePerCrateMinor,
+        pricePerCrateMinor: parseNairaToKobo(eggSaleForm.pricePerCrateMinor),
       });
       await loadEggsForBatch(batchId);
       setEggSaleForm(form => ({ ...form, customer: "", customerId: "", crates: "", pricePerCrateMinor: "" }));
@@ -786,7 +787,7 @@ export default function App() {
         recordDate: drugForm.date,
         drug: drugForm.drug.trim(),
         quantity: Number(drugForm.quantity),
-        costMinor: drugForm.costMinor,
+        costMinor: parseNairaToKobo(drugForm.costMinor),
         reason: drugForm.reason.trim(),
       });
       setDrugRecords(await healthApi.listDrugs(drugForm.batchId));

@@ -28,6 +28,17 @@ describe("AppShell", () => {
     }
   });
 
+  it("uses the saved farm profile name in the shell", () => {
+    render(
+      <AppShell farm={{ name: "Riverbend Poultry", location: "", currency: "NGN", timezone: "Africa/Lagos" }}>
+        <section id="dashboard">Dashboard</section>
+      </AppShell>
+    );
+
+    expect(screen.getAllByText("Riverbend Poultry").length).toBeGreaterThanOrEqual(2);
+    expect(screen.getByText("RP")).toBeInTheDocument();
+  });
+
   it("offers Auto, Light, and Dark theme preferences", () => {
     render(
       <AppShell farm={{ name: "Grantino", location: "", currency: "NGN", timezone: "Africa/Lagos" }}>

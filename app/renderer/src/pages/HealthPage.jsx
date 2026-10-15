@@ -33,7 +33,7 @@ export default function HealthPage() {
             <label>Date<input required type="date" value={drugForm.date} onChange={event => setDrugForm({...drugForm,date:event.target.value})}/></label>
             <label>Drug<input required value={drugForm.drug} onChange={event => setDrugForm({...drugForm,drug:event.target.value})}/></label>
             <label>Quantity<input required min="1" step="1" type="number" value={drugForm.quantity} onChange={event => setDrugForm({...drugForm,quantity:event.target.value})}/></label>
-            <label>Cost (minor units)<input required min="1" step="1" type="number" value={drugForm.costMinor} onChange={event => setDrugForm({...drugForm,costMinor:event.target.value})}/></label>
+            <label>Cost (₦)<input required type="text" inputMode="decimal" value={drugForm.costMinor} onChange={event => setDrugForm({...drugForm,costMinor:event.target.value})}/></label>
             <label>Reason<input required value={drugForm.reason} onChange={event => setDrugForm({...drugForm,reason:event.target.value})}/></label>
             <button disabled={saving}>Record drug</button>
           </form>
@@ -50,7 +50,7 @@ export default function HealthPage() {
             <label>Batch<select required value={vaccinationForm.batchId} onChange={event => {setVaccinationForm({...vaccinationForm,batchId:event.target.value});loadHealthForBatch(event.target.value);}}>{batchOptions}</select></label>
             <label>Date<input required type="date" value={vaccinationForm.date} onChange={event => setVaccinationForm({...vaccinationForm,date:event.target.value})}/></label>
             <label>Vaccine<input required value={vaccinationForm.vaccine} onChange={event => setVaccinationForm({...vaccinationForm,vaccine:event.target.value})}/></label>
-            <label>Dose<input required placeholder="e.g. 1 dose" value={vaccinationForm.dose} onChange={event => setVaccinationForm({...vaccinationForm,dose:event.target.value})}/></label>
+            <label>Dose<input required value={vaccinationForm.dose} onChange={event => setVaccinationForm({...vaccinationForm,dose:event.target.value})}/></label>
             <label>Quantity<input required min="1" step="1" type="number" value={vaccinationForm.quantity} onChange={event => setVaccinationForm({...vaccinationForm,quantity:event.target.value})}/></label>
             <label>Notes<input value={vaccinationForm.notes} onChange={event => setVaccinationForm({...vaccinationForm,notes:event.target.value})}/></label>
             <button disabled={saving}>Record vaccination</button>
