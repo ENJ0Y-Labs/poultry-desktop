@@ -852,7 +852,9 @@ Prioritize:
 - Enter to save where appropriate
 - today's date defaults
 - last-used batch defaults
-- visible units
+- visible units and persistent field labels that remain visible after typing
+- money entry in the farm currency (for NGN, enter naira with up to two decimal places); convert string input to integer kobo without floating-point arithmetic before API submission
+- readable table text and headers, with navigation and keyboard shortcuts comfortably legible at 1366×768
 - plain-language errors
 - confirmation before voiding
 - 1366×768 usability
