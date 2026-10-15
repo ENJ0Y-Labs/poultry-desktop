@@ -162,6 +162,7 @@ afterEach(() => vi.restoreAllMocks());
 
 beforeEach(() => {
   localStorage.clear();
+  window.location.hash = "";
   document.body.innerHTML = "";
 });
 
