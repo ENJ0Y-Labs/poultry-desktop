@@ -29,6 +29,7 @@ function resolvePage(hash, startPage = "dashboard") {
   if (validPages.includes(candidate)) return candidate;
   if (legacyRoutes[candidate]) return legacyRoutes[candidate];
   if (validPages.includes(startPage)) return startPage;
+  if (legacyRoutes[startPage]) return legacyRoutes[startPage];
   return "dashboard";
 }
 
