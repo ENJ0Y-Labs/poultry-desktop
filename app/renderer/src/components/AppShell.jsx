@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+// eslint-disable-next-line no-unused-vars
 import { NavigationContext } from "./NavigationContext.jsx";
 import { getThemePreference, setThemePreference } from "../utils/theme.js";
 
