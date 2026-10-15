@@ -36,3 +36,11 @@ The nine page components live under `app/renderer/src/pages/`. Shared form state
 - Batch creation and feed purchases select registered suppliers by name instead of asking operators to type database IDs.
 - Tables, table headings, navigation labels, and keyboard shortcut hints use readable text sizes intended for the 1366×768 desktop target.
 - The shell name and initials are derived from the saved farm profile.
+
+
+## IDE-style activity bar
+
+- The fixed 48px activity bar maps only to the existing Dashboard, Flocks, Daily Work, Feed & Stock, Health, Production, and Sales & Money pages.
+- The account control opens the existing Settings → App, appearance & account section; the gear opens the existing Settings page.
+- The adjacent sidebar remains the existing navigation for the same application routes. No new farm modules or route system is introduced.
+- The dark palette is expressed through CSS tokens; existing appearance preference support and page/form/table/dialog styling remain in place.
