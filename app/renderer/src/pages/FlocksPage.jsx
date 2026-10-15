@@ -3,7 +3,7 @@ import { FarmManagerContext } from "../components/FarmManagerContext.jsx";
 import PageSection from "../components/PageSection.jsx";
 
 export default function FlocksPage() {
-  const { houses, batches, batchForm, costForm, houseForm, saving, selectedBatchId, createBatch, addBirdCost, addHouse } = useContext(FarmManagerContext);
+  const { formatMoney, formatQuantity, formatPercent, formatKg, formatMetric, farm, houses, batches, batchForm, setBatchForm, costForm, setCostForm, broilerGrowth, broilerSales, eggInventory, houseForm, setHouseForm, saving, attention, selectedBatchId, setSelectedBatchId, batchDashboard, createBatch, addBirdCost, markBatchSold, reopenBatch, addHouse } = useContext(FarmManagerContext);
 
   return (
     <div className="grid">
