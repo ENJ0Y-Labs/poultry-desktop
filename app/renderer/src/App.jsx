@@ -2,16 +2,27 @@ import { useEffect, useState } from "react";
 import { todayLocalDate, getLastBatchId, rememberLastBatchId } from "./utils/farmUx.js";
 // eslint-disable-next-line no-unused-vars
 import AppShell from "./components/AppShell.jsx";
+// eslint-disable-next-line no-unused-vars
 import PageSection from "./components/PageSection.jsx";
+// eslint-disable-next-line no-unused-vars
 import { FarmManagerContext } from "./components/FarmManagerContext.jsx";
+// eslint-disable-next-line no-unused-vars
 import DashboardPage from "./pages/DashboardPage.jsx";
+// eslint-disable-next-line no-unused-vars
 import FlocksPage from "./pages/FlocksPage.jsx";
+// eslint-disable-next-line no-unused-vars
 import DailyWorkPage from "./pages/DailyWorkPage.jsx";
+// eslint-disable-next-line no-unused-vars
 import FeedStockPage from "./pages/FeedStockPage.jsx";
+// eslint-disable-next-line no-unused-vars
 import HealthPage from "./pages/HealthPage.jsx";
+// eslint-disable-next-line no-unused-vars
 import ProductionPage from "./pages/ProductionPage.jsx";
+// eslint-disable-next-line no-unused-vars
 import SalesMoneyPage from "./pages/SalesMoneyPage.jsx";
+// eslint-disable-next-line no-unused-vars
 import ReportsPage from "./pages/ReportsPage.jsx";
+// eslint-disable-next-line no-unused-vars
 import SettingsPage from "./pages/SettingsPage.jsx";
 function formatMoney(minor, currency = "NGN") { if (minor == null) return "—"; return new Intl.NumberFormat("en-NG", { style: "currency", currency, maximumFractionDigits: 2 }).format(Number(minor) / 100); }
 function formatQuantity(milli) { return milli == null ? "—" : (Number(milli) / 1000).toLocaleString() + " units"; }
