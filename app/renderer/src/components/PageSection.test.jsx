@@ -4,15 +4,16 @@ import { NavigationContext } from "./NavigationContext.jsx";
 import PageSection from "./PageSection.jsx";
 
 describe("PageSection", () => {
-  it("renders content only for the active page", () => {
+  it("renders only the active page and tab", () => {
     render(
       <NavigationContext.Provider value={{ activePage: "flocks", activeTab: "houses" }}>
         <PageSection page="dashboard" tab="overview"><p>Dashboard content</p></PageSection>
-        <PageSection page="flocks" tab="batch-dashboard"><p>Flock content</p></PageSection>
+        <PageSection page="flocks" tab="batch-dashboard"><p>Flock dashboard content</p></PageSection>
+        <PageSection page="flocks" tab="houses"><p>Houses content</p></PageSection>
       </NavigationContext.Provider>,
     );
     expect(screen.queryByText("Dashboard content")).not.toBeInTheDocument();
-    expect(screen.queryByText("Flock content")).not.toBeInTheDocument();
+    expect(screen.queryByText("Flock dashboard content")).not.toBeInTheDocument();
     expect(screen.getByText("Houses content")).toBeInTheDocument();
   });
 });
