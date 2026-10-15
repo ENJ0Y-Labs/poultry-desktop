@@ -13,6 +13,11 @@ describe("parseNairaToKobo", () => {
     expect(Number.isInteger(parseNairaToKobo(input))).toBe(true);
   });
 
+  it("allows zero only when the caller explicitly permits it", () => {
+    expect(parseNairaToKobo("0", { allowZero: true })).toBe(0);
+    expect(() => parseNairaToKobo("0")).toThrow(/greater than/);
+  });
+
   it.each(["", " ", "-1", "1.234", "1,000", "NaN", "1.", ".50"])(
     "rejects invalid money string %s",
     input => expect(() => parseNairaToKobo(input)).toThrow(),
