@@ -3,7 +3,7 @@ import { FarmManagerContext } from "../components/FarmManagerContext.jsx";
 import PageSection from "../components/PageSection.jsx";
 
 export default function ProductionPage() {
-  const { eggBatchId, broilerBatchId, weightForm, birdSaleForm, pricingForm, eggCollectionForm, eggSaleForm, saving, saveWeight, saveBirdSale, saveEggCollection, saveEggSale } = useContext(FarmManagerContext);
+  const { formatMoney, farm, batches, customers, eggBatchId, setEggBatchId, broilerBatchId, setBroilerBatchId, broilerGrowth, broilerWeights, broilerSales, weightForm, setWeightForm, birdSaleForm, setBirdSaleForm, pricing, pricingForm, setPricingForm, eggInventory, eggCollections, eggSales, eggCollectionForm, setEggCollectionForm, eggSaleForm, setEggSaleForm, crateSize, saving, loadPricingForBatch, loadBroilerForBatch, saveWeight, saveBirdSale, loadEggsForBatch, saveEggCollection, saveEggSale } = useContext(FarmManagerContext);
 
   return (
     <div className="grid">
