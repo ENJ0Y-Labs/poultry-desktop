@@ -4,7 +4,7 @@ import App from "./App.jsx";
 import {
   farmApi, batchApi, expenseApi, customerApi, salesApi, inventoryApi,
   feedApi, pricingApi, dashboardApi, attentionApi, auditApi,
-  eggApi, broilerApi, reportApi, expenseCategoryApi, accountApi, settingsApi,
+  eggApi, broilerApi, reportApi, expenseCategoryApi, accountApi, settingsApi, supplierApi,
 } from "./services/api.js";
 
 const farm = {
@@ -68,6 +68,7 @@ function mockFarmApis({
   vi.spyOn(batchApi, "list").mockResolvedValue(currentBatches);
   vi.spyOn(expenseApi, "list").mockResolvedValue([]);
   vi.spyOn(customerApi, "list").mockResolvedValue([]);
+  vi.spyOn(supplierApi, "list").mockResolvedValue([]);
   vi.spyOn(salesApi, "list").mockResolvedValue([]);
   vi.spyOn(inventoryApi, "listItems").mockResolvedValue([]);
   vi.spyOn(feedApi, "listTypes").mockResolvedValue([]);
@@ -181,6 +182,7 @@ describe("App", () => {
     vi.spyOn(batchApi, "list").mockResolvedValue([]);
     vi.spyOn(expenseApi, "list").mockResolvedValue([]);
     vi.spyOn(customerApi, "list").mockResolvedValue([]);
+    vi.spyOn(supplierApi, "list").mockResolvedValue([]);
     vi.spyOn(salesApi, "list").mockResolvedValue([]);
     vi.spyOn(inventoryApi, "listItems").mockResolvedValue([]);
     vi.spyOn(feedApi, "listTypes").mockResolvedValue([]);
