@@ -1,9 +1,12 @@
 import { useContext } from "react";
 import { FarmManagerContext } from "../components/FarmManagerContext.jsx";
+// eslint-disable-next-line no-unused-vars
+// eslint-disable-next-line no-unused-vars
 import PageSection from "../components/PageSection.jsx";
+import { rememberLastBatchId } from "../utils/farmUx.js";
 
 export default function FlocksPage() {
-  const { formatMoney, formatQuantity, formatPercent, formatKg, formatMetric, farm, houses, batches, batchForm, setBatchForm, costForm, setCostForm, broilerGrowth, broilerSales, eggInventory, houseForm, setHouseForm, saving, attention, selectedBatchId, setSelectedBatchId, batchDashboard, createBatch, addBirdCost, markBatchSold, reopenBatch, addHouse } = useContext(FarmManagerContext);
+  const { formatMoney, formatQuantity, formatPercent, formatKg, formatMetric, farm, houses, batches, batchForm, setBatchForm, costForm, setCostForm, houseForm, setHouseForm, saving, selectedBatchId, setSelectedBatchId, batchDashboard, createBatch, addBirdCost, markBatchSold, reopenBatch, addHouse } = useContext(FarmManagerContext);
 
   return (
     <div className="grid">
