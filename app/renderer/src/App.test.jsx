@@ -245,8 +245,9 @@ describe("App", () => {
 
     await waitFor(() => expect(screen.getByRole("heading", { name: "Farm dashboard" })).toBeInTheDocument());
     await waitFor(() => expect(screen.getAllByText("5,000")).toHaveLength(1));
-    await waitFor(() => expect(screen.getAllByText("₦1,000.00")).toHaveLength(2));
-    await waitFor(() => expect(screen.getAllByText("₦300.00")).toHaveLength(2));
+    expect(within(screen.getByText("Revenue").parentElement).getByText("₦1,000.00")).toBeInTheDocument();
+    expect(within(screen.getByText("Expenses").parentElement).getByText("₦700.00")).toBeInTheDocument();
+    expect(within(screen.getByText("Profit").parentElement).getByText("₦300.00")).toBeInTheDocument();
     expect(screen.getByText("Nothing currently requires attention.")).toBeInTheDocument();
     expect(screen.getByText("No audit records yet.")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Sales & Money" }));
