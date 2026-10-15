@@ -290,3 +290,7 @@ kbd{font-size:8px;font-weight:800;color:var(--muted-2);border:1px solid var(--pa
   border-color: var(--border-strong, #424b5a);
   background: var(--surface-raised, #222833);
 }
+
+/* Connection indicators reflect the local API probe instead of claiming a permanent online state. */
+.status-dot.offline{background:var(--red, #e05252);box-shadow:0 0 8px rgba(224,82,82,.35)}
+.system-pill.disconnected{border-color:rgba(224,82,82,.35);color:var(--red, #e05252)}
