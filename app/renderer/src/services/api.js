@@ -1,4 +1,18 @@
-const API_BASE = "http://127.0.0.1:18942/api/v1";
+const configuredApiBase = import.meta.env?.VITE_API_BASE_URL || window.poultryDesktop?.apiBaseUrl || "http://127.0.0.1:18942";
+const normalizedApiBase = configuredApiBase.replace(/\\/+$/, "");
+const API_BASE = normalizedApiBase.endsWith("/api/v1") ? normalizedApiBase : normalizedApiBase + "/api/v1";
+
+export const connectionApi = {
+  async check() {
+    try {
+      // A 404 is still a response from the running backend (for example, before farm setup).
+      const response = await fetch(API_BASE + "/farm", { credentials: "include" });
+      return response.status < 500;
+    } catch {
+      return false;
+    }
+  },
+};
 
 export class ApiError extends Error {
   constructor(code, message, status, details) {
