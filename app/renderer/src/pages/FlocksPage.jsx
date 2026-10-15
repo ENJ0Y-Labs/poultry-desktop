@@ -50,7 +50,7 @@ export default function FlocksPage() {
             <input required type="date" value={batchForm.placementDate} onChange={e=>setBatchForm({...batchForm,placementDate:e.target.value})}/>
             <select required value={batchForm.houseId} onChange={e=>setBatchForm({...batchForm,houseId:e.target.value})}><option value="">House / pen</option>{houses.filter(h=>h.status==="ACTIVE").map(h=><option key={h.id} value={h.id}>{h.name} ({h.code})</option>)}</select>
             <label className="field"><span>Initial birds</span><input required min="1" type="number" value={batchForm.initialBirdCount} onChange={e=>setBatchForm({...batchForm,initialBirdCount:e.target.value})}/></label>
-            <label className="field"><span>Supplier/source ID (optional)</span><input value={batchForm.supplierId} onChange={e=>setBatchForm({...batchForm,supplierId:e.target.value})}/></label>
+            <label className="field"><span>Supplier / source (optional)</span><select value={batchForm.supplierId} onChange={e=>setBatchForm({...batchForm,supplierId:e.target.value})}><option value="">Unknown / not recorded</option>{suppliers.filter(supplier=>supplier.status!=="ARCHIVED").map(supplier=><option key={supplier.id} value={supplier.id}>{supplier.name}</option>)}</select></label>
             <label className="field"><span>Purchase cost (₦)</span><input required type="text" inputMode="decimal" value={batchForm.purchaseCostMinor} onChange={e=>setBatchForm({...batchForm,purchaseCostMinor:e.target.value})}/></label>
             <button disabled={saving || houses.length===0}>Create batch</button>
           </form>
