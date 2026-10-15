@@ -202,8 +202,56 @@ export default function AppShell({ farm, error, children, startPage = "dashboard
     return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
 
+  const activities = [
+    { label: "Farm dashboard", target: "dashboard", icon: "dashboard" },
+    { label: "Houses, pens and batches", target: "flocks", icon: "batches" },
+    { label: "Daily operations", target: "daily-work", icon: "records" },
+    { label: "Feed and inventory", target: "feed-stock", icon: "feed" },
+    { label: "Health and vaccination", target: "health", icon: "health" },
+    { label: "Production", target: "production", icon: "eggs" },
+    { label: "Sales and finance", target: "sales-money", icon: "sales" },
+  ];
+
   return (
     <div className="app-shell">
+      <nav className="activity-bar" aria-label="Primary work areas">
+        <div className="activity-bar-main">
+          {activities.map(item => (
+            <button
+              key={item.target}
+              type="button"
+              className={active === item.target ? "activity-button active" : "activity-button"}
+              aria-label={item.label}
+              aria-current={active === item.target ? "page" : undefined}
+              title={item.label}
+              onClick={() => navigate(item.target)}
+            >
+              <Icon name={item.icon} />
+            </button>
+          ))}
+        </div>
+        <div className="activity-bar-footer">
+          <button
+            type="button"
+            className={active === "settings" && activeTab === "application" ? "activity-button active" : "activity-button"}
+            aria-label="Account"
+            title="Account"
+            onClick={() => { window.location.hash = "settings/application"; setActive("settings"); setActiveTab("application"); }}
+          >
+            <span className="activity-avatar" aria-hidden="true">{farmInitials(farm.name)}</span>
+          </button>
+          <button
+            type="button"
+            className={active === "settings" ? "activity-button active" : "activity-button"}
+            aria-label="Settings"
+            aria-current={active === "settings" ? "page" : undefined}
+            title="Settings"
+            onClick={() => navigate("settings")}
+          >
+            <Icon name="settings" />
+          </button>
+        </div>
+      </nav>
       <aside className="sidebar">
         <div className="brand">
           <div className="brand-mark" aria-hidden="true"><span>{farmInitials(farm.name)}</span></div>
