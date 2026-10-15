@@ -38,7 +38,6 @@ const pageTabs = {
     { id: "batch-dashboard", label: "Batch dashboard" },
     { id: "flocks", label: "Batches & bird costs" },
     { id: "houses", label: "Houses / pens" },
-    { id: "pricing", label: "Pricing" },
   ],
   "feed-stock": [
     { id: "feed", label: "Feed & purchases" },
