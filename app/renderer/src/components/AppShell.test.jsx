@@ -20,11 +20,12 @@ describe("AppShell", () => {
       </AppShell>
     );
 
+    const navigation = screen.getByRole("navigation", { name: "Main navigation" });
     for (const label of [
       "Dashboard", "Flocks", "Daily Work", "Feed & Stock", "Health",
       "Production", "Sales & Money", "Reports", "Settings",
     ]) {
-      expect(screen.getByRole("button", { name: label })).toBeInTheDocument();
+      expect(within(navigation).getByRole("button", { name: label })).toBeInTheDocument();
     }
   });
 
@@ -36,7 +37,7 @@ describe("AppShell", () => {
     );
 
     expect(screen.getAllByText("Riverbend Poultry").length).toBeGreaterThanOrEqual(2);
-    expect(screen.getByText("RP")).toBeInTheDocument();
+    expect(within(screen.getByRole("button", { name: "Account" })).getByText("RP")).toBeInTheDocument();
   });
 
   it("offers Auto, Light, and Dark theme preferences", () => {

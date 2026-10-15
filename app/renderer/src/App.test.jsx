@@ -321,7 +321,7 @@ describe("App", () => {
     render(<App />);
 
     await waitFor(() => expect(screen.getByRole("heading", { name: "Farm dashboard" })).toBeInTheDocument());
-    fireEvent.click(screen.getByRole("button", { name: "Production" }));
+    fireEvent.click(within(screen.getByRole("navigation", { name: "Main navigation" })).getByRole("button", { name: "Production" }));
     await waitFor(() => expect(screen.getByRole("option", { name: "Select a layer batch" })).toBeInTheDocument());
 
     const eggBatch = screen.getByRole("option", { name: "Select a layer batch" }).parentElement;
