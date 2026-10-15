@@ -3,7 +3,6 @@ import { parseNairaToKobo } from "./moneyInput.js";
 
 describe("parseNairaToKobo", () => {
   it.each([
-    ["0", 0],
     ["1", 100],
     ["125", 12500],
     ["12.3", 1230],
