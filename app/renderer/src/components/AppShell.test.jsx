@@ -1,9 +1,13 @@
 import { render, screen, fireEvent, within } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 // eslint-disable-next-line no-unused-vars
 import AppShell from "./AppShell.jsx";
 
 describe("AppShell", () => {
+  beforeEach(() => {
+    localStorage.removeItem("grantino:theme");
+    window.location.hash = "";
+  });
   it("renders the nine primary pages", () => {
     render(
       <AppShell farm={{ name: "Grantino", location: "Port Harcourt", currency: "NGN", timezone: "Africa/Lagos" }}>
