@@ -27,3 +27,12 @@
 - Only the active page/tab sections are mounted. The backend remains the source of truth for farm calculations and records.
 
 The nine page components live under `app/renderer/src/pages/`. Shared form state and API handlers remain in `App.jsx` and are exposed through `FarmManagerContext`; future cleanup can move domain-specific state/handlers into focused hooks.
+
+
+## Farm-worker form usability
+
+- Money fields are entered in naira (₦), not kobo. The renderer parses the input string into integer kobo before sending the existing backend API payload; no floating-point money arithmetic is used.
+- Fields use persistent visible labels instead of relying on placeholders that disappear during typing.
+- Batch creation and feed purchases select registered suppliers by name instead of asking operators to type database IDs.
+- Tables, table headings, navigation labels, and keyboard shortcut hints use readable text sizes intended for the 1366×768 desktop target.
+- The shell name and initials are derived from the saved farm profile.
