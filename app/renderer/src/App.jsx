@@ -536,7 +536,7 @@ export default function App() {
         houseId: batchForm.houseId,
         initialBirdCount: Number(batchForm.initialBirdCount),
         supplierId: batchForm.supplierId.trim() || null,
-        purchaseCostMinor: parseNairaToKobo(batchForm.purchaseCostMinor),
+        purchaseCostMinor: parseNairaToKobo(batchForm.purchaseCostMinor, { allowZero: true }),
       });
       setBatches(current => [created, ...current]);
       rememberLastBatchId(created.id);
