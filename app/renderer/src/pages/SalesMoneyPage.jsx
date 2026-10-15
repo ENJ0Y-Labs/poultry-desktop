@@ -3,7 +3,7 @@ import { FarmManagerContext } from "../components/FarmManagerContext.jsx";
 import PageSection from "../components/PageSection.jsx";
 
 export default function SalesMoneyPage() {
-  const { expenseForm, expenseBatchFilter, customerForm, saving, saveCustomer, saveExpense } = useContext(FarmManagerContext);
+  const { formatMoney, farm, batches, expenseForm, setExpenseForm, expenses, expenseBatchFilter, setExpenseBatchFilter, customers, customerForm, setCustomerForm, sales, saving, expenseCategories, loadExpenses, saveCustomer, saveExpense } = useContext(FarmManagerContext);
 
   return (
     <div className="grid">
