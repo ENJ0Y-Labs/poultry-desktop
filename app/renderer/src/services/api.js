@@ -1,12 +1,19 @@
-const configuredApiBase = import.meta.env?.VITE_API_BASE_URL || window.poultryDesktop?.apiBaseUrl || "http://127.0.0.1:18942";
-const normalizedApiBase = configuredApiBase.replace(/\/+$/, "");
-const API_BASE = normalizedApiBase.endsWith("/api/v1") ? normalizedApiBase : normalizedApiBase + "/api/v1";
+const configuredApiBase = import.meta.env?.VITE_API_BASE_URL || window.poultryDesktop?.apiBaseUrl;
+
+async function getApiBase() {
+  const desktopBase = window.poultryDesktop?.getApiBaseUrl
+    ? await window.poultryDesktop.getApiBaseUrl()
+    : null;
+  const configured = desktopBase || configuredApiBase || "http://127.0.0.1:18942";
+  const normalized = configured.replace(/\/+$/, "");
+  return normalized.endsWith("/api/v1") ? normalized : normalized + "/api/v1";
+}
 
 export const connectionApi = {
   async check() {
     try {
       // A 404 is still a response from the running backend (for example, before farm setup).
-      const response = await fetch(API_BASE + "/farm", { credentials: "include" });
+      const response = await fetch((await getApiBase()) + "/farm", { credentials: "include" });
       return response.status < 500;
     } catch {
       return false;
@@ -27,7 +34,7 @@ export class ApiError extends Error {
 async function request(path, options = {}) {
   let response;
   try {
-    response = await fetch(API_BASE + path, {
+    response = await fetch((await getApiBase()) + path, {
       credentials: "include",
       headers: { "Content-Type": "application/json", ...(options.headers || {}) },
       ...options,
