@@ -1,0 +1,93 @@
+import { useContext } from "react";
+import { FarmManagerContext } from "../components/FarmManagerContext.jsx";
+import PageSection from "../components/PageSection.jsx";
+
+export default function SalesMoneyPage() {
+  const { formatMoney, formatQuantity, formatPercent, formatKg, formatMetric, formatCount, displayApiError, emptyWeight, emptyBirdSale, emptyPricing, emptyFarm, emptyHouse, emptyBatch, emptyCost, emptyFeedType, emptyFeedPurchase, emptyFeedUsage, emptyDaily, emptyPopulationEvent, emptyHealth, emptyDrug, emptyVaccination, emptyExpense, emptyCustomer, emptyInventoryItem, emptyInventoryMovement, farm, setFarm, farmForm, setFarmForm, houses, setHouses, batches, setBatches, batchForm, setBatchForm, costForm, setCostForm, feedTypes, setFeedTypes, feedInventory, setFeedInventory, feedTypeForm, setFeedTypeForm, feedPurchaseForm, setFeedPurchaseForm, feedUsageForm, setFeedUsageForm, dailyForm, setDailyForm, dailyRecord, setDailyRecord, mortalityForm, setMortalityForm, cullingForm, setCullingForm, healthForm, setHealthForm, drugForm, setDrugForm, vaccinationForm, setVaccinationForm, healthRecords, setHealthRecords, drugRecords, setDrugRecords, vaccinationRecords, setVaccinationRecords, expenseForm, setExpenseForm, expenses, setExpenses, expenseBatchFilter, setExpenseBatchFilter, inventoryItems, setInventoryItems, inventoryItemForm, setInventoryItemForm, inventoryMovementForm, setInventoryMovementForm, inventoryMovements, setInventoryMovements, customers, setCustomers, customerForm, setCustomerForm, sales, setSales, eggBatchId, setEggBatchId, broilerBatchId, setBroilerBatchId, broilerGrowth, setBroilerGrowth, broilerWeights, setBroilerWeights, broilerSales, setBroilerSales, weightForm, setWeightForm, birdSaleForm, setBirdSaleForm, pricingSettings, setPricingSettings, pricing, setPricing, pricingForm, setPricingForm, eggInventory, setEggInventory, eggCollections, setEggCollections, eggSales, setEggSales, eggCollectionForm, setEggCollectionForm, eggSaleForm, setEggSaleForm, houseForm, setHouseForm, crateSize, setCrateSize, defaultWater, setDefaultWater, waterSizes, setWaterSizes, loading, setLoading, saving, setSaving, error, setError, dashboard, setDashboard, attention, setAttention, auditRows, setAuditRows, expenseCategories, setExpenseCategories, expenseCategoryForm, setExpenseCategoryForm, account, setAccount, accountForm, setAccountForm, applicationSettings, setApplicationSettings, backupSettings, setBackupSettings, selectedBatchId, setSelectedBatchId, batchDashboard, setBatchDashboard, farmReport, setFarmReport, batchReport, setBatchReport, load, loadReport, loadBatchReport, exportCsv, exportPdf, loadBatchDashboard, loadDashboard, submitFarm, saveFarm, createExpenseCategory, archiveExpenseCategory, saveAccount, saveApplicationSettings, chooseBackupSettingsDirectory, saveBackupSettings, createBackup, restoreBackup, saveSettings, loadExpenses, loadSales, saveCustomer, saveInventoryItem, loadInventoryMovements, saveInventoryMovement, saveExpense, createBatch, addBirdCost, createFeedType, purchaseFeed, useFeed, feedQuantity, parseWaterEntries, saveDailyRecord, recordPopulationEvent, loadPricingForBatch, savePricingSettings, loadBroilerForBatch, saveWeight, saveBirdSale, loadEggsForBatch, saveEggCollection, saveEggSale, saveHealth, saveDrug, saveVaccination, loadHealthForBatch, markBatchSold, reopenBatch, addHouse } = useContext(FarmManagerContext);
+
+  return (
+    <div className="grid">
+      <PageSection page="sales-money" tab="customers"><section id="customers" className="card full">
+          <div className="section-head">
+            <h2>Customers</h2>
+            <p className="muted">Keep reusable customer records for egg and broiler sales. Type-specific sale records also retain the customer name used when the sale was recorded.</p>
+          </div>
+          <form className="inline-form" onSubmit={saveCustomer}>
+            <input required placeholder="Customer name" value={customerForm.name} onChange={e=>setCustomerForm({...customerForm,name:e.target.value})}/>
+            <input placeholder="Phone" value={customerForm.phone} onChange={e=>setCustomerForm({...customerForm,phone:e.target.value})}/>
+            <input placeholder="Notes" value={customerForm.notes} onChange={e=>setCustomerForm({...customerForm,notes:e.target.value})}/>
+            <button disabled={saving}>Add customer</button>
+          </form>
+          <div className="table">
+            <div className="row header"><span>Name</span><span>Phone</span><span>Notes</span></div>
+            {customers.map(row=><div className="row" key={row.id}><span>{row.name}</span><span>{row.phone || "—"}</span><span>{row.notes || "—"}</span></div>)}
+            {customers.length===0 && <p className="muted empty">No customers yet.</p>}
+          </div>
+        </section></PageSection>
+
+      <PageSection page="sales-money" tab="sales"><section id="sales" className="card full">
+          <div className="section-head">
+            <h2>Sales</h2>
+            <p className="muted">Common commercial ledger for Layer egg and Broiler bird sales. Type-specific rules remain in their production modules.</p>
+          </div>
+          <div className="subsection">
+            <div className="table">
+              <div className="row header"><span>Date</span><span>Type</span><span>Customer</span><span>Batch</span><span>Quantity</span><span>Unit</span><span>Unit price</span><span>Total</span></div>
+              {sales.map(row=><div className="row" key={row.id}>
+                <span>{row.saleDate}</span>
+                <span>{row.saleType}</span>
+                <span>{row.customerName}</span>
+                <span>{batches.find(b=>b.id===row.batchId)?.code || row.batchId}</span>
+                <span>{row.quantity?.toString()}</span>
+                <span>{row.unit}</span>
+                <span>{formatMoney(row.unitPriceMinor, farm.currency)}</span>
+                <span>{formatMoney(row.totalAmountMinor, farm.currency)}</span>
+              </div>)}
+              {sales.length===0 && <p className="muted empty">No sales recorded.</p>}
+            </div>
+          </div>
+        </section></PageSection>
+
+      <PageSection page="sales-money" tab="expenses"><section id="expenses" className="card full">
+          <div className="section-head">
+            <h2>Expenses</h2>
+            <p className="muted">Record farm-level or batch-associated expenses. Amounts use integer minor currency units.</p>
+          </div>
+          <form className="inline-form" onSubmit={saveExpense}>
+            <input required type="date" value={expenseForm.occurredDate} onChange={e=>setExpenseForm({...expenseForm,occurredDate:e.target.value})}/>
+            <input required placeholder="Description" value={expenseForm.description} onChange={e=>setExpenseForm({...expenseForm,description:e.target.value})}/>
+            <input required min="1" step="1" type="number" placeholder="Amount (minor units)" value={expenseForm.amountMinor} onChange={e=>setExpenseForm({...expenseForm,amountMinor:e.target.value})}/>
+            <select required value={expenseForm.category} onChange={e=>setExpenseForm({...expenseForm,category:e.target.value})}>
+              {expenseCategories.map(category => <option key={category.id} value={category.name}>{category.name}</option>)}
+            </select>
+            <select value={expenseForm.batchId} onChange={e=>setExpenseForm({...expenseForm,batchId:e.target.value})}>
+              <option value="">Farm-level</option>
+              {batches.map(b=><option key={b.id} value={b.id}>{b.code}</option>)}
+            </select>
+            <button disabled={saving}>Record expense</button>
+          </form>
+
+          <div className="subsection">
+            <div className="section-head">
+              <h3>Expense history</h3>
+              <select value={expenseBatchFilter} onChange={e=>{setExpenseBatchFilter(e.target.value);loadExpenses(e.target.value);}}>
+                <option value="">All farm expenses</option>
+                {batches.map(b=><option key={b.id} value={b.id}>{b.code}</option>)}
+              </select>
+            </div>
+            <div className="table">
+              <div className="row header"><span>Date</span><span>Description</span><span>Amount</span><span>Category</span><span>Association</span></div>
+              {expenses.map(row=><div className="row" key={row.id}>
+                <span>{row.occurredDate}</span>
+                <span>{row.description}</span>
+                <span>{row.amountMinor}</span>
+                <span>{row.category}</span>
+                <span>{row.batchId ? (batches.find(b=>b.id===row.batchId)?.code || row.batchId) : "Farm"}</span>
+              </div>)}
+              {expenses.length===0 && <p className="muted empty">No expenses recorded.</p>}
+            </div>
+          </div>
+        </section></PageSection>
+    </div>
+  );
+}
