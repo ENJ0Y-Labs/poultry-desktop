@@ -12,8 +12,8 @@ describe("PageSection", () => {
         <PageSection page="flocks" tab="houses"><p>Houses content</p></PageSection>
       </NavigationContext.Provider>,
     );
-    expect(screen.queryByText("Dashboard content")).not.toBeInTheDocument();
-    expect(screen.queryByText("Flock dashboard content")).not.toBeInTheDocument();
-    expect(screen.getByText("Houses content")).toBeInTheDocument();
+    expect(screen.queryByText("Dashboard content")).toBeNull();
+    expect(screen.queryByText("Flock dashboard content")).toBeNull();
+    expect(screen.getByText("Houses content")).not.toBeNull();
   });
 });
