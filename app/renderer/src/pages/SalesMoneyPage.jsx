@@ -52,7 +52,7 @@ export default function SalesMoneyPage() {
       <PageSection page="sales-money" tab="expenses"><section id="expenses" className="card full">
           <div className="section-head">
             <h2>Expenses</h2>
-            <p className="muted">Record farm-level or batch-associated expenses. Amounts use integer minor currency units.</p>
+            <p className="muted">Record farm-level or batch-associated expenses. Enter amounts in naira (₦); the app stores exact kobo values.</p>
           </div>
           <form className="inline-form" onSubmit={saveExpense}>
             <label className="field"><span>Expense date</span><input required type="date" value={expenseForm.occurredDate} onChange={e=>setExpenseForm({...expenseForm,occurredDate:e.target.value})}/></label>
