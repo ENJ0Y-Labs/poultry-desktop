@@ -217,7 +217,7 @@ async function downloadText(path) {
 }
 
 async function downloadBlob(path) {
-  const response = await fetch(API_BASE + path, { credentials: "include" });
+  const response = await fetch((await getApiBase()) + path, { credentials: "include" });
   if (!response.ok) throw new ApiError("EXPORT_FAILED", "Report export failed.", response.status);
   return response.blob();
 }
