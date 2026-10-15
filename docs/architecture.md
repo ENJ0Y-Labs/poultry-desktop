@@ -199,3 +199,8 @@ Electron Builder creates a Windows NSIS installer. The package contains:
 - bundled Java runtime
 
 The live database remains outside the application bundle so upgrades do not overwrite farm data.
+
+
+## Renderer navigation
+
+The renderer uses a dependency-free hash router for its nine top-level pages. Route changes are reflected in the URL hash, support browser/Electron back and forward navigation, and do not rely on scroll-spy listeners. `PageSection` mounts only the content for the active page to avoid rendering every farm form on each interaction.
