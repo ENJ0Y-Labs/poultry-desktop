@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { NavigationContext } from "./NavigationContext.jsx";
 import { getThemePreference, setThemePreference } from "../utils/theme.js";
 
 const groups = [
@@ -69,7 +70,7 @@ function localDateLabel() {
 }
 
 export default function AppShell({ farm, error, children, startPage = "dashboard" }) {
-  const [active, setActive] = useState(startPage);
+  const [active, setActive] = useState(() => resolvePage(window.location.hash, startPage));
   const [theme, setTheme] = useState(getThemePreference);
 
   function changeTheme(event) {
@@ -79,28 +80,22 @@ export default function AppShell({ farm, error, children, startPage = "dashboard
   const today = useMemo(localDateLabel, []);
 
   function navigate(target) {
-    setActive(target);
-    document.getElementById(target)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    const page = resolvePage(`#${target}`, startPage);
+    if (window.location.hash !== `#${page}`) window.location.hash = page;
+    setActive(page);
   }
 
   useEffect(() => {
-    const onScroll = () => {
-      const current = targets.reduce((best, id) => {
-        const element = document.getElementById(id);
-        if (!element) return best;
-        const distance = Math.abs(element.getBoundingClientRect().top - 110);
-        return distance < best.distance ? { id, distance } : best;
-      }, { id: "dashboard", distance: Number.POSITIVE_INFINITY });
-      setActive(current.id);
-    };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
+    const syncRoute = () => setActive(resolvePage(window.location.hash, startPage));
+    window.addEventListener("hashchange", syncRoute);
+    if (!window.location.hash) window.location.hash = resolvePage("", startPage);
+    return () => window.removeEventListener("hashchange", syncRoute);
+  }, [startPage]);
 
   useEffect(() => {
     const onKeyDown = (event) => {
       if (!event.ctrlKey || event.altKey || event.shiftKey) return;
-      const shortcuts = { "1": "dashboard", "2": "batches", "3": "operations", "4": "eggs", "5": "sales", "6": "reports", "7": "settings" };
+      const shortcuts = { "1": "dashboard", "2": "flocks", "3": "daily-work", "4": "feed-stock", "5": "health", "6": "production", "7": "sales-money", "8": "reports", "9": "settings" };
       const target = shortcuts[event.key];
       if (!target) return;
       event.preventDefault();
@@ -174,7 +169,7 @@ export default function AppShell({ farm, error, children, startPage = "dashboard
             </div>
           </header>
           {error && <div className="error">{error}</div>}
-          {children}
+          <NavigationContext.Provider value={{ activePage: active }}>{children}</NavigationContext.Provider>
         </div>
       </main>
 
