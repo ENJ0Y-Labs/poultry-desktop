@@ -28,6 +28,11 @@
   --error-bg: var(--palette-28181b);
   --error-border: var(--palette-603034);
   --error-text: var(--palette-ffb1b1);
+  --light-nav-text: var(--palette-aeb7c3);
+  --light-nav-hover-bg: var(--palette-20252d);
+  --light-nav-hover-border: var(--palette-272e38);
+  --light-nav-active-bg: var(--palette-242a32);
+  --light-nav-active-border: var(--palette-303943);
   /* Raw color palette: every component color is tokenized here. */
   --palette-e5e9f0: #e5e9f0;
   --palette-0b0f14: #0b0f14;
@@ -236,6 +241,11 @@ kbd{font-size:8px;font-weight:800;color:var(--muted-2);border:1px solid var(--pa
   --error-bg: #fff0f0;
   --error-border: #efb5b5;
   --error-text: #9f2525;
+  --light-nav-text: #435164;
+  --light-nav-hover-bg: #edf2f7;
+  --light-nav-hover-border: #d9e1ea;
+  --light-nav-active-bg: #e8f6fa;
+  --light-nav-active-border: #c9e9ef;
 }
 :root[data-theme="light"] .app-topbar { background: linear-gradient(to bottom, var(--topbar-bg-start), var(--topbar-bg-end)); }
 :root[data-theme="light"] .pulse,
@@ -243,9 +253,9 @@ kbd{font-size:8px;font-weight:800;color:var(--muted-2);border:1px solid var(--pa
 
 .theme-control { display: flex; align-items: center; gap: 7px; color: var(--muted); font-size: 10px; font-weight: 750; white-space: nowrap; }
 .theme-control select { width: auto; min-width: 88px; padding: 7px 9px; background: var(--panel-soft); color: var(--text); border-color: var(--border); }
-:root[data-theme="light"] .nav-item { color: #435164; }
-:root[data-theme="light"] .nav-item:hover { background: #edf2f7; border-color: #d9e1ea; }
-:root[data-theme="light"] .nav-item.active { background: #e8f6fa; color: var(--cyan); border-color: #c9e9ef; }
+:root[data-theme="light"] .nav-item { color: var(--light-nav-text); }
+:root[data-theme="light"] .nav-item:hover { background: var(--light-nav-hover-bg); border-color: var(--light-nav-hover-border); }
+:root[data-theme="light"] .nav-item.active { background: var(--light-nav-active-bg); color: var(--cyan); border-color: var(--light-nav-active-border); }
 :root[data-theme="light"] .metric-card strong,
 :root[data-theme="light"] .dashboard-list strong { color: var(--text); }
 :root[data-theme="light"] .table,
