@@ -207,7 +207,7 @@ export default function AppShell({ farm, error, children, startPage = "dashboard
           </div>
         </div>
 
-        <div className="workspace-switcher" aria-label="Active farm">
+        <div className="workspace-summary" aria-label="Active farm">
           <span className="workspace-kicker">ACTIVE FARM</span>
           <span className="workspace-name">{farm.name || "Local farm"}</span>
           <span className="workspace-status">Local data · single farm</span>
