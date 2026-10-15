@@ -92,6 +92,7 @@ function resolveTab(hash, page) {
   return defaultTabs[page] || "overview";
 }
 
+// eslint-disable-next-line no-unused-vars
 function Icon({ name }) {
   const paths = {
     dashboard: <><rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" /></>,
