@@ -96,7 +96,7 @@ const emptyDaily = {
   batchId: "",
   date: todayLocalDate(),
   notes: "",
-  water: "25:4, 75:2",
+  water: "",
 };
 const emptyPopulationEvent = {
   batchId: "",
