@@ -1,0 +1,84 @@
+import { useContext } from "react";
+import { FarmManagerContext } from "../components/FarmManagerContext.jsx";
+import PageSection from "../components/PageSection.jsx";
+
+export default function FlocksPage() {
+  const { formatMoney, formatQuantity, formatPercent, formatKg, formatMetric, formatCount, displayApiError, emptyWeight, emptyBirdSale, emptyPricing, emptyFarm, emptyHouse, emptyBatch, emptyCost, emptyFeedType, emptyFeedPurchase, emptyFeedUsage, emptyDaily, emptyPopulationEvent, emptyHealth, emptyDrug, emptyVaccination, emptyExpense, emptyCustomer, emptyInventoryItem, emptyInventoryMovement, farm, setFarm, farmForm, setFarmForm, houses, setHouses, batches, setBatches, batchForm, setBatchForm, costForm, setCostForm, feedTypes, setFeedTypes, feedInventory, setFeedInventory, feedTypeForm, setFeedTypeForm, feedPurchaseForm, setFeedPurchaseForm, feedUsageForm, setFeedUsageForm, dailyForm, setDailyForm, dailyRecord, setDailyRecord, mortalityForm, setMortalityForm, cullingForm, setCullingForm, healthForm, setHealthForm, drugForm, setDrugForm, vaccinationForm, setVaccinationForm, healthRecords, setHealthRecords, drugRecords, setDrugRecords, vaccinationRecords, setVaccinationRecords, expenseForm, setExpenseForm, expenses, setExpenses, expenseBatchFilter, setExpenseBatchFilter, inventoryItems, setInventoryItems, inventoryItemForm, setInventoryItemForm, inventoryMovementForm, setInventoryMovementForm, inventoryMovements, setInventoryMovements, customers, setCustomers, customerForm, setCustomerForm, sales, setSales, eggBatchId, setEggBatchId, broilerBatchId, setBroilerBatchId, broilerGrowth, setBroilerGrowth, broilerWeights, setBroilerWeights, broilerSales, setBroilerSales, weightForm, setWeightForm, birdSaleForm, setBirdSaleForm, pricingSettings, setPricingSettings, pricing, setPricing, pricingForm, setPricingForm, eggInventory, setEggInventory, eggCollections, setEggCollections, eggSales, setEggSales, eggCollectionForm, setEggCollectionForm, eggSaleForm, setEggSaleForm, houseForm, setHouseForm, crateSize, setCrateSize, defaultWater, setDefaultWater, waterSizes, setWaterSizes, loading, setLoading, saving, setSaving, error, setError, dashboard, setDashboard, attention, setAttention, auditRows, setAuditRows, expenseCategories, setExpenseCategories, expenseCategoryForm, setExpenseCategoryForm, account, setAccount, accountForm, setAccountForm, applicationSettings, setApplicationSettings, backupSettings, setBackupSettings, selectedBatchId, setSelectedBatchId, batchDashboard, setBatchDashboard, farmReport, setFarmReport, batchReport, setBatchReport, load, loadReport, loadBatchReport, exportCsv, exportPdf, loadBatchDashboard, loadDashboard, submitFarm, saveFarm, createExpenseCategory, archiveExpenseCategory, saveAccount, saveApplicationSettings, chooseBackupSettingsDirectory, saveBackupSettings, createBackup, restoreBackup, saveSettings, loadExpenses, loadSales, saveCustomer, saveInventoryItem, loadInventoryMovements, saveInventoryMovement, saveExpense, createBatch, addBirdCost, createFeedType, purchaseFeed, useFeed, feedQuantity, parseWaterEntries, saveDailyRecord, recordPopulationEvent, loadPricingForBatch, savePricingSettings, loadBroilerForBatch, saveWeight, saveBirdSale, loadEggsForBatch, saveEggCollection, saveEggSale, saveHealth, saveDrug, saveVaccination, loadHealthForBatch, markBatchSold, reopenBatch, addHouse } = useContext(FarmManagerContext);
+
+  return (
+    <div className="grid">
+      <PageSection page="flocks" tab="batch-dashboard"><section id="batch-dashboard" className="card full dashboard-page">
+        <div className="section-head"><div><p className="eyebrow">BATCH</p><h2>Batch dashboard</h2></div>
+          <select aria-label="Batch dashboard" value={selectedBatchId} onChange={e => { setSelectedBatchId(e.target.value); rememberLastBatchId(e.target.value); }}>
+            <option value="">Select a batch</option>{batches.map(batch => <option key={batch.id} value={batch.id}>{batch.code} · {batch.type}</option>)}
+          </select>
+        </div>
+        {batchDashboard ? <div className="batch-dashboard">
+          <div className="metric-grid">
+            {[
+              ["Initial birds", batchDashboard.population?.initialBirds, ""], ["Current birds", batchDashboard.population?.currentBirds, ""],
+              ["Mortality", batchDashboard.population?.mortality, ""], ["Culling", batchDashboard.population?.culling, ""],
+              ["Sold", batchDashboard.population?.sold, ""], ["Feed used", formatQuantity(batchDashboard.feed?.totalQuantityMilli), ""],
+              ["Feed cost", formatMoney(batchDashboard.feed?.totalCostMinor, farm.currency), ""],
+              ["Expenses", formatMoney(batchDashboard.expensesMinor, farm.currency), ""],
+              ["Revenue", formatMoney(batchDashboard.revenueMinor, farm.currency), ""],
+              ["Profit", formatMoney(batchDashboard.profitMinor, farm.currency), ""]
+            ].map(([label,value]) => <div className="metric-card" key={label}><span>{label}</span><strong>{value ?? "—"}</strong></div>)}
+          </div>
+          <div className="dashboard-columns">
+            <div className="subsection"><h3>Production</h3>{batchDashboard.batch.type === "LAYER" ? <div className="dashboard-list">
+              <div><span>Good eggs</span><strong>{batchDashboard.eggInventory?.goodCollected ?? "—"}</strong></div>
+              <div><span>Cracked eggs</span><strong>{batchDashboard.eggInventory?.cracked ?? "—"}</strong></div>
+              <div><span>Egg inventory</span><strong>{batchDashboard.eggInventory?.goodRemaining ?? "—"}</strong></div>
+              <div><span>Good egg rate</span><strong>{formatPercent(batchDashboard.eggQuality?.goodRatePercent)}</strong></div>
+            </div> : <div className="dashboard-list">
+              <div><span>Average weight</span><strong>{formatKg(batchDashboard.broilerGrowth?.currentAverageWeightKg)}</strong></div>
+              <div><span>Growth</span><strong>{formatKg(batchDashboard.broilerGrowth?.liveWeightGainKg)}</strong></div>
+              <div><span>FCR</span><strong>{formatMetric(batchDashboard.broilerGrowth?.fcr)}</strong></div>
+              <div><span>Sales records</span><strong>{batchDashboard.broilerSales?.length ?? 0}</strong></div>
+            </div>}</div>
+            <div className="subsection"><h3>Status & attention</h3><div className="dashboard-list"><div><span>Status</span><strong>{batchDashboard.batch.status}</strong></div><div><span>Attention items</span><strong>{batchDashboard.attention}</strong></div></div></div>
+          </div>
+        </div> : <p className="muted">{selectedBatchId ? "Loading batch dashboard…" : "Select a batch to inspect its dashboard."}</p>}
+      </section></PageSection>
+
+      <PageSection page="flocks" tab="flocks"><section id="batches" className="card full"><div className="section-head"><h2>Batches</h2><p className="muted">Opening a batch creates a permanent flock record and generates its code automatically.</p></div>
+          <form className="inline-form" onSubmit={createBatch}>
+            <select value={batchForm.type} onChange={e=>setBatchForm({...batchForm,type:e.target.value})}><option value="LAYER">Layer</option><option value="BROILER">Broiler</option></select>
+            <input required type="date" value={batchForm.placementDate} onChange={e=>setBatchForm({...batchForm,placementDate:e.target.value})}/>
+            <select required value={batchForm.houseId} onChange={e=>setBatchForm({...batchForm,houseId:e.target.value})}><option value="">House / pen</option>{houses.filter(h=>h.status==="ACTIVE").map(h=><option key={h.id} value={h.id}>{h.name} ({h.code})</option>)}</select>
+            <input required min="1" type="number" placeholder="Initial birds" value={batchForm.initialBirdCount} onChange={e=>setBatchForm({...batchForm,initialBirdCount:e.target.value})}/>
+            <input placeholder="Supplier/source ID (optional)" value={batchForm.supplierId} onChange={e=>setBatchForm({...batchForm,supplierId:e.target.value})}/>
+            <input required min="0" step="1" type="number" placeholder="Purchase cost (minor units)" value={batchForm.purchaseCostMinor} onChange={e=>setBatchForm({...batchForm,purchaseCostMinor:e.target.value})}/>
+            <button disabled={saving || houses.length===0}>Create batch</button>
+          </form>
+          <div className="table">
+            <div className="row header"><span>Code</span><span>Type</span><span>Placement</span><span>Birds</span><span>Status</span><span>Action</span></div>
+            {batches.map(batch=><div className="row" key={batch.id}><span>{batch.code}</span><span>{batch.type}</span><span>{batch.placementDate}</span><span>{batch.initialBirdCount}</span><span>{batch.status}</span><span>{batch.status==="SOLD" ? <button type="button" onClick={()=>reopenBatch(batch.id)} disabled={saving}>Reopen</button> : batch.type==="BROILER" ? <button type="button" onClick={()=>markBatchSold(batch.id)} disabled={saving}>Mark sold</button> : "—"}</span></div>)}
+            {batches.length===0 && <p className="muted empty">No batches yet.</p>}
+          </div>
+          <div className="subsection">
+            <div className="section-head"><h3>Additional attributable bird cost</h3><p className="muted">Enter integer minor units only. The backend carries this cost with the live birds.</p></div>
+            <form className="inline-form" onSubmit={addBirdCost}>
+              <select required value={costForm.batchId} onChange={e=>setCostForm({...costForm,batchId:e.target.value})}>
+                <option value="">Batch</option>
+                {batches.filter(batch => batch.status === "ACTIVE").map(batch=><option key={batch.id} value={batch.id}>{batch.code}</option>)}
+              </select>
+              <input required type="date" value={costForm.eventDate} onChange={e=>setCostForm({...costForm,eventDate:e.target.value})}/>
+              <input required min="1" step="1" type="number" placeholder="Amount (minor units)" value={costForm.amountMinor} onChange={e=>setCostForm({...costForm,amountMinor:e.target.value})}/>
+              <input placeholder="Reason" value={costForm.reason} onChange={e=>setCostForm({...costForm,reason:e.target.value})}/>
+              <button disabled={saving || batches.filter(batch => batch.status === "ACTIVE").length===0}>Add cost</button>
+            </form>
+          </div>
+        </section></PageSection>
+
+      <PageSection page="flocks" tab="houses"><section id="houses" className="card full"><div className="section-head"><h2>Houses / pens</h2><p className="muted">Physical locations that batches belong to.</p></div>
+          <form className="inline-form" onSubmit={addHouse}><input required placeholder="Name" value={houseForm.name} onChange={e=>setHouseForm({...houseForm,name:e.target.value})}/><input required placeholder="Code" value={houseForm.code} onChange={e=>setHouseForm({...houseForm,code:e.target.value})}/><input placeholder="Notes" value={houseForm.notes} onChange={e=>setHouseForm({...houseForm,notes:e.target.value})}/><button disabled={saving}>Add house</button></form>
+          <div className="table"><div className="row header"><span>Name</span><span>Code</span><span>Status</span><span>Notes</span></div>
+            {houses.map(h=><div className="row" key={h.id}><span>{h.name}</span><span>{h.code}</span><span>{h.status}</span><span>{h.notes||"—"}</span></div>)}
+            {houses.length===0 && <p className="muted empty">No houses or pens yet.</p>}
+          </div>
+        </section></PageSection>
+    </div>
+  );
+}
