@@ -262,7 +262,7 @@ export default function App() {
       setExpenseCategories(categories);
       setAccount(currentAccount);
       setAccountForm({ email: currentAccount.email, fullName: currentAccount.fullName, currentPassword: "", newPassword: "" });
-      setApplicationSettings(appSettings);
+      setApplicationSettings({ ...appSettings, startPage: appSettings.startPage === "operations" ? "daily-work" : appSettings.startPage });
       setSettingsReady(true);
       setBackupSettings(backupConfig);
     } catch (err) {
