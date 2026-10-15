@@ -15,9 +15,9 @@ export default function FeedStockPage() {
             <form className="inline-form" onSubmit={createFeedType}>
               <label className="field"><span>Name e.g. Starter</span><input required value={feedTypeForm.name} onChange={e=>setFeedTypeForm({...feedTypeForm,name:e.target.value})}/></label>
               <label className="field"><span>Unit e.g. bag or kg</span><input required value={feedTypeForm.unit} onChange={e=>setFeedTypeForm({...feedTypeForm,unit:e.target.value})}/></label>
-              <select value={feedTypeForm.applicableType} onChange={e=>setFeedTypeForm({...feedTypeForm,applicableType:e.target.value})}>
+              <label className="field"><span>Applicable to</span><select value={feedTypeForm.applicableType} onChange={e=>setFeedTypeForm({...feedTypeForm,applicableType:e.target.value})}>
                 <option value="BOTH">Both</option><option value="LAYER">Layers</option><option value="BROILER">Broilers</option>
-              </select>
+              </select></label>
               <button disabled={saving}>Add feed type</button>
             </form>
             <div className="table">
@@ -30,16 +30,16 @@ export default function FeedStockPage() {
           <div className="subsection">
             <h3>Use feed</h3>
             <form className="inline-form" onSubmit={useFeed}>
-              <select required value={feedUsageForm.batchId} onChange={e=>setFeedUsageForm({...feedUsageForm,batchId:e.target.value})}>
+              <label className="field"><span>Batch</span><select required value={feedUsageForm.batchId} onChange={e=>setFeedUsageForm({...feedUsageForm,batchId:e.target.value})}>
                 <option value="">Batch</option>{batches.filter(b=>b.status==="ACTIVE").map(b=><option key={b.id} value={b.id}>{b.code}</option>)}
-              </select>
-              <select required value={feedUsageForm.feedTypeId} onChange={e=>{
+              </select></label>
+              <label className="field"><span>Feed type</span><select required value={feedUsageForm.feedTypeId} onChange={e=>{
                 const type=feedTypes.find(item=>item.id===e.target.value);
                 setFeedUsageForm({...feedUsageForm,feedTypeId:e.target.value,unit:type?.unit||"bag"});
               }}>
                 <option value="">Feed type</option>{feedTypes.filter(t=>t.status==="ACTIVE").map(t=><option key={t.id} value={t.id}>{t.name} ({t.unit})</option>)}
-              </select>
-              <input required type="date" value={feedUsageForm.usageDate} onChange={e=>setFeedUsageForm({...feedUsageForm,usageDate:e.target.value})}/>
+              </select></label>
+              <label className="field"><span>Usage date</span><input required type="date" value={feedUsageForm.usageDate} onChange={e=>setFeedUsageForm({...feedUsageForm,usageDate:e.target.value})}/></label>
               <label className="field"><span>Quantity</span><input required min="0.001" step="0.001" type="number" value={feedUsageForm.quantity} onChange={e=>setFeedUsageForm({...feedUsageForm,quantity:e.target.value})}/></label>
               <label className="field"><span>Reason</span><input value={feedUsageForm.reason} onChange={e=>setFeedUsageForm({...feedUsageForm,reason:e.target.value})}/></label>
               <button disabled={saving}>Record usage</button>
@@ -68,11 +68,11 @@ export default function FeedStockPage() {
             <h3>Inventory items</h3>
             <form className="inline-form" onSubmit={saveInventoryItem}>
               <label className="field"><span>Item name</span><input required value={inventoryItemForm.name} onChange={e=>setInventoryItemForm({...inventoryItemForm,name:e.target.value})}/></label>
-              <select value={inventoryItemForm.category} onChange={e=>setInventoryItemForm({...inventoryItemForm,category:e.target.value})}>
+              <label className="field"><span>Category</span><select value={inventoryItemForm.category} onChange={e=>setInventoryItemForm({...inventoryItemForm,category:e.target.value})}>
                 <option value="SUPPLY">Farm supply</option>
                 <option value="DRUG">Drug</option>
                 <option value="VACCINE">Vaccine</option>
-              </select>
+              </select></label>
               <label className="field"><span>Unit e.g. bottle, piece, dose</span><input required value={inventoryItemForm.unit} onChange={e=>setInventoryItemForm({...inventoryItemForm,unit:e.target.value})}/></label>
               <label className="field"><span>Reorder level</span><input min="0" step="0.001" type="number" value={inventoryItemForm.reorderLevel} onChange={e=>setInventoryItemForm({...inventoryItemForm,reorderLevel:e.target.value})}/></label>
               <button disabled={saving}>Add item</button>
@@ -104,25 +104,25 @@ export default function FeedStockPage() {
           <div className="subsection">
             <h3>Record inventory movement</h3>
             <form className="inline-form" onSubmit={saveInventoryMovement}>
-              <select required value={inventoryMovementForm.itemId} onChange={e=>{const id=e.target.value;setInventoryMovementForm({...inventoryMovementForm,itemId:id});loadInventoryMovements(id);}}>
+              <label className="field"><span>Inventory item</span><select required value={inventoryMovementForm.itemId} onChange={e=>{const id=e.target.value;setInventoryMovementForm({...inventoryMovementForm,itemId:id});loadInventoryMovements(id);}}>
                 <option value="">Select item</option>
                 {inventoryItems.filter(i=>i.status==="ACTIVE").map(i=><option key={i.id} value={i.id}>{i.name}</option>)}
-              </select>
-              <input required type="date" value={inventoryMovementForm.date} onChange={e=>setInventoryMovementForm({...inventoryMovementForm,date:e.target.value})}/>
-              <select value={inventoryMovementForm.movementType} onChange={e=>setInventoryMovementForm({...inventoryMovementForm,movementType:e.target.value})}>
+              </select></label>
+              <label className="field"><span>Movement date</span><input required type="date" value={inventoryMovementForm.date} onChange={e=>setInventoryMovementForm({...inventoryMovementForm,date:e.target.value})}/></label>
+              <label className="field"><span>Movement type</span><select value={inventoryMovementForm.movementType} onChange={e=>setInventoryMovementForm({...inventoryMovementForm,movementType:e.target.value})}>
                 <option value="RECEIVE">Receive</option>
                 <option value="ISSUE">Issue</option>
                 <option value="ADJUST_IN">Adjustment in</option>
                 <option value="ADJUST_OUT">Adjustment out</option>
                 <option value="WASTE">Waste</option>
-              </select>
+              </select></label>
               <label className="field"><span>Quantity</span><input required min="0.001" step="0.001" type="number" value={inventoryMovementForm.quantity} onChange={e=>setInventoryMovementForm({...inventoryMovementForm,quantity:e.target.value})}/></label>
               <label className="field"><span>Reason</span><input required value={inventoryMovementForm.reason} onChange={e=>setInventoryMovementForm({...inventoryMovementForm,reason:e.target.value})}/></label>
               <label className="field"><span>Source e.g. supplier invoice, treatment</span><input required value={inventoryMovementForm.source} onChange={e=>setInventoryMovementForm({...inventoryMovementForm,source:e.target.value})}/></label>
-              <select value={inventoryMovementForm.batchId} onChange={e=>setInventoryMovementForm({...inventoryMovementForm,batchId:e.target.value})}>
+              <label className="field"><span>Batch association</span><select value={inventoryMovementForm.batchId} onChange={e=>setInventoryMovementForm({...inventoryMovementForm,batchId:e.target.value})}>
                 <option value="">Farm-level</option>
                 {batches.map(b=><option key={b.id} value={b.id}>{b.code}</option>)}
-              </select>
+              </select></label>
               <button disabled={saving || !inventoryMovementForm.itemId}>Record movement</button>
             </form>
             {inventoryMovementForm.itemId && <div className="table">
@@ -138,15 +138,15 @@ export default function FeedStockPage() {
           <div className="subsection">
             <h3>Purchase feed</h3>
             <form className="inline-form" onSubmit={purchaseFeed}>
-              <select required value={feedPurchaseForm.feedTypeId} onChange={e=>{
+              <label className="field"><span>Feed type</span><select required value={feedPurchaseForm.feedTypeId} onChange={e=>{
                 const type=feedTypes.find(item=>item.id===e.target.value);
                 setFeedPurchaseForm({...feedPurchaseForm,feedTypeId:e.target.value,unit:type?.unit||"bag"});
               }}>
                 <option value="">Feed type</option>{feedTypes.filter(t=>t.status==="ACTIVE").map(t=><option key={t.id} value={t.id}>{t.name} ({t.unit})</option>)}
-              </select>
-              <input required type="date" value={feedPurchaseForm.purchaseDate} onChange={e=>setFeedPurchaseForm({...feedPurchaseForm,purchaseDate:e.target.value})}/>
+              </select></label>
+              <label className="field"><span>Purchase date</span><input required type="date" value={feedPurchaseForm.purchaseDate} onChange={e=>setFeedPurchaseForm({...feedPurchaseForm,purchaseDate:e.target.value})}/></label>
               <label className="field"><span>Quantity</span><input required min="0.001" step="0.001" type="number" value={feedPurchaseForm.quantity} onChange={e=>setFeedPurchaseForm({...feedPurchaseForm,quantity:e.target.value})}/></label>
-              <select value={feedPurchaseForm.supplierId} onChange={e=>setFeedPurchaseForm({...feedPurchaseForm,supplierId:e.target.value})}><option value="">No supplier recorded</option>{suppliers.filter(supplier=>supplier.status!=="ARCHIVED").map(supplier=><option key={supplier.id} value={supplier.id}>{supplier.name}</option>)}</select>
+              <label className="field"><span>Supplier (optional)</span><select value={feedPurchaseForm.supplierId} onChange={e=>setFeedPurchaseForm({...feedPurchaseForm,supplierId:e.target.value})}><option value="">No supplier recorded</option>{suppliers.filter(supplier=>supplier.status!=="ARCHIVED").map(supplier=><option key={supplier.id} value={supplier.id}>{supplier.name}</option>)}</select></label>
               <label className="field"><span>Total cost (₦)</span><input required type="text" inputMode="decimal" value={feedPurchaseForm.totalCostMinor} onChange={e=>setFeedPurchaseForm({...feedPurchaseForm,totalCostMinor:e.target.value})}/></label>
               <button disabled={saving || feedTypes.filter(t=>t.status==="ACTIVE").length===0}>Record purchase</button>
             </form>
