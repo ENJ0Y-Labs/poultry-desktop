@@ -5,7 +5,7 @@ import AppShell from "./AppShell.jsx";
 
 describe("AppShell", () => {
   beforeEach(() => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ status: 200 }));
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ status: 200, ok: true, json: async () => ({ schema: "VALID" }) }));
     localStorage.removeItem("grantino:theme");
     window.location.hash = "";
   });
