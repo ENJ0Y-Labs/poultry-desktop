@@ -22,4 +22,4 @@
 
 ## Known follow-up
 
-Some grouped areas currently present their existing subsections as cards within the page rather than separate tab panels. The route/page boundary is established without changing their form behavior; extracting each tab into focused feature components is a separate follow-up.
+Some grouped areas currently present their existing subsections as cards within the page rather than separate tab panels. The nine page components now live under `app/renderer/src/pages/`. Shared form state and API handlers remain in `App.jsx` and are exposed through `FarmManagerContext`; a future cleanup can move domain-specific state/handlers into focused hooks. Daily Work and Health still keep related operations within their existing card sections rather than splitting every operation into its own tab.
