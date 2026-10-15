@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 // eslint-disable-next-line no-unused-vars
 import { NavigationContext } from "./NavigationContext.jsx";
 import { getThemePreference, setThemePreference } from "../utils/theme.js";
+import { connectionApi } from "../services/api.js";
 
 const groups = [
   { label: "WORKSPACE", items: [
@@ -40,9 +41,22 @@ const pageTabs = {
     { id: "flocks", label: "Batches & bird costs" },
     { id: "houses", label: "Houses / pens" },
   ],
+  "daily-work": [
+    { id: "daily-record", label: "Daily record" },
+    { id: "mortality", label: "Mortality" },
+    { id: "culling", label: "Culling" },
+    { id: "water", label: "Water" },
+  ],
+  health: [
+    { id: "health-record", label: "Health records" },
+    { id: "drugs", label: "Drugs & treatments" },
+    { id: "vaccination", label: "Vaccination" },
+  ],
   "feed-stock": [
-    { id: "feed", label: "Feed & purchases" },
+    { id: "feed", label: "Feed & usage" },
+    { id: "purchases", label: "Purchases" },
     { id: "inventory", label: "Other stock" },
+    { id: "suppliers", label: "Suppliers" },
   ],
   production: [
     { id: "eggs", label: "Egg production" },
@@ -66,8 +80,8 @@ const pageTabs = {
   ],
 };
 const defaultTabs = {
-  dashboard: "overview", flocks: "batch-dashboard", "daily-work": "daily-work",
-  "feed-stock": "feed", health: "health", production: "eggs",
+  dashboard: "overview", flocks: "batch-dashboard", "daily-work": "daily-record",
+  health: "health-record", "feed-stock": "feed", production: "eggs",
   "sales-money": "customers", reports: "farm-report", settings: "farm",
 };
 
@@ -109,10 +123,12 @@ function localDateLabel() {
   return new Intl.DateTimeFormat("en-NG", { day: "2-digit", month: "short", year: "numeric" }).format(new Date());
 }
 
-export default function AppShell({ farm, error, children, startPage = "dashboard" }) {
+export default function AppShell({ farm, error, children, startPage = "dashboard", startPageReady = true }) {
   const [active, setActive] = useState(() => resolvePage(window.location.hash, startPage));
   const [activeTab, setActiveTab] = useState(() => resolveTab(window.location.hash, resolvePage(window.location.hash, startPage)));
   const [theme, setTheme] = useState(getThemePreference);
+  const [backendConnected, setBackendConnected] = useState(null);
+  const [hasUserNavigated, setHasUserNavigated] = useState(Boolean(window.location.hash));
 
   function changeTheme(event) {
     const nextTheme = setThemePreference(event.target.value);
@@ -123,6 +139,7 @@ export default function AppShell({ farm, error, children, startPage = "dashboard
   function navigate(target) {
     const page = resolvePage(`#${target}`, startPage);
     const tab = defaultTabs[page] || "overview";
+    setHasUserNavigated(true);
     if (window.location.hash !== `#${page}/${tab}`) window.location.hash = `${page}/${tab}`;
     setActive(page);
     setActiveTab(tab);
@@ -130,6 +147,7 @@ export default function AppShell({ farm, error, children, startPage = "dashboard
 
   function navigateTab(tab) {
     const nextHash = `${active}/${tab}`;
+    setHasUserNavigated(true);
     if (window.location.hash !== `#${nextHash}`) window.location.hash = nextHash;
     setActiveTab(tab);
   }
@@ -141,10 +159,27 @@ export default function AppShell({ farm, error, children, startPage = "dashboard
       setActiveTab(resolveTab(window.location.hash, page));
     };
     window.addEventListener("hashchange", syncRoute);
-    if (!window.location.hash) window.location.hash = `${resolvePage("", startPage)}/${defaultTabs[resolvePage("", startPage)] || "overview"}`;
-    else syncRoute();
+    if (window.location.hash) syncRoute();
+    else if (startPageReady && !hasUserNavigated) {
+      const initialPage = resolvePage("", startPage);
+      window.location.hash = `${initialPage}/${defaultTabs[initialPage] || "overview"}`;
+    }
     return () => window.removeEventListener("hashchange", syncRoute);
-  }, [startPage]);
+  }, [startPage, startPageReady, hasUserNavigated]);
+
+  useEffect(() => {
+    let mounted = true;
+    const checkBackend = async () => {
+      const connected = await connectionApi.check();
+      if (mounted) setBackendConnected(connected);
+    };
+    checkBackend();
+    const interval = window.setInterval(checkBackend, 15000);
+    return () => {
+      mounted = false;
+      window.clearInterval(interval);
+    };
+  }, []);
 
   useEffect(() => {
     const onKeyDown = (event) => {
@@ -172,10 +207,10 @@ export default function AppShell({ farm, error, children, startPage = "dashboard
           </div>
         </div>
 
-        <div className="workspace-switcher">
-          <span className="workspace-kicker">WORKSPACE</span>
-          <span className="workspace-name">LOCAL FARM</span>
-          <span className="workspace-status"><i /> SQLite · Offline first</span>
+        <div className="workspace-summary" aria-label="Active farm">
+          <span className="workspace-kicker">ACTIVE FARM</span>
+          <span className="workspace-name">{farm.name || "Local farm"}</span>
+          <span className="workspace-status">Local data · single farm</span>
         </div>
 
         <nav className="sidebar-nav" aria-label="Main navigation">
@@ -202,10 +237,9 @@ export default function AppShell({ farm, error, children, startPage = "dashboard
 
         <div className="sidebar-footer">
           <div className="node-status">
-            <span className="status-dot online" />
-            <div><strong>LOCAL DATABASE</strong><small>127.0.0.1 · Spring Boot</small></div>
+            <span className={backendConnected === true ? "status-dot online" : backendConnected === false ? "status-dot offline" : "status-dot"} />
+            <div><strong>{backendConnected === true ? "BACKEND CONNECTED" : backendConnected === false ? "BACKEND UNAVAILABLE" : "CHECKING BACKEND"}</strong><small>Local API connection</small></div>
           </div>
-          <span className="pulse" aria-hidden="true" />
         </div>
       </aside>
 
@@ -219,8 +253,11 @@ export default function AppShell({ farm, error, children, startPage = "dashboard
             </div>
             <div className="topbar-actions">
               <label className="theme-control">Theme<select aria-label="Theme" value={theme} onChange={changeTheme}><option value="auto">Auto</option><option value="light">Light</option><option value="dark">Dark</option></select></label>
-              <div className="system-pill"><span className="status-dot online" /> BACKEND ONLINE</div>
-              <div className="system-pill"><span className="status-dot cyan" /> OFFLINE-FIRST</div>
+              <div className={backendConnected === true ? "system-pill connected" : backendConnected === false ? "system-pill disconnected" : "system-pill"} role="status" aria-live="polite">
+                <span className={backendConnected === true ? "status-dot online" : backendConnected === false ? "status-dot offline" : "status-dot"} />
+                {backendConnected === true ? "BACKEND CONNECTED" : backendConnected === false ? "BACKEND UNAVAILABLE" : "CHECKING BACKEND"}
+              </div>
+              <div className="system-pill" title="Designed to keep farm records on this computer">LOCAL-FIRST</div>
               <div className="date-chip">{today}</div>
             </div>
           </header>
@@ -247,10 +284,10 @@ export default function AppShell({ farm, error, children, startPage = "dashboard
       </main>
 
       <footer className="app-statusbar">
-        <span><b>LOCAL-DB</b> · SQLite</span>
-        <span><b>API</b> · 127.0.0.1:18942</span>
+        <span><b>DATA MODE</b> · Local-first</span>
+        <span><b>API</b> · {backendConnected === true ? "Connected" : backendConnected === false ? "Unavailable" : "Checking"}</span>
         <span className="statusbar-spacer" />
-        <span><i className="status-dot online" /> Data stays on this PC</span>
+        <span><i className={backendConnected === true ? "status-dot online" : backendConnected === false ? "status-dot offline" : "status-dot"} /> {backendConnected === true ? "Backend responding" : backendConnected === false ? "Backend not responding" : "Checking connection"}</span>
       </footer>
     </div>
   );

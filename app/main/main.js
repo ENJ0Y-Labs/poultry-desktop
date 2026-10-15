@@ -8,6 +8,12 @@ let mainWindow;
 let backendManager;
 let shutdownInProgress = false;
 
+ipcMain.handle("backend:base-url", async (_event, ...args) => {
+  if (args.length !== 0) throw new Error("Invalid IPC message.");
+  if (!backendManager?.port) throw new Error("The local backend is not ready.");
+  return "http://127.0.0.1:" + backendManager.port;
+});
+
 const themePreferencePath = () => join(app.getPath("userData"), "theme-preference.json");
 
 function readThemePreference() {

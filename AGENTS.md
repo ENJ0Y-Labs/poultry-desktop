@@ -109,7 +109,7 @@ React owns:
 - screens
 - forms
 - tables
-- navigation
+- navigation, using the dependency-free hash routes documented in `docs/frontend-navigation.md`
 - loading/error states
 - keyboard-first interaction
 - displaying values returned by the backend

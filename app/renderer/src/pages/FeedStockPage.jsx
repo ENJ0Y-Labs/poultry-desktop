@@ -4,7 +4,7 @@ import { FarmManagerContext } from "../components/FarmManagerContext.jsx";
 import PageSection from "../components/PageSection.jsx";
 
 export default function FeedStockPage() {
-  const { formatMoney, farm, batches, feedTypes, feedInventory, feedTypeForm, setFeedTypeForm, feedPurchaseForm, setFeedPurchaseForm, feedUsageForm, setFeedUsageForm, inventoryItems, inventoryItemForm, setInventoryItemForm, inventoryMovementForm, setInventoryMovementForm, inventoryMovements, saving, saveInventoryItem, loadInventoryMovements, saveInventoryMovement, createFeedType, purchaseFeed, useFeed, feedQuantity } = useContext(FarmManagerContext);
+  const { formatMoney, farm, batches, feedTypes, feedInventory, feedTypeForm, setFeedTypeForm, feedPurchaseForm, setFeedPurchaseForm, feedUsageForm, setFeedUsageForm, inventoryItems, inventoryItemForm, setInventoryItemForm, inventoryMovementForm, setInventoryMovementForm, inventoryMovements, suppliers, supplierForm, setSupplierForm, saveSupplier, archiveSupplier, saving, saveInventoryItem, loadInventoryMovements, saveInventoryMovement, createFeedType, purchaseFeed, useFeed, feedQuantity } = useContext(FarmManagerContext);
 
   return (
     <div className="grid">
@@ -25,23 +25,6 @@ export default function FeedStockPage() {
               {feedTypes.map(type=><div className="row" key={type.id}><span>{type.name}</span><span>{type.unit}</span><span>{type.applicableType}</span><span>{type.status}</span></div>)}
               {feedTypes.length===0 && <p className="muted empty">No feed types yet.</p>}
             </div>
-          </div>
-
-          <div className="subsection">
-            <h3>Purchase feed</h3>
-            <form className="inline-form" onSubmit={purchaseFeed}>
-              <select required value={feedPurchaseForm.feedTypeId} onChange={e=>{
-                const type=feedTypes.find(item=>item.id===e.target.value);
-                setFeedPurchaseForm({...feedPurchaseForm,feedTypeId:e.target.value,unit:type?.unit||"bag"});
-              }}>
-                <option value="">Feed type</option>{feedTypes.filter(t=>t.status==="ACTIVE").map(t=><option key={t.id} value={t.id}>{t.name} ({t.unit})</option>)}
-              </select>
-              <input required type="date" value={feedPurchaseForm.purchaseDate} onChange={e=>setFeedPurchaseForm({...feedPurchaseForm,purchaseDate:e.target.value})}/>
-              <input required min="0.001" step="0.001" type="number" placeholder="Quantity" value={feedPurchaseForm.quantity} onChange={e=>setFeedPurchaseForm({...feedPurchaseForm,quantity:e.target.value})}/>
-              <input placeholder="Supplier/source ID" value={feedPurchaseForm.supplierId} onChange={e=>setFeedPurchaseForm({...feedPurchaseForm,supplierId:e.target.value})}/>
-              <input required min="1" step="1" type="number" placeholder="Total cost (minor units)" value={feedPurchaseForm.totalCostMinor} onChange={e=>setFeedPurchaseForm({...feedPurchaseForm,totalCostMinor:e.target.value})}/>
-              <button disabled={saving || feedTypes.filter(t=>t.status==="ACTIVE").length===0}>Record purchase</button>
-            </form>
           </div>
 
           <div className="subsection">
@@ -151,6 +134,40 @@ export default function FeedStockPage() {
             </div>}
           </div>
         </section></PageSection>
+      <PageSection page="feed-stock" tab="purchases"><section id="purchases" className="card full"><div className="section-head"><h2>Feed purchases</h2><p className="muted">Choose a registered supplier or leave it blank if the source is unknown.</p></div>
+          <div className="subsection">
+            <h3>Purchase feed</h3>
+            <form className="inline-form" onSubmit={purchaseFeed}>
+              <select required value={feedPurchaseForm.feedTypeId} onChange={e=>{
+                const type=feedTypes.find(item=>item.id===e.target.value);
+                setFeedPurchaseForm({...feedPurchaseForm,feedTypeId:e.target.value,unit:type?.unit||"bag"});
+              }}>
+                <option value="">Feed type</option>{feedTypes.filter(t=>t.status==="ACTIVE").map(t=><option key={t.id} value={t.id}>{t.name} ({t.unit})</option>)}
+              </select>
+              <input required type="date" value={feedPurchaseForm.purchaseDate} onChange={e=>setFeedPurchaseForm({...feedPurchaseForm,purchaseDate:e.target.value})}/>
+              <input required min="0.001" step="0.001" type="number" placeholder="Quantity" value={feedPurchaseForm.quantity} onChange={e=>setFeedPurchaseForm({...feedPurchaseForm,quantity:e.target.value})}/>
+              <select value={feedPurchaseForm.supplierId} onChange={e=>setFeedPurchaseForm({...feedPurchaseForm,supplierId:e.target.value})}><option value="">No supplier recorded</option>{suppliers.filter(supplier=>supplier.status!=="ARCHIVED").map(supplier=><option key={supplier.id} value={supplier.id}>{supplier.name}</option>)}</select>
+              <input required min="1" step="1" type="number" placeholder="Total cost (minor units)" value={feedPurchaseForm.totalCostMinor} onChange={e=>setFeedPurchaseForm({...feedPurchaseForm,totalCostMinor:e.target.value})}/>
+              <button disabled={saving || feedTypes.filter(t=>t.status==="ACTIVE").length===0}>Record purchase</button>
+            </form>
+          </div>
+
+      </section></PageSection>
+
+      <PageSection page="feed-stock" tab="suppliers"><section id="suppliers" className="card full">
+        <div className="section-head"><h2>Suppliers</h2><p className="muted">Maintain reusable supplier records for feed purchases. Archiving keeps historical purchase references intact.</p></div>
+        <form className="form-grid" onSubmit={saveSupplier}>
+          <label>Supplier name<input required maxLength="120" value={supplierForm.name} onChange={event=>setSupplierForm({...supplierForm,name:event.target.value})}/></label>
+          <label>Phone<input maxLength="40" value={supplierForm.phone} onChange={event=>setSupplierForm({...supplierForm,phone:event.target.value})}/></label>
+          <label className="full">Notes<input value={supplierForm.notes} onChange={event=>setSupplierForm({...supplierForm,notes:event.target.value})}/></label>
+          <button disabled={saving}>Add supplier</button>
+        </form>
+        <div className="table"><div className="row header"><span>Supplier</span><span>Phone</span><span>Notes</span><span>Status</span><span>Action</span></div>
+          {suppliers.map(supplier=><div className="row" key={supplier.id}><span>{supplier.name}</span><span>{supplier.phone||"—"}</span><span>{supplier.notes||"—"}</span><span>{supplier.status||"ACTIVE"}</span><span>{supplier.status==="ARCHIVED" ? "Archived" : <button type="button" disabled={saving} onClick={()=>archiveSupplier(supplier.id)}>Archive</button>}</span></div>)}
+          {suppliers.length===0 && <p className="muted empty">No suppliers recorded yet.</p>}
+        </div>
+      </section></PageSection>
+
     </div>
   );
 }

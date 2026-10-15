@@ -1,4 +1,25 @@
-const API_BASE = "http://127.0.0.1:18942/api/v1";
+const configuredApiBase = import.meta.env?.VITE_API_BASE_URL || window.poultryDesktop?.apiBaseUrl;
+
+async function getApiBase() {
+  const desktopBase = window.poultryDesktop?.getApiBaseUrl
+    ? await window.poultryDesktop.getApiBaseUrl()
+    : null;
+  const configured = desktopBase || configuredApiBase || "http://127.0.0.1:18942";
+  const normalized = configured.replace(/\/+$/, "");
+  return normalized.endsWith("/api/v1") ? normalized : normalized + "/api/v1";
+}
+
+export const connectionApi = {
+  async check() {
+    try {
+      const response = await fetch((await getApiBase()) + "/health", { credentials: "include" });
+      const health = await response.json().catch(() => ({}));
+      return response.ok && health.schema === "VALID";
+    } catch {
+      return false;
+    }
+  },
+};
 
 export class ApiError extends Error {
   constructor(code, message, status, details) {
@@ -13,7 +34,7 @@ export class ApiError extends Error {
 async function request(path, options = {}) {
   let response;
   try {
-    response = await fetch(API_BASE + path, {
+    response = await fetch((await getApiBase()) + path, {
       credentials: "include",
       headers: { "Content-Type": "application/json", ...(options.headers || {}) },
       ...options,
@@ -190,13 +211,13 @@ export const attentionApi = {
 };
 
 async function downloadText(path) {
-  const response = await fetch(API_BASE + path, { credentials: "include" });
+  const response = await fetch((await getApiBase()) + path, { credentials: "include" });
   if (!response.ok) throw new ApiError("EXPORT_FAILED", "Report export failed.", response.status);
   return response.text();
 }
 
 async function downloadBlob(path) {
-  const response = await fetch(API_BASE + path, { credentials: "include" });
+  const response = await fetch((await getApiBase()) + path, { credentials: "include" });
   if (!response.ok) throw new ApiError("EXPORT_FAILED", "Report export failed.", response.status);
   return response.blob();
 }

@@ -1,13 +1,18 @@
 import { render, screen, fireEvent, within } from "@testing-library/react";
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 // eslint-disable-next-line no-unused-vars
 import AppShell from "./AppShell.jsx";
 
 describe("AppShell", () => {
   beforeEach(() => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ status: 200, ok: true, json: async () => ({ schema: "VALID" }) }));
     localStorage.removeItem("grantino:theme");
     window.location.hash = "";
   });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   it("renders the nine primary pages", () => {
     render(
       <AppShell farm={{ name: "Grantino", location: "Port Harcourt", currency: "NGN", timezone: "Africa/Lagos" }}>
@@ -50,5 +55,17 @@ describe("AppShell", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Houses / pens" }));
     expect(window.location.hash).toBe("#flocks/houses");
+
+    fireEvent.click(screen.getByRole("button", { name: "Daily Work" }));
+    fireEvent.click(screen.getByRole("button", { name: "Water" }));
+    expect(window.location.hash).toBe("#daily-work/water");
+
+    fireEvent.click(screen.getByRole("button", { name: "Health" }));
+    fireEvent.click(screen.getByRole("button", { name: "Drugs & treatments" }));
+    expect(window.location.hash).toBe("#health/drugs");
+
+    fireEvent.click(screen.getByRole("button", { name: "Feed & Stock" }));
+    fireEvent.click(screen.getByRole("button", { name: "Suppliers" }));
+    expect(window.location.hash).toBe("#feed-stock/suppliers");
   });
 });

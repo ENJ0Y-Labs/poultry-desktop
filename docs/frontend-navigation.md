@@ -14,12 +14,16 @@
 
 ## Routing behavior
 
-- The current page is stored in the URL hash, for example `#daily-work`.
+- The current page and subpage are stored in the URL hash, for example `#daily-work/mortality` or `#feed-stock/suppliers`.
 - Back/forward and direct hash navigation are supported.
-- Existing saved start-page values and legacy section names are mapped to their new page.
+- The saved start page is applied after application settings load, unless the app is opened with an explicit route hash.
+- Daily Work has separate Daily record, Mortality, Culling, and Water tabs.
+- Health has separate Health records, Drugs & treatments, and Vaccination tabs.
+- Feed & Stock has separate Feed & usage, Purchases, Other stock, and Suppliers tabs.
+- Supplier records are loaded and managed through the existing supplier API; feed purchases can reference a registered supplier.
+- The connection indicator probes the backend health endpoint and refreshes periodically. It reports healthy status only when the backend responds successfully and reports a valid database schema.
+- The API base can be configured with `VITE_API_BASE_URL` or the desktop bridge's `getApiBaseUrl`; the local loopback address is only the development fallback.
 - Navigation is fully local and adds no package dependency.
-- Only active-page sections are mounted. The backend remains the source of truth for farm calculations and records.
+- Only the active page/tab sections are mounted. The backend remains the source of truth for farm calculations and records.
 
-## Known follow-up
-
-Some grouped areas currently present their existing subsections as cards within the page rather than separate tab panels. The nine page components now live under `app/renderer/src/pages/`. Shared form state and API handlers remain in `App.jsx` and are exposed through `FarmManagerContext`; a future cleanup can move domain-specific state/handlers into focused hooks. Daily Work and Health still keep related operations within their existing card sections rather than splitting every operation into its own tab.
+The nine page components live under `app/renderer/src/pages/`. Shared form state and API handlers remain in `App.jsx` and are exposed through `FarmManagerContext`; future cleanup can move domain-specific state/handlers into focused hooks.
