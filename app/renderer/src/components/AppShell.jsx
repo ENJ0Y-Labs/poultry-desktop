@@ -119,6 +119,11 @@ function Icon({ name }) {
   return <svg className="nav-glyph" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">{paths[name] || paths.dashboard}</svg>;
 }
 
+function farmInitials(name) {
+  const words = String(name || "").trim().split(/\s+/).filter(Boolean);
+  return words.slice(0, 2).map(word => word[0]).join("").toUpperCase() || "GF";
+}
+
 function localDateLabel() {
   return new Intl.DateTimeFormat("en-NG", { day: "2-digit", month: "short", year: "numeric" }).format(new Date());
 }
@@ -200,9 +205,9 @@ export default function AppShell({ farm, error, children, startPage = "dashboard
     <div className="app-shell">
       <aside className="sidebar">
         <div className="brand">
-          <div className="brand-mark" aria-hidden="true"><span>GF</span></div>
+          <div className="brand-mark" aria-hidden="true"><span>{farmInitials(farm.name)}</span></div>
           <div className="brand-copy">
-            <strong>Grantino Farms</strong>
+            <strong>{farm.name || "Local farm"}</strong>
             <small>Poultry Farm Manager</small>
           </div>
         </div>
@@ -226,7 +231,7 @@ export default function AppShell({ farm, error, children, startPage = "dashboard
                   title={item.shortcut ? `${item.label} · ${item.shortcut}` : item.label}
                   aria-label={item.label}
                 >
-                  <span className="nav-icon-wrap">{Icon({ name: item.icon })}</span>
+                  <span className="nav-icon-wrap"><Icon name={item.icon} /></span>
                   <span className="nav-label">{item.label}</span>
                   {item.shortcut && <kbd>{item.shortcut.replace("Ctrl", "⌃")}</kbd>}
                 </button>
@@ -247,7 +252,7 @@ export default function AppShell({ farm, error, children, startPage = "dashboard
         <div className="shell">
           <header className="app-topbar">
             <div className="topbar-title">
-              <p className="eyebrow">GRANTINO FARMS / POULTRY MANAGER</p>
+              <p className="eyebrow">{farm.name || "LOCAL FARM"} / POULTRY MANAGER</p>
               <h1>{farm.name}</h1>
               <p className="muted">{farm.location || "Farm profile"} · {farm.currency} · {farm.timezone}</p>
             </div>
