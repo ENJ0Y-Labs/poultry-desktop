@@ -211,7 +211,7 @@ export const attentionApi = {
 };
 
 async function downloadText(path) {
-  const response = await fetch(API_BASE + path, { credentials: "include" });
+  const response = await fetch((await getApiBase()) + path, { credentials: "include" });
   if (!response.ok) throw new ApiError("EXPORT_FAILED", "Report export failed.", response.status);
   return response.text();
 }
