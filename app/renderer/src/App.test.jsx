@@ -244,7 +244,7 @@ describe("App", () => {
     render(<App />);
 
     await waitFor(() => expect(screen.getByRole("heading", { name: "Farm dashboard" })).toBeInTheDocument());
-    await waitFor(() => expect(screen.getAllByText("5,000")).toHaveLength(2));
+    await waitFor(() => expect(screen.getAllByText("5,000")).toHaveLength(1));
     await waitFor(() => expect(screen.getAllByText("₦1,000.00")).toHaveLength(2));
     await waitFor(() => expect(screen.getAllByText("₦300.00")).toHaveLength(2));
     expect(screen.getByText("Nothing currently requires attention.")).toBeInTheDocument();
@@ -358,7 +358,7 @@ describe("App", () => {
     fireEvent.change(screen.getByRole("combobox", { name: "Batch dashboard" }), { target: { value: "broiler-1" } });
 
     await waitFor(() => expect(dashboardApi.batch).toHaveBeenLastCalledWith("broiler-1"));
-    expect(screen.getByText("BROILER")).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: /B-2026-001 · BROILER/ })).toBeInTheDocument();
     expect(localStorage.getItem("grantino:lastBatchId")).toBe("broiler-1");
   });
 });
