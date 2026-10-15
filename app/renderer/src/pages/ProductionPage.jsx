@@ -48,9 +48,9 @@ export default function ProductionPage() {
                 <h3>Record egg production</h3>
                 <form className="inline-form" onSubmit={saveEggCollection}>
                   <input required type="date" value={eggCollectionForm.date} onChange={e=>setEggCollectionForm({...eggCollectionForm,date:e.target.value})}/>
-                  <input required min="0" step="1" type="number" placeholder="Good eggs" value={eggCollectionForm.good} onChange={e=>setEggCollectionForm({...eggCollectionForm,good:e.target.value})}/>
-                  <input required min="0" step="1" type="number" placeholder="Cracked eggs" value={eggCollectionForm.cracked} onChange={e=>setEggCollectionForm({...eggCollectionForm,cracked:e.target.value})}/>
-                  <input placeholder="Notes" value={eggCollectionForm.notes} onChange={e=>setEggCollectionForm({...eggCollectionForm,notes:e.target.value})}/>
+                  <label className="field"><span>Good eggs</span><input required min="0" step="1" type="number" value={eggCollectionForm.good} onChange={e=>setEggCollectionForm({...eggCollectionForm,good:e.target.value})}/></label>
+                  <label className="field"><span>Cracked eggs</span><input required min="0" step="1" type="number" value={eggCollectionForm.cracked} onChange={e=>setEggCollectionForm({...eggCollectionForm,cracked:e.target.value})}/></label>
+                  <label className="field"><span>Notes</span><input value={eggCollectionForm.notes} onChange={e=>setEggCollectionForm({...eggCollectionForm,notes:e.target.value})}/></label>
                   <button disabled={saving}>Record collection</button>
                 </form>
                 <div className="table">
@@ -69,8 +69,8 @@ export default function ProductionPage() {
                     <option value="">Customer</option>
                     {customers.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}
                   </select>
-                  <input required min="0.001" step="0.001" type="number" placeholder="Crates e.g. 0.5 or 2.5" value={eggSaleForm.crates} onChange={e=>setEggSaleForm({...eggSaleForm,crates:e.target.value})}/>
-                  <input required min="1" step="1" type="number" placeholder="Price / crate (minor units)" value={eggSaleForm.pricePerCrateMinor} onChange={e=>setEggSaleForm({...eggSaleForm,pricePerCrateMinor:e.target.value})}/>
+                  <label className="field"><span>Crates e.g. 0.5 or 2.5</span><input required min="0.001" step="0.001" type="number" value={eggSaleForm.crates} onChange={e=>setEggSaleForm({...eggSaleForm,crates:e.target.value})}/></label>
+                  <label className="field"><span>Price per crate (₦)</span><input required type="text" inputMode="decimal" value={eggSaleForm.pricePerCrateMinor} onChange={e=>setEggSaleForm({...eggSaleForm,pricePerCrateMinor:e.target.value})}/></label>
                   <button disabled={saving}>Record sale</button>
                 </form>
                 <div className="table">
@@ -126,9 +126,9 @@ export default function ProductionPage() {
                 <h3>Record weight</h3>
                 <form className="inline-form" onSubmit={saveWeight}>
                   <input required type="date" value={weightForm.date} onChange={e=>setWeightForm({...weightForm,date:e.target.value})}/>
-                  <input required min="1" type="number" placeholder="Sampled birds" value={weightForm.sampleQuantity} onChange={e=>setWeightForm({...weightForm,sampleQuantity:e.target.value})}/>
-                  <input required min="0.001" step="0.001" type="number" placeholder="Total sample weight (kg)" value={weightForm.totalWeightKg} onChange={e=>setWeightForm({...weightForm,totalWeightKg:e.target.value})}/>
-                  <input placeholder="Notes" value={weightForm.notes} onChange={e=>setWeightForm({...weightForm,notes:e.target.value})}/>
+                  <label className="field"><span>Sampled birds</span><input required min="1" type="number" value={weightForm.sampleQuantity} onChange={e=>setWeightForm({...weightForm,sampleQuantity:e.target.value})}/></label>
+                  <label className="field"><span>Total sample weight (kg)</span><input required min="0.001" step="0.001" type="number" value={weightForm.totalWeightKg} onChange={e=>setWeightForm({...weightForm,totalWeightKg:e.target.value})}/></label>
+                  <label className="field"><span>Notes</span><input value={weightForm.notes} onChange={e=>setWeightForm({...weightForm,notes:e.target.value})}/></label>
                   <button disabled={saving}>Record weight</button>
                 </form>
                 <div className="table">
@@ -142,7 +142,7 @@ export default function ProductionPage() {
                 <h3>Cost-based pricing</h3>
                 <p className="muted">Actual cost comes from the backend bird-cost ledger. Prices are calculated by Spring Boot.</p>
                 <form className="inline-form" onSubmit={e=>{e.preventDefault(); loadPricingForBatch(broilerBatchId, pricingForm.quantity, pricingForm.date);}}>
-                  <input required min="1" type="number" placeholder="Bird quantity" value={pricingForm.quantity} onChange={e=>setPricingForm({...pricingForm,quantity:e.target.value})}/>
+                  <label className="field"><span>Bird quantity</span><input required min="1" type="number" value={pricingForm.quantity} onChange={e=>setPricingForm({...pricingForm,quantity:e.target.value})}/></label>
                   <input required type="date" value={pricingForm.date} onChange={e=>setPricingForm({...pricingForm,date:e.target.value})}/>
                   <button disabled={saving}>Calculate price</button>
                 </form>
@@ -156,8 +156,8 @@ export default function ProductionPage() {
                 <h3>Bird sales</h3>
                 <form className="inline-form" onSubmit={saveBirdSale}>
                   <input required type="date" value={birdSaleForm.date} onChange={e=>setBirdSaleForm({...birdSaleForm,date:e.target.value})}/>
-                  <input required min="1" type="number" placeholder="Quantity" value={birdSaleForm.quantity} onChange={e=>setBirdSaleForm({...birdSaleForm,quantity:e.target.value})}/>
-                  <input required min="1" step="1" type="number" placeholder="Price / bird (minor units)" value={birdSaleForm.pricePerBirdMinor} onChange={e=>setBirdSaleForm({...birdSaleForm,pricePerBirdMinor:e.target.value})}/>
+                  <label className="field"><span>Quantity</span><input required min="1" type="number" value={birdSaleForm.quantity} onChange={e=>setBirdSaleForm({...birdSaleForm,quantity:e.target.value})}/></label>
+                  <label className="field"><span>Price per bird (₦)</span><input required type="text" inputMode="decimal" value={birdSaleForm.pricePerBirdMinor} onChange={e=>setBirdSaleForm({...birdSaleForm,pricePerBirdMinor:e.target.value})}/></label>
                   <select required value={birdSaleForm.customerId} onChange={e=>{const id=e.target.value;const customer=customers.find(c=>c.id===id);setBirdSaleForm({...birdSaleForm,customerId:id,customer:customer?.name||""});}}>
                     <option value="">Customer</option>
                     {customers.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}
