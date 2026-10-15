@@ -33,7 +33,7 @@ export default function HealthPage() {
             <label>Date<input required type="date" value={drugForm.date} onChange={event => setDrugForm({...drugForm,date:event.target.value})}/></label>
             <label>Drug<input required value={drugForm.drug} onChange={event => setDrugForm({...drugForm,drug:event.target.value})}/></label>
             <label>Quantity<input required min="1" step="1" type="number" value={drugForm.quantity} onChange={event => setDrugForm({...drugForm,quantity:event.target.value})}/></label>
-            <label>Cost (₦)<input required min="0.01" step="0.01" type="text" inputMode="decimal" value={drugForm.costMinor} onChange={event => setDrugForm({...drugForm,costMinor:event.target.value})}/></label>
+            <label>Cost (₦)<input required type="text" inputMode="decimal" value={drugForm.costMinor} onChange={event => setDrugForm({...drugForm,costMinor:event.target.value})}/></label>
             <label>Reason<input required value={drugForm.reason} onChange={event => setDrugForm({...drugForm,reason:event.target.value})}/></label>
             <button disabled={saving}>Record drug</button>
           </form>
