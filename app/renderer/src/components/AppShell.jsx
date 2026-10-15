@@ -3,40 +3,34 @@ import { NavigationContext } from "./NavigationContext.jsx";
 import { getThemePreference, setThemePreference } from "../utils/theme.js";
 
 const groups = [
-  { label: "Overview", items: [{ label: "Dashboard", target: "dashboard", icon: "dashboard", shortcut: "Ctrl+1" }] },
-  { label: "Farm", items: [
-    { label: "Houses / Pens", target: "houses", icon: "houses" },
-    { label: "Batches / Flocks", target: "batches", icon: "batches", shortcut: "Ctrl+2" },
+  { label: "WORKSPACE", items: [
+    { label: "Dashboard", target: "dashboard", icon: "dashboard", shortcut: "Ctrl+1" },
+    { label: "Flocks", target: "flocks", icon: "batches", shortcut: "Ctrl+2" },
+    { label: "Daily Work", target: "daily-work", icon: "records", shortcut: "Ctrl+3" },
+    { label: "Feed & Stock", target: "feed-stock", icon: "feed", shortcut: "Ctrl+4" },
+    { label: "Health", target: "health", icon: "health", shortcut: "Ctrl+5" },
+    { label: "Production", target: "production", icon: "eggs", shortcut: "Ctrl+6" },
+    { label: "Sales & Money", target: "sales-money", icon: "sales", shortcut: "Ctrl+7" },
+    { label: "Reports", target: "reports", icon: "reports", shortcut: "Ctrl+8" },
+    { label: "Settings", target: "settings", icon: "settings", shortcut: "Ctrl+9" },
   ]},
-  { label: "Operations", items: [
-    { label: "Daily Records", target: "operations", icon: "records", shortcut: "Ctrl+3" },
-    { label: "Feed", target: "feed", icon: "feed" },
-    { label: "Mortality", target: "operations", icon: "mortality" },
-    { label: "Culling", target: "operations", icon: "culling" },
-    { label: "Health", target: "health", icon: "health" },
-    { label: "Drugs", target: "health", icon: "drugs" },
-    { label: "Vaccination", target: "health", icon: "vaccine" },
-    { label: "Water", target: "operations", icon: "water" },
-  ]},
-  { label: "Production", items: [
-    { label: "Eggs", target: "eggs", icon: "eggs", shortcut: "Ctrl+4" },
-    { label: "Weight & Growth", target: "broiler", icon: "growth" },
-  ]},
-  { label: "Inventory", items: [
-    { label: "Stock", target: "inventory", icon: "inventory" },
-    { label: "Purchases", target: "feed", icon: "purchase" },
-    { label: "Suppliers", target: "feed", icon: "supplier" },
-  ]},
-  { label: "Commerce", items: [
-    { label: "Sales", target: "sales", icon: "sales", shortcut: "Ctrl+5" },
-    { label: "Customers", target: "customers", icon: "customers" },
-    { label: "Expenses", target: "expenses", icon: "expenses" },
-  ]},
-  { label: "Reports", items: [{ label: "Reports", target: "reports", icon: "reports", shortcut: "Ctrl+6" }] },
-  { label: "Settings", items: [{ label: "Settings", target: "settings", icon: "settings", shortcut: "Ctrl+7" }] },
 ];
 
-const targets = ["dashboard", "houses", "batches", "operations", "feed", "health", "eggs", "broiler", "inventory", "sales", "customers", "expenses", "reports", "settings"];
+const validPages = ["dashboard", "flocks", "daily-work", "feed-stock", "health", "production", "sales-money", "reports", "settings"];
+const legacyRoutes = {
+  houses: "flocks", batches: "flocks", "batch-dashboard": "flocks",
+  operations: "daily-work", feed: "feed-stock", inventory: "feed-stock",
+  eggs: "production", broiler: "production",
+  sales: "sales-money", customers: "sales-money", expenses: "sales-money",
+  "batch-reports": "reports",
+};
+function resolvePage(hash, startPage = "dashboard") {
+  const candidate = String(hash || "").replace(/^#\/?/, "").split("/")[0];
+  if (validPages.includes(candidate)) return candidate;
+  if (legacyRoutes[candidate]) return legacyRoutes[candidate];
+  if (validPages.includes(startPage)) return startPage;
+  return "dashboard";
+}
 
 function Icon({ name }) {
   const paths = {
