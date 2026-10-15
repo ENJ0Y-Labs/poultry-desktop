@@ -1182,3 +1182,12 @@ And never sacrifice poultry math for dashboard cosmetics.
 - Persist the renderer preference in localStorage and apply it before React mounts; keep all component colors in CSS tokens with explicit light-theme values.
 - Keep native theme changes behind a validated preload IPC method. Set the Electron window background before showing the window to minimize theme flashes.
 - Verify status/severity/error contrast in both themes. If charts are introduced or modified, verify their series, grid, axis, tooltip, and legend colors in both themes.
+
+
+## Frontend page architecture
+
+- Keep the renderer organized around nine top-level pages: Dashboard, Flocks, Daily Work, Feed & Stock, Health, Production, Sales & Money, Reports, and Settings.
+- Use the local hash router in `AppShell.jsx`; do not add a routing dependency without explicit owner approval.
+- Navigation must not depend on scroll position, scroll listeners, or `scrollIntoView`.
+- Wrap page content in `PageSection` so inactive pages are not mounted. Keep domain calculations and persistence in the existing backend/API layers.
+- Add or update renderer tests for route changes and inactive-page rendering. Keep all source in JavaScript/JSX.

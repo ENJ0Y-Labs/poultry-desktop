@@ -262,3 +262,31 @@ kbd{font-size:8px;font-weight:800;color:var(--muted-2);border:1px solid var(--pa
 :root[data-theme="light"] .dashboard-list,
 :root[data-theme="light"] .metric-card,
 :root[data-theme="light"] .attention-item { background: var(--panel-soft); }
+
+
+/* Page-level tabs replace the old long-page scroll navigation. */
+.page-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0 0 1rem;
+  padding: 0.35rem;
+  border: 1px solid var(--border, #303744);
+  border-radius: 0.75rem;
+  background: var(--surface, #171b22);
+}
+.page-tab {
+  border: 1px solid transparent;
+  border-radius: 0.5rem;
+  background: transparent;
+  color: var(--muted, #aab2c0);
+  padding: 0.55rem 0.8rem;
+  cursor: pointer;
+  font: inherit;
+}
+.page-tab:hover { color: var(--text, #f4f6f8); background: var(--surface-raised, #222833); }
+.page-tab.active {
+  color: var(--text, #f4f6f8);
+  border-color: var(--border-strong, #424b5a);
+  background: var(--surface-raised, #222833);
+}

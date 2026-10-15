@@ -162,6 +162,7 @@ afterEach(() => vi.restoreAllMocks());
 
 beforeEach(() => {
   localStorage.clear();
+  window.location.hash = "";
   document.body.innerHTML = "";
 });
 
@@ -243,14 +244,19 @@ describe("App", () => {
     render(<App />);
 
     await waitFor(() => expect(screen.getByRole("heading", { name: "Farm dashboard" })).toBeInTheDocument());
-    await waitFor(() => expect(screen.getAllByText("5,000")).toHaveLength(2));
-    await waitFor(() => expect(screen.getAllByText("₦1,000.00")).toHaveLength(2));
-    await waitFor(() => expect(screen.getAllByText("₦300.00")).toHaveLength(2));
+    await waitFor(() => expect(screen.getAllByText("5,000")).toHaveLength(1));
+    expect(within(screen.getByText("Revenue").parentElement).getByText("₦1,000.00")).toBeInTheDocument();
+    expect(within(screen.getByText("Expenses").parentElement).getByText("₦700.00")).toBeInTheDocument();
+    expect(within(screen.getByText("Profit").parentElement).getByText("₦300.00")).toBeInTheDocument();
     expect(screen.getByText("Nothing currently requires attention.")).toBeInTheDocument();
     expect(screen.getByText("No audit records yet.")).toBeInTheDocument();
-    expect(screen.getByText("No batches yet.")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Sales & Money" }));
     expect(screen.getByText("No customers yet.")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Expenses" }));
     expect(screen.getByText("No expenses recorded.")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Flocks" }));
+    fireEvent.click(screen.getByRole("button", { name: "Batches & bird costs" }));
+    expect(screen.getByText("No batches yet.")).toBeInTheDocument();
   });
 
   it("renders backend-derived attention items on the dashboard", async () => {
@@ -313,12 +319,16 @@ describe("App", () => {
     render(<App />);
 
     await waitFor(() => expect(screen.getByRole("heading", { name: "Farm dashboard" })).toBeInTheDocument());
+    fireEvent.click(screen.getByRole("button", { name: "Production" }));
+    await waitFor(() => expect(screen.getByRole("option", { name: "Select a layer batch" })).toBeInTheDocument());
 
     const eggBatch = screen.getByRole("option", { name: "Select a layer batch" }).parentElement;
     fireEvent.change(eggBatch, { target: { value: "layer-1" } });
     await waitFor(() => expect(screen.getByRole("heading", { name: "Record egg production" })).toBeInTheDocument());
     expect(within(eggBatch).getByRole("option", { name: "L-2026-001" })).toBeInTheDocument();
 
+    fireEvent.click(screen.getByRole("button", { name: "Weight & growth" }));
+    await waitFor(() => expect(screen.getByRole("option", { name: "Select a broiler batch" })).toBeInTheDocument());
     const broilerBatch = screen.getByRole("option", { name: "Select a broiler batch" }).parentElement;
     fireEvent.change(broilerBatch, { target: { value: "broiler-1" } });
     await waitFor(() => expect(screen.getByRole("heading", { name: "Record weight" })).toBeInTheDocument());
@@ -343,12 +353,13 @@ describe("App", () => {
 
     render(<App />);
 
+    fireEvent.click(await screen.findByRole("button", { name: "Flocks" }));
     await waitFor(() => expect(screen.getByRole("combobox", { name: "Batch dashboard" })).toBeInTheDocument());
 
     fireEvent.change(screen.getByRole("combobox", { name: "Batch dashboard" }), { target: { value: "broiler-1" } });
 
     await waitFor(() => expect(dashboardApi.batch).toHaveBeenLastCalledWith("broiler-1"));
-    expect(screen.getByText("BROILER")).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: /B-2026-001 · BROILER/ })).toBeInTheDocument();
     expect(localStorage.getItem("grantino:lastBatchId")).toBe("broiler-1");
   });
 });

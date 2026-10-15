@@ -1,41 +1,82 @@
 import { useEffect, useMemo, useState } from "react";
+// eslint-disable-next-line no-unused-vars
+import { NavigationContext } from "./NavigationContext.jsx";
 import { getThemePreference, setThemePreference } from "../utils/theme.js";
 
 const groups = [
-  { label: "Overview", items: [{ label: "Dashboard", target: "dashboard", icon: "dashboard", shortcut: "Ctrl+1" }] },
-  { label: "Farm", items: [
-    { label: "Houses / Pens", target: "houses", icon: "houses" },
-    { label: "Batches / Flocks", target: "batches", icon: "batches", shortcut: "Ctrl+2" },
+  { label: "WORKSPACE", items: [
+    { label: "Dashboard", target: "dashboard", icon: "dashboard", shortcut: "Ctrl+1" },
+    { label: "Flocks", target: "flocks", icon: "batches", shortcut: "Ctrl+2" },
+    { label: "Daily Work", target: "daily-work", icon: "records", shortcut: "Ctrl+3" },
+    { label: "Feed & Stock", target: "feed-stock", icon: "feed", shortcut: "Ctrl+4" },
+    { label: "Health", target: "health", icon: "health", shortcut: "Ctrl+5" },
+    { label: "Production", target: "production", icon: "eggs", shortcut: "Ctrl+6" },
+    { label: "Sales & Money", target: "sales-money", icon: "sales", shortcut: "Ctrl+7" },
+    { label: "Reports", target: "reports", icon: "reports", shortcut: "Ctrl+8" },
+    { label: "Settings", target: "settings", icon: "settings", shortcut: "Ctrl+9" },
   ]},
-  { label: "Operations", items: [
-    { label: "Daily Records", target: "operations", icon: "records", shortcut: "Ctrl+3" },
-    { label: "Feed", target: "feed", icon: "feed" },
-    { label: "Mortality", target: "operations", icon: "mortality" },
-    { label: "Culling", target: "operations", icon: "culling" },
-    { label: "Health", target: "health", icon: "health" },
-    { label: "Drugs", target: "health", icon: "drugs" },
-    { label: "Vaccination", target: "health", icon: "vaccine" },
-    { label: "Water", target: "operations", icon: "water" },
-  ]},
-  { label: "Production", items: [
-    { label: "Eggs", target: "eggs", icon: "eggs", shortcut: "Ctrl+4" },
-    { label: "Weight & Growth", target: "broiler", icon: "growth" },
-  ]},
-  { label: "Inventory", items: [
-    { label: "Stock", target: "inventory", icon: "inventory" },
-    { label: "Purchases", target: "feed", icon: "purchase" },
-    { label: "Suppliers", target: "feed", icon: "supplier" },
-  ]},
-  { label: "Commerce", items: [
-    { label: "Sales", target: "sales", icon: "sales", shortcut: "Ctrl+5" },
-    { label: "Customers", target: "customers", icon: "customers" },
-    { label: "Expenses", target: "expenses", icon: "expenses" },
-  ]},
-  { label: "Reports", items: [{ label: "Reports", target: "reports", icon: "reports", shortcut: "Ctrl+6" }] },
-  { label: "Settings", items: [{ label: "Settings", target: "settings", icon: "settings", shortcut: "Ctrl+7" }] },
 ];
 
-const targets = ["dashboard", "houses", "batches", "operations", "feed", "health", "eggs", "broiler", "inventory", "sales", "customers", "expenses", "reports", "settings"];
+const validPages = ["dashboard", "flocks", "daily-work", "feed-stock", "health", "production", "sales-money", "reports", "settings"];
+const legacyRoutes = {
+  houses: "flocks", batches: "flocks", "batch-dashboard": "flocks",
+  operations: "daily-work", feed: "feed-stock", inventory: "feed-stock",
+  eggs: "production", broiler: "production",
+  sales: "sales-money", customers: "sales-money", expenses: "sales-money",
+  "batch-reports": "reports",
+};
+function resolvePage(hash, startPage = "dashboard") {
+  const candidate = String(hash || "").replace(/^#\/?/, "").split("/")[0];
+  if (validPages.includes(candidate)) return candidate;
+  if (legacyRoutes[candidate]) return legacyRoutes[candidate];
+  if (validPages.includes(startPage)) return startPage;
+  if (legacyRoutes[startPage]) return legacyRoutes[startPage];
+  return "dashboard";
+}
+
+const pageTabs = {
+  flocks: [
+    { id: "batch-dashboard", label: "Batch dashboard" },
+    { id: "flocks", label: "Batches & bird costs" },
+    { id: "houses", label: "Houses / pens" },
+  ],
+  "feed-stock": [
+    { id: "feed", label: "Feed & purchases" },
+    { id: "inventory", label: "Other stock" },
+  ],
+  production: [
+    { id: "eggs", label: "Egg production" },
+    { id: "broiler", label: "Weight & growth" },
+  ],
+  "sales-money": [
+    { id: "customers", label: "Customers" },
+    { id: "sales", label: "Sales" },
+    { id: "expenses", label: "Expenses" },
+  ],
+  reports: [
+    { id: "farm-report", label: "Farm report" },
+    { id: "batch-report", label: "Batch report" },
+  ],
+  settings: [
+    { id: "farm", label: "Farm profile" },
+    { id: "farm-defaults", label: "Farm defaults" },
+    { id: "application", label: "App, appearance & account" },
+    { id: "backup", label: "Backup & restore" },
+    { id: "pricing", label: "Pricing" },
+  ],
+};
+const defaultTabs = {
+  dashboard: "overview", flocks: "batch-dashboard", "daily-work": "daily-work",
+  "feed-stock": "feed", health: "health", production: "eggs",
+  "sales-money": "customers", reports: "farm-report", settings: "farm",
+};
+
+function resolveTab(hash, page) {
+  const requested = String(hash || "").replace(/^#\/?/, "").split("/")[1];
+  const tabs = pageTabs[page] || [];
+  if (tabs.some(tab => tab.id === requested)) return requested;
+  return defaultTabs[page] || "overview";
+}
 
 function Icon({ name }) {
   const paths = {
@@ -69,7 +110,8 @@ function localDateLabel() {
 }
 
 export default function AppShell({ farm, error, children, startPage = "dashboard" }) {
-  const [active, setActive] = useState(startPage);
+  const [active, setActive] = useState(() => resolvePage(window.location.hash, startPage));
+  const [activeTab, setActiveTab] = useState(() => resolveTab(window.location.hash, resolvePage(window.location.hash, startPage)));
   const [theme, setTheme] = useState(getThemePreference);
 
   function changeTheme(event) {
@@ -79,32 +121,41 @@ export default function AppShell({ farm, error, children, startPage = "dashboard
   const today = useMemo(localDateLabel, []);
 
   function navigate(target) {
-    setActive(target);
-    document.getElementById(target)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    const page = resolvePage(`#${target}`, startPage);
+    const tab = defaultTabs[page] || "overview";
+    if (window.location.hash !== `#${page}/${tab}`) window.location.hash = `${page}/${tab}`;
+    setActive(page);
+    setActiveTab(tab);
+  }
+
+  function navigateTab(tab) {
+    const nextHash = `${active}/${tab}`;
+    if (window.location.hash !== `#${nextHash}`) window.location.hash = nextHash;
+    setActiveTab(tab);
   }
 
   useEffect(() => {
-    const onScroll = () => {
-      const current = targets.reduce((best, id) => {
-        const element = document.getElementById(id);
-        if (!element) return best;
-        const distance = Math.abs(element.getBoundingClientRect().top - 110);
-        return distance < best.distance ? { id, distance } : best;
-      }, { id: "dashboard", distance: Number.POSITIVE_INFINITY });
-      setActive(current.id);
+    const syncRoute = () => {
+      const page = resolvePage(window.location.hash, startPage);
+      setActive(page);
+      setActiveTab(resolveTab(window.location.hash, page));
     };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
+    window.addEventListener("hashchange", syncRoute);
+    if (!window.location.hash) window.location.hash = `${resolvePage("", startPage)}/${defaultTabs[resolvePage("", startPage)] || "overview"}`;
+    else syncRoute();
+    return () => window.removeEventListener("hashchange", syncRoute);
+  }, [startPage]);
 
   useEffect(() => {
     const onKeyDown = (event) => {
       if (!event.ctrlKey || event.altKey || event.shiftKey) return;
-      const shortcuts = { "1": "dashboard", "2": "batches", "3": "operations", "4": "eggs", "5": "sales", "6": "reports", "7": "settings" };
+      const shortcuts = { "1": "dashboard", "2": "flocks", "3": "daily-work", "4": "feed-stock", "5": "health", "6": "production", "7": "sales-money", "8": "reports", "9": "settings" };
       const target = shortcuts[event.key];
       if (!target) return;
       event.preventDefault();
-      navigate(target);
+      window.location.hash = `${target}/${defaultTabs[target] || "overview"}`;
+      setActive(target);
+      setActiveTab(defaultTabs[target] || "overview");
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
@@ -174,7 +225,24 @@ export default function AppShell({ farm, error, children, startPage = "dashboard
             </div>
           </header>
           {error && <div className="error">{error}</div>}
-          {children}
+          {(pageTabs[active] || []).length > 0 && (
+            <nav className="page-tabs" aria-label={`${active} sections`}>
+              {pageTabs[active].map(tab => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  className={activeTab === tab.id ? "page-tab active" : "page-tab"}
+                  aria-current={activeTab === tab.id ? "page" : undefined}
+                  onClick={() => navigateTab(tab.id)}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </nav>
+          )}
+          <NavigationContext.Provider value={{ activePage: active, activeTab }}>
+            {children}
+          </NavigationContext.Provider>
         </div>
       </main>
 
