@@ -3,7 +3,7 @@ import { FarmManagerContext } from "../components/FarmManagerContext.jsx";
 import PageSection from "../components/PageSection.jsx";
 
 export default function ReportsPage() {
-  const { selectedBatchId, loadReport } = useContext(FarmManagerContext);
+  const { formatMoney, formatQuantity, formatPercent, formatKg, formatMetric, formatCount, farm, batches, healthRecords, sales, broilerGrowth, eggInventory, dashboard, selectedBatchId, setSelectedBatchId, farmReport, batchReport, loadReport, loadBatchReport, exportCsv, exportPdf } = useContext(FarmManagerContext);
 
   return (
     <div className="grid">
