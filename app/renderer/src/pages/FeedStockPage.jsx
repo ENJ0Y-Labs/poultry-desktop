@@ -13,8 +13,8 @@ export default function FeedStockPage() {
           <div className="subsection">
             <h3>Feed types</h3>
             <form className="inline-form" onSubmit={createFeedType}>
-              <input required placeholder="Name e.g. Starter" value={feedTypeForm.name} onChange={e=>setFeedTypeForm({...feedTypeForm,name:e.target.value})}/>
-              <input required placeholder="Unit e.g. bag or kg" value={feedTypeForm.unit} onChange={e=>setFeedTypeForm({...feedTypeForm,unit:e.target.value})}/>
+              <label className="field"><span>Name e.g. Starter</span><input required value={feedTypeForm.name} onChange={e=>setFeedTypeForm({...feedTypeForm,name:e.target.value})}/></label>
+              <label className="field"><span>Unit e.g. bag or kg</span><input required value={feedTypeForm.unit} onChange={e=>setFeedTypeForm({...feedTypeForm,unit:e.target.value})}/></label>
               <select value={feedTypeForm.applicableType} onChange={e=>setFeedTypeForm({...feedTypeForm,applicableType:e.target.value})}>
                 <option value="BOTH">Both</option><option value="LAYER">Layers</option><option value="BROILER">Broilers</option>
               </select>
@@ -40,8 +40,8 @@ export default function FeedStockPage() {
                 <option value="">Feed type</option>{feedTypes.filter(t=>t.status==="ACTIVE").map(t=><option key={t.id} value={t.id}>{t.name} ({t.unit})</option>)}
               </select>
               <input required type="date" value={feedUsageForm.usageDate} onChange={e=>setFeedUsageForm({...feedUsageForm,usageDate:e.target.value})}/>
-              <input required min="0.001" step="0.001" type="number" placeholder="Quantity" value={feedUsageForm.quantity} onChange={e=>setFeedUsageForm({...feedUsageForm,quantity:e.target.value})}/>
-              <input placeholder="Reason" value={feedUsageForm.reason} onChange={e=>setFeedUsageForm({...feedUsageForm,reason:e.target.value})}/>
+              <label className="field"><span>Quantity</span><input required min="0.001" step="0.001" type="number" value={feedUsageForm.quantity} onChange={e=>setFeedUsageForm({...feedUsageForm,quantity:e.target.value})}/></label>
+              <label className="field"><span>Reason</span><input value={feedUsageForm.reason} onChange={e=>setFeedUsageForm({...feedUsageForm,reason:e.target.value})}/></label>
               <button disabled={saving}>Record usage</button>
             </form>
           </div>
@@ -67,14 +67,14 @@ export default function FeedStockPage() {
           <div className="subsection">
             <h3>Inventory items</h3>
             <form className="inline-form" onSubmit={saveInventoryItem}>
-              <input required placeholder="Item name" value={inventoryItemForm.name} onChange={e=>setInventoryItemForm({...inventoryItemForm,name:e.target.value})}/>
+              <label className="field"><span>Item name</span><input required value={inventoryItemForm.name} onChange={e=>setInventoryItemForm({...inventoryItemForm,name:e.target.value})}/></label>
               <select value={inventoryItemForm.category} onChange={e=>setInventoryItemForm({...inventoryItemForm,category:e.target.value})}>
                 <option value="SUPPLY">Farm supply</option>
                 <option value="DRUG">Drug</option>
                 <option value="VACCINE">Vaccine</option>
               </select>
-              <input required placeholder="Unit e.g. bottle, piece, dose" value={inventoryItemForm.unit} onChange={e=>setInventoryItemForm({...inventoryItemForm,unit:e.target.value})}/>
-              <input min="0" step="0.001" type="number" placeholder="Reorder level" value={inventoryItemForm.reorderLevel} onChange={e=>setInventoryItemForm({...inventoryItemForm,reorderLevel:e.target.value})}/>
+              <label className="field"><span>Unit e.g. bottle, piece, dose</span><input required value={inventoryItemForm.unit} onChange={e=>setInventoryItemForm({...inventoryItemForm,unit:e.target.value})}/></label>
+              <label className="field"><span>Reorder level</span><input min="0" step="0.001" type="number" value={inventoryItemForm.reorderLevel} onChange={e=>setInventoryItemForm({...inventoryItemForm,reorderLevel:e.target.value})}/></label>
               <button disabled={saving}>Add item</button>
             </form>
             <div className="table">
@@ -116,9 +116,9 @@ export default function FeedStockPage() {
                 <option value="ADJUST_OUT">Adjustment out</option>
                 <option value="WASTE">Waste</option>
               </select>
-              <input required min="0.001" step="0.001" type="number" placeholder="Quantity" value={inventoryMovementForm.quantity} onChange={e=>setInventoryMovementForm({...inventoryMovementForm,quantity:e.target.value})}/>
-              <input required placeholder="Reason" value={inventoryMovementForm.reason} onChange={e=>setInventoryMovementForm({...inventoryMovementForm,reason:e.target.value})}/>
-              <input required placeholder="Source e.g. supplier invoice, treatment" value={inventoryMovementForm.source} onChange={e=>setInventoryMovementForm({...inventoryMovementForm,source:e.target.value})}/>
+              <label className="field"><span>Quantity</span><input required min="0.001" step="0.001" type="number" value={inventoryMovementForm.quantity} onChange={e=>setInventoryMovementForm({...inventoryMovementForm,quantity:e.target.value})}/></label>
+              <label className="field"><span>Reason</span><input required value={inventoryMovementForm.reason} onChange={e=>setInventoryMovementForm({...inventoryMovementForm,reason:e.target.value})}/></label>
+              <label className="field"><span>Source e.g. supplier invoice, treatment</span><input required value={inventoryMovementForm.source} onChange={e=>setInventoryMovementForm({...inventoryMovementForm,source:e.target.value})}/></label>
               <select value={inventoryMovementForm.batchId} onChange={e=>setInventoryMovementForm({...inventoryMovementForm,batchId:e.target.value})}>
                 <option value="">Farm-level</option>
                 {batches.map(b=><option key={b.id} value={b.id}>{b.code}</option>)}
@@ -145,9 +145,9 @@ export default function FeedStockPage() {
                 <option value="">Feed type</option>{feedTypes.filter(t=>t.status==="ACTIVE").map(t=><option key={t.id} value={t.id}>{t.name} ({t.unit})</option>)}
               </select>
               <input required type="date" value={feedPurchaseForm.purchaseDate} onChange={e=>setFeedPurchaseForm({...feedPurchaseForm,purchaseDate:e.target.value})}/>
-              <input required min="0.001" step="0.001" type="number" placeholder="Quantity" value={feedPurchaseForm.quantity} onChange={e=>setFeedPurchaseForm({...feedPurchaseForm,quantity:e.target.value})}/>
+              <label className="field"><span>Quantity</span><input required min="0.001" step="0.001" type="number" value={feedPurchaseForm.quantity} onChange={e=>setFeedPurchaseForm({...feedPurchaseForm,quantity:e.target.value})}/></label>
               <select value={feedPurchaseForm.supplierId} onChange={e=>setFeedPurchaseForm({...feedPurchaseForm,supplierId:e.target.value})}><option value="">No supplier recorded</option>{suppliers.filter(supplier=>supplier.status!=="ARCHIVED").map(supplier=><option key={supplier.id} value={supplier.id}>{supplier.name}</option>)}</select>
-              <input required min="1" step="1" type="number" placeholder="Total cost (minor units)" value={feedPurchaseForm.totalCostMinor} onChange={e=>setFeedPurchaseForm({...feedPurchaseForm,totalCostMinor:e.target.value})}/>
+              <label className="field"><span>Total cost (₦)</span><input required type="text" inputMode="decimal" value={feedPurchaseForm.totalCostMinor} onChange={e=>setFeedPurchaseForm({...feedPurchaseForm,totalCostMinor:e.target.value})}/></label>
               <button disabled={saving || feedTypes.filter(t=>t.status==="ACTIVE").length===0}>Record purchase</button>
             </form>
           </div>
