@@ -1,9 +1,12 @@
 import { useContext } from "react";
 import { FarmManagerContext } from "../components/FarmManagerContext.jsx";
+// eslint-disable-next-line no-unused-vars
 import PageSection from "../components/PageSection.jsx";
+import { reportApi } from "../services/api.js";
+import { rememberLastBatchId } from "../utils/farmUx.js";
 
 export default function ReportsPage() {
-  const { formatMoney, formatQuantity, formatPercent, formatKg, formatMetric, formatCount, farm, batches, healthRecords, sales, broilerGrowth, eggInventory, dashboard, selectedBatchId, setSelectedBatchId, farmReport, batchReport, loadReport, loadBatchReport, exportCsv, exportPdf } = useContext(FarmManagerContext);
+  const { formatMoney, formatQuantity, formatPercent, formatKg, formatMetric, formatCount, farm, batches, selectedBatchId, setSelectedBatchId, farmReport, batchReport, loadReport, loadBatchReport, exportCsv, exportPdf } = useContext(FarmManagerContext);
 
   return (
     <div className="grid">
