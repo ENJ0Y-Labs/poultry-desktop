@@ -21,8 +21,8 @@
 - Health has separate Health records, Drugs & treatments, and Vaccination tabs.
 - Feed & Stock has separate Feed & usage, Purchases, Other stock, and Suppliers tabs.
 - Supplier records are loaded and managed through the existing supplier API; feed purchases can reference a registered supplier.
-- The backend connection indicator probes the local API and refreshes periodically. It reports API reachability, not a guarantee that every database operation will succeed.
-- The API base can be configured with `VITE_API_BASE_URL` or the desktop bridge's `apiBaseUrl`; the local loopback address is only the development fallback.
+- The connection indicator probes the backend health endpoint and refreshes periodically. It reports healthy status only when the backend responds successfully and reports a valid database schema.
+- The API base can be configured with `VITE_API_BASE_URL` or the desktop bridge's `getApiBaseUrl`; the local loopback address is only the development fallback.
 - Navigation is fully local and adds no package dependency.
 - Only the active page/tab sections are mounted. The backend remains the source of truth for farm calculations and records.
 
