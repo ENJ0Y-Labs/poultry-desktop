@@ -3,7 +3,7 @@ import { FarmManagerContext } from "../components/FarmManagerContext.jsx";
 import PageSection from "../components/PageSection.jsx";
 
 export default function DashboardPage() {
-  const {  } = useContext(FarmManagerContext);
+  const { formatMoney, formatQuantity, formatCount, farm, dashboard, attention, auditRows } = useContext(FarmManagerContext);
 
   return (
     <div className="grid">
