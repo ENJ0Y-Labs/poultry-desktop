@@ -1,5 +1,4 @@
 :root {
-  color-scheme: dark;
   font-family: Inter, "Segoe UI", system-ui, sans-serif;
   color: var(--palette-e5e9f0);
   background: var(--palette-0b0f14);
@@ -226,3 +225,15 @@ kbd{font-size:8px;font-weight:800;color:var(--muted-2);border:1px solid var(--pa
 :root[data-theme="light"] .error { background: #fff0f0; border-color: #efb5b5; color: #9f2525; }
 :root[data-theme="light"] .pulse,
 :root[data-theme="light"] .status-dot { box-shadow: none; }
+
+.theme-control { display: flex; align-items: center; gap: 7px; color: var(--muted); font-size: 10px; font-weight: 750; white-space: nowrap; }
+.theme-control select { width: auto; min-width: 88px; padding: 7px 9px; background: var(--panel-soft); color: var(--text); border-color: var(--border); }
+:root[data-theme="light"] .nav-item { color: #435164; }
+:root[data-theme="light"] .nav-item:hover { background: #edf2f7; border-color: #d9e1ea; }
+:root[data-theme="light"] .nav-item.active { background: #e8f6fa; color: var(--cyan); border-color: #c9e9ef; }
+:root[data-theme="light"] .metric-card strong,
+:root[data-theme="light"] .dashboard-list strong { color: var(--text); }
+:root[data-theme="light"] .table,
+:root[data-theme="light"] .dashboard-list,
+:root[data-theme="light"] .metric-card,
+:root[data-theme="light"] .attention-item { background: var(--panel-soft); }
