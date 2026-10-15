@@ -12,9 +12,9 @@ async function getApiBase() {
 export const connectionApi = {
   async check() {
     try {
-      // A 404 is still a response from the running backend (for example, before farm setup).
-      const response = await fetch((await getApiBase()) + "/farm", { credentials: "include" });
-      return response.status < 500;
+      const response = await fetch((await getApiBase()) + "/health", { credentials: "include" });
+      const health = await response.json().catch(() => ({}));
+      return response.ok && health.schema === "VALID";
     } catch {
       return false;
     }
