@@ -56,6 +56,7 @@ The preload exposes only the small desktop operations required by the UI, includ
 
 - choose a backup directory
 - request database restore
+- set the native application theme using a validated Auto/Light/Dark preference
 
 IPC handlers reject unexpected arguments.
 
