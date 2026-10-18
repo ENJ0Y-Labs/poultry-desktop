@@ -62,6 +62,13 @@ public class AuthService {
         return sessions.findUserByTokenHash(hashToken(token), Instant.now().toString());
     }
 
+    public Map<String, Object> status(String token) {
+        return Map.of(
+                "authenticated", current(token) != null,
+                "setupRequired", users.count() == 0
+        );
+    }
+
     @Transactional
     public void logout(String token) {
         if (token != null && !token.isBlank()) sessions.delete(hashToken(token));

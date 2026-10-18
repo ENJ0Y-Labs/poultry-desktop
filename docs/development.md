@@ -40,6 +40,8 @@ Start the desktop application:
 npm run dev
 ```
 
+On first launch, create the owner account. On later launches, sign in before the renderer loads farm or account data. Authentication status is checked without making an unauthenticated request to a protected endpoint.
+
 The development backend runs through Maven and uses:
 
 ```

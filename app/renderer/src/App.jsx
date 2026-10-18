@@ -58,7 +58,7 @@ const emptyBirdSale = {
   customerId: "",
 };
 const emptyPricing = { quantity: "", date: todayLocalDate() };
-import { batchApi, broilerApi, costApi, dailyApi, eggApi, expenseApi, farmApi, feedApi, populationApi, healthApi, pricingApi, customerApi, salesApi, inventoryApi, dashboardApi, attentionApi, auditApi, backupApi, reportApi, expenseCategoryApi, accountApi, settingsApi, supplierApi } from "./services/api.js";
+import { authApi, batchApi, broilerApi, costApi, dailyApi, eggApi, expenseApi, farmApi, feedApi, populationApi, healthApi, pricingApi, customerApi, salesApi, inventoryApi, dashboardApi, attentionApi, auditApi, backupApi, reportApi, expenseCategoryApi, accountApi, settingsApi, supplierApi } from "./services/api.js";
 
 const emptyFarm = { name: "", location: "", timezone: "Africa/Lagos", currency: "NGN" };
 const emptyHouse = { name: "", code: "", notes: "" };
@@ -205,6 +205,8 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [authStatus, setAuthStatus] = useState(null);
+  const [authForm, setAuthForm] = useState({ email: "", fullName: "", password: "" });
   const [dashboard, setDashboard] = useState(null);
   const [attention, setAttention] = useState([]);
   const [auditRows, setAuditRows] = useState([]);
@@ -267,8 +269,41 @@ export default function App() {
       setSettingsReady(true);
       setBackupSettings(backupConfig);
     } catch (err) {
-      if (err.message !== "No farm has been created yet.") setError(displayApiError(err));
+      if (err.code === "UNAUTHENTICATED") {
+        setAuthStatus({ authenticated: false, setupRequired: false });
+      } else if (err.message !== "No farm has been created yet.") {
+        setError(displayApiError(err));
+      }
     } finally { setLoading(false); }
+  }
+  async function initialize() {
+    setLoading(true); setError("");
+    try {
+      const status = await authApi.status();
+      setAuthStatus(status);
+      if (status.authenticated) {
+        await load();
+      } else {
+        setLoading(false);
+      }
+    } catch (err) {
+      setError(displayApiError(err));
+      setLoading(false);
+    }
+  }
+  async function submitAuth(event) {
+    event.preventDefault(); setSaving(true); setError("");
+    try {
+      if (authStatus?.setupRequired) {
+        await authApi.setup(authForm);
+        setAuthStatus({ authenticated: false, setupRequired: false });
+      }
+      await authApi.login({ email: authForm.email, password: authForm.password });
+      setAuthStatus({ authenticated: true, setupRequired: false });
+      await load();
+    } catch (err) {
+      setError(displayApiError(err));
+    } finally { setSaving(false); }
   }
   async function loadReport() {
     try {
@@ -331,7 +366,7 @@ export default function App() {
     }
   }
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { initialize(); }, []);
   useEffect(() => { if (farm) { loadDashboard(); loadReport(); } }, [farm, batches.length, inventoryItems.length, sales.length, expenses.length]);
   useEffect(() => {
     if (selectedBatchId && batches.some(batch => batch.id === selectedBatchId)) {
@@ -849,6 +884,29 @@ export default function App() {
   }
 
   if (loading) return <main className="shell"><p className="muted">Loading farm...</p></main>;
+
+  if (!authStatus?.authenticated) return (
+    <main className="shell narrow">
+      <header className="hero">
+        <p className="eyebrow">GRANTINO FARMS</p>
+        <h1>{authStatus?.setupRequired ? "Create owner account" : "Sign in"}</h1>
+        <p className="muted">{authStatus?.setupRequired
+          ? "Create the local owner account to secure and access your farm."
+          : "Sign in to access your local farm data."}</p>
+      </header>
+      {error && <div className="error" role="alert">{error}</div>}
+      {authStatus ? (
+        <form className="card form-grid" onSubmit={submitAuth}>
+          {authStatus.setupRequired && <label>Full name<input required maxLength="120" autoComplete="name" value={authForm.fullName} onChange={e=>setAuthForm({...authForm,fullName:e.target.value})}/></label>}
+          <label>Email<input required type="email" autoComplete="username" value={authForm.email} onChange={e=>setAuthForm({...authForm,email:e.target.value})}/></label>
+          <label>Password<input required type="password" minLength={authStatus.setupRequired ? 10 : undefined} autoComplete={authStatus.setupRequired ? "new-password" : "current-password"} value={authForm.password} onChange={e=>setAuthForm({...authForm,password:e.target.value})}/>{authStatus.setupRequired && <small>Use at least 10 characters.</small>}</label>
+          <button disabled={saving} type="submit">{saving ? "Please wait..." : authStatus.setupRequired ? "Create account and sign in" : "Sign in"}</button>
+        </form>
+      ) : (
+        <button type="button" onClick={initialize}>Retry connection</button>
+      )}
+    </main>
+  );
 
   if (!farm) return (
     <main className="shell narrow">

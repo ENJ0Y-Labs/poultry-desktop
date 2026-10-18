@@ -748,6 +748,7 @@ For local-only operation:
 - never store plaintext passwords
 - use a strong password hashing algorithm supported by the selected Java security library
 - audit important authentication/account actions
+- the renderer must check session/setup status before calling protected APIs and provide first-run owner setup and sign-in flows
 
 Multi-user roles and permissions are future work.
 

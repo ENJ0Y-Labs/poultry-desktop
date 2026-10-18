@@ -23,6 +23,11 @@ public class AuthController {
         return ResponseEntity.ok(Map.of("ok", true, "data", service.setup(request)));
     }
 
+    @GetMapping("/status")
+    ResponseEntity<?> status(HttpServletRequest request) {
+        return ResponseEntity.ok(Map.of("ok", true, "data", service.status(sessionToken(request))));
+    }
+
     @PostMapping("/login")
     ResponseEntity<?> login(@Valid @RequestBody LoginRequest request, HttpServletResponse response) {
         AuthService.Session session = service.login(request);
@@ -32,9 +37,7 @@ public class AuthController {
 
     @PostMapping("/logout")
     ResponseEntity<?> logout(HttpServletRequest request, HttpServletResponse response) {
-        jakarta.servlet.http.Cookie cookie = request.getCookies() == null ? null :
-                Arrays.stream(request.getCookies()).filter(c -> AuthService.COOKIE.equals(c.getName())).findFirst().orElse(null);
-        service.logout(cookie == null ? null : cookie.getValue());
+        service.logout(sessionToken(request));
         response.addHeader("Set-Cookie", AuthService.COOKIE + "=; Path=/; HttpOnly; Max-Age=0; SameSite=Strict");
         return ResponseEntity.ok(Map.of("ok", true, "data", Map.of()));
     }
@@ -45,5 +48,14 @@ public class AuthController {
         if (!(value instanceof Map<?, ?> map)) return ResponseEntity.status(401).body(Map.of(
                 "ok", false, "error", Map.of("code", "UNAUTHENTICATED", "message", "No active session.")));
         return ResponseEntity.ok(Map.of("ok", true, "data", map));
+    }
+
+    private String sessionToken(HttpServletRequest request) {
+        if (request.getCookies() == null) return null;
+        return Arrays.stream(request.getCookies())
+                .filter(cookie -> AuthService.COOKIE.equals(cookie.getName()))
+                .map(jakarta.servlet.http.Cookie::getValue)
+                .findFirst()
+                .orElse(null);
     }
 }
