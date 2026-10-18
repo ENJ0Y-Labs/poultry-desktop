@@ -98,6 +98,20 @@ If replacement has started and the restarted backend cannot become healthy, Elec
 
 The restore flow also removes stale SQLite WAL/SHM files associated with the replaced database so old journal state cannot be mixed with the restored database.
 
+## Restore verification checklist
+
+Run these checks against a disposable database before releasing a restore-related change:
+
+1. Create a farm record and confirm it is committed.
+2. Enable SQLite WAL mode in the test database, commit another record, and create the pre-restore safety snapshot.
+3. Validate the safety snapshot before stopping the backend; reject the restore if validation fails.
+4. Restore a known-good backup and verify the expected records after the backend restarts.
+5. Force replacement/startup failure after the live database has been moved aside. Verify recovery restores the safety snapshot, removes the failed database's `-wal` and `-shm` files, and starts the backend against the recovered database.
+6. Verify the recovered database passes the normal backend readiness/schema checks and contains all records present in the safety snapshot.
+7. Repeat on Windows, where process termination and open-file semantics differ from Unix.
+
+Do not run destructive restore drills against the live farm database. The checklist is an acceptance procedure; it is not a substitute for automated tests of the Electron restore orchestration.
+
 ## Safety considerations
 
 - Never restore the active database file over itself.
