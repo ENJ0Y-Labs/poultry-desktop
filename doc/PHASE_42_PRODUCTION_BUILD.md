@@ -34,7 +34,7 @@ npm run package
     |      Maven Wrapper creates backend/target/poultry-backend.jar
     |
     +--> package:verify
-    |      verifies renderer, main, preload, backend JAR and Java runtime
+    |      verifies renderer, main, ESM preload, backend JAR and Java runtime
     |
     +--> electron-builder
            creates Windows NSIS installer in release/
@@ -93,7 +93,7 @@ The verification checks:
 
 - dist/renderer/index.html
 - dist/main/main.js
-- dist/preload/preload.js
+- dist/preload/preload.mjs
 - backend/target/poultry-backend.jar
 - runtime/bin/java.exe on Windows
 

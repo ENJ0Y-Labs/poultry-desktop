@@ -166,10 +166,22 @@ public class BackupService {
         }
     }
 
+    private String backupSortKey(Path path) {
+        // Parse the date and optional HHmm/suffix rather than sorting raw filenames:
+        // poultry-YYYY-MM-DD.db must sort older than poultry-YYYY-MM-DD-HHmm.db.
+        String name = path.getFileName().toString();
+        java.util.regex.Matcher matcher = java.util.regex.Pattern
+                .compile("^poultry-(\\d{4}-\\d{2}-\\d{2})(?:-(\\d{4})(?:-(\\d+))?)?\\.db$")
+                .matcher(name);
+        if (!matcher.matches()) return "";
+        return matcher.group(1) + "-" + (matcher.group(2) == null ? "0000" : matcher.group(2))
+                + "-" + (matcher.group(3) == null ? "0000" : String.format("%04d", Integer.parseInt(matcher.group(3))));
+    }
+
     private void prune(Path dir)throws Exception{
         try(Stream<Path>s=Files.list(dir)){
-            List<Path> backups=s.filter(p->BACKUP_NAME.matcher(p.getFileName().toString()).matches())
-                    .sorted(Comparator.comparing(Path::toString).reversed()).toList();
+            List<Path> backups=s.filter(p -> BACKUP_NAME.matcher(p.getFileName().toString()).matches())
+                    .sorted(Comparator.comparing(this::backupSortKey).reversed()).toList();
             for(int i=30;i<backups.size();i++)Files.deleteIfExists(backups.get(i));
         }
     }

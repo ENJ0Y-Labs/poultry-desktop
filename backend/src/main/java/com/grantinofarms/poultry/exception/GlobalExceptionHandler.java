@@ -7,6 +7,9 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -129,6 +132,24 @@ public class GlobalExceptionHandler {
         log.error("database_sql_error", e);
         return error(HttpStatus.INTERNAL_SERVER_ERROR, "DATABASE_OPERATION_FAILED",
                 "The database operation could not be completed.");
+    }
+
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    ResponseEntity<?> methodNotAllowed(HttpRequestMethodNotSupportedException e) {
+        log.warn("http_method_not_allowed method={}", e.getMethod());
+        return error(HttpStatus.METHOD_NOT_ALLOWED, "METHOD_NOT_ALLOWED", "The HTTP method is not supported for this endpoint.");
+    }
+
+    @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
+    ResponseEntity<?> unsupportedMediaType(HttpMediaTypeNotSupportedException e) {
+        log.warn("http_media_type_not_supported");
+        return error(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "UNSUPPORTED_MEDIA_TYPE", "The request content type is not supported.");
+    }
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    ResponseEntity<?> notFound(NoResourceFoundException e) {
+        log.warn("http_route_not_found");
+        return error(HttpStatus.NOT_FOUND, "NOT_FOUND", "The requested endpoint was not found.");
     }
 
     @ExceptionHandler(Exception.class)
