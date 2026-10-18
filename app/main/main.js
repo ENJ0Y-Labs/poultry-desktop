@@ -171,6 +171,9 @@ ipcMain.handle("backup:restore", async (_event, ...args) => {
       throw new Error(safetyBody?.error?.message || "The pre-restore safety backup could not be created.");
     }
     const safety = safetyBody.data.path;
+    // Validate the safety snapshot before any destructive operation. A backup
+    // that exists but cannot be opened is not a recovery plan.
+    await validateBackup(safety);
     log("restore_safety_backup_created", { filename: backupFilename(safety) });
 
     await backendManager.stop();
@@ -204,8 +207,17 @@ ipcMain.handle("backup:restore", async (_event, ...args) => {
 
       rmSync(temporary, { force: true });
       if (replacementStarted) {
+        // Never let journal files from the failed replacement attach to the
+        // recovered database. SQLite can recreate these files on restart.
         rmSync(database, { force: true });
-        if (existsSync(safety)) copyFileSync(safety, database);
+        rmSync(wal, { force: true });
+        rmSync(shm, { force: true });
+        if (!existsSync(safety)) {
+          throw new Error("The pre-restore safety backup is missing; automatic recovery is impossible.");
+        }
+        copyFileSync(safety, database);
+        // A safety copy is only useful if it remains valid after being copied.
+        await validateBackup(database);
       }
 
       try {
