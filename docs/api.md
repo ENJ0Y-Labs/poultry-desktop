@@ -171,11 +171,14 @@ Audit history is read-only through the normal application API.
 - POST `/auth/setup`
 - POST `/auth/login`
 - POST `/auth/logout`
+- GET `/auth/status`
 - GET `/auth/me`
 - GET `/account`
 - PUT `/account`
 
-Production requires an authenticated owner session. Authentication uses an HTTP-only, SameSite=Strict session cookie.
+The desktop checks `/auth/status` before loading protected farm or account data. The status endpoint returns whether a valid session exists and whether the initial owner setup is still required; it does not expose account credentials or require authentication. If setup is required, the renderer creates the owner account and signs in. Otherwise it prompts the owner to sign in.
+
+Production requires an authenticated owner session. Authentication uses an HTTP-only, SameSite=Strict session cookie. `/auth/me` returns HTTP 401 without an active session; use `/auth/status` to check session state without an expected authorization error.
 
 ## Application and backup settings
 

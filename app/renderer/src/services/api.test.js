@@ -25,6 +25,21 @@ describe("API client", () => {
     );
   });
 
+  it("checks authentication status without requiring a session", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ ok: true, data: { authenticated: false, setupRequired: true } }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      })
+    );
+
+    await expect(authApi.status()).resolves.toEqual({ authenticated: false, setupRequired: true });
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining("/auth/status"),
+      expect.objectContaining({ credentials: "include" })
+    );
+  });
+
   it("loads backend-derived attention rows with credentials", async () => {
     const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
       new Response(JSON.stringify({

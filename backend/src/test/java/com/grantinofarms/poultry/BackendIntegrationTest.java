@@ -44,8 +44,18 @@ class BackendIntegrationTest {
 
     @Test
     void protectedApiRejectsAnonymousRequestsAndAcceptsAuthenticatedRequests() throws Exception {
+        mockMvc.perform(get("/api/v1/auth/status"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.authenticated").value(false))
+                .andExpect(jsonPath("$.data.setupRequired").value(true));
+
         auth.setup(new com.grantinofarms.poultry.dto.AuthSetupRequest(
                 "owner@example.com", "correct-horse-battery", "Farm Owner"));
+
+        mockMvc.perform(get("/api/v1/auth/status"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.authenticated").value(false))
+                .andExpect(jsonPath("$.data.setupRequired").value(false));
 
         mockMvc.perform(get("/api/v1/batches"))
                 .andExpect(status().isUnauthorized())
@@ -66,6 +76,11 @@ class BackendIntegrationTest {
         var session = login.getResponse().getCookie(AuthService.COOKIE);
         assertThat(session).isNotNull();
         assertThat(session.isHttpOnly()).isTrue();
+
+        mockMvc.perform(get("/api/v1/auth/status").cookie(session))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.authenticated").value(true))
+                .andExpect(jsonPath("$.data.setupRequired").value(false));
 
         farmService.create(new FarmCreateRequest(
                 "Grantino Farms", "Port Harcourt", "Africa/Lagos", "NGN"));

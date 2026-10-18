@@ -2,7 +2,7 @@ import { fireEvent, render, screen, waitFor, within } from "@testing-library/rea
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App.jsx";
 import {
-  farmApi, batchApi, expenseApi, customerApi, salesApi, inventoryApi,
+  authApi, farmApi, batchApi, expenseApi, customerApi, salesApi, inventoryApi,
   feedApi, pricingApi, dashboardApi, attentionApi, auditApi,
   eggApi, broilerApi, reportApi, expenseCategoryApi, accountApi, settingsApi, supplierApi,
 } from "./services/api.js";
@@ -165,6 +165,7 @@ beforeEach(() => {
   localStorage.clear();
   window.location.hash = "";
   document.body.innerHTML = "";
+  vi.spyOn(authApi, "status").mockResolvedValue({ authenticated: true, setupRequired: false });
 });
 
 describe("App", () => {
@@ -191,7 +192,18 @@ describe("App", () => {
     vi.spyOn(dashboardApi, "farm").mockResolvedValue(null);
     vi.spyOn(attentionApi, "list").mockResolvedValue([]);
     vi.spyOn(auditApi, "list").mockResolvedValue([]);
+    vi.spyOn(expenseCategoryApi, "list").mockResolvedValue([]);
+    vi.spyOn(accountApi, "get").mockResolvedValue({
+      id: "user-1", email: "owner@example.com", fullName: "Farm Owner", role: "OWNER"
+    });
+    vi.spyOn(settingsApi, "application").mockResolvedValue({
+      startPage: "dashboard", dateFormat: "YYYY-MM-DD"
+    });
+    vi.spyOn(settingsApi, "backup").mockResolvedValue({
+      enabled: false, directory: "", intervalMs: 86400000
+    });
 
+    await waitFor(() => expect(resolveFarm).toBeTypeOf("function"));
     resolveFarm(farm);
     await waitFor(() => expect(screen.getByRole("heading", { name: "Farm dashboard" })).toBeInTheDocument());
   });
@@ -204,6 +216,40 @@ describe("App", () => {
     await waitFor(() => expect(screen.getByRole("heading", { name: /set up your farm/i })).toBeInTheDocument());
     expect(screen.getByText("GRANTINO FARMS")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Create farm" })).toBeInTheDocument();
+  });
+
+  it("prompts for sign-in before requesting protected account data", async () => {
+    mockFarmApis();
+    vi.mocked(authApi.status).mockResolvedValue({ authenticated: false, setupRequired: false });
+    const accountRequest = vi.mocked(accountApi.get);
+
+    render(<App />);
+
+    expect(await screen.findByRole("heading", { name: "Sign in" })).toBeInTheDocument();
+    expect(accountRequest).not.toHaveBeenCalled();
+  });
+
+  it("creates the initial owner account, signs in, then loads the farm", async () => {
+    mockFarmApis();
+    vi.mocked(authApi.status).mockResolvedValue({ authenticated: false, setupRequired: true });
+    const setup = vi.spyOn(authApi, "setup").mockResolvedValue({});
+    const login = vi.spyOn(authApi, "login").mockResolvedValue({});
+
+    render(<App />);
+
+    await screen.findByRole("heading", { name: "Create owner account" });
+    fireEvent.change(screen.getByLabelText("Full name"), { target: { value: "Farm Owner" } });
+    fireEvent.change(screen.getByLabelText("Email"), { target: { value: "owner@example.com" } });
+    fireEvent.change(screen.getByLabelText(/Password/), { target: { value: "correct-horse-battery" } });
+    fireEvent.click(screen.getByRole("button", { name: "Create account and sign in" }));
+
+    await waitFor(() => expect(screen.getByRole("heading", { name: "Farm dashboard" })).toBeInTheDocument());
+    expect(setup).toHaveBeenCalledWith({
+      fullName: "Farm Owner",
+      email: "owner@example.com",
+      password: "correct-horse-battery",
+    });
+    expect(login).toHaveBeenCalledWith({ email: "owner@example.com", password: "correct-horse-battery" });
   });
 
   it("blocks an invalid setup form before calling the API", async () => {
