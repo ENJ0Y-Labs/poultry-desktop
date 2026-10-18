@@ -9,7 +9,8 @@ import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.apache.pdfbox.pdmodel.font.PDFont;
 import org.apache.pdfbox.pdmodel.font.PDType0Font;
 import org.apache.pdfbox.pdmodel.font.PDType1Font;
-import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import org.apache.pdfbox.pdmodel.font.Standard14Fonts;
 import org.springframework.stereotype.Service;
 
@@ -111,18 +112,23 @@ public class ReportExportService {
 
         private PdfWriter(PDDocument document) throws IOException {
             this.document = document;
-            InputStream regularFont = ReportExportService.class.getResourceAsStream("/fonts/DejaVuSans.ttf");
-            InputStream boldFont = ReportExportService.class.getResourceAsStream("/fonts/DejaVuSans-Bold.ttf");
-            if (regularFont == null || boldFont == null) {
-                throw new IOException("Bundled Unicode fonts are missing from /fonts.");
+            Path regularPath = findFont("arial.ttf", "segoeui.ttf");
+            Path boldPath = findFont("arialbd.ttf", "segoeuib.ttf");
+            if (regularPath == null || boldPath == null) {
+                throw new IOException("A Unicode TrueType font (Arial or Segoe UI) is required for PDF export.");
             }
-            try (regularFont; boldFont) {
-                this.regular = PDType0Font.load(document, regularFont);
-                this.bold = PDType0Font.load(document, boldFont);
-            }
+            this.regular = PDType0Font.load(document, regularPath.toFile());
+            this.bold = PDType0Font.load(document, boldPath.toFile());
             openPage();
         }
 
+        private Path findFont(String... names) {
+            for (String name : names) {
+                Path path = Path.of("C:/Windows/Fonts", name);
+                if (Files.isRegularFile(path)) return path;
+            }
+            return null;
+        }
         private void openPage() throws IOException {
             PDPage page = new PDPage(PDRectangle.A4);
             document.addPage(page);
