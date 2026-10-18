@@ -3,6 +3,8 @@ package com.grantinofarms.poultry;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.grantinofarms.poultry.service.ReportExportService;
 import org.junit.jupiter.api.Test;
+import org.apache.pdfbox.Loader;
+import org.apache.pdfbox.text.PDFTextStripper;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -33,7 +35,7 @@ class ReportExportServiceTest {
     }
 
     @Test
-    void pdfProducesARealPdfDocument() {
+    void pdfProducesAReadableDocumentWithoutOperatingSystemFonts() throws Exception {
         byte[] pdf = service.pdf(
                 Map.of("reportType", "BATCH_SUMMARY", "profitMinor", 500000),
                 "Batch Report"
@@ -41,5 +43,11 @@ class ReportExportServiceTest {
 
         assertThat(pdf).startsWith("%PDF".getBytes(StandardCharsets.US_ASCII));
         assertThat(pdf).contains("%EOF".getBytes(StandardCharsets.US_ASCII));
+
+        try (var document = Loader.loadPDF(pdf)) {
+            assertThat(document.getNumberOfPages()).isEqualTo(1);
+            assertThat(new PDFTextStripper().getText(document))
+                    .contains("Batch Report", "reportType: BATCH_SUMMARY", "profitMinor: 500000");
+        }
     }
 }
