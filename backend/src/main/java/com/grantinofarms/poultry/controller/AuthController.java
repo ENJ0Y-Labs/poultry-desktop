@@ -31,14 +31,14 @@ public class AuthController {
     @PostMapping("/login")
     ResponseEntity<?> login(@Valid @RequestBody LoginRequest request, HttpServletRequest httpRequest, HttpServletResponse response) {
         AuthService.Session session = service.login(request, httpRequest.getRemoteAddr());
-        response.addHeader("Set-Cookie", AuthService.COOKIE + "=" + session.token() + "; Path=/; HttpOnly; SameSite=Strict");
+        response.addHeader("Set-Cookie", AuthService.COOKIE + "=" + session.token() + "; Path=/; HttpOnly; SameSite=None; Secure");
         return ResponseEntity.ok(Map.of("ok", true, "data", session.user()));
     }
 
     @PostMapping("/logout")
     ResponseEntity<?> logout(HttpServletRequest request, HttpServletResponse response) {
         service.logout(sessionToken(request));
-        response.addHeader("Set-Cookie", AuthService.COOKIE + "=; Path=/; HttpOnly; Max-Age=0; SameSite=Strict");
+        response.addHeader("Set-Cookie", AuthService.COOKIE + "=; Path=/; HttpOnly; Max-Age=0; SameSite=None; Secure");
         return ResponseEntity.ok(Map.of("ok", true, "data", Map.of()));
     }
 
