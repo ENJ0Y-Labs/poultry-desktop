@@ -79,5 +79,6 @@
     "electron": true,
     "esbuild": true,
     "electron-winstaller": true
-  }
+  },
+  "type": "module"
 }
