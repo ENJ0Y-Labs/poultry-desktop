@@ -1,6 +1,6 @@
 # Backup and restore
 
-Poultry Farm Manager uses SQLite locally. Backup and restore are designed around SQLite's consistency requirements rather than treating the database as an ordinary static file.
+Pomas uses SQLite locally. Backup and restore are designed around SQLite's consistency requirements rather than treating the database as an ordinary static file.
 
 ## Backup creation
 

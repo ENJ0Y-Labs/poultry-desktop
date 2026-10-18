@@ -26,6 +26,13 @@ Stage 8 feed management is implemented. Stage 9 daily farm operations is impleme
 
 Do not build later-stage features unless the owner explicitly changes the stage.
 
+### Branding
+
+The product is branded **Pomas** (egg-and-M logo). Logo sources: `build/icon.ico` and `build/icon.png` (installer/executable), `app/assets/icon.png` (window icon), `app/renderer/src/assets/pomas-logo.png` (sidebar mark).
+
+The installer ID (`appId`), repository name, Java packages, and database file name are intentionally unchanged. Packaged builds pin Electron's `userData` to the folder `%APPDATA%/Poultry Farm Manager` (see `app/main/main.js`) so installs created before the rename keep finding their data. Do not remove that pin without a data-migration plan.
+
+
 ## 2. Non-negotiables
 
 1. Derived state is calculated, never manually stored or maintained.
