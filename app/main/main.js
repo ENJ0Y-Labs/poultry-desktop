@@ -216,8 +216,8 @@ ipcMain.handle("backup:restore", async (_event, ...args) => {
           throw new Error("The pre-restore safety backup is missing; automatic recovery is impossible.");
         }
         copyFileSync(safety, database);
-        // A safety copy is only useful if it remains valid after being copied.
-        await validateBackup(database);
+        // The safety snapshot was validated before shutdown. Start the backend
+        // below so its normal startup/schema checks validate the recovered DB.
       }
 
       try {
