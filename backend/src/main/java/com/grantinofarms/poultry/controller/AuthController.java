@@ -29,8 +29,8 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    ResponseEntity<?> login(@Valid @RequestBody LoginRequest request, HttpServletResponse response) {
-        AuthService.Session session = service.login(request);
+    ResponseEntity<?> login(@Valid @RequestBody LoginRequest request, HttpServletRequest httpRequest, HttpServletResponse response) {
+        AuthService.Session session = service.login(request, httpRequest.getRemoteAddr());
         response.addHeader("Set-Cookie", AuthService.COOKIE + "=" + session.token() + "; Path=/; HttpOnly; SameSite=Strict");
         return ResponseEntity.ok(Map.of("ok", true, "data", session.user()));
     }
