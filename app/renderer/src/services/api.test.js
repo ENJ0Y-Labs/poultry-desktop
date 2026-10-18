@@ -20,7 +20,7 @@ describe("API client", () => {
       expect.stringContaining("/auth/me"),
       expect.objectContaining({
         credentials: "include",
-        headers: expect.objectContaining({ "Content-Type": "application/json" }),
+        headers: expect.objectContaining({ "Content-Type": "application/json", "X-Requested-With": "XMLHttpRequest" }),
       })
     );
   });
