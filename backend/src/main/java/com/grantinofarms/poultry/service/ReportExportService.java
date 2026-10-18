@@ -95,6 +95,9 @@ public class ReportExportService {
 
     private String escapeCsv(String value) {
         String safe = value == null ? "" : value;
+        // Keep plain negative numbers numeric, but neutralize formula-like text.
+        boolean numeric = safe.matches("-?\\d+(\\.\\d+)?");
+        if (!numeric && safe.matches("(?s)^[\\s\\p{Cc}]*[=+@-].*")) safe = "\'" + safe;
         return "\"" + safe.replace("\"", "\"\"") + "\"";
     }
 
