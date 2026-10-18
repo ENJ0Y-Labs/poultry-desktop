@@ -8,14 +8,12 @@ import org.apache.pdfbox.pdmodel.PDPageContentStream;
 import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.apache.pdfbox.pdmodel.font.PDFont;
 import org.apache.pdfbox.pdmodel.font.PDType0Font;
-import org.apache.pdfbox.pdmodel.font.PDType1Font;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import org.apache.pdfbox.pdmodel.font.Standard14Fonts;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -107,6 +105,15 @@ public class ReportExportService {
     }
 
     private static final class PdfWriter {
+        private static final List<String[]> FONT_FILE_NAMES = List.of(
+                new String[]{"arial.ttf", "arialbd.ttf"},
+                new String[]{"Arial.ttf", "Arial Bold.ttf"},
+                new String[]{"segoeui.ttf", "segoeuib.ttf"},
+                new String[]{"DejaVuSans.ttf", "DejaVuSans-Bold.ttf"},
+                new String[]{"LiberationSans-Regular.ttf", "LiberationSans-Bold.ttf"},
+                new String[]{"FreeSans.ttf", "FreeSansBold.ttf"}
+        );
+
         private final PDDocument document;
         private final PDFont regular;
         private final PDFont bold;
@@ -115,23 +122,48 @@ public class ReportExportService {
 
         private PdfWriter(PDDocument document) throws IOException {
             this.document = document;
-            Path regularPath = findFont("arial.ttf", "segoeui.ttf");
-            Path boldPath = findFont("arialbd.ttf", "segoeuib.ttf");
-            if (regularPath == null || boldPath == null) {
-                throw new IOException("A Unicode TrueType font (Arial or Segoe UI) is required for PDF export.");
+            FontFiles fonts = findFonts();
+            if (fonts == null) {
+                throw new IOException("A Unicode TrueType font (Arial, Segoe UI, DejaVu Sans, Liberation Sans, or FreeSans) is required for PDF export.");
             }
-            this.regular = PDType0Font.load(document, regularPath.toFile());
-            this.bold = PDType0Font.load(document, boldPath.toFile());
+            this.regular = PDType0Font.load(document, fonts.regular().toFile());
+            this.bold = PDType0Font.load(document, fonts.bold().toFile());
             openPage();
         }
 
-        private Path findFont(String... names) {
-            for (String name : names) {
-                Path path = Path.of("C:/Windows/Fonts", name);
-                if (Files.isRegularFile(path)) return path;
+        private FontFiles findFonts() {
+            List<Path> directories = new ArrayList<>();
+            String windowsDirectory = System.getenv("WINDIR");
+            if (windowsDirectory != null && !windowsDirectory.isBlank()) {
+                directories.add(Path.of(windowsDirectory, "Fonts"));
+            }
+            String localAppData = System.getenv("LOCALAPPDATA");
+            if (localAppData != null && !localAppData.isBlank()) {
+                directories.add(Path.of(localAppData, "Microsoft", "Windows", "Fonts"));
+            }
+            directories.addAll(List.of(
+                    Path.of("/usr/share/fonts/truetype/dejavu"),
+                    Path.of("/usr/share/fonts/truetype/liberation2"),
+                    Path.of("/usr/share/fonts/truetype/liberation"),
+                    Path.of("/usr/share/fonts/truetype/freefont"),
+                    Path.of("/System/Library/Fonts/Supplemental"),
+                    Path.of("/Library/Fonts")
+            ));
+
+            for (Path directory : directories) {
+                for (String[] names : FONT_FILE_NAMES) {
+                    Path regularPath = directory.resolve(names[0]);
+                    Path boldPath = directory.resolve(names[1]);
+                    if (Files.isRegularFile(regularPath) && Files.isRegularFile(boldPath)) {
+                        return new FontFiles(regularPath, boldPath);
+                    }
+                }
             }
             return null;
         }
+
+        private record FontFiles(Path regular, Path bold) {}
+
         private void openPage() throws IOException {
             PDPage page = new PDPage(PDRectangle.A4);
             document.addPage(page);

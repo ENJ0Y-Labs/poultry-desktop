@@ -158,7 +158,7 @@ Optional `asOf=YYYY-MM-DD` is supported where the service exposes historical cal
 - GET `/reports/farm.pdf`
 - GET `/reports/batches/{id}.pdf`
 
-Reports reuse the same backend calculation services used by dashboards. CSV and PDF are export representations of those report results.
+Reports reuse the same backend calculation services used by dashboards. CSV and PDF are export representations of those report results. PDF exports embed a locally installed Unicode font; font discovery supports Windows system/user fonts and common DejaVu Sans, Liberation Sans, and FreeSans directories on Linux and macOS.
 
 ## Audit
 
