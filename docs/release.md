@@ -45,15 +45,17 @@ npm run package
 Packaging performs:
 
 1. `npm run package:runtime`
-2. `npm run build`
+2. `npm run build` (including the ESM preload at `dist/preload/preload.mjs`)
 3. `npm run backend:package`
-4. `electron-builder`
+4. `npm run package:verify`
+5. `electron-builder`
 
 The runtime preparation uses `jlink` and creates the ignored `runtime/` directory.
 It includes `java.desktop` for Spring Boot property binding, plus the HTTP, security,
 database, and supporting modules required by the backend. `npm run package:verify`
 checks the generated runtime's module list before Electron Builder includes the backend
-JAR and runtime as extra resources.
+JAR and runtime as extra resources. The verifier checks the generated ESM preload
+at `dist/preload/preload.mjs`, matching Electron's configured preload path.
 
 The Windows installer is emitted under:
 
