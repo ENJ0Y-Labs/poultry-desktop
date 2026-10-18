@@ -6,7 +6,10 @@ import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
 import org.apache.pdfbox.pdmodel.common.PDRectangle;
+import org.apache.pdfbox.pdmodel.font.PDFont;
+import org.apache.pdfbox.pdmodel.font.PDType0Font;
 import org.apache.pdfbox.pdmodel.font.PDType1Font;
+import java.io.InputStream;
 import org.apache.pdfbox.pdmodel.font.Standard14Fonts;
 import org.springframework.stereotype.Service;
 
@@ -101,13 +104,22 @@ public class ReportExportService {
 
     private static final class PdfWriter {
         private final PDDocument document;
-        private final PDType1Font regular = new PDType1Font(Standard14Fonts.FontName.HELVETICA);
-        private final PDType1Font bold = new PDType1Font(Standard14Fonts.FontName.HELVETICA_BOLD);
+        private final PDFont regular;
+        private final PDFont bold;
         private PDPageContentStream stream;
         private float y;
 
         private PdfWriter(PDDocument document) throws IOException {
             this.document = document;
+            InputStream regularFont = ReportExportService.class.getResourceAsStream("/fonts/DejaVuSans.ttf");
+            InputStream boldFont = ReportExportService.class.getResourceAsStream("/fonts/DejaVuSans-Bold.ttf");
+            if (regularFont == null || boldFont == null) {
+                throw new IOException("Bundled Unicode fonts are missing from /fonts.");
+            }
+            try (regularFont; boldFont) {
+                this.regular = PDType0Font.load(document, regularFont);
+                this.bold = PDType0Font.load(document, boldFont);
+            }
             openPage();
         }
 
@@ -131,7 +143,7 @@ public class ReportExportService {
             }
         }
 
-        private void writeText(String text, PDType1Font font, float size) {
+        private void writeText(String text, PDFont font, float size) {
             ensureSpace();
             try {
                 stream.beginText();
@@ -190,7 +202,7 @@ public class ReportExportService {
             }
             StringBuilder safe = new StringBuilder(value.length());
             for (char c : value.toCharArray()) {
-                safe.append(c >= 32 && c <= 255 ? c : '?');
+                safe.append((c >= 32 && c != 127) || c == '\t' ? c : ' ');
             }
             return safe.toString();
         }
