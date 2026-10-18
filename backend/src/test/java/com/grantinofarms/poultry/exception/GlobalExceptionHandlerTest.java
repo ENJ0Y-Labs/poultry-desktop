@@ -2,6 +2,8 @@ package com.grantinofarms.poultry.exception;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 
 import java.util.Map;
 
@@ -43,6 +45,40 @@ class GlobalExceptionHandlerTest {
                         "error", Map.of(
                                 "code", "INTERNAL_ERROR",
                                 "message", "The operation could not be completed."
+                        )
+                ),
+                response.getBody()
+        );
+    }
+
+    @Test
+    void unsupportedMethodReturnsStableClientError() {
+        var response = handler.methodNotAllowed(new HttpRequestMethodNotSupportedException("TRACE"));
+
+        assertEquals(405, response.getStatusCode().value());
+        assertEquals(
+                Map.of(
+                        "ok", false,
+                        "error", Map.of(
+                                "code", "METHOD_NOT_ALLOWED",
+                                "message", "The HTTP method is not supported for this endpoint."
+                        )
+                ),
+                response.getBody()
+        );
+    }
+
+    @Test
+    void unsupportedMediaTypeReturnsStableClientError() {
+        var response = handler.unsupportedMediaType(new HttpMediaTypeNotSupportedException("text/plain"));
+
+        assertEquals(415, response.getStatusCode().value());
+        assertEquals(
+                Map.of(
+                        "ok", false,
+                        "error", Map.of(
+                                "code", "UNSUPPORTED_MEDIA_TYPE",
+                                "message", "The request content type is not supported."
                         )
                 ),
                 response.getBody()
