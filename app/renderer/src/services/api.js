@@ -36,7 +36,7 @@ async function request(path, options = {}) {
   try {
     response = await fetch((await getApiBase()) + path, {
       credentials: "include",
-      headers: { "Content-Type": "application/json", ...(options.headers || {}) },
+      headers: { "Content-Type": "application/json", "X-Requested-With": "XMLHttpRequest", ...(options.headers || {}) },
       ...options,
     });
   } catch {

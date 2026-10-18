@@ -8,11 +8,19 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 public class WebConfig implements WebMvcConfigurer {
     @Override
     public void addCorsMappings(CorsRegistry registry) {
+        // Keep the dev server ports explicit. A wildcard port would let any
+        // unrelated localhost website ask the local farm API for credentials.
+        // Electron's packaged file:// renderer sends Origin: null.
         registry.addMapping("/api/**")
-                .allowedOriginPatterns("http://localhost:*","http://127.0.0.1:*","null")
-                .allowedMethods("GET","POST","PUT","PATCH","DELETE","OPTIONS")
-                .allowedHeaders("*")
+                .allowedOrigins(
+                        "http://localhost:5173",
+                        "http://127.0.0.1:5173",
+                        "http://localhost:4173",
+                        "http://127.0.0.1:4173",
+                        "null")
+                .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
+                .allowedHeaders("Content-Type", "X-Requested-With")
                 .allowCredentials(true)
-                .maxAge(3600);
+                .maxAge(600);
     }
 }
