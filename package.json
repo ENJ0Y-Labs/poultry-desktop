@@ -2,7 +2,7 @@
   "name": "poultry-desktop",
   "version": "0.1.0",
   "private": true,
-  "description": "Local-first poultry farm management desktop application.",
+  "description": "Pomas: local-first poultry farm management desktop application.",
   "main": "dist/main/main.js",
   "scripts": {
     "dev": "electron-vite dev",
@@ -42,7 +42,7 @@
   },
   "build": {
     "appId": "com.grantinofarms.poultry",
-    "productName": "Poultry Farm Manager",
+    "productName": "Pomas",
     "directories": {
       "output": "release"
     },
@@ -52,7 +52,8 @@
       "package.json"
     ],
     "win": {
-      "target": "nsis"
+      "target": "nsis",
+      "icon": "build/icon.ico"
     },
     "extraResources": [
       {
@@ -64,13 +65,15 @@
         "to": "runtime"
       }
     ],
-    "artifactName": "PoultrySetup.${ext}",
+    "artifactName": "PomasSetup.${ext}",
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "Poultry Farm Manager",
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico",
+      "shortcutName": "Pomas",
       "runAfterFinish": true,
       "deleteAppDataOnUninstall": false
     }

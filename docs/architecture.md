@@ -1,6 +1,6 @@
 # Architecture
 
-Poultry Farm Manager is a local-first desktop system:
+Pomas is a local-first desktop system:
 
 ```
 Electron

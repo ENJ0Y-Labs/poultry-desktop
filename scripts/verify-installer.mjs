@@ -8,13 +8,13 @@ if (!existsSync(releaseDir)) {
   process.exit(1);
 }
 
-const expected = `PoultrySetup.exe`;
-const installers = readdirSync(releaseDir).filter(file => /^PoultrySetup\.exe$/i.test(file));
+const expected = `PomasSetup.exe`;
+const installers = readdirSync(releaseDir).filter(file => /^PomasSetup\.exe$/i.test(file));
 
 if (!installers.includes(expected)) {
   console.error("Installer verification failed:");
   console.error(`- expected: release/${expected}`);
-  console.error(`- found: ${installers.length ? installers.join(", ") : "PoultrySetup.exe not found"}`);
+  console.error(`- found: ${installers.length ? installers.join(", ") : "PomasSetup.exe not found"}`);
   process.exit(1);
 }
 

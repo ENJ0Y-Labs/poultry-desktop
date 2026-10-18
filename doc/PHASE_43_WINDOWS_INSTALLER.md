@@ -7,7 +7,7 @@ Produce and validate the Windows installer used by farmers.
 Production flow:
 
 ```text
-PoultrySetup.exe
+PomasSetup.exe
       |
       v
 Install
@@ -16,7 +16,7 @@ Install
       +--> Start Menu shortcut
       |
       v
-Start Poultry Farm Manager
+Start Pomas
       |
       v
 Electron
@@ -39,9 +39,9 @@ Electron Builder uses the Windows NSIS target.
 
 The installer:
 
-- is named `PoultrySetup.exe`
+- is named `PomasSetup.exe`
 - uses application ID `com.grantinofarms.poultry`
-- installs Poultry Farm Manager
+- installs Pomas
 - creates a desktop shortcut
 - creates a Start Menu shortcut
 - runs the application after installation
@@ -87,8 +87,8 @@ The Electron CI job now:
 3. Packages the Spring Boot backend.
 4. Verifies production inputs.
 5. Runs Electron Builder.
-6. Verifies `release/PoultrySetup.exe` exists and is not suspiciously small.
-7. Uploads the installer as the GitHub Actions artifact `poultry-farm-manager-windows-installer`.
+6. Verifies `release/PomasSetup.exe` exists and is not suspiciously small.
+7. Uploads the installer as the GitHub Actions artifact `pomas-windows-installer`.
 
 This catches the embarrassing class of release where the build says "success" but nobody actually checked whether an installer came out.
 
@@ -100,12 +100,12 @@ Run these tests on a Windows test machine. Do not use the development machine as
 
 Precondition:
 
-- Poultry Farm Manager is not installed.
+- Pomas is not installed.
 - No existing application data is present.
 
 Steps:
 
-1. Run `PoultrySetup.exe`.
+1. Run `PomasSetup.exe`.
 2. Complete installation.
 3. Confirm the desktop shortcut exists.
 4. Confirm the Start Menu shortcut exists.
@@ -151,10 +151,10 @@ Precondition:
 
 Steps:
 
-1. Uninstall Poultry Farm Manager.
+1. Uninstall Pomas.
 2. Confirm the application binaries and shortcuts are removed.
 3. Check application data.
-4. Install `PoultrySetup.exe` again.
+4. Install `PomasSetup.exe` again.
 5. Start the application.
 
 Expected:
@@ -190,7 +190,7 @@ Expected:
 
 Steps:
 
-1. Close Poultry Farm Manager.
+1. Close Pomas.
 2. Uninstall it from Windows.
 3. Confirm desktop and Start Menu shortcuts are removed.
 4. Confirm installed application files are removed.
@@ -225,7 +225,7 @@ farm data deletion
 ## Phase 43 acceptance
 
 - [x] Windows NSIS installer configured.
-- [x] Installer artifact named `PoultrySetup.exe`.
+- [x] Installer artifact named `PomasSetup.exe`.
 - [x] Desktop shortcut configured.
 - [x] Start Menu shortcut configured.
 - [x] Application starts after installation.

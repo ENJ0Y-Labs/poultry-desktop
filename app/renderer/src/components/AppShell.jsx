@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { NavigationContext } from "./NavigationContext.jsx";
 import { getThemePreference, setThemePreference } from "../utils/theme.js";
 import { connectionApi } from "../services/api.js";
+import pomasLogo from "../assets/pomas-logo.png";
 
 const groups = [
   { label: "WORKSPACE", items: [
@@ -254,10 +255,10 @@ export default function AppShell({ farm, error, children, startPage = "dashboard
       </nav>
       <aside className="sidebar">
         <div className="brand">
-          <div className="brand-mark" aria-hidden="true"><span>{farmInitials(farm.name)}</span></div>
+          <div className="brand-mark" aria-hidden="true"><img src={pomasLogo} alt="" draggable="false" /></div>
           <div className="brand-copy">
-            <strong>{farm.name || "Local farm"}</strong>
-            <small>Poultry Farm Manager</small>
+            <strong>Pomas</strong>
+            <small>Farm management</small>
           </div>
         </div>
 

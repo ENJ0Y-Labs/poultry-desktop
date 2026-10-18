@@ -1,6 +1,6 @@
-# Poultry Farm Manager
+# Pomas
 
-Poultry Farm Manager is a local-first Windows desktop application for managing Layer and Broiler poultry operations. It records farm facts, calculates derived farm state, tracks production and costs, provides dashboards and reports, and supports SQLite backup and restore.
+Pomas is a local-first Windows desktop application for managing Layer and Broiler poultry operations. It records farm facts, calculates derived farm state, tracks production and costs, provides dashboards and reports, and supports SQLite backup and restore.
 
 The application is designed for farm use without a cloud dependency. The packaged application runs its own Electron shell, React renderer, Spring Boot backend, SQLite database, and bundled Java runtime.
 

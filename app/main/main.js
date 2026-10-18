@@ -4,6 +4,14 @@ import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { BackendManager } from "./backend-manager.js";
 
+// The product is branded "Pomas", but installed copies keep their farm data in the
+// folder created under the original product name. Pin the packaged data folder so
+// the rename can never make existing records appear to vanish.
+const LEGACY_USER_DATA_FOLDER = "Poultry Farm Manager";
+if (app.isPackaged) {
+  app.setPath("userData", join(app.getPath("appData"), LEGACY_USER_DATA_FOLDER));
+}
+
 let mainWindow;
 let backendManager;
 let shutdownInProgress = false;
@@ -108,9 +116,9 @@ ipcMain.handle("backup:restore", async (_event, ...args) => {
   if (!backendManager) throw new Error("Backend is not running.");
 
   const picked = await dialog.showOpenDialog({
-    title: "Restore poultry database backup",
+    title: "Restore Pomas database backup",
     properties: ["openFile"],
-    filters: [{ name: "Poultry database", extensions: ["db"] }]
+    filters: [{ name: "Pomas database", extensions: ["db"] }]
   });
   if (picked.canceled) return { canceled: true };
 
@@ -266,14 +274,16 @@ async function createWindow() {
     await dialog.showMessageBox({
       type: "error",
       title: "Backend startup failed",
-      message: "Poultry Farm Manager could not start its local backend.",
+      message: "Pomas could not start its local backend.",
       detail: friendlyFileError(error, "The local backend could not start. Check the backend log for the database or migration error.")
     });
     app.quit();
     return;
   }
 
+  const iconPath = join(app.getAppPath(), "app", "assets", "icon.png");
   mainWindow = new BrowserWindow({
+    ...(existsSync(iconPath) ? { icon: iconPath } : {}),
     backgroundColor: initialBackground,
     width: 1366,
     height: 768,

@@ -187,6 +187,8 @@ small { color: var(--muted); font-weight: 400; }
 }
 .brand { display:flex; align-items:center; gap:12px; min-height:72px; padding:15px 17px; border-bottom:1px solid var(--border-soft); }
 .brand-mark { display:grid; place-items:center; width:38px; height:38px; border-radius:10px; background:var(--palette-10141a); border:1px solid var(--palette-303844); color:var(--cyan); font-size:12px; font-weight:900; letter-spacing:.04em; }
+.brand-mark { overflow:hidden; padding:0; }
+.brand-mark img { display:block; width:100%; height:100%; object-fit:cover; border-radius:inherit; }
 .brand-copy strong,.brand-copy small{display:block}.brand-copy strong{font-size:14px;letter-spacing:-.01em}.brand-copy small{margin-top:3px;font-size:11px;color:var(--muted)}
 .workspace-summary{margin:12px 12px 4px;padding:10px 11px;border:1px solid var(--border-soft);border-radius:8px;background:var(--palette-151920)}
 .workspace-kicker{display:block;font-size:10px;letter-spacing:.14em;font-weight:800;color:var(--muted-2)}.workspace-name{display:block;margin-top:4px;font-size:14px;font-weight:800}.workspace-status{display:flex;align-items:center;gap:6px;margin-top:5px;font-size:11px;color:var(--muted)}.workspace-status i{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--alpha-72223165p45)}
