@@ -29,6 +29,18 @@ public class AuthFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
+        String method = request.getMethod();
+        boolean stateChanging = "POST".equalsIgnoreCase(method)
+                || "PUT".equalsIgnoreCase(method)
+                || "PATCH".equalsIgnoreCase(method)
+                || "DELETE".equalsIgnoreCase(method);
+        if (stateChanging && !"XMLHttpRequest".equals(request.getHeader("X-Requested-With"))) {
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            response.setContentType("application/json");
+            response.getWriter().write("{\"ok\":false,\"error\":{\"code\":\"CSRF_CHECK_FAILED\",\"message\":\"The request could not be verified.\"}}");
+            return;
+        }
+
         String token = token(request);
         Map<String, Object> user = auth.current(token);
         if (user != null) {
