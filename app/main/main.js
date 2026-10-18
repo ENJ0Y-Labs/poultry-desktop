@@ -74,7 +74,7 @@ function friendlyFileError(error, fallback) {
 async function validateBackup(file) {
   const response = await fetch("http://127.0.0.1:" + backendManager.port + "/api/v1/backup/validate", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", "X-Requested-With": "XMLHttpRequest" },
     body: JSON.stringify({ file })
   });
   const body = await response.json().catch(() => ({}));
@@ -162,7 +162,7 @@ ipcMain.handle("backup:restore", async (_event, ...args) => {
       "http://127.0.0.1:" + backendManager.port + "/api/v1/backup",
       {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "X-Requested-With": "XMLHttpRequest" },
         body: JSON.stringify({ directory: backendManager.dataDirectory })
       }
     );
