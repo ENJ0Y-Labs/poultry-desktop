@@ -88,7 +88,7 @@ The Electron CI job now:
 4. Verifies production inputs.
 5. Runs Electron Builder.
 6. Verifies `release/PomasSetup.exe` exists and is not suspiciously small.
-7. Uploads the installer as the GitHub Actions artifact `poultry-farm-manager-windows-installer`.
+7. Uploads the installer as the GitHub Actions artifact `pomas-windows-installer`.
 
 This catches the embarrassing class of release where the build says "success" but nobody actually checked whether an installer came out.
 
