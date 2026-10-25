@@ -67,12 +67,13 @@ export class BackendManager {
     this.lastError = null;
 
     if (!this.isPackaged) {
-      const command = process.platform === "win32" ? "mvn.cmd" : "mvn";
-      this.process = this.spawnProcess(command, ["-f", join(this.appPath, "backend", "pom.xml"), "spring-boot:run", ...this.backendArguments], {
-        cwd: this.appPath,
-        windowsHide: true,
-        stdio: "ignore"
-      });
+      const isWin = process.platform === "win32";
+      const wrapper = join(this.appPath, isWin ? "mvnw.cmd" : "mvnw");
+      this.process = this.spawnProcess(
+        wrapper,
+        ["-f", join(this.appPath, "backend", "pom.xml"), "spring-boot:run", ...this.backendArguments],
+        { cwd: this.appPath, windowsHide: true, stdio: "ignore", shell: isWin }
+      );
     } else {
       if (!existsSync(this.jarPath)) throw new Error(`Packaged backend JAR not found: ${this.jarPath}`);
       this.process = this.spawnProcess(this.javaPath, ["-jar", this.jarPath, ...this.backendArguments], {
