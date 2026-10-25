@@ -1,5 +1,5 @@
 import { EventEmitter } from "node:events";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -92,9 +92,11 @@ describe("BackendManager", () => {
           expect.stringContaining("--poultry.database-path="),
           "--spring.profiles.active=prod",
         ]),
-        expect.objectContaining({ windowsHide: true, stdio: "ignore" })
+        expect.objectContaining({ windowsHide: true, stdio: ["ignore", "pipe", "pipe"] })
       );
       expect(globalThis.fetch).toHaveBeenCalledWith("http://127.0.0.1:19002/api/v1/health");
+      expect(existsSync(join(userDataPath, "logs", "backend.log"))).toBe(true);
+      expect(readFileSync(join(userDataPath, "logs", "backend.log"), "utf8")).toContain("Backend health check passed.");
     } finally {
       rmSync(userDataPath, { recursive: true, force: true });
     }
