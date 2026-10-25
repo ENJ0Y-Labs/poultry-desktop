@@ -79,9 +79,6 @@ function mockFarmApis({
   vi.spyOn(accountApi, "get").mockResolvedValue({
     id: "user-1", email: "owner@example.com", fullName: "Farm Owner", role: "OWNER"
   });
-  vi.spyOn(settingsApi, "application").mockResolvedValue({
-    startPage: "dashboard", dateFormat: "YYYY-MM-DD"
-  });
   vi.spyOn(settingsApi, "backup").mockResolvedValue({
     enabled: false, directory: "", intervalMs: 86400000
   });
@@ -284,6 +281,25 @@ describe("App", () => {
 
     await waitFor(() => expect(screen.getByText(/name: Farm name already exists/)).toBeInTheDocument());
     expect(screen.getByText(/currency: Currency must be 3 letters/)).toBeInTheDocument();
+  });
+
+  it("labels the dashboard as-of date and follows the saved date format", async () => {
+    mockFarmApis();
+    vi.spyOn(settingsApi, "application").mockResolvedValue({
+      startPage: "dashboard",
+      dateFormat: "DD/MM/YYYY",
+    });
+
+    render(<App />);
+
+    await waitFor(() => expect(screen.getByRole("heading", { name: "Farm dashboard" })).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText("03/10/2026")).toBeInTheDocument());
+    expect(screen.getByText("Dashboard as of")).toBeInTheDocument();
+
+    const primaryMetric = screen.getByText("Total birds").closest(".metric-card");
+    const secondaryMetric = screen.getByText("Layer birds").closest(".metric-card");
+    expect(primaryMetric).toHaveClass("metric-card-primary");
+    expect(secondaryMetric).not.toHaveClass("metric-card-primary");
   });
 
   it("renders backend-derived dashboard metrics and empty dashboard states", async () => {
