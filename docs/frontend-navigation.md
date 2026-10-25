@@ -29,6 +29,14 @@
 The nine page components live under `app/renderer/src/pages/`. Shared form state and API handlers remain in `App.jsx` and are exposed through `FarmManagerContext`; future cleanup can move domain-specific state/handlers into focused hooks.
 
 
+## Farm dashboard presentation
+
+- The farm dashboard labels its business date as “Dashboard as of” so it is not mistaken for the computer's current date or a date-range selector.
+- The dashboard formats that date using the saved application date-format preference. Business dates are parsed as calendar components, not as UTC instants.
+- Total birds, revenue, and profit are primary metrics. Other KPIs remain visible but use a quieter visual treatment.
+- Feed and attention panels share the available dashboard width and stack at narrower supported widths; neither panel truncates its content to force equal heights.
+- Dashboard currency values use the existing `formatMoney` utility and farm currency. This presentation change must not alter backend calculations or financial values.
+
 ## Farm-worker form usability
 
 - Money fields are entered in naira (₦), not kobo. The renderer parses the input string into integer kobo before sending the existing backend API payload; no floating-point money arithmetic is used.
