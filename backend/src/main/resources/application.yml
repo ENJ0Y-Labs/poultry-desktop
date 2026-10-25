@@ -6,9 +6,9 @@ spring:
     name: poultry-backend
   profiles:
     default: dev
-  server:
-    address: 127.0.0.1
-    port: ${SERVER_PORT:18942}
+server:
+  address: 127.0.0.1
+  port: ${SERVER_PORT:18942}
   datasource:
     # Always use the configured poultry.database-path. Do not pin this to a developer's machine.
     url: jdbc:sqlite:${poultry.database-path}
