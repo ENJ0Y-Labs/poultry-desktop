@@ -5,6 +5,7 @@ import PageSection from "../components/PageSection.jsx";
 
 function formatBusinessDate(value, pattern = "YYYY-MM-DD") {
   if (!value || typeof value !== "string") return "—";
+  pattern = pattern || "YYYY-MM-DD";
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
   if (!match) return value;
 
