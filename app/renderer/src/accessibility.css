@@ -5,12 +5,18 @@
  */
 :root:not([data-theme="light"]) {
   --a11y-surface: #0e0e11;
-  --a11y-surface-raised: #18181c;
+  --a11y-surface-raised: #1a1a20;
   --a11y-text: #e4e4e7;
   --a11y-secondary: #a1a1aa;
   --a11y-tertiary: #a1a1aa;
   --a11y-accent-text: #38bdf8;
   --a11y-shortcut-bg: #18181c;
+  --a11y-warning-bg: #3a2d17;
+  --a11y-warning-text: #ffc46f;
+  --a11y-critical-bg: #3a1d20;
+  --a11y-critical-text: #ff9b9b;
+  --a11y-error-bg: #28181b;
+  --a11y-error-text: #ffb1b1;
 }
 
 :root[data-theme="light"] {
@@ -21,6 +27,12 @@
   --a11y-tertiary: #5e6b7b;
   --a11y-accent-text: #00677c;
   --a11y-shortcut-bg: #edf2f7;
+  --a11y-warning-bg: #fff1cf;
+  --a11y-warning-text: #7a4b00;
+  --a11y-critical-bg: #ffe4e6;
+  --a11y-critical-text: #9f1239;
+  --a11y-error-bg: #fff0f0;
+  --a11y-error-text: #9f2525;
 }
 
 /* Navigation, labels, state, and data labels are essential UI text. */
@@ -59,7 +71,7 @@ label {
   font-size: 12px;
 }
 
-label small {
+.workspace-status,\n.node-status small {\n  font-size: 11px;\n}\n\nlabel small {
   color: var(--a11y-secondary);
   font-size: 11px;
 }
