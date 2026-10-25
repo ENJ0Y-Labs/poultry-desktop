@@ -114,7 +114,7 @@ export class BackendManager {
     child.once("exit", (code, signal) => {
       this.writeLog(`Backend process exited; code=${code}; signal=${signal || "none"}`);
       if (this.process === child) {
-        this.lastError = new Error(`Backend process exited before becoming healthy (code ${code}${signal ? `, signal ${signal}` : ""}). Check ${this.logFilePath}`);
+        this.lastError = new Error(`Backend process exited before becoming healthy (code ${code}${signal ? `, signal ${signal}` : ""}). Check ${this.processLogFilePath} and ${this.logFilePath}`);
         this.process = null;
       }
     });
