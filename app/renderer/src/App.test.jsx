@@ -286,6 +286,25 @@ describe("App", () => {
     expect(screen.getByText(/currency: Currency must be 3 letters/)).toBeInTheDocument();
   });
 
+  it("labels the dashboard as-of date and follows the saved date format", async () => {
+    mockFarmApis();
+    vi.mocked(settingsApi.application).mockResolvedValue({
+      startPage: "dashboard",
+      dateFormat: "DD/MM/YYYY",
+    });
+
+    render(<App />);
+
+    await waitFor(() => expect(screen.getByRole("heading", { name: "Farm dashboard" })).toBeInTheDocument());
+    expect(screen.getByText("Dashboard as of")).toBeInTheDocument();
+    expect(screen.getByText("03/10/2026")).toBeInTheDocument();
+
+    const primaryMetric = screen.getByText("Total birds").closest(".metric-card");
+    const secondaryMetric = screen.getByText("Layer birds").closest(".metric-card");
+    expect(primaryMetric).toHaveClass("metric-card-primary");
+    expect(secondaryMetric).not.toHaveClass("metric-card-primary");
+  });
+
   it("renders backend-derived dashboard metrics and empty dashboard states", async () => {
     mockFarmApis({ currentBatches: [] });
 
