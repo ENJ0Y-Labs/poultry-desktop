@@ -117,8 +117,7 @@ React owns:
 - forms
 - tables
 - navigation, using the dependency-free hash routes documented in `docs/frontend-navigation.md`
-- loading/error states
-- keyboard-first interaction
+- loading/error states- keyboard-first interaction
 - displaying values returned by the backend
 
 Use normal JavaScript and JSX files. Do not create `.ts` or `.tsx` frontend source files.
@@ -237,8 +236,7 @@ Every batch has:
 - type: LAYER or BROILER
 - placement/opening date
 - initial bird count
-- house/pen
-- supplier/source where applicable
+- house/pen- supplier/source where applicable
 - original bird purchase cost in integer minor units
 - status
 - audit history
@@ -357,8 +355,7 @@ Every batch has its own smaller dashboard containing only that batch's data:
 - mortality
 - culling
 - sold birds
-- feed used
-- feed cost
+- feed used- feed cost
 - expenses
 - revenue
 - profit
@@ -478,7 +475,6 @@ For operator convenience, the UI may accept:
 - combinations of crates and loose eggs
 
 Default crate/tray size is **30 eggs**, but it is configurable in Settings.
-
 ### Collection
 
 Record separately:
@@ -598,7 +594,6 @@ The common `sales` ledger is the commercial history shared by Layer and Broiler 
 The type-specific sale tables remain authoritative for production behavior:
 - Layer sales remain egg sales using configured crate conversion and good-egg inventory validation.
 - Broiler sales remain bird sales using population reduction, cost-based pricing, below-target confirmation, and SOLD lifecycle rules.
-
 The common ledger must be written in the same transaction as its type-specific sale. It is a shared commercial view of the sale, not a second source of truth for production calculations.
 
 For common sales:
@@ -717,7 +712,6 @@ The frontend must never become a second source of truth for these calculations.
 ## 22. API design
 
 Use REST endpoints under a versioned API prefix such as `/api/v1`.
-
 Keep endpoint naming resource-oriented.
 
 Examples:
@@ -838,7 +832,6 @@ If another backup exists that day:
 Automatic backups should default to retaining the last 30.
 
 Backup locations can be user-selected, including USB drives. Missing destinations must fail gracefully.
-
 Restore:
 1. validate backup
 2. run `PRAGMA integrity_check`
@@ -874,6 +867,14 @@ Abbreviations such as HDP and FCR must have formula tooltips.
 All null metrics display **—**.
 
 The UI presents data returned by the backend. It does not own authoritative farm calculations.
+
+
+### Accessibility rules
+
+- Essential normal text must meet WCAG AA contrast of at least 4.5:1 against its rendered background. Do not use the large-text exception for small labels, table headings, status text, or shortcut hints.
+- Keep persistent form labels and primary navigation at 12 px or larger; navigation labels should target 13 px. Table headers, metric labels, and keyboard shortcut hints should be at least 12 px.
+- Supporting metadata may remain 11 px only when it is genuinely secondary and still meets contrast requirements. Do not make primary information rely on decorative kickers, color alone, or tiny text.
+- Check both Light and Dark themes. Run `node scripts/verify-a11y.mjs` as part of the production build, then manually review the rendered app at 1366×768 and 1100×700. Automated token checks do not replace rendered keyboard/visual review.
 
 ## 29. Navigation
 
@@ -957,7 +958,6 @@ Reference vectors:
 `4,200 / 4,800 × 100 = 87.5% HDP`
 
 `6,000 / 3,000 = 2.0 FCR`
-
 `0 / 0 = null`
 
 ## 31. Delivery plan
@@ -1077,8 +1077,7 @@ Done when every new Layer or Broiler sale preserves its existing type-specific r
 
 Build:
 - expanded KPI dashboards
-- reports
-- charts
+- reports- charts
 - exports
 - alerts
 - audit viewer
@@ -1197,7 +1196,6 @@ And never sacrifice poultry math for dashboard cosmetics.
 
 
 ## Frontend page architecture
-
 - Keep the renderer organized around nine top-level pages: Dashboard, Flocks, Daily Work, Feed & Stock, Health, Production, Sales & Money, Reports, and Settings.
 - Use the local hash router in `AppShell.jsx`; do not add a routing dependency without explicit owner approval.
 - Navigation must not depend on scroll position, scroll listeners, or `scrollIntoView`.
