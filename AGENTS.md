@@ -210,7 +210,7 @@ Development:
 - start Electron/React locally, or use the documented browser-only Vite workflow (`npm run dev:browser:all`)
 - Electron connects to the configured local API address
 - the datasource URL must be derived from `poultry.database-path`; never hardcode a developer-specific database path
-- backend startup stdout/stderr must be captured in `logs/backend.log` so database and Flyway failures can be diagnosed
+- Spring Boot file logs go to `logs/backend.log`; Electron-captured process stdout/stderr and startup diagnostics go to `logs/backend-process.log`
 
 Production:
 
