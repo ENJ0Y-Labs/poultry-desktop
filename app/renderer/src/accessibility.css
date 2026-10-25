@@ -10,6 +10,7 @@
   --a11y-secondary: #a1a1aa;
   --a11y-tertiary: #a1a1aa;
   --a11y-accent-text: #38bdf8;
+  --a11y-nav-active-bg: #202027;
   --a11y-shortcut-bg: #18181c;
   --a11y-warning-bg: #3a2d17;
   --a11y-warning-text: #ffc46f;
@@ -26,6 +27,7 @@
   --a11y-secondary: #435164;
   --a11y-tertiary: #5e6b7b;
   --a11y-accent-text: #00677c;
+  --a11y-nav-active-bg: #e8f6fa;
   --a11y-shortcut-bg: #edf2f7;
   --a11y-warning-bg: #fff1cf;
   --a11y-warning-text: #7a4b00;
