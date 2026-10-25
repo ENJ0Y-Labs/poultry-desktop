@@ -95,8 +95,8 @@ describe("BackendManager", () => {
         expect.objectContaining({ windowsHide: true, stdio: ["ignore", "pipe", "pipe"] })
       );
       expect(globalThis.fetch).toHaveBeenCalledWith("http://127.0.0.1:19002/api/v1/health");
-      expect(existsSync(join(userDataPath, "logs", "backend.log"))).toBe(true);
-      expect(readFileSync(join(userDataPath, "logs", "backend.log"), "utf8")).toContain("Backend health check passed.");
+      expect(existsSync(join(userDataPath, "logs", "backend-process.log"))).toBe(true);
+      expect(readFileSync(join(userDataPath, "logs", "backend-process.log"), "utf8")).toContain("Backend health check passed.");
     } finally {
       rmSync(userDataPath, { recursive: true, force: true });
     }
