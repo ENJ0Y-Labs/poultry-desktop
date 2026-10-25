@@ -52,3 +52,8 @@ The nine page components live under `app/renderer/src/pages/`. Shared form state
 - The account control opens the existing Settings → App, appearance & account section; the gear opens the existing Settings page.
 - The adjacent sidebar remains the existing navigation for the same application routes. No new farm modules or route system is introduced.
 - The dark palette is expressed through CSS tokens; existing appearance preference support and page/form/table/dialog styling remain in place.
+
+## Theme selector accessibility
+
+- The theme selector uses its visible “Theme” label as its accessible name through the wrapping label element; do not add a competing `aria-label`.
+- Keep the selector keyboard-operable and retain readable label/control contrast in light, dark, and automatic themes.

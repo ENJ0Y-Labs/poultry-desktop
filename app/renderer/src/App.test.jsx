@@ -302,6 +302,18 @@ describe("App", () => {
     expect(secondaryMetric).not.toHaveClass("metric-card-primary");
   });
 
+  it("exposes the theme selector through its visible label and allows changing it", async () => {
+    mockFarmApis();
+
+    render(<App />);
+
+    const themeSelector = await screen.findByRole("combobox", { name: "Theme" });
+    expect(themeSelector).toHaveValue("auto");
+
+    fireEvent.change(themeSelector, { target: { value: "dark" } });
+    expect(themeSelector).toHaveValue("dark");
+  });
+
   it("renders backend-derived dashboard metrics and empty dashboard states", async () => {
     mockFarmApis({ currentBatches: [] });
 

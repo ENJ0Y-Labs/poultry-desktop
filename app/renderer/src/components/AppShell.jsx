@@ -307,7 +307,7 @@ export default function AppShell({ farm, error, children, startPage = "dashboard
               <p className="muted">{farm.location || "Farm profile"} · {farm.currency} · {farm.timezone}</p>
             </div>
             <div className="topbar-actions">
-              <label className="theme-control">Theme<select aria-label="Theme" value={theme} onChange={changeTheme}><option value="auto">Auto</option><option value="light">Light</option><option value="dark">Dark</option></select></label>
+              <label className="theme-control">Theme<select value={theme} onChange={changeTheme}><option value="auto">Auto</option><option value="light">Light</option><option value="dark">Dark</option></select></label>
               <div className={backendConnected === true ? "system-pill connected" : backendConnected === false ? "system-pill disconnected" : "system-pill"} role="status" aria-live="polite">
                 <span className={backendConnected === true ? "status-dot online" : backendConnected === false ? "status-dot offline" : "status-dot"} />
                 {backendConnected === true ? "BACKEND CONNECTED" : backendConnected === false ? "BACKEND UNAVAILABLE" : "CHECKING BACKEND"}
