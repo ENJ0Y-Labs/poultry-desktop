@@ -79,9 +79,6 @@ function mockFarmApis({
   vi.spyOn(accountApi, "get").mockResolvedValue({
     id: "user-1", email: "owner@example.com", fullName: "Farm Owner", role: "OWNER"
   });
-  vi.spyOn(settingsApi, "application").mockResolvedValue({
-    startPage: "dashboard", dateFormat: "YYYY-MM-DD"
-  });
   vi.spyOn(settingsApi, "backup").mockResolvedValue({
     enabled: false, directory: "", intervalMs: 86400000
   });
@@ -288,7 +285,7 @@ describe("App", () => {
 
   it("labels the dashboard as-of date and follows the saved date format", async () => {
     mockFarmApis();
-    vi.mocked(settingsApi.application).mockResolvedValue({
+    vi.spyOn(settingsApi, "application").mockResolvedValue({
       startPage: "dashboard",
       dateFormat: "DD/MM/YYYY",
     });
@@ -296,8 +293,8 @@ describe("App", () => {
     render(<App />);
 
     await waitFor(() => expect(screen.getByRole("heading", { name: "Farm dashboard" })).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText("03/10/2026")).toBeInTheDocument());
     expect(screen.getByText("Dashboard as of")).toBeInTheDocument();
-    expect(screen.getByText("03/10/2026")).toBeInTheDocument();
 
     const primaryMetric = screen.getByText("Total birds").closest(".metric-card");
     const secondaryMetric = screen.getByText("Layer birds").closest(".metric-card");
