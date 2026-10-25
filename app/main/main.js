@@ -271,11 +271,16 @@ async function createWindow() {
     log("backend_start_failed", {
       error: error instanceof Error ? error.message : String(error)
     });
+    const startupError = error instanceof Error ? error.message : String(error || "");
     await dialog.showMessageBox({
       type: "error",
       title: "Backend startup failed",
       message: "Pomas could not start its local backend.",
-      detail: friendlyFileError(error, "The local backend could not start. Check the backend log for the database or migration error.")
+      detail: [
+        startupError || "The local backend could not start.",
+        "",
+        `Full backend output: ${backendManager.logFilePath}`
+      ].join("\n")
     });
     app.quit();
     return;
