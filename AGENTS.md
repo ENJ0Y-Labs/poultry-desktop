@@ -190,7 +190,7 @@ Use:
 - narrow typed `contextBridge`
 - no direct `ipcRenderer` exposure
 - no direct `fs` exposure
-- strict CSP
+- strict CSP: packaged renderer allows only bundled same-origin resources and the local API at `http://127.0.0.1:18942`; development-only Vite HMR sources are injected only in serve mode and must never ship
 - controlled navigation
 - controlled window creation
 

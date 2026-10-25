@@ -135,6 +135,10 @@ Confirm:
 - no production database is inside the installer
 - no credentials or secrets are committed
 - no required CDN dependency exists
+- built renderer CSP contains only `default-src 'self'`, `style-src 'self'`, `script-src 'self'`, and `connect-src 'self' http://127.0.0.1:18942`
+- packaged renderer CSP contains no Vite dev server, HMR WebSocket, wildcard local port, or unsafe directive
+
+For the packaged-app smoke test, launch the installed app with DevTools available and inspect Console and Network. Confirm the dashboard and navigation render, the local API responds on port 18942, and there are no blocked-resource/CSP errors. Test theme switching and charts as well; if a style is blocked, fix the specific resource rather than weakening production CSP globally.
 
 ## 6. Installer inspection
 

@@ -22,7 +22,7 @@ export class BackendManager {
     this.resourcesPath = resourcesPath;
     this.spawnProcess = spawnProcess;
     this.process = null;
-    this.port = Number(port || process.env.POULTRY_BACKEND_PORT || DEFAULT_PORT);
+    this.port = Number(port || (!isPackaged && process.env.POULTRY_BACKEND_PORT) || DEFAULT_PORT);
     this.lastError = null;
   }
 

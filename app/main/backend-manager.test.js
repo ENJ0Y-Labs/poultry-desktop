@@ -43,6 +43,24 @@ describe("BackendManager", () => {
     rmSync(resourcesPath, { recursive: true, force: true });
   });
 
+  it("keeps the packaged backend on the CSP-allowed default port", () => {
+    const previousPort = process.env.POULTRY_BACKEND_PORT;
+    process.env.POULTRY_BACKEND_PORT = "19003";
+
+    try {
+      const manager = new BackendManager({
+        userDataPath: "C:/Users/test/AppData/Roaming/Poultry Farm Manager",
+        appPath: "C:/project",
+        isPackaged: true,
+      });
+
+      expect(manager.port).toBe(18942);
+    } finally {
+      if (previousPort === undefined) delete process.env.POULTRY_BACKEND_PORT;
+      else process.env.POULTRY_BACKEND_PORT = previousPort;
+    }
+  });
+
   it("uses the project data directory for the development database", () => {
     const manager = new BackendManager({
       userDataPath: "C:/Users/test/AppData/Roaming/Poultry Farm Manager",
