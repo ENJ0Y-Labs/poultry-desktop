@@ -20,7 +20,7 @@ const runtimeModules = [
 const required = [
   ["renderer build", join("dist", "renderer", "index.html")],
   ["main process build", join("dist", "main", "main.js")],
-  ["preload build", join("dist", "preload", "preload.mjs")],
+  ["preload build", join("dist", "preload", "preload.cjs")],
   ["Spring Boot backend", join("backend", "target", "poultry-backend.jar")],
   [
     "bundled Java runtime",

@@ -32,27 +32,39 @@ $env:JAVA_HOME
 & "$env:JAVA_HOME\bin\jlink.exe" --version
 ```
 
-## Run
+## Run the desktop application
 
-Start the desktop application:
+Start Electron, React, and the supervised Spring Boot backend:
 
 ```powershell
 npm run dev
 ```
 
-On first launch, create the owner account. On later launches, sign in before the renderer loads farm or account data. Authentication status is checked without making an unauthenticated request to a protected endpoint.
+On first launch, create the owner account. On later launches, sign in before the renderer loads farm or account data.
 
-The development backend runs through Maven and uses:
+## Run the UI in a browser
 
-```
-project/data/poultry.db
+For browser-only development, run both services together:
+
+```powershell
+npm run dev:browser:all
 ```
 
-The API is:
+Open `http://127.0.0.1:5173` in Chrome or another browser. Vite provides frontend hot reload; Spring Boot serves the API on `http://127.0.0.1:18942/api/v1`.
 
+You can also start the services separately in two terminals:
+
+```powershell
+npm run dev:backend
 ```
-http://127.0.0.1:18942/api/v1
+
+```powershell
+npm run dev:browser
 ```
+
+The browser workflow uses the same local development database as Electron: `data/poultry.db`. The database path is supplied through `poultry.database-path`; the datasource URL must resolve from that property rather than a machine-specific absolute path. Spring Boot logs are written to `logs/backend.log`; Electron process output and startup diagnostics are written separately to `logs/backend-process.log`.
+
+The browser does not provide Electron-only native features such as choosing a backup folder through the desktop dialog. Test those features with `npm run dev`.
 
 ## Commands
 

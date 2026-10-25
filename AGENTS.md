@@ -207,8 +207,10 @@ Electron is the desktop orchestrator.
 Development:
 
 - start Spring Boot locally
-- start Electron/React locally
+- start Electron/React locally, or use the documented browser-only Vite workflow (`npm run dev:browser:all`)
 - Electron connects to the configured local API address
+- the datasource URL must be derived from `poultry.database-path`; never hardcode a developer-specific database path
+- Spring Boot file logs go to `logs/backend.log`; Electron-captured process stdout/stderr and startup diagnostics go to `logs/backend-process.log`
 
 Production:
 

@@ -1,5 +1,5 @@
 import { spawn } from "node:child_process";
-import { existsSync, mkdirSync } from "node:fs";
+import { appendFileSync, existsSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 
 const DEFAULT_PORT = 18942;
@@ -36,8 +36,16 @@ export class BackendManager {
     return join(this.dataDirectory, "poultry.db");
   }
 
+  get logDirectory() {
+    return join(this.isPackaged ? this.userDataPath : this.appPath, "logs");
+  }
+
   get logFilePath() {
-    return join(this.isPackaged ? this.userDataPath : this.appPath, "logs", "backend.log");
+    return join(this.logDirectory, "backend.log");
+  }
+
+  get processLogFilePath() {
+    return join(this.logDirectory, "backend-process.log");
   }
 
   get javaPath() {
@@ -59,38 +67,63 @@ export class BackendManager {
     ];
   }
 
+  writeLog(message) {
+    try {
+      appendFileSync(this.processLogFilePath, `[${new Date().toISOString()}] ${message}\n`);
+    } catch {
+      // Logging must never prevent the backend from starting or shutting down.
+    }
+  }
+
   async start() {
     if (this.process) return;
 
     mkdirSync(this.dataDirectory, { recursive: true });
     mkdirSync(join(this.isPackaged ? this.userDataPath : this.appPath, "logs"), { recursive: true });
     this.lastError = null;
+    this.writeLog(`Starting backend; packaged=${this.isPackaged}; database=${this.databasePath}; port=${this.port}`);
 
-    if (!this.isPackaged) {
-      const command = process.platform === "win32" ? "mvn.cmd" : "mvn";
-      this.process = this.spawnProcess(command, ["-f", join(this.appPath, "backend", "pom.xml"), "spring-boot:run", ...this.backendArguments], {
-        cwd: this.appPath,
-        windowsHide: true,
-        stdio: "ignore"
-      });
-    } else {
-      if (!existsSync(this.jarPath)) throw new Error(`Packaged backend JAR not found: ${this.jarPath}`);
-      this.process = this.spawnProcess(this.javaPath, ["-jar", this.jarPath, ...this.backendArguments], {
-        windowsHide: true,
-        stdio: "ignore"
-      });
+    try {
+      if (!this.isPackaged) {
+        const isWin = process.platform === "win32";
+        const wrapper = join(this.appPath, isWin ? "mvnw.cmd" : "mvnw");
+        this.process = this.spawnProcess(
+          wrapper,
+          ["-f", join(this.appPath, "backend", "pom.xml"), "spring-boot:run", ...this.backendArguments],
+          { cwd: this.appPath, windowsHide: true, stdio: ["ignore", "pipe", "pipe"], shell: isWin }
+        );
+      } else {
+        if (!existsSync(this.jarPath)) throw new Error(`Packaged backend JAR not found: ${this.jarPath}`);
+        this.process = this.spawnProcess(this.javaPath, ["-jar", this.jarPath, ...this.backendArguments], {
+          windowsHide: true,
+          stdio: ["ignore", "pipe", "pipe"]
+        });
+      }
+    } catch (error) {
+      this.writeLog(`Backend process could not be launched: ${error.stack || error.message || error}`);
+      throw new Error(`Pomas could not launch the local backend. Check ${this.processLogFilePath}. Details: ${error.message || error}`);
     }
 
     const child = this.process;
-    child.once("error", (error) => { this.lastError = error; });
-    child.once("exit", (code) => {
-      if (code !== 0 && this.process === child) this.lastError = new Error(`Spring Boot exited with code ${code}.`);
-      if (this.process === child) this.process = null;
+    child.stdout?.on("data", (chunk) => this.writeLog(`[stdout] ${String(chunk).trimEnd()}`));
+    child.stderr?.on("data", (chunk) => this.writeLog(`[stderr] ${String(chunk).trimEnd()}`));
+    child.once("error", (error) => {
+      this.lastError = new Error(`Backend process error: ${error.message}. See ${this.processLogFilePath}`);
+      this.writeLog(`Backend process error: ${error.stack || error.message}`);
+    });
+    child.once("exit", (code, signal) => {
+      this.writeLog(`Backend process exited; code=${code}; signal=${signal || "none"}`);
+      if (this.process === child) {
+        this.lastError = new Error(`Backend process exited before becoming healthy (code ${code}${signal ? `, signal ${signal}` : ""}). Check ${this.processLogFilePath} and ${this.logFilePath}`);
+        this.process = null;
+      }
     });
 
     try {
       await this.waitForHealth();
+      this.writeLog("Backend health check passed.");
     } catch (error) {
+      this.writeLog(`Backend startup failed: ${error.stack || error.message || error}`);
       await this.stop();
       throw error;
     }
@@ -112,7 +145,9 @@ export class BackendManager {
       await new Promise((resolve) => setTimeout(resolve, intervalMs));
     }
 
-    throw new Error(`The local backend could not become ready on port ${this.port}. Another application may be using that port, the database may be unavailable, or a migration may have failed. Check the backend log for details.`);
+    throw new Error(
+      `The local backend could not become ready on port ${this.port}. Another application may be using that port, the database may be unavailable, or a migration may have failed. Check ${this.logFilePath} for Spring Boot errors and ${this.processLogFilePath} for process startup output.`
+    );
   }
 
   async stop() {
@@ -124,6 +159,7 @@ export class BackendManager {
 
     if (child.exitCode !== null || child.killed) return;
 
+    this.writeLog("Stopping backend process.");
     child.kill();
 
     await new Promise((resolve) => {

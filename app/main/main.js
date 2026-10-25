@@ -271,11 +271,17 @@ async function createWindow() {
     log("backend_start_failed", {
       error: error instanceof Error ? error.message : String(error)
     });
+    const startupError = error instanceof Error ? error.message : String(error || "");
     await dialog.showMessageBox({
       type: "error",
       title: "Backend startup failed",
       message: "Pomas could not start its local backend.",
-      detail: friendlyFileError(error, "The local backend could not start. Check the backend log for the database or migration error.")
+      detail: [
+        startupError || "The local backend could not start.",
+        "",
+        `Spring Boot log: ${backendManager.logFilePath}`,
+        `Process startup log: ${backendManager.processLogFilePath}`
+      ].join("\n")
     });
     app.quit();
     return;
@@ -290,7 +296,7 @@ async function createWindow() {
     minWidth: 1100,
     minHeight: 650,
     webPreferences: {
-      preload: join(__dirname, "../preload/preload.mjs"),
+      preload: join(__dirname, "../preload/preload.cjs"),
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: true

@@ -16,7 +16,10 @@
     "backend:package": "mvnw.cmd -f backend/pom.xml package",
     "package:runtime": "node scripts/prepare-runtime.mjs",
     "package:verify": "node scripts/verify-production-inputs.mjs",
-    "installer:verify": "node scripts/verify-installer.mjs"
+    "installer:verify": "node scripts/verify-installer.mjs",
+    "dev:backend": "node scripts/run-backend-dev.mjs",
+    "dev:browser": "vite --config vite.browser.config.js",
+    "dev:browser:all": "concurrently -k -n backend,browser \"npm:dev:backend\" \"npm:dev:browser\""
   },
   "dependencies": {
     "react": "^19.1.1",

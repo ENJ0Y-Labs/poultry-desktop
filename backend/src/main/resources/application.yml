@@ -7,13 +7,18 @@ spring:
   profiles:
     default: dev
   datasource:
-    url: jdbc:sqlite:${poultry.database-path:./data/poultry.db}?foreign_keys=on&journal_mode=WAL&synchronous=FULL
+    # Use the configured path rather than a developer-specific machine path.
+    url: jdbc:sqlite:${poultry.database-path}
     driver-class-name: org.sqlite.JDBC
     hikari:
       maximum-pool-size: 1
   flyway:
     enabled: true
     locations: classpath:db/migration
+
+server:
+  address: 127.0.0.1
+  port: ${SERVER_PORT:18942}
 
 poultry:
   database-path: ${DATABASE_PATH:./data/poultry.db}
@@ -23,6 +28,8 @@ poultry:
     interval-ms: ${BACKUP_INTERVAL_MS:86400000}
 
 logging:
+  file:
+    name: ${LOG_FILE:./logs/backend.log}
   level:
     root: ${LOG_LEVEL:INFO}
   structured:
