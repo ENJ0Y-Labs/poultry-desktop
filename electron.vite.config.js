@@ -13,7 +13,13 @@ export default defineConfig({
   preload: {
     build: {
       outDir: "dist/preload",
-      rollupOptions: { input: resolve("app/preload/preload.js") }
+      rollupOptions: {
+        input: resolve("app/preload/preload.js"),
+        output: {
+          format: "cjs",
+          entryFileNames: "preload.cjs"
+        }
+      }
     },
     plugins: [externalizeDepsPlugin()]
   },
