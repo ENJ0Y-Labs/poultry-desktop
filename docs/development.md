@@ -62,7 +62,7 @@ npm run dev:backend
 npm run dev:browser
 ```
 
-The browser workflow uses the same local development database as Electron: `data/poultry.db`. The database path is supplied through `poultry.database-path`; the datasource URL must resolve from that property rather than a machine-specific absolute path. Backend logs are written to `logs/backend.log`.
+The browser workflow uses the same local development database as Electron: `data/poultry.db`. The database path is supplied through `poultry.database-path`; the datasource URL must resolve from that property rather than a machine-specific absolute path. Spring Boot logs are written to `logs/backend.log`; Electron process output and startup diagnostics are written separately to `logs/backend-process.log`.
 
 The browser does not provide Electron-only native features such as choosing a backup folder through the desktop dialog. Test those features with `npm run dev`.
 
