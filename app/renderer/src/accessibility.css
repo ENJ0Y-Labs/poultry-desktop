@@ -1,0 +1,202 @@
+/*
+ * Accessibility overrides for the rendered desktop UI.
+ * Essential text uses explicit semantic colors so the older palette aliases
+ * cannot silently turn readable text into low-contrast light-theme colors.
+ */
+:root:not([data-theme="light"]) {
+  --a11y-surface: #0e0e11;
+  --a11y-surface-raised: #1a1a20;
+  --a11y-text: #e4e4e7;
+  --a11y-secondary: #a1a1aa;
+  --a11y-tertiary: #a1a1aa;
+  --a11y-accent-text: #38bdf8;
+  --a11y-nav-active-bg: #202027;
+  --a11y-shortcut-bg: #18181c;
+  --a11y-warning-bg: #3a2d17;
+  --a11y-warning-text: #ffc46f;
+  --a11y-critical-bg: #3a1d20;
+  --a11y-critical-text: #ff9b9b;
+  --a11y-error-bg: #28181b;
+  --a11y-error-text: #ffb1b1;
+}
+
+:root[data-theme="light"] {
+  --a11y-surface: #f5f7fa;
+  --a11y-surface-raised: #ffffff;
+  --a11y-text: #202b38;
+  --a11y-secondary: #435164;
+  --a11y-tertiary: #5e6b7b;
+  --a11y-accent-text: #00677c;
+  --a11y-nav-active-bg: #e8f6fa;
+  --a11y-shortcut-bg: #edf2f7;
+  --a11y-warning-bg: #fff1cf;
+  --a11y-warning-text: #7a4b00;
+  --a11y-critical-bg: #ffe4e6;
+  --a11y-critical-text: #9f1239;
+  --a11y-error-bg: #fff0f0;
+  --a11y-error-text: #9f2525;
+}
+
+/* Navigation, labels, state, and data labels are essential UI text. */
+.nav-group p,
+.workspace-kicker,
+.eyebrow {
+  color: var(--a11y-secondary);
+  font-size: 11px;
+}
+
+.nav-item {
+  color: var(--a11y-text);
+  font-size: 13px;
+}
+
+.nav-item.active,
+:root[data-theme="light"] .nav-item.active {
+  color: var(--a11y-accent-text);
+}
+
+.workspace-status,
+.brand-copy small,
+.topbar-title .muted,
+.date-chip,
+.theme-control,
+.node-status small,
+.dashboard-list span,
+.attention-item p,
+.metric-card small,
+.section-head > .muted {
+  color: var(--a11y-secondary);
+}
+
+.theme-control,
+label {
+  font-size: 12px;
+}
+
+.workspace-status,
+.node-status small {
+  font-size: 11px;
+}
+
+label small {
+  color: var(--a11y-secondary);
+  font-size: 11px;
+}
+
+.nav-group p {
+  font-weight: 750;
+  letter-spacing: .08em;
+}
+
+kbd {
+  color: var(--a11y-secondary);
+  background: var(--a11y-shortcut-bg);
+  border-color: var(--border);
+  font-size: 12px;
+  line-height: 1.2;
+  padding: 2px 5px;
+}
+
+.node-status strong,
+.system-pill,
+.date-chip,
+.statusbar,
+.app-statusbar {
+  font-size: 11px;
+}
+
+.app-statusbar {
+  color: var(--a11y-secondary);
+  font-size: 11px;
+}
+
+.app-statusbar b {
+  color: var(--a11y-text);
+}
+
+.row.header {
+  color: var(--a11y-secondary);
+  font-size: 12px;
+}
+
+.metric-card span {
+  color: var(--a11y-secondary);
+  font-size: 12px;
+}
+
+.metric-card-primary span {
+  color: var(--a11y-secondary);
+}
+
+.severity {
+  font-size: 12px;
+}
+
+.severity.warning {
+  background: var(--a11y-warning-bg);
+  color: var(--a11y-warning-text);
+}
+
+.severity.critical {
+  background: var(--a11y-critical-bg);
+  color: var(--a11y-critical-text);
+}
+
+.error {
+  background: var(--a11y-error-bg);
+  color: var(--a11y-error-text);
+}
+
+.error {
+  font-size: 13px;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--a11y-secondary);
+  opacity: 1;
+}
+
+:root[data-theme="light"] .system-pill,
+:root[data-theme="light"] .date-chip {
+  color: var(--a11y-secondary);
+}
+
+:root[data-theme="light"] .eyebrow,
+:root[data-theme="light"] .workspace-kicker,
+:root[data-theme="light"] .nav-group p,
+:root[data-theme="light"] .row.header,
+:root[data-theme="light"] .metric-card span {
+  color: var(--a11y-secondary);
+}
+
+:root[data-theme="light"] kbd {
+  color: var(--a11y-secondary);
+  background: var(--a11y-shortcut-bg);
+  border-color: #cbd5e1;
+}
+
+/* Preserve focus visibility while using an opaque, high-contrast focus ring. */
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+button:focus-visible {
+  outline: 2px solid var(--a11y-accent-text);
+  outline-offset: 2px;
+}
+
+@media (max-width: 1366px) {
+  .shell {
+    padding-left: 22px;
+    padding-right: 22px;
+  }
+
+  .topbar-actions {
+    gap: 8px;
+  }
+
+  .system-pill,
+  .date-chip {
+    letter-spacing: 0;
+  }
+}

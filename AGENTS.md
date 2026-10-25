@@ -875,6 +875,12 @@ All null metrics display **—**.
 
 The UI presents data returned by the backend. It does not own authoritative farm calculations.
 
+### Accessibility rules
+
+- Essential normal text must meet WCAG AA contrast of at least 4.5:1 against its rendered background. Do not use the large-text exception for small labels, table headings, status text, or shortcut hints.
+- Keep persistent form labels and primary navigation at 12 px or larger; navigation labels should target 13 px. Table headers, metric labels, and keyboard shortcut hints should be at least 12 px.
+- Supporting metadata may remain 11 px only when it is genuinely secondary and still meets contrast requirements. Do not make primary information rely on decorative kickers, color alone, or tiny text.
+- Check both Light and Dark themes. Run `node scripts/verify-a11y.mjs` as part of the production build, then manually review the rendered app at 1366×768 and 1100×700. Automated token checks do not replace rendered keyboard/visual review.
 ## 29. Navigation
 
 Main navigation:
