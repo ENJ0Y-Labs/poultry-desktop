@@ -71,7 +71,12 @@ label {
   font-size: 12px;
 }
 
-.workspace-status,\n.node-status small {\n  font-size: 11px;\n}\n\nlabel small {
+.workspace-status,
+.node-status small {
+  font-size: 11px;
+}
+
+label small {
   color: var(--a11y-secondary);
   font-size: 11px;
 }
@@ -122,6 +127,21 @@ kbd {
 
 .severity {
   font-size: 11px;
+}
+
+.severity.warning {
+  background: var(--a11y-warning-bg);
+  color: var(--a11y-warning-text);
+}
+
+.severity.critical {
+  background: var(--a11y-critical-bg);
+  color: var(--a11y-critical-text);
+}
+
+.error {
+  background: var(--a11y-error-bg);
+  color: var(--a11y-error-text);
 }
 
 .error {
