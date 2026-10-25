@@ -279,7 +279,8 @@ async function createWindow() {
       detail: [
         startupError || "The local backend could not start.",
         "",
-        `Full backend output: ${backendManager.logFilePath}`
+        `Spring Boot log: ${backendManager.logFilePath}`,
+        `Process startup log: ${backendManager.processLogFilePath}`
       ].join("\n")
     });
     app.quit();
