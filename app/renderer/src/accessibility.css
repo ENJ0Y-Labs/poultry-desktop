@@ -105,6 +105,7 @@ kbd {
 
 .app-statusbar {
   color: var(--a11y-secondary);
+  font-size: 11px;
 }
 
 .app-statusbar b {
@@ -126,7 +127,7 @@ kbd {
 }
 
 .severity {
-  font-size: 11px;
+  font-size: 12px;
 }
 
 .severity.warning {
