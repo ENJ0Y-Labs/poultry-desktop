@@ -3,6 +3,7 @@ import ReactDOM from "react-dom/client";
 import App from "./App.jsx";
 import { initializeTheme } from "./utils/theme.js";
 import "./styles.css";
+import "./accessibility.css";
 
 // Apply the saved/system theme before React mounts to avoid a first-render flash.
 initializeTheme();
