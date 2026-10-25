@@ -47,6 +47,12 @@ const tokenNames = {
   tertiary: "--a11y-tertiary",
   accent: "--a11y-accent-text",
   shortcut: "--a11y-shortcut-bg",
+  warningBg: "--a11y-warning-bg",
+  warningText: "--a11y-warning-text",
+  criticalBg: "--a11y-critical-bg",
+  criticalText: "--a11y-critical-text",
+  errorBg: "--a11y-error-bg",
+  errorText: "--a11y-error-text",
 };
 
 for (const theme of themes) {
@@ -60,6 +66,9 @@ for (const theme of themes) {
     ["tertiary text on surface", tokens.tertiary, tokens.surface, 4.5],
     ["shortcut hint on raised surface", tokens.secondary, tokens.shortcut, 4.5],
     ["accent navigation text on raised surface", tokens.accent, tokens.raised, 4.5],
+    ["warning status text", tokens.warningText, tokens.warningBg, 4.5],
+    ["critical status text", tokens.criticalText, tokens.criticalBg, 4.5],
+    ["error message text", tokens.errorText, tokens.errorBg, 4.5],
   ];
 
   for (const [label, foreground, background, minimum] of checks) {
@@ -80,7 +89,7 @@ for (const [selector, minimum] of [
   const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const rule = [...css.matchAll(new RegExp(`(?:^|\\n)\\s*${escaped}\\s*\\{([^}]*)\\}`, "g"))].at(-1)?.[1];
   assert.ok(rule, `Missing readable-size rule for ${selector}`);
-  const size = rule.match(/font-size:\\s*(\\d+(?:\\.\\d+)?)px/i);
+  const size = rule.match(/font-size:\s*(\d+(?:\.\d+)?)px/i);
   assert.ok(size && Number(size[1]) >= minimum, `${selector} must be at least ${minimum}px`);
   console.log(`PASS font size: ${selector} ${size[1]}px`);
 }
