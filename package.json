@@ -6,7 +6,7 @@
   "main": "dist/main/main.js",
   "scripts": {
     "dev": "electron-vite dev",
-    "build": "electron-vite build && node scripts/verify-csp.mjs && node scripts/verify-production-renderer.mjs",
+    "build": "electron-vite build && node scripts/verify-csp.mjs && node scripts/verify-production-renderer.mjs && node scripts/verify-a11y.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "eslint .",
