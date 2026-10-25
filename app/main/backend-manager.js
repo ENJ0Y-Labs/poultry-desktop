@@ -36,8 +36,16 @@ export class BackendManager {
     return join(this.dataDirectory, "poultry.db");
   }
 
+  get logDirectory() {
+    return join(this.isPackaged ? this.userDataPath : this.appPath, "logs");
+  }
+
   get logFilePath() {
-    return join(this.isPackaged ? this.userDataPath : this.appPath, "logs", "backend.log");
+    return join(this.logDirectory, "backend.log");
+  }
+
+  get processLogFilePath() {
+    return join(this.logDirectory, "backend-process.log");
   }
 
   get javaPath() {
@@ -61,7 +69,7 @@ export class BackendManager {
 
   writeLog(message) {
     try {
-      appendFileSync(this.logFilePath, `[${new Date().toISOString()}] ${message}\n`);
+      appendFileSync(this.processLogFilePath, `[${new Date().toISOString()}] ${message}\n`);
     } catch {
       // Logging must never prevent the backend from starting or shutting down.
     }
@@ -93,14 +101,14 @@ export class BackendManager {
       }
     } catch (error) {
       this.writeLog(`Backend process could not be launched: ${error.stack || error.message || error}`);
-      throw new Error(`Pomas could not launch the local backend. See ${this.logFilePath}. Details: ${error.message || error}`);
+      throw new Error(`Pomas could not launch the local backend. Check ${this.processLogFilePath}. Details: ${error.message || error}`);
     }
 
     const child = this.process;
     child.stdout?.on("data", (chunk) => this.writeLog(`[stdout] ${String(chunk).trimEnd()}`));
     child.stderr?.on("data", (chunk) => this.writeLog(`[stderr] ${String(chunk).trimEnd()}`));
     child.once("error", (error) => {
-      this.lastError = new Error(`Backend process error: ${error.message}. See ${this.logFilePath}`);
+      this.lastError = new Error(`Backend process error: ${error.message}. See ${this.processLogFilePath}`);
       this.writeLog(`Backend process error: ${error.stack || error.message}`);
     });
     child.once("exit", (code, signal) => {
@@ -138,7 +146,7 @@ export class BackendManager {
     }
 
     throw new Error(
-      `The local backend could not become ready on port ${this.port}. Another application may be using that port, the database may be unavailable, or a migration may have failed. Check ${this.logFilePath} for the exact error.`
+      `The local backend could not become ready on port ${this.port}. Another application may be using that port, the database may be unavailable, or a migration may have failed. Check ${this.logFilePath} for Spring Boot errors and ${this.processLogFilePath} for process startup output.`
     );
   }
 
