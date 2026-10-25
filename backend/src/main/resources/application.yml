@@ -6,8 +6,12 @@ spring:
     name: poultry-backend
   profiles:
     default: dev
+  server:
+    address: 127.0.0.1
+    port: ${SERVER_PORT:18942}
   datasource:
-    url: jdbc:sqlite:C:\\Users\\HP\\Documents\\grantino\\poultry-desktop\\data\\poultry.db
+    # Always use the configured poultry.database-path. Do not pin this to a developer's machine.
+    url: jdbc:sqlite:${poultry.database-path}
     driver-class-name: org.sqlite.JDBC
     hikari:
       maximum-pool-size: 1
@@ -16,13 +20,15 @@ spring:
     locations: classpath:db/migration
 
 poultry:
-  database-path: ${DATABASE_PATH:C:\\Users\\HP\\Documents\\grantino\\poultry-desktop\\data\\poultry.db}
+  database-path: ${DATABASE_PATH:./data/poultry.db}
   backup:
     enabled: ${BACKUP_ENABLED:false}
     directory: ${BACKUP_DIRECTORY:}
     interval-ms: ${BACKUP_INTERVAL_MS:86400000}
 
 logging:
+  file:
+    name: ${LOG_FILE:./logs/backend.log}
   level:
     root: ${LOG_LEVEL:INFO}
   structured:
