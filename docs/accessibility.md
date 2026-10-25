@@ -19,6 +19,10 @@ WCAG contrast thresholds used by the checker are 4.5:1 for normal text. The curr
 
 ## Required manual rendered review
 
+The token check does not measure every live text node. To re-measure actual rendered text counts and computed styles, open DevTools in the running desktop app and paste the contents of `scripts/audit-rendered-ui.js` into the Console. Run it once with Light selected and again with Dark selected. Repeat at 1366×768 and 1100×700. Save the returned summary/counts with the release checklist. Do not reuse counts from a previous build.
+
+The browser-console audit reports visible text nodes measured, contrast failures, essential-text contrast failures, text below 12 px, and essential text below 12 px. Review each example rather than blindly enlarging decorative labels.
+
 Automated token checks are a guardrail, not a substitute for checking the actual rendered app. Before release, run `npm run dev` and review both Light and Dark themes at 1366×768 and 1100×700. Check Dashboard, Flocks, Daily Work, Feed & Stock, Health, Production, Sales & Money, Reports, and Settings.
 
 Verify:
