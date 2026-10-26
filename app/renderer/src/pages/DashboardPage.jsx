@@ -91,7 +91,7 @@ export default function DashboardPage() {
           </section>
         ) : (
           <>
-            <GettingStartedChecklist houses={houses} batches={batches} feedTypes={feedTypes} dashboard={dashboard} />
+            <GettingStartedChecklist houses={houses} batches={batches} feedTypes={feedTypes} feedInventory={feedInventory} />
             <section className="subsection quick-actions" aria-labelledby="quick-actions-title">
               <div className="section-head"><div><p className="eyebrow">DAILY WORK</p><h3 id="quick-actions-title">Quick actions</h3></div><p className="muted">Jump straight to a validated entry form.</p></div>
               <div className="quick-action-grid">
