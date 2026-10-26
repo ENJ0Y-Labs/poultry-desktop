@@ -107,6 +107,21 @@ class AttentionServiceIntegrationTest {
                 .filter(row -> "LOW_INVENTORY".equals(row.get("type")))
                 .findFirst().orElseThrow()
                 .get("item")).isEqualTo(lowInventory.name());
+
+        assertThat(attention.stream()
+                .filter(row -> "LOW_FEED_STOCK".equals(row.get("type")))
+                .findFirst().orElseThrow()
+                .get("feedTypeId")).isEqualTo(feedType.id());
+
+        assertThat(attention.stream()
+                .filter(row -> "LOW_INVENTORY".equals(row.get("type")))
+                .findFirst().orElseThrow()
+                .get("itemId")).isEqualTo(lowInventory.id());
+
+        assertThat(attention.stream()
+                .filter(row -> "INSUFFICIENT_INVENTORY".equals(row.get("type")))
+                .findFirst().orElseThrow()
+                .get("itemId")).isEqualTo(emptyInventory.id());
     }
 
     @Test
