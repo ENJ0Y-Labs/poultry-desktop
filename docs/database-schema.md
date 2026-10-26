@@ -1,6 +1,6 @@
 # Database schema
 
-SQLite schema changes are managed by Flyway. Migrations are forward-only and currently run through V20.
+SQLite schema changes are managed by Flyway. Migrations are forward-only and currently run through V21.
 
 ## Design rules
 
@@ -222,7 +222,7 @@ farm
 
 ## Migration history
 
-The repository currently contains V1 through V20.
+The repository currently contains V1 through V21.
 
 Broad progression:
 
@@ -245,6 +245,6 @@ Broad progression:
 - V17: sessions
 - V18: operational query indexes
 - V19: performance indexes
-- V20: settings management and configurable expense categories
+- V20: settings management and configurable expense categories\n- V21: optional feed kilogram conversion factors
 
 Never edit an applied migration. Add V21 or later for future schema changes.
