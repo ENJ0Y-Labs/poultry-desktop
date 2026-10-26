@@ -360,10 +360,12 @@ describe("App", () => {
     expect(screen.getByText("26 Oct 2026, 09:21:44")).toBeInTheDocument();
     expect(screen.getByText("Created")).toBeInTheDocument();
     expect(screen.getByText("Farm")).toBeInTheDocument();
-    expect(screen.getByText("—")).toBeInTheDocument();
     expect(screen.getByText("Unknown time")).toBeInTheDocument();
     expect(screen.getByText("Unrecognized Action")).toBeInTheDocument();
     expect(screen.getByText("New Entity Kind")).toBeInTheDocument();
+    const unknownAuditRow = screen.getByText("Unrecognized Action").closest(".row");
+    expect(unknownAuditRow).not.toBeNull();
+    expect(within(unknownAuditRow).getByText("—")).toBeInTheDocument();
   });
 
   it("renders backend-derived attention items on the dashboard", async () => {
