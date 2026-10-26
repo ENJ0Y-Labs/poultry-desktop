@@ -80,6 +80,18 @@ const pageTabs = {
     { id: "pricing", label: "Pricing" },
   ],
 };
+const pageHelp = {
+  dashboard: { title: "Understand the farm at a glance", body: "Review bird counts, production, money, stock, alerts, and recent audited changes. Investigate attention items before relying on summary figures.", action: "Review flock setup", target: "flocks/houses" },
+  flocks: { title: "Manage houses and flock lifecycles", body: "Create houses or pens first, then open layer or broiler batches. Use the batch dashboard to inspect a single flock and its records.", action: "Manage houses and pens", target: "flocks/houses" },
+  "daily-work": { title: "Record routine farm operations", body: "Enter daily observations, water use, mortality, and culling against the correct batch and business date. Correct records at source so reports stay consistent.", action: "Open daily record", target: "daily-work/daily-record" },
+  "feed-stock": { title: "Track feed and farm supplies", body: "Create feed types, record purchases from suppliers, and assign feed usage to batches. Feed purchases and consumption are different events; avoid counting consumption as a second purchase.", action: "Open feed and usage", target: "feed-stock/feed" },
+  health: { title: "Keep treatment history traceable", body: "Record health problems, drugs, treatments, and vaccinations with the correct batch and date. Use the history to support follow-up and reporting.", action: "Open health records", target: "health/health-record" },
+  production: { title: "Record production by flock type", body: "Use egg collection and quality workflows for layers, and weight and growth workflows for broilers. The available workflow depends on the selected batch type.", action: "Open production", target: "production/eggs" },
+  "sales-money": { title: "Track sales and farm costs", body: "Record customers, sales, and expenses with accurate dates and amounts. Use the common ledger and batch links to understand the farm's financial position.", action: "Open sales", target: "sales-money/sales" },
+  reports: { title: "Review farm-wide and batch results", body: "Farm reports combine relevant records; batch reports focus on one flock. Export only after checking the selected date range and batch context.", action: "Open farm report", target: "reports/farm-report" },
+  settings: { title: "Configure and protect local farm data", body: "Review farm profile, units and defaults, application settings, account details, pricing, and backup options. Keep backups current before major changes.", action: "Open backup settings", target: "settings/backup" },
+};
+
 const defaultTabs = {
   dashboard: "overview", flocks: "batch-dashboard", "daily-work": "daily-record",
   health: "health-record", "feed-stock": "feed", production: "eggs",
@@ -375,6 +387,16 @@ export default function AppShell({ farm, error, onRetry, children, startPage = "
               ))}
             </nav>
           )}
+          <section className="page-help" aria-label="Page help">
+            <div className="page-help-copy">
+              <p className="eyebrow">PAGE GUIDE</p>
+              <h2>{pageHelp[active]?.title || "Work with your farm records"}</h2>
+              <p>{pageHelp[active]?.body || "Use this section to manage farm records. Choose the correct batch and business date before saving."}</p>
+            </div>
+            <button type="button" className="secondary-button" onClick={() => { window.location.hash = pageHelp[active]?.target || "dashboard/overview"; }}>
+              {pageHelp[active]?.action || "Open dashboard"}
+            </button>
+          </section>
           <NavigationContext.Provider value={{ activePage: active, activeTab }}>
             {children}
           </NavigationContext.Provider>
