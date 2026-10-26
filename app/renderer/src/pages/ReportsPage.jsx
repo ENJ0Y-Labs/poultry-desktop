@@ -2,6 +2,7 @@ import { useContext } from "react";
 import { FarmManagerContext } from "../components/FarmManagerContext.jsx";
 // eslint-disable-next-line no-unused-vars
 import PageSection from "../components/PageSection.jsx";
+import MetricHelp from "../components/MetricHelp.jsx";
 import { reportApi } from "../services/api.js";
 import { rememberLastBatchId } from "../utils/farmUx.js";
 
@@ -70,7 +71,7 @@ export default function ReportsPage() {
                   <div className="dashboard-list">
                     <div><span>Average weight</span><strong>{formatKg(batchReport.production.growth?.currentAverageWeightKg)}</strong></div>
                     <div><span>Growth</span><strong>{formatKg(batchReport.production.growth?.liveWeightGainKg)}</strong></div>
-                    <div><span>FCR</span><strong>{formatMetric(batchReport.production.growth?.fcr)}</strong></div>
+                    <div><span>FCR <MetricHelp id="report-fcr-help" label="FCR formula">Feed conversion ratio (FCR) = feed consumed in kilograms ÷ live-weight gain in kilograms for this batch as of the report date. Both quantities must cover the same period. Only feed recorded in kg contributes. Lower FCR means less feed per kilogram of live-weight gain. If live-weight gain is zero or negative, FCR is undefined.</MetricHelp></span><strong>{formatMetric(batchReport.production.growth?.fcr)}</strong></div>
                   </div>
                 </>}
               </div>
