@@ -543,3 +543,6 @@ kbd{font-size:11px;font-weight:800;color:var(--muted-2);border:1px solid var(--p
   --alpha-65217245p4: rgba(26, 77, 92, .34);
   --alpha-65217245p55: rgba(26, 77, 92, .42);
 }
+
+
+.production-trend-chart{width:100%;min-width:0;min-height:260px;margin-top:12px}.production-trend-filters{grid-template-columns:repeat(2,minmax(150px,220px));margin-bottom:12px}.production-trend .section-head{margin-bottom:8px}.production-trend .section-head .muted{max-width:760px}
