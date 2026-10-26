@@ -573,7 +573,7 @@ describe("App", () => {
     await screen.findByRole("heading", { name: "Farm dashboard" });
     const dashboardNav = () => fireEvent.click(within(screen.getByRole("navigation", { name: "Main navigation" })).getByRole("button", { name: "Dashboard" }));
 
-    fireEvent.click(screen.getByRole("button", { name: "Record mortality" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Record mortality" }));
     expect(window.location.hash).toContain("daily-work/mortality");
     expect(await screen.findByRole("combobox", { name: "Batch" })).toHaveValue("layer-1");
 
