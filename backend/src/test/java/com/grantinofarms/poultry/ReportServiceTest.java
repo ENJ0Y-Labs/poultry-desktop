@@ -99,6 +99,8 @@ class ReportServiceTest {
         SalesService sales = mock(SalesService.class);
         InventoryService inventory = mock(InventoryService.class);
         HealthManagementService health = mock(HealthManagementService.class);
+        FarmService farmService = mock(FarmService.class);
+        when(farmService.getSettings()).thenReturn(new FarmSettingsResponse(30, 25, List.of(25, 75), "litres"));
 
         BatchResponse batch = mock(BatchResponse.class);
         when(batch.id()).thenReturn("batch-1");
@@ -130,7 +132,7 @@ class ReportServiceTest {
 
         ReportService service = new ReportService(
                 dashboard, batches, population, birdCost, feed, eggs, broilers,
-                expenses, sales, inventory, health
+                expenses, sales, inventory, health, farmService
         );
 
         Map<String, Object> report = service.batch("batch-1", asOf);
