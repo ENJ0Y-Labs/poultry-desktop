@@ -15,13 +15,6 @@ function defaultTo() {
   return local.toISOString().slice(0, 10);
 }
 
-function defaultFrom() {
-  const date = new Date();
-  date.setDate(date.getDate() - 29);
-  const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
-  return local.toISOString().slice(0, 10);
-}
-
 function formatValue(value, unit) {
   if (value == null || !Number.isFinite(Number(value))) return "No record";
   const numeric = Number(value);
@@ -34,6 +27,22 @@ export default function ProductionTrendChart({ batchId, title, description, unit
   const [trend, setTrend] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  useEffect(() => {
+    function refreshAfterMutation(event) {
+      const path = event.detail?.path || "";
+      const method = String(event.detail?.method || "").toUpperCase();
+      if (method === "GET") return;
+      const relevant = unit === "percent"
+        ? new RegExp("^/batches/" + batchId + "/eggs/(collections|sales)(?:/|$|\\?)").test(path)
+        : new RegExp("^/batches/" + batchId + "/broiler/weights(?:/|$|\\?)").test(path);
+      if (relevant) setRefreshKey(key => key + 1);
+    }
+    window.addEventListener("pomas:data-mutated", refreshAfterMutation);
+    return () => window.removeEventListener("pomas:data-mutated", refreshAfterMutation);
+  }, [batchId, unit]);
 
   useEffect(() => {
     if (!batchId) {
@@ -48,7 +57,7 @@ export default function ProductionTrendChart({ batchId, title, description, unit
       .catch(err => { if (active) { setTrend(null); setError(err.message || "Could not load production trend."); } })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
-  }, [batchId, from, to, loadTrend]);
+  }, [batchId, from, to, loadTrend, refreshKey]);
 
   const points = trend?.points || [];
   const hasValues = points.some(point => point.value != null);
