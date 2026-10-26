@@ -84,12 +84,8 @@ export default function DashboardPage() {
             <p className="eyebrow">GETTING STARTED</p>
             <h3 id="first-run-title">Your farm is ready to be set up</h3>
             <p className="first-run-intro">These zeros are expected because no flock records have been entered yet. Start with your farm's physical setup, then add birds and record daily work. Nothing has been added automatically.</p>
-            <ol className="first-run-steps">
-              <li><span className="first-run-step-number">1</span><div><strong>Create a house or pen</strong><p>Add the place where your birds will be kept. A house is required before you can create a batch.</p><button type="button" onClick={() => navigateTo("flocks/houses")}>Create house / pen</button></div></li>
-              <li><span className="first-run-step-number">2</span><div><strong>Open your first batch</strong><p>Record whether the flock is for layers or broilers, its placement date, and starting bird count.</p><button type="button" onClick={() => navigateTo("flocks/flocks")}>Create batch</button></div></li>
-              <li><span className="first-run-step-number">3</span><div><strong>Set up and record feed</strong><p>Add a feed type, record a purchase, then record feed used by an active batch.</p><button type="button" onClick={() => navigateTo("feed-stock/feed")}>Open feed & stock</button></div></li>
-              <li><span className="first-run-step-number">4</span><div><strong>Start daily records</strong><p>Record routine observations for your active batch. Mortality, water, health, and production can be entered in their own sections.</p><button type="button" onClick={() => navigateTo("daily-work/daily-record")}>Record daily work</button></div></li>
-            </ol>
+            <GettingStartedChecklist houses={houses} batches={batches} feedTypes={feedTypes} dashboard={dashboard} />
+
           </section>
         ) : (
           <>
