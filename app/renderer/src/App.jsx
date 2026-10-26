@@ -269,12 +269,14 @@ export default function App() {
       setApplicationSettings({ ...appSettings, startPage: appSettings.startPage === "operations" ? "daily-work" : appSettings.startPage });
       setSettingsReady(true);
       setBackupSettings(backupConfig);
+      return true;
     } catch (err) {
       if (err.code === "UNAUTHENTICATED") {
         setAuthStatus({ authenticated: false, setupRequired: false });
       } else if (err.message !== "No farm has been created yet.") {
         setError(displayApiError(err));
       }
+      return false;
     } finally {
       if (showLoading) setLoading(false);
     }
@@ -286,13 +288,14 @@ export default function App() {
       const status = await authApi.status();
       setAuthStatus(status);
       if (status.authenticated) {
-        await load({ showLoading: !preserveScreen, preserveForms: preserveScreen });
-      } else if (!preserveScreen) {
-        setLoading(false);
+        return await load({ showLoading: !preserveScreen, preserveForms: preserveScreen });
       }
+      if (!preserveScreen) setLoading(false);
+      return true;
     } catch (err) {
       setError(displayApiError(err));
       if (!preserveScreen) setLoading(false);
+      return false;
     }
   }
   async function submitAuth(event) {
