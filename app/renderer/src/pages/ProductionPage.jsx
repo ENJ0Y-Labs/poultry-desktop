@@ -1,4 +1,7 @@
 import { useContext } from "react";
+import { productionTrendApi } from "../services/api.js";
+// eslint-disable-next-line no-unused-vars
+import ProductionTrendChart from "../components/ProductionTrendChart.jsx";
 import { FarmManagerContext } from "../components/FarmManagerContext.jsx";
 // eslint-disable-next-line no-unused-vars
 import PageSection from "../components/PageSection.jsx";
@@ -31,6 +34,13 @@ export default function ProductionPage() {
 
           {eggBatchId && (
             <>
+              <ProductionTrendChart
+                batchId={eggBatchId}
+                title="Layer HDP%"
+                description="Daily egg production as a percentage of live birds. Uses total collected eggs (good + cracked) and backend population calculations. Missing production records appear as gaps."
+                unit="percent"
+                loadTrend={productionTrendApi.layerHdp}
+              />
               <div className="subsection">
                 <h3>Egg inventory</h3>
                 <div className="table">
@@ -110,18 +120,26 @@ export default function ProductionPage() {
 
           {broilerBatchId && (
             <>
+              <ProductionTrendChart
+                batchId={broilerBatchId}
+                title="Broiler average weight"
+                description="Average sampled bird weight by record date, in kilograms. Days without weight records appear as gaps."
+                unit="kg"
+                loadTrend={productionTrendApi.broilerAverageWeight}
+              />
               <div className="subsection">
                 <h3>Growth summary</h3>
                 <div className="table">
-                  <div className="row header"><span>Average weight</span><span>Weight gain</span><span>FCR <MetricHelp id="production-fcr-help" label="FCR formula">Feed conversion ratio (FCR) = feed consumed in kilograms ÷ live-weight gain in kilograms for this batch as of the selected date. Both quantities must cover the same period. Only feed recorded in kg contributes. Lower FCR means less feed per kilogram of live-weight gain. If live-weight gain is zero or negative, FCR is undefined.</MetricHelp></span><span>Trend records</span></div>
+                  <div className="row header"><span>Average weight</span><span>Weight gain</span><span>Feed consumed (converted)</span><span>FCR</span><span>Trend records</span></div>
                   <div className="row">
                     <span>{broilerGrowth?.averageWeightKg ?? "—"} kg</span>
                     <span>{broilerGrowth?.weightGainKg ?? "—"} kg</span>
+                    <span>{broilerGrowth?.feedConsumedKg ?? "—"} kg</span>
                     <span>{broilerGrowth?.fcr ?? "—"}</span>
                     <span>{broilerGrowth?.trend?.length ?? 0}</span>
                   </div>
                 </div>
-                <p className="muted">FCR is calculated by the backend. Feed consumed and live-weight gain use kilograms and the same batch reporting period; feed types recorded in other units are excluded.</p>
+                <p className="muted">FCR uses converted kilograms of all recorded feed divided by live-weight gain. Configure each non-kg feed type’s kg-per-unit factor in Feed management. If any consumed feed type has an unknown conversion, feed consumed and FCR display — until the factor is configured.</p>
               </div>
 
               <div className="subsection">

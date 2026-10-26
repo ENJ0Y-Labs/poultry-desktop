@@ -67,7 +67,7 @@ public class AttentionService {
 
     private void addInventoryAlerts(List<Map<String, Object>> result, String farmId) {
         jdbc.query("""
-                SELECT i.name, i.unit, i.reorder_level,
+                SELECT i.id, i.name, i.unit, i.reorder_level,
                        COALESCE(SUM(
                            CASE
                                WHEN m.movement_type IN ('RECEIVE','ADJUST_IN') THEN m.quantity
@@ -100,6 +100,7 @@ public class AttentionService {
                                     ? " is out of stock."
                                     : " is at or below its reorder level."),
                             Map.of(
+                                    "itemId", rs.getString("id"),
                                     "item", rs.getString("name"),
                                     "stock", stock,
                                     "reorderLevel", rs.getBigDecimal("reorder_level"),
@@ -148,7 +149,7 @@ public class AttentionService {
                                 remaining <= 0 ? "CRITICAL" : "WARNING",
                                 "Low feed stock",
                                 message,
-                                feedDetails(rs.getString("name"), remaining, rs.getString("unit"), daysCover)
+                                feedDetails(rs.getString("id"), rs.getString("name"), remaining, rs.getString("unit"), daysCover)
                         ));
                     }
                 }, date.toString(), date.toString(), date.toString(), date.toString(), farmId);
@@ -365,8 +366,9 @@ public class AttentionService {
         ));
     }
 
-    private Map<String, Object> feedDetails(String item, long stock, String unit, double daysCover) {
+    private Map<String, Object> feedDetails(String feedTypeId, String item, long stock, String unit, double daysCover) {
         Map<String, Object> details = new LinkedHashMap<>();
+        details.put("feedTypeId", feedTypeId);
         details.put("item", item);
         details.put("stockQuantityMilli", stock);
         details.put("unit", unit);

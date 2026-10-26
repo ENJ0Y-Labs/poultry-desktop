@@ -71,6 +71,31 @@ class DatabaseSchemaTest {
         assertThat(flywaySuccess).isGreaterThanOrEqualTo(18);
     }
 
+
+    @Test
+    void applicationSettingsCheckConstraintAcceptsAllSupportedStartPagesAndRejectsUnknownValues() {
+        String farmId = UUID.randomUUID().toString();
+        String now = "2026-10-26T00:00:00Z";
+        jdbcTemplate.update(
+                "INSERT INTO farms (id, name, timezone, currency, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                farmId, "Start Page Test Farm", "Africa/Lagos", "NGN", "ACTIVE", now, now);
+        jdbcTemplate.update(
+                "INSERT INTO application_settings (farm_id, created_at, updated_at) VALUES (?, ?, ?)",
+                farmId, now, now);
+
+        for (String page : List.of("dashboard", "flocks", "daily-work", "feed-stock",
+                "health", "production", "sales-money", "reports", "settings")) {
+            jdbcTemplate.update("UPDATE application_settings SET start_page = ? WHERE farm_id = ?", page, farmId);
+            assertThat(jdbcTemplate.queryForObject(
+                    "SELECT start_page FROM application_settings WHERE farm_id = ?", String.class, farmId))
+                    .isEqualTo(page);
+        }
+
+        assertThatThrownBy(() -> jdbcTemplate.update(
+                "UPDATE application_settings SET start_page = 'unknown-page' WHERE farm_id = ?", farmId))
+                .isInstanceOf(Exception.class);
+    }
+
     @Test
     void inventorySupportsItemsAndMovementReasons() {
         List<String> itemColumns = jdbcTemplate.query(
@@ -78,6 +103,12 @@ class DatabaseSchemaTest {
                 (rs, rowNum) -> rs.getString("name")
         );
         assertThat(itemColumns).contains("name", "category", "unit", "reorder_level", "status");
+
+        List<String> feedTypeColumns = jdbcTemplate.query(
+                "PRAGMA table_info(feed_types)",
+                (rs, rowNum) -> rs.getString("name")
+        );
+        assertThat(feedTypeColumns).contains("kg_per_unit");
 
         List<String> movementColumns = jdbcTemplate.query(
                 "PRAGMA table_info(inventory_movements)",

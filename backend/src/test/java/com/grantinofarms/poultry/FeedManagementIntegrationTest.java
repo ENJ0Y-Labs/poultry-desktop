@@ -29,6 +29,25 @@ class FeedManagementIntegrationTest {
     @Autowired JdbcTemplate jdbc;
 
     @Test
+    void feedConversionMustBePositiveAndCanBeLeftUnknown() {
+        setupFarm();
+        var unknown = feedService.createType(new FeedTypeCreateRequest("Unknown Bag", "bag", "BROILER"));
+        assertThat(unknown.kgPerUnit()).isNull();
+
+        assertThatThrownBy(() -> feedService.createType(
+                new FeedTypeCreateRequest("Invalid Bag", "bag", "BROILER", BigDecimal.ZERO)))
+                .hasMessage("Kilograms per unit must be greater than zero.");
+
+        assertThatThrownBy(() -> feedService.updateConversion(unknown.id(),
+                new FeedTypeConversionRequest(new BigDecimal("-1"))))
+                .hasMessage("Kilograms per unit must be greater than zero, or left blank when unknown.");
+
+        var updated = feedService.updateConversion(unknown.id(),
+                new FeedTypeConversionRequest(new BigDecimal("25")));
+        assertThat(updated.kgPerUnit()).isEqualByComparingTo("25");
+    }
+
+    @Test
     void purchaseCreatesInventoryAndOneExpense() {
         setupFarm();
         var type = feedService.createType(new FeedTypeCreateRequest("Starter", "bag", "BROILER"));

@@ -2,8 +2,9 @@ import { useContext } from "react";
 import { FarmManagerContext } from "../components/FarmManagerContext.jsx";
 // eslint-disable-next-line no-unused-vars
 import PageSection from "../components/PageSection.jsx";
-import MetricHelp from "../components/MetricHelp.jsx";
-import { reportApi } from "../services/api.js";
+import { reportApi, productionTrendApi } from "../services/api.js";
+// eslint-disable-next-line no-unused-vars
+import ProductionTrendChart from "../components/ProductionTrendChart.jsx";
 import { rememberLastBatchId } from "../utils/farmUx.js";
 
 export default function ReportsPage() {
@@ -30,7 +31,7 @@ export default function ReportsPage() {
                 ["Inventory items", formatCount(farmReport.inventory?.length)]
               ].map(([label,value]) => <div className="metric-card" key={label}><span>{label}</span><strong>{value ?? "—"}</strong></div>)}
             </div>
-            <p className="muted">As of {farmReport.asOf}. All report metrics are assembled from the same calculation services used by the dashboards.</p>
+            <p className="muted">As of {farmReport.asOf}. Water quantities use the farm display label: {farmReport.waterUnitLabel || "litres"}. All report metrics are assembled from the same calculation services used by the dashboards.</p>
           </> : <p className="muted">Report is loading…</p>}
         </section></PageSection>
 
@@ -83,8 +84,26 @@ export default function ReportsPage() {
                 </div>
               </div>
             </div>
-            <p className="muted">As of {batchReport.asOf}. Population, feed, production, costs, revenue and profit reuse the dashboard calculation services.</p>
+            <p className="muted">As of {batchReport.asOf}. Water quantities use the farm display label: {batchReport.waterUnitLabel || "litres"}. Population, feed, production, costs, revenue and profit reuse the dashboard calculation services.</p>
           </> : <p className="muted">{selectedBatchId ? "Batch report is loading…" : "Select a batch to inspect its report."}</p>}
+          {selectedBatchId && batches.find(batch => batch.id === selectedBatchId)?.type === "LAYER" && (
+            <ProductionTrendChart
+              batchId={selectedBatchId}
+              title="Layer HDP%"
+              description="Daily eggs collected (good + cracked) as a percentage of the historical live-bird population."
+              unit="percent"
+              loadTrend={productionTrendApi.layerHdp}
+            />
+          )}
+          {selectedBatchId && batches.find(batch => batch.id === selectedBatchId)?.type === "BROILER" && (
+            <ProductionTrendChart
+              batchId={selectedBatchId}
+              title="Broiler average weight"
+              description="Daily average sampled bird weight in kilograms, calculated by the backend."
+              unit="kg"
+              loadTrend={productionTrendApi.broilerAverageWeight}
+            />
+          )}
         </section></PageSection>
     </div>
   );

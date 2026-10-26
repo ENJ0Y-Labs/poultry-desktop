@@ -1,6 +1,6 @@
 # Database schema
 
-SQLite schema changes are managed by Flyway. Migrations are forward-only and currently run through V20.
+SQLite schema changes are managed by Flyway. Migrations are forward-only and currently run through V22.
 
 ## Design rules
 
@@ -124,7 +124,7 @@ Broiler bird sales. A corresponding SOLD population event remains the authoritat
 
 ### `farm_settings`
 
-Farm operating defaults, including egg crate size, water defaults and pricing/margin settings.
+Farm operating defaults, including egg crate size, water defaults, water unit display label, and pricing/margin settings. The water unit label defaults to `litres` and is presentation-only; changing it does not convert or rewrite existing water measurements.
 
 ### `pricing_margin_history`
 
@@ -170,11 +170,11 @@ Session-token hashes and session state used by authentication.
 
 ### `application_settings`
 
-One settings row per farm.
+One settings row per farm. V22 rebuilds this table with a CHECK constraint aligned to all nine supported renderer pages, preserving existing settings and timestamps.
 
 Current fields include:
 
-- start page
+- start page, restricted to the canonical renderer pages: `dashboard`, `flocks`, `daily-work`, `feed-stock`, `health`, `production`, `sales-money`, `reports`, and `settings`
 - date format
 
 ### `backup_settings`
@@ -222,7 +222,7 @@ farm
 
 ## Migration history
 
-The repository currently contains V1 through V20.
+The repository currently contains V1 through V21.
 
 Broad progression:
 
@@ -245,6 +245,6 @@ Broad progression:
 - V17: sessions
 - V18: operational query indexes
 - V19: performance indexes
-- V20: settings management and configurable expense categories
+- V20: settings management and configurable expense categories\n- V21: optional feed kilogram conversion factors
 
 Never edit an applied migration. Add V21 or later for future schema changes.
