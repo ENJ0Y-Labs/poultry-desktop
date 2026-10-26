@@ -237,18 +237,20 @@ describe("App", () => {
 
     await screen.findByRole("heading", { name: "Create owner account" });
     fireEvent.change(screen.getByLabelText("Full name"), { target: { value: "Farm Owner" } });
-    fireEvent.change(screen.getByLabelText("Email"), { target: { value: "owner@example.com" } });
+    fireEvent.change(screen.getByLabelText(/Username/), { target: { value: "farm-owner" } });
+    fireEvent.change(screen.getByLabelText("Email (optional)"), { target: { value: "owner@example.com" } });
     fireEvent.change(screen.getByLabelText(/Password/), { target: { value: "correct-horse-battery" } });
     fireEvent.click(screen.getByRole("button", { name: "Create account and sign in" }));
 
     await waitFor(() => expect(screen.getByRole("heading", { name: "Farm dashboard" })).toBeInTheDocument());
     expect(setup).toHaveBeenCalledWith({
-      fullName: "Farm Owner",
+      username: "farm-owner",
       email: "owner@example.com",
+      fullName: "Farm Owner",
       password: "correct-horse-battery",
     });
     expect(login).toHaveBeenCalledWith({
-      email: "owner@example.com",
+      loginIdentifier: "farm-owner",
       password: "correct-horse-battery",
       rememberMe: false,
     });

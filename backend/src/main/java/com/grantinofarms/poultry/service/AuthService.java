@@ -7,6 +7,7 @@ import com.grantinofarms.poultry.repository.SessionRepository;
 import com.grantinofarms.poultry.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,15 +17,20 @@ import java.security.SecureRandom;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Base64;
+import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.regex.Pattern;
 
 @Service
 public class AuthService {
     private static final Logger log = LoggerFactory.getLogger(AuthService.class);
     public static final String COOKIE = "poultry_session";
+    private static final Pattern USERNAME_PATTERN = Pattern.compile("[a-z0-9][a-z0-9._-]{2,31}");
+    private static final Pattern EMAIL_PATTERN = Pattern.compile("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$");
     private final UserRepository users;
     private final SessionRepository sessions;
     private final PasswordHasher passwords;
@@ -51,7 +57,14 @@ public class AuthService {
             throw new ApiException(HttpStatus.CONFLICT, "OWNER_ALREADY_EXISTS", "The primary owner account already exists.");
         }
 
-        String email = request.email().trim().toLowerCase(java.util.Locale.ROOT);
+        String email = normalizeEmail(request.email());
+        String username = normalizeUsername(request.username(), email);
+        validateUsername(username);
+        validateEmail(email);
+        if (users.findByUsername(username) != null) {
+            throw new ApiException(HttpStatus.CONFLICT, "USERNAME_ALREADY_EXISTS", "That username is already in use.");
+        }
+
         String id = UUID.randomUUID().toString();
         String now = Instant.now().toString();
 
@@ -60,12 +73,17 @@ public class AuthService {
         long passwordHashMs = elapsedMs(stageStarted);
 
         stageStarted = System.nanoTime();
-        users.insert(id, email, passwordHash, request.fullName().trim(), now);
+        try {
+            users.insert(id, username, email, passwordHash, request.fullName().trim(), now);
+        } catch (DataIntegrityViolationException e) {
+            throw new ApiException(HttpStatus.CONFLICT, "ACCOUNT_IDENTIFIER_ALREADY_EXISTS",
+                    "That username or email is already in use.");
+        }
         long sqliteWriteMs = elapsedMs(stageStarted);
 
         log.info("auth_setup_timing outcome=success ownerCountMs={} passwordHashMs={} sqliteWriteMs={} totalMs={}",
                 ownerCountMs, passwordHashMs, sqliteWriteMs, elapsedMs(totalStarted));
-        return Map.of("id", id, "email", email, "fullName", request.fullName().trim(), "role", "OWNER");
+        return publicUser(id, username, email, request.fullName().trim(), "OWNER");
     }
 
     @Transactional
@@ -81,9 +99,12 @@ public class AuthService {
     @Transactional
     public Session login(LoginRequest request, String clientAddress, boolean persistentSession) {
         long totalStarted = System.nanoTime();
-        String email = request.email().trim().toLowerCase(java.util.Locale.ROOT);
+        String identifier = request.loginIdentifier().trim().toLowerCase(Locale.ROOT);
+        if (identifier.isBlank()) {
+            throw new ApiException(HttpStatus.UNAUTHORIZED, "INVALID_CREDENTIALS", "Username/email or password is incorrect.");
+        }
         String address = clientAddress == null || clientAddress.isBlank() ? "unknown" : clientAddress;
-        String attemptKey = address + "|" + email;
+        String attemptKey = address + "|" + identifier;
         long nowMillis = System.currentTimeMillis();
         LoginAttempts attempts = loginAttempts.compute(attemptKey, (key, current) ->
                 current == null || nowMillis - current.windowStartedAt() >= LOGIN_WINDOW_MILLIS
@@ -94,7 +115,7 @@ public class AuthService {
         }
 
         long stageStarted = System.nanoTime();
-        Map<String, Object> user = users.findByEmail(email);
+        Map<String, Object> user = users.findByIdentifier(identifier);
         long userLookupMs = elapsedMs(stageStarted);
 
         stageStarted = System.nanoTime();
@@ -106,7 +127,7 @@ public class AuthService {
                     new LoginAttempts(attempts.windowStartedAt(), attempts.failures() + 1));
             log.info("auth_login_timing outcome=invalid_credentials userLookupMs={} passwordVerifyMs={} sessionPurgeMs=0 sessionWriteMs=0 totalMs={}",
                     userLookupMs, passwordVerifyMs, elapsedMs(totalStarted));
-            throw new ApiException(HttpStatus.UNAUTHORIZED, "INVALID_CREDENTIALS", "Email or password is incorrect.");
+            throw new ApiException(HttpStatus.UNAUTHORIZED, "INVALID_CREDENTIALS", "Username/email or password is incorrect.");
         }
         loginAttempts.remove(attemptKey);
         if (!"ACTIVE".equals(user.get("status")))
@@ -127,9 +148,9 @@ public class AuthService {
         long sessionWriteMs = elapsedMs(stageStarted);
         log.info("auth_login_timing outcome=success userLookupMs={} passwordVerifyMs={} sessionPurgeMs={} sessionWriteMs={} totalMs={}",
                 userLookupMs, passwordVerifyMs, sessionPurgeMs, sessionWriteMs, elapsedMs(totalStarted));
-        return new Session(raw, Map.of(
-                "id", user.get("id"), "email", user.get("email"),
-                "fullName", user.get("full_name"), "role", user.get("role")));
+        return new Session(raw, publicUser(
+                String.valueOf(user.get("id")), String.valueOf(user.get("username")),
+                (String) user.get("email"), String.valueOf(user.get("full_name")), String.valueOf(user.get("role"))));
     }
 
     public Map<String, Object> current(String token) {
@@ -147,6 +168,41 @@ public class AuthService {
     @Transactional
     public void logout(String token) {
         if (token != null && !token.isBlank()) sessions.delete(hashToken(token));
+    }
+
+    private String normalizeEmail(String email) {
+        if (email == null || email.isBlank()) return null;
+        return email.trim().toLowerCase(Locale.ROOT);
+    }
+
+    private String normalizeUsername(String requested, String email) {
+        String value = requested == null || requested.isBlank()
+                ? (email == null ? "" : email.substring(0, email.indexOf('@')))
+                : requested.trim();
+        return value.toLowerCase(Locale.ROOT);
+    }
+
+    private void validateUsername(String username) {
+        if (username == null || !USERNAME_PATTERN.matcher(username).matches()) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_USERNAME",
+                    "Username must be 3–32 characters and use lowercase letters, numbers, dots, underscores, or hyphens.");
+        }
+    }
+
+    private void validateEmail(String email) {
+        if (email != null && !EMAIL_PATTERN.matcher(email).matches()) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_EMAIL", "Enter a valid email address or leave it blank.");
+        }
+    }
+
+    private Map<String, Object> publicUser(String id, String username, String email, String fullName, String role) {
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("id", id);
+        result.put("username", username);
+        result.put("email", email);
+        result.put("fullName", fullName);
+        result.put("role", role);
+        return result;
     }
 
     private String newToken() {

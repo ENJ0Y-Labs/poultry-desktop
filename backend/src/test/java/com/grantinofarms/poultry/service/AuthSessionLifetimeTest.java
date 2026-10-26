@@ -30,8 +30,9 @@ class AuthSessionLifetimeTest {
         sessions = mock(SessionRepository.class);
         passwords = mock(PasswordHasher.class);
         service = new AuthService(users, sessions, passwords);
-        when(users.findByEmail("owner@example.com")).thenReturn(Map.of(
+        when(users.findByIdentifier("owner@example.com")).thenReturn(Map.of(
                 "id", "owner-1",
+                "username", "owner",
                 "email", "owner@example.com",
                 "full_name", "Farm Owner",
                 "role", "OWNER",
