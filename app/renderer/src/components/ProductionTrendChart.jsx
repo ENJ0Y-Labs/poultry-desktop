@@ -24,7 +24,7 @@ function formatValue(value, unit) {
   return unit === "percent" ? `${numeric.toFixed(2)}%` : `${numeric.toFixed(3)} kg`;
 }
 
-export default function ProductionTrendChart({ batchId, title, description, unit, loadTrend }) {
+export default function ProductionTrendChart({ batchId, title, titleHelp, description, unit, loadTrend }) {
   const [from, setFrom] = useState("");
   const [to, setTo] = useState(defaultTo);
   const [trend, setTrend] = useState(null);
@@ -69,7 +69,7 @@ export default function ProductionTrendChart({ batchId, title, description, unit
     <section className="subsection production-trend" aria-label={title}>
       <div className="section-head">
         <div>
-          <h3>{title}</h3>
+          <h3>{title}{titleHelp ? <> {titleHelp}</> : null}</h3>
           <p className="muted">{description}</p>
         </div>
       </div>
