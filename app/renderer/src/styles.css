@@ -228,7 +228,7 @@ kbd{font-size:11px;font-weight:800;color:var(--muted-2);border:1px solid var(--p
 .hero{margin:70px auto 24px;max-width:680px}.hero h1{font-size:32px;line-height:1.05;margin:0 0 8px}.shell-placeholder{display:none}.dashboard-page{scroll-margin-top:100px}section[id]{scroll-margin-top:100px}
 @media(max-width:1200px){.metric-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.inline-form{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:900px){.sidebar{width:220px}.app-main{margin-left:220px}.dashboard-columns,.grid{grid-template-columns:1fr}.metric-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(max-width:700px){body{min-width:0}.sidebar{position:static;width:100%;height:auto}.sidebar-nav{display:flex;overflow:auto}.nav-group{min-width:150px}.sidebar-footer{display:none}.app-shell{display:block}.app-main{margin-left:0}.app-topbar{position:static}.app-statusbar{display:none}}
+/* Pomas is a desktop-only renderer. Keep the canvas at the same minimum width as Electron. Narrow browser viewports are unsupported and must not trigger a misleading phone-navigation layout. */
 
 :root[data-theme="light"] {
   --bg: #f5f7fa;
@@ -491,16 +491,7 @@ kbd{font-size:11px;font-weight:800;color:var(--muted-2);border:1px solid var(--p
   .sidebar { left: 42px; width: 200px; }
   .app-main { margin-left: 242px; }
 }
-@media (max-width: 700px) {
-  .activity-bar { position: static; width: 100%; height: auto; flex-direction: row; border-right: 0; border-bottom: 1px solid var(--ide-border); }
-  .activity-bar-main, .activity-bar-footer { flex-direction: row; align-items: center; }
-  .activity-bar-main { flex: 1; overflow-x: auto; }
-  .activity-bar-footer { margin: 0 0 0 auto; padding: 0 0 0 8px; border-top: 0; border-left: 1px solid var(--ide-border); }
-  .activity-button { min-width: 40px; width: 40px; }
-  .sidebar { position: static; width: 100%; height: auto; }
-  .app-shell { display: flex; flex-direction: column; }
-  .app-main { margin-left: 0; }
-}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; transition-duration: 0.01ms !important; }
 }

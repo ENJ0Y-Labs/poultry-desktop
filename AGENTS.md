@@ -1243,3 +1243,12 @@ And never sacrifice poultry math for dashboard cosmetics.
 - Run `npm run build`; the build must run `scripts/audit-font-assets.mjs` against both renderer source and built output.
 - Development and packaged renderer Network/Console checks are separate manual validation. Do not claim the packaged renderer has no missing-font errors until the packaged app has actually been launched and inspected.
 - Record before/after font request counts and transferred bytes when a runtime report is supplied. Distinguish repository asset inventory from actual browser transfer measurements.
+
+
+## 36. Responsive layout and supported window size
+
+- Pomas is a desktop-only Windows app. Keep the renderer minimum canvas width aligned with Electron's `minWidth: 1100` and `minHeight: 650`.
+- Do not imply phone/tablet support through narrow-screen navigation transformations. Browser emulation below 1100px is diagnostic only; document it as unsupported, not as a passed responsive layout.
+- At supported dimensions, keep primary navigation reachable, prevent page-level horizontal overflow, and contain wide data tables in their own scroll region. Forms and action buttons must remain operable.
+- Before introducing a hamburger menu or other navigation redesign, reproduce and record the failure at a supported window size. Follow `docs/responsive-layout-audit.md` and distinguish static source inspection from actual browser/Electron runtime verification.
+- Resize and test the packaged Electron app at its 1100×650 minimum and at the 1366×768 default. Do not claim runtime validation unless those checks were actually performed.
