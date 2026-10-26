@@ -131,7 +131,7 @@ describe("API client", () => {
       name: "ApiError",
       code: "BACKEND_UNAVAILABLE",
       status: 503,
-      message: "The local backend is unavailable. Restart the application and try again.",
+      message: "The local backend is not responding. Your unsaved form entries are still on this screen. Retry the connection when the backend is available.",
     });
   });
 
