@@ -86,7 +86,7 @@ class DailyOperationsIntegrationTest {
         var house = houseService.create(new HouseCreateRequest("Layer House", "LH1", null));
         var batch = batchService.create(new BatchCreateRequest(
                 "LAYER", LocalDate.of(2026, 1, 1), house.id(), 100, null, 1_000_000L));
-        farmService.updateSettings(new FarmSettingsRequest(30, 25, java.util.List.of(25, 75)));
+        farmService.updateSettings(new FarmSettingsRequest(30, 25, java.util.List.of(25, 75), "litres"));
 
         var first = dailyOperationsService.create(batch.id(), new DailyRecordRequest(
                 LocalDate.of(2026, 1, 2), "Keep these notes",
