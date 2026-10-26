@@ -14,7 +14,9 @@ For a population reduction:
 
 The result is calculated with integer arithmetic only.
 
-If the proportional result is not a whole minor unit, the integer quotient is allocated to the birds leaving and the remainder stays in the carried pool. If all available birds leave, the entire remaining carried cost is allocated.
+Batch purchase totals are authoritative integer minor-unit amounts and do not need to divide evenly by the initial bird count. The recorded per-bird unit cost is the integer quotient (total purchase cost divided by bird count); it is a base unit-cost field, not a replacement for the exact total. The original full purchase total remains in the batch and bird-purchase total-cost fields and seeds the carried-cost pool.
+
+If a proportional population-reduction result is not a whole minor unit, the integer quotient is allocated to the birds leaving and the remainder stays in the carried pool. If all available birds leave, the entire remaining carried cost is allocated. This ensures the final allocation reconciles to the exact original purchase total without floating-point arithmetic.
 
 ## Ordering
 
