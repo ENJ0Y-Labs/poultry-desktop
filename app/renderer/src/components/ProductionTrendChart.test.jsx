@@ -32,6 +32,22 @@ describe("ProductionTrendChart", () => {
     expect(loadTrend).toHaveBeenCalledWith("batch-1", undefined, expect.any(String));
   });
 
+  it("reloads the selected batch trend after a relevant successful write event", async () => {
+    const loadTrend = vi.fn().mockResolvedValue({
+      from: "2026-10-01",
+      to: "2026-10-02",
+      points: [{ date: "2026-10-01", value: 12.5, recorded: true }],
+    });
+    render(<ProductionTrendChart batchId="batch-1" title="Layer HDP%" description="Layer trend" unit="percent" loadTrend={loadTrend} />);
+    await waitFor(() => expect(loadTrend).toHaveBeenCalledTimes(1));
+
+    window.dispatchEvent(new CustomEvent("pomas:data-mutated", {
+      detail: { path: "/batches/batch-1/eggs/collections", method: "POST" },
+    }));
+
+    await waitFor(() => expect(loadTrend).toHaveBeenCalledTimes(2));
+  });
+
   it("shows an explicit empty state when all days have missing records", async () => {
     const loadTrend = vi.fn().mockResolvedValue({
       from: "2026-10-01",
