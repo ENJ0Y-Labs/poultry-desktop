@@ -205,6 +205,7 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
   const [authStatus, setAuthStatus] = useState(null);
   const [authForm, setAuthForm] = useState({ email: "", fullName: "", password: "" });
   const [dashboard, setDashboard] = useState(null);
@@ -262,6 +263,8 @@ export default function App() {
       setInventoryItems(await inventoryApi.listItems());
       setFeedTypes(await feedApi.listTypes());
       setFeedInventory(await feedApi.inventory());
+      setSuccessMessage("Feed usage recorded successfully.");
+      await loadDashboard();
       setPricingSettings(await pricingApi.settings());
       const [categories, currentAccount, appSettings, backupConfig] = await Promise.all([
         expenseCategoryApi.list(), accountApi.get(), settingsApi.application(), settingsApi.backup()
@@ -560,7 +563,7 @@ export default function App() {
   }
 
   async function saveExpense(event) {
-    event.preventDefault(); setSaving(true); setError("");
+    event.preventDefault(); setSaving(true); setError(""); setSuccessMessage("");
     try {
       const created = await expenseApi.create({
         occurredDate: expenseForm.occurredDate,
@@ -571,6 +574,8 @@ export default function App() {
       });
       setExpenses(current => [created, ...current]);
       setExpenseForm(form => ({ ...emptyExpense, batchId: form.batchId }));
+      setSuccessMessage("Expense recorded successfully.");
+      await loadDashboard();
     } catch (err) { setError(displayApiError(err)); } finally { setSaving(false); }
   }
 
@@ -631,7 +636,7 @@ export default function App() {
   }
 
   async function useFeed(event) {
-    event.preventDefault(); setSaving(true); setError("");
+    event.preventDefault(); setSaving(true); setError(""); setSuccessMessage("");
     try {
       const type = feedTypes.find(item => item.id === feedUsageForm.feedTypeId);
       await feedApi.use(feedUsageForm.batchId, {
@@ -673,7 +678,7 @@ export default function App() {
   }
 
   async function recordPopulationEvent(event, type) {
-    event.preventDefault(); setSaving(true); setError("");
+    event.preventDefault(); setSaving(true); setError(""); setSuccessMessage("");
     try {
       const form = type === "MORTALITY" ? mortalityForm : cullingForm;
       const save = type === "MORTALITY" ? populationApi.mortality : populationApi.culling;
@@ -687,6 +692,8 @@ export default function App() {
       setDailyRecord(record);
       if (type === "MORTALITY") setMortalityForm({ ...emptyPopulationEvent, batchId: form.batchId });
       else setCullingForm({ ...emptyPopulationEvent, batchId: form.batchId });
+      setSuccessMessage(type === "MORTALITY" ? "Mortality recorded successfully." : "Culling recorded successfully.");
+      await loadDashboard();
     } catch (err) { setError(displayApiError(err)); } finally { setSaving(false); }
   }
 
@@ -740,7 +747,7 @@ export default function App() {
   }
 
   async function saveBirdSale(event) {
-    event.preventDefault(); setSaving(true); setError("");
+    event.preventDefault(); setSaving(true); setError(""); setSuccessMessage("");
     try {
       const batchId = birdSaleForm.batchId;
       const sale = {
@@ -761,6 +768,8 @@ export default function App() {
       setBatches(await batchApi.list());
       setBirdSaleForm(form => ({ ...form, quantity: "", pricePerBirdMinor: "", customer: "", customerId: "" }));
       await loadSales();
+      setSuccessMessage("Bird sale recorded successfully.");
+      await loadDashboard();
     } catch (err) { setError(displayApiError(err)); } finally { setSaving(false); }
   }
 
@@ -782,7 +791,7 @@ export default function App() {
   }
 
   async function saveEggCollection(event) {
-    event.preventDefault(); setSaving(true); setError("");
+    event.preventDefault(); setSaving(true); setError(""); setSuccessMessage("");
     try {
       const batchId = eggCollectionForm.batchId;
       await eggApi.addCollection(batchId, {
@@ -793,11 +802,13 @@ export default function App() {
       });
       await loadEggsForBatch(batchId);
       setEggCollectionForm(form => ({ ...form, good: "", cracked: "", notes: "" }));
+      setSuccessMessage("Egg collection recorded successfully.");
+      await loadDashboard();
     } catch (err) { setError(displayApiError(err)); } finally { setSaving(false); }
   }
 
   async function saveEggSale(event) {
-    event.preventDefault(); setSaving(true); setError("");
+    event.preventDefault(); setSaving(true); setError(""); setSuccessMessage("");
     try {
       const batchId = eggSaleForm.batchId;
       await eggApi.addSale(batchId, {
@@ -810,6 +821,8 @@ export default function App() {
       await loadEggsForBatch(batchId);
       setEggSaleForm(form => ({ ...form, customer: "", customerId: "", crates: "", pricePerCrateMinor: "" }));
       await loadSales();
+      setSuccessMessage("Egg sale recorded successfully.");
+      await loadDashboard();
     } catch (err) { setError(displayApiError(err)); } finally { setSaving(false); }
   }
 
@@ -934,11 +947,12 @@ export default function App() {
     </main>
   );
 
-  const pageModel = { suppliers, supplierForm, setSupplierForm, saveSupplier, archiveSupplier, formatMoney, formatQuantity, formatPercent, formatKg, formatMetric, formatCount, displayApiError, emptyWeight, emptyBirdSale, emptyPricing, emptyFarm, emptyHouse, emptyBatch, emptyCost, emptyFeedType, emptyFeedPurchase, emptyFeedUsage, emptyDaily, emptyPopulationEvent, emptyHealth, emptyDrug, emptyVaccination, emptyExpense, emptyCustomer, emptyInventoryItem, emptyInventoryMovement, farm, setFarm, farmForm, setFarmForm, houses, setHouses, batches, setBatches, batchForm, setBatchForm, costForm, setCostForm, feedTypes, setFeedTypes, feedInventory, setFeedInventory, feedTypeForm, setFeedTypeForm, feedPurchaseForm, setFeedPurchaseForm, feedUsageForm, setFeedUsageForm, dailyForm, setDailyForm, dailyRecord, setDailyRecord, mortalityForm, setMortalityForm, cullingForm, setCullingForm, healthForm, setHealthForm, drugForm, setDrugForm, vaccinationForm, setVaccinationForm, healthRecords, setHealthRecords, drugRecords, setDrugRecords, vaccinationRecords, setVaccinationRecords, expenseForm, setExpenseForm, expenses, setExpenses, expenseBatchFilter, setExpenseBatchFilter, inventoryItems, setInventoryItems, inventoryItemForm, setInventoryItemForm, inventoryMovementForm, setInventoryMovementForm, inventoryMovements, setInventoryMovements, customers, setCustomers, customerForm, setCustomerForm, sales, setSales, eggBatchId, setEggBatchId, broilerBatchId, setBroilerBatchId, broilerGrowth, setBroilerGrowth, broilerWeights, setBroilerWeights, broilerSales, setBroilerSales, weightForm, setWeightForm, birdSaleForm, setBirdSaleForm, pricingSettings, setPricingSettings, pricing, setPricing, pricingForm, setPricingForm, eggInventory, setEggInventory, eggCollections, setEggCollections, eggSales, setEggSales, eggCollectionForm, setEggCollectionForm, eggSaleForm, setEggSaleForm, houseForm, setHouseForm, crateSize, setCrateSize, defaultWater, setDefaultWater, waterSizes, setWaterSizes, loading, setLoading, saving, setSaving, error, setError, dashboard, setDashboard, attention, setAttention, auditRows, setAuditRows, expenseCategories, setExpenseCategories, expenseCategoryForm, setExpenseCategoryForm, account, setAccount, accountForm, setAccountForm, applicationSettings, setApplicationSettings, backupSettings, setBackupSettings, selectedBatchId, setSelectedBatchId, batchDashboard, setBatchDashboard, farmReport, setFarmReport, batchReport, setBatchReport, reportAsOf, setReportAsOf, load, loadReport, loadBatchReport, exportCsv, exportPdf, loadBatchDashboard, loadDashboard, submitFarm, saveFarm, createExpenseCategory, archiveExpenseCategory, saveAccount, saveApplicationSettings, chooseBackupSettingsDirectory, saveBackupSettings, createBackup, restoreBackup, saveSettings, loadExpenses, loadSales, saveCustomer, saveInventoryItem, loadInventoryMovements, saveInventoryMovement, saveExpense, createBatch, addBirdCost, createFeedType, purchaseFeed, useFeed, feedQuantity, parseWaterEntries, saveDailyRecord, recordPopulationEvent, loadPricingForBatch, savePricingSettings, loadBroilerForBatch, saveWeight, saveBirdSale, loadEggsForBatch, saveEggCollection, saveEggSale, saveHealth, saveDrug, saveVaccination, loadHealthForBatch, markBatchSold, reopenBatch, addHouse };
+  const pageModel = { successMessage, suppliers, supplierForm, setSupplierForm, saveSupplier, archiveSupplier, formatMoney, formatQuantity, formatPercent, formatKg, formatMetric, formatCount, displayApiError, emptyWeight, emptyBirdSale, emptyPricing, emptyFarm, emptyHouse, emptyBatch, emptyCost, emptyFeedType, emptyFeedPurchase, emptyFeedUsage, emptyDaily, emptyPopulationEvent, emptyHealth, emptyDrug, emptyVaccination, emptyExpense, emptyCustomer, emptyInventoryItem, emptyInventoryMovement, farm, setFarm, farmForm, setFarmForm, houses, setHouses, batches, setBatches, batchForm, setBatchForm, costForm, setCostForm, feedTypes, setFeedTypes, feedInventory, setFeedInventory, feedTypeForm, setFeedTypeForm, feedPurchaseForm, setFeedPurchaseForm, feedUsageForm, setFeedUsageForm, dailyForm, setDailyForm, dailyRecord, setDailyRecord, mortalityForm, setMortalityForm, cullingForm, setCullingForm, healthForm, setHealthForm, drugForm, setDrugForm, vaccinationForm, setVaccinationForm, healthRecords, setHealthRecords, drugRecords, setDrugRecords, vaccinationRecords, setVaccinationRecords, expenseForm, setExpenseForm, expenses, setExpenses, expenseBatchFilter, setExpenseBatchFilter, inventoryItems, setInventoryItems, inventoryItemForm, setInventoryItemForm, inventoryMovementForm, setInventoryMovementForm, inventoryMovements, setInventoryMovements, customers, setCustomers, customerForm, setCustomerForm, sales, setSales, eggBatchId, setEggBatchId, broilerBatchId, setBroilerBatchId, broilerGrowth, setBroilerGrowth, broilerWeights, setBroilerWeights, broilerSales, setBroilerSales, weightForm, setWeightForm, birdSaleForm, setBirdSaleForm, pricingSettings, setPricingSettings, pricing, setPricing, pricingForm, setPricingForm, eggInventory, setEggInventory, eggCollections, setEggCollections, eggSales, setEggSales, eggCollectionForm, setEggCollectionForm, eggSaleForm, setEggSaleForm, houseForm, setHouseForm, crateSize, setCrateSize, defaultWater, setDefaultWater, waterSizes, setWaterSizes, loading, setLoading, saving, setSaving, error, setError, dashboard, setDashboard, attention, setAttention, auditRows, setAuditRows, expenseCategories, setExpenseCategories, expenseCategoryForm, setExpenseCategoryForm, account, setAccount, accountForm, setAccountForm, applicationSettings, setApplicationSettings, backupSettings, setBackupSettings, selectedBatchId, setSelectedBatchId, batchDashboard, setBatchDashboard, farmReport, setFarmReport, batchReport, setBatchReport, reportAsOf, setReportAsOf, load, loadReport, loadBatchReport, exportCsv, exportPdf, loadBatchDashboard, loadDashboard, submitFarm, saveFarm, createExpenseCategory, archiveExpenseCategory, saveAccount, saveApplicationSettings, chooseBackupSettingsDirectory, saveBackupSettings, createBackup, restoreBackup, saveSettings, loadExpenses, loadSales, saveCustomer, saveInventoryItem, loadInventoryMovements, saveInventoryMovement, saveExpense, createBatch, addBirdCost, createFeedType, purchaseFeed, useFeed, feedQuantity, parseWaterEntries, saveDailyRecord, recordPopulationEvent, loadPricingForBatch, savePricingSettings, loadBroilerForBatch, saveWeight, saveBirdSale, loadEggsForBatch, saveEggCollection, saveEggSale, saveHealth, saveDrug, saveVaccination, loadHealthForBatch, markBatchSold, reopenBatch, addHouse };
 
   return (
     <AppShell farm={farm} error={error} onRetry={() => initialize({ preserveScreen: true })} startPage={applicationSettings.startPage} startPageReady={settingsReady}>
       <FarmManagerContext.Provider value={pageModel}>
+        {successMessage && <p className="success-message" role="status">{successMessage}</p>}
         <PageSection page="dashboard"><DashboardPage /></PageSection>
         <PageSection page="flocks"><FlocksPage /></PageSection>
         <PageSection page="daily-work"><DailyWorkPage /></PageSection>
