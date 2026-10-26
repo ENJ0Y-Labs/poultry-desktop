@@ -320,7 +320,7 @@ export default function AppShell({ farm, error, onRetry, children, startPage = "
 
         <div className="sidebar-footer">
           <div className="node-status">
-            <span className={backendConnected === true ? "status-dot online" : backendConnected === false ? "status-dot offline" : "status-dot"} />
+            <span className={backendConnected === true && !recoveryNeeded ? "status-dot online" : backendConnected === false || recoveryNeeded ? "status-dot offline" : "status-dot"} />
             <div><strong>{connectionLabel}</strong><small>Local API connection</small></div>
           </div>
         </div>
@@ -336,9 +336,9 @@ export default function AppShell({ farm, error, onRetry, children, startPage = "
             </div>
             <div className="topbar-actions">
               <label className="theme-control">Theme<select value={theme} onChange={changeTheme}><option value="auto">Auto</option><option value="light">Light</option><option value="dark">Dark</option></select></label>
-              <div className={backendConnected === true ? "system-pill connected" : backendConnected === false ? "system-pill disconnected" : "system-pill"} role="status" aria-live="polite">
-                <span className={backendConnected === true ? "status-dot online" : backendConnected === false ? "status-dot offline" : "status-dot"} />
-                {backendConnected === true ? "BACKEND CONNECTED" : backendConnected === false ? "BACKEND UNAVAILABLE" : "CHECKING BACKEND"}
+              <div className={backendConnected === true && !recoveryNeeded ? "system-pill connected" : backendConnected === false || recoveryNeeded ? "system-pill disconnected" : "system-pill"} role="status" aria-live="polite">
+                <span className={backendConnected === true && !recoveryNeeded ? "status-dot online" : backendConnected === false || recoveryNeeded ? "status-dot offline" : "status-dot"} />
+                {connectionLabel}
               </div>
               <div className="system-pill" title="Designed to keep farm records on this computer">LOCAL-FIRST</div>
               <div className="date-chip">{today}</div>
@@ -380,7 +380,7 @@ export default function AppShell({ farm, error, onRetry, children, startPage = "
         <span><b>DATA MODE</b> · Local-first</span>
         <span><b>API</b> · {recoveryNeeded ? "Recovery required" : backendConnected === true ? "Connected" : backendConnected === false ? "Unavailable" : "Checking"}</span>
         <span className="statusbar-spacer" />
-        <span><i className={backendConnected === true ? "status-dot online" : backendConnected === false ? "status-dot offline" : "status-dot"} /> {recoveryNeeded ? "Refresh farm data" : backendConnected === true ? "Backend responding" : backendConnected === false ? "Backend not responding" : "Checking connection"}</span>
+        <span><i className={backendConnected === true && !recoveryNeeded ? "status-dot online" : backendConnected === false || recoveryNeeded ? "status-dot offline" : "status-dot"} /> {recoveryNeeded ? "Refresh farm data" : backendConnected === true ? "Backend responding" : backendConnected === false ? "Backend not responding" : "Checking connection"}</span>
       </footer>
     </div>
   );
