@@ -514,3 +514,32 @@ kbd{font-size:11px;font-weight:800;color:var(--muted-2);border:1px solid var(--p
 .first-run-steps li strong{display:block;color:var(--text);margin:2px 0 5px}
 .first-run-steps li p{margin:0 0 12px;color:var(--muted);font-size:13px;line-height:1.5}
 @media(max-width:1150px){.first-run-steps{grid-template-columns:minmax(0,1fr)}}
+
+
+/* Issue #93: shared Pomas brand palette for both appearance modes. */
+:root {
+  --brand-teal: #1A4D5C;
+  --brand-gold: #F4B41A;
+  --ide-accent: var(--brand-gold);
+  --ide-accent-hover: #d99b00;
+  --cyan: var(--brand-gold);
+  --palette-41d9f5: var(--brand-gold);
+  --palette-26303a: var(--brand-teal);
+  --palette-313c48: #246779;
+  --alpha-65217245p35: rgba(244, 180, 26, .42);
+  --alpha-65217245p4: rgba(244, 180, 26, .34);
+  --alpha-65217245p55: rgba(244, 180, 26, .48);
+}
+:root[data-theme="light"] {
+  --brand-teal: #1A4D5C;
+  --brand-gold: #F4B41A;
+  --ide-accent: var(--brand-teal);
+  --ide-accent-hover: #123945;
+  --cyan: var(--brand-teal);
+  --palette-41d9f5: var(--brand-teal);
+  --palette-26303a: var(--brand-teal);
+  --palette-313c48: #246779;
+  --alpha-65217245p35: rgba(26, 77, 92, .3);
+  --alpha-65217245p4: rgba(26, 77, 92, .34);
+  --alpha-65217245p55: rgba(26, 77, 92, .42);
+}
