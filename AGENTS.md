@@ -56,6 +56,7 @@ The installer ID (`appId`), repository name, Java packages, and database file na
 19. Opening a new batch creates a new permanent batch record. It does not overwrite an old batch.
 20. The broiler terminal status is **SOLD**, not COMPLETED.
 21. Reopening a SOLD batch is an exceptional, audited action and requires a reason.
+22. Posted farm transactions are corrected by an audited reversal plus a separate replacement, never by editing or deleting the original. Corrections must be atomic, reasoned, actor-attributed, and validated against later dependent records. Preserve FIFO feed costing, bird-cost allocation, bird populations, egg balances, common sales rows, and generated expenses. See `docs/decisions/2026-10-26-auditable-transaction-corrections.md`.
 
 ## 3. Stack
 
