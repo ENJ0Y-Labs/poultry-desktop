@@ -1209,6 +1209,16 @@ And never sacrifice poultry math for dashboard cosmetics.
 - Verify status/severity/error contrast in both themes. If charts are introduced or modified, verify their series, grid, axis, tooltip, and legend colors in both themes.
 
 
+
+## Local backend reliability
+
+- Treat Spring Boot + SQLite as the source of truth for farm records; browser localStorage is not the persistence layer.
+- Bound renderer API and health-check requests with timeouts. A failed request must never be represented as a successful backend connection.
+- Keep an actionable unavailable/recovery state visible until a retry successfully reloads backend data, even if the health check begins responding again.
+- When retrying data after an outage, preserve the mounted screen and controlled form input wherever practical.
+- Test outage and restart behavior only against an explicitly disposable SQLite database. Never delete, reset, truncate, or replace a real farm database during reliability testing.
+- Verify committed records after a backend restart using the same disposable database path. Document runtime tests separately from automated checks; never claim the restart drill passed unless it was actually run.
+
 ## Frontend page architecture
 
 - Keep the renderer organized around nine top-level pages: Dashboard, Flocks, Daily Work, Feed & Stock, Health, Production, Sales & Money, Reports, and Settings.

@@ -130,19 +130,37 @@ function localDateLabel() {
   return new Intl.DateTimeFormat("en-NG", { day: "2-digit", month: "short", year: "numeric" }).format(new Date());
 }
 
-export default function AppShell({ farm, error, children, startPage = "dashboard", startPageReady = true }) {
+export default function AppShell({ farm, error, onRetry, children, startPage = "dashboard", startPageReady = true }) {
   const [active, setActive] = useState(() => resolvePage(window.location.hash, startPage));
   const [activeTab, setActiveTab] = useState(() => resolveTab(window.location.hash, resolvePage(window.location.hash, startPage)));
   const [theme, setTheme] = useState(getThemePreference);
   const [backendConnected, setBackendConnected] = useState(null);
+  const [recoveryNeeded, setRecoveryNeeded] = useState(false);
+  const [retrying, setRetrying] = useState(false);
   const [hasUserNavigated, setHasUserNavigated] = useState(Boolean(window.location.hash));
   const mainContentRef = useRef(null);
+
+  async function retryBackend() {
+    if (!onRetry || retrying) return;
+    setRetrying(true);
+    try {
+      const recovered = await onRetry();
+      if (recovered !== false) setRecoveryNeeded(false);
+    } finally {
+      setRetrying(false);
+    }
+  }
 
   function changeTheme(event) {
     const nextTheme = setThemePreference(event.target.value);
     setTheme(nextTheme);
   }
   const today = useMemo(localDateLabel, []);
+  const connectionLabel = backendConnected === null
+    ? "CHECKING BACKEND"
+    : recoveryNeeded
+      ? (backendConnected ? "RECONNECTED · RETRY DATA" : "BACKEND UNAVAILABLE")
+      : backendConnected ? "BACKEND CONNECTED" : "BACKEND UNAVAILABLE";
 
   function navigate(target) {
     const page = resolvePage(`#${target}`, startPage);
@@ -179,12 +197,22 @@ export default function AppShell({ farm, error, children, startPage = "dashboard
     let mounted = true;
     const checkBackend = async () => {
       const connected = await connectionApi.check();
-      if (mounted) setBackendConnected(connected);
+      if (mounted) {
+        setBackendConnected(connected);
+        if (!connected) setRecoveryNeeded(true);
+      }
     };
+    const onBackendUnavailable = () => {
+      if (!mounted) return;
+      setBackendConnected(false);
+      setRecoveryNeeded(true);
+    };
+    window.addEventListener("pomas:backend-unavailable", onBackendUnavailable);
     checkBackend();
-    const interval = window.setInterval(checkBackend, 15000);
+    const interval = window.setInterval(checkBackend, 5000);
     return () => {
       mounted = false;
+      window.removeEventListener("pomas:backend-unavailable", onBackendUnavailable);
       window.clearInterval(interval);
     };
   }, []);
@@ -303,8 +331,8 @@ export default function AppShell({ farm, error, children, startPage = "dashboard
 
         <div className="sidebar-footer">
           <div className="node-status">
-            <span className={backendConnected === true ? "status-dot online" : backendConnected === false ? "status-dot offline" : "status-dot"} />
-            <div><strong>{backendConnected === true ? "BACKEND CONNECTED" : backendConnected === false ? "BACKEND UNAVAILABLE" : "CHECKING BACKEND"}</strong><small>Local API connection</small></div>
+            <span className={backendConnected === true && !recoveryNeeded ? "status-dot online" : backendConnected === false || recoveryNeeded ? "status-dot offline" : "status-dot"} />
+            <div><strong>{connectionLabel}</strong><small>Local API connection</small></div>
           </div>
         </div>
       </aside>
@@ -319,15 +347,25 @@ export default function AppShell({ farm, error, children, startPage = "dashboard
             </div>
             <div className="topbar-actions">
               <label className="theme-control">Theme<select value={theme} onChange={changeTheme}><option value="auto">Auto</option><option value="light">Light</option><option value="dark">Dark</option></select></label>
-              <div className={backendConnected === true ? "system-pill connected" : backendConnected === false ? "system-pill disconnected" : "system-pill"} role="status" aria-live="polite">
-                <span className={backendConnected === true ? "status-dot online" : backendConnected === false ? "status-dot offline" : "status-dot"} />
-                {backendConnected === true ? "BACKEND CONNECTED" : backendConnected === false ? "BACKEND UNAVAILABLE" : "CHECKING BACKEND"}
+              <div className={backendConnected === true && !recoveryNeeded ? "system-pill connected" : backendConnected === false || recoveryNeeded ? "system-pill disconnected" : "system-pill"} role="status" aria-live="polite">
+                <span className={backendConnected === true && !recoveryNeeded ? "status-dot online" : backendConnected === false || recoveryNeeded ? "status-dot offline" : "status-dot"} />
+                {connectionLabel}
               </div>
               <div className="system-pill" title="Designed to keep farm records on this computer">LOCAL-FIRST</div>
               <div className="date-chip">{today}</div>
             </div>
           </header>
-          {error && <div className="error">{error}</div>}
+          {error && <div className="error" role="alert">{error}</div>}
+          {recoveryNeeded && (
+            <div className="error connection-recovery" role="alert">
+              {backendConnected === true
+                ? "The local backend is responding again, but farm data has not been refreshed. Your unsaved form entries are still on this screen."
+                : "The local backend is unavailable. Farm records remain in the local database. Your unsaved form entries are still on this screen."}
+              <button type="button" disabled={retrying} onClick={retryBackend}>
+                {retrying ? "Retrying..." : "Retry connection"}
+              </button>
+            </div>
+          )}
           {(pageTabs[active] || []).length > 0 && (
             <nav className="page-tabs" aria-label={`${active} sections`}>
               {pageTabs[active].map(tab => (
@@ -351,9 +389,9 @@ export default function AppShell({ farm, error, children, startPage = "dashboard
 
       <footer className="app-statusbar">
         <span><b>DATA MODE</b> · Local-first</span>
-        <span><b>API</b> · {backendConnected === true ? "Connected" : backendConnected === false ? "Unavailable" : "Checking"}</span>
+        <span><b>API</b> · {recoveryNeeded ? "Recovery required" : backendConnected === true ? "Connected" : backendConnected === false ? "Unavailable" : "Checking"}</span>
         <span className="statusbar-spacer" />
-        <span><i className={backendConnected === true ? "status-dot online" : backendConnected === false ? "status-dot offline" : "status-dot"} /> {backendConnected === true ? "Backend responding" : backendConnected === false ? "Backend not responding" : "Checking connection"}</span>
+        <span><i className={backendConnected === true && !recoveryNeeded ? "status-dot online" : backendConnected === false || recoveryNeeded ? "status-dot offline" : "status-dot"} /> {recoveryNeeded ? "Refresh farm data" : backendConnected === true ? "Backend responding" : backendConnected === false ? "Backend not responding" : "Checking connection"}</span>
       </footer>
     </div>
   );

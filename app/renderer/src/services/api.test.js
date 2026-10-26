@@ -124,15 +124,23 @@ describe("API client", () => {
       details: { available: 3 },
     });
   });
-  it("turns backend connection failures into a readable recovery error", async () => {
-    vi.spyOn(globalThis, "fetch").mockRejectedValue(new TypeError("Failed to fetch"));
+  it("turns backend connection failures into a readable recovery error and connection-state event", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockRejectedValue(new TypeError("Failed to fetch"));
+    const outageHandler = vi.fn();
+    window.addEventListener("pomas:backend-unavailable", outageHandler);
 
     await expect(authApi.me()).rejects.toMatchObject({
       name: "ApiError",
       code: "BACKEND_UNAVAILABLE",
       status: 503,
-      message: "The local backend is unavailable. Restart the application and try again.",
+      message: "The local backend is not responding. Retry the connection when the backend is available. The current screen will remain open during recovery.",
     });
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining("/auth/me"),
+      expect.objectContaining({ credentials: "include", signal: expect.any(AbortSignal) })
+    );
+    expect(outageHandler).toHaveBeenCalledTimes(1);
+    window.removeEventListener("pomas:backend-unavailable", outageHandler);
   });
 
 });
