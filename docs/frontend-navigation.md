@@ -83,3 +83,11 @@ The nine page components live under `app/renderer/src/pages/`. Shared form state
 - Backend feed-stock alerts expose `feedTypeId`; low and insufficient inventory alerts expose `itemId`. Display names are not used as database identifiers.
 - Successful writes emit the shared mutation invalidation event. Relevant mutations refresh farm dashboard metrics, attention alerts, audit activity, reports, and the selected batch dashboard.
 - Vitest covers all supported alert mappings, missing/invalid context, encoded context parsing, and a dashboard-to-daily-record navigation with batch/date prefilled. Backend integration tests assert that stock alerts include their navigable IDs.
+
+
+## Water unit label
+
+- Settings → Farm defaults controls the farm-level water unit label, defaulting to litres.
+- The water entry form and farm/batch report screens and exports display the configured label. It is presentation metadata only; changing the label does not convert historical capacity or container-count values.
+- Updating farm settings writes an audit record with before/after snapshots. The label and any other setting changes should be traceable from the audit history.
+- The migration upgrade test starts with existing water container and usage records and verifies their numeric values remain unchanged after the label is added.
