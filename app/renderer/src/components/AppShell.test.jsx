@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, within } from "@testing-library/react";
+import { render, screen, fireEvent, within, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 // eslint-disable-next-line no-unused-vars
 import AppShell from "./AppShell.jsx";
@@ -80,4 +80,26 @@ describe("AppShell", () => {
     fireEvent.click(screen.getByRole("button", { name: "Suppliers" }));
     expect(window.location.hash).toBe("#feed-stock/suppliers");
   });
+  it("shows a retry action when the local backend is unavailable", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+      status: 503,
+      ok: false,
+      json: async () => ({ schema: "UNAVAILABLE" }),
+    }));
+    const onRetry = vi.fn();
+    render(
+      <AppShell
+        farm={{ name: "Grantino", location: "", currency: "NGN", timezone: "Africa/Lagos" }}
+        onRetry={onRetry}
+      >
+        <section id="dashboard">Dashboard</section>
+      </AppShell>
+    );
+
+    const retryButton = await screen.findByRole("button", { name: "Retry connection" });
+    expect(screen.getByRole("alert")).toHaveTextContent(/local backend is unavailable/i);
+    fireEvent.click(retryButton);
+    await waitFor(() => expect(onRetry).toHaveBeenCalledTimes(1));
+  });
+
 });
