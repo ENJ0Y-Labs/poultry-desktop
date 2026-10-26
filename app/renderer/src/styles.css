@@ -543,3 +543,42 @@ kbd{font-size:11px;font-weight:800;color:var(--muted-2);border:1px solid var(--p
   --alpha-65217245p4: rgba(26, 77, 92, .34);
   --alpha-65217245p55: rgba(26, 77, 92, .42);
 }
+
+
+/* Issue #50: contextual help and persistent data-driven setup checklist. */
+.page-help {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 1rem 0;
+  padding: 1rem 1.15rem;
+  border: 1px solid var(--border, #d6dce1);
+  border-radius: 12px;
+  background: var(--surface, rgba(127, 127, 127, .06));
+}
+.page-help-copy { min-width: 0; }
+.page-help .eyebrow { margin: 0 0 .25rem; }
+.page-help h2 { margin: 0 0 .35rem; font-size: 1rem; }
+.page-help p:not(.eyebrow) { margin: 0; max-width: 78ch; color: var(--text-muted, var(--muted, inherit)); line-height: 1.45; }
+.page-help > button { flex: 0 0 auto; }
+.getting-started-checklist { margin: 1rem 0; padding: 1rem; }
+.getting-started-checklist .section-head { align-items: flex-start; }
+.getting-started-checklist .section-head h3 { margin: 0 0 .3rem; }
+.getting-started-checklist .section-head p:not(.eyebrow) { margin: 0; }
+.getting-started-list { display: grid; gap: .65rem; margin: .9rem 0 0; padding: 0; list-style: none; }
+.getting-started-item { display: flex; align-items: center; gap: .75rem; padding: .75rem; border: 1px solid var(--border, #d6dce1); border-radius: 9px; }
+.getting-started-status { display: grid; place-items: center; flex: 0 0 1.6rem; width: 1.6rem; height: 1.6rem; border-radius: 50%; border: 1px solid currentColor; font-weight: 700; }
+.getting-started-item.complete .getting-started-status { color: var(--success, #287a4b); }
+.getting-started-item-copy { flex: 1; min-width: 0; }
+.getting-started-item-copy p { margin: .2rem 0 0; color: var(--text-muted, var(--muted, inherit)); font-size: .92rem; }
+.getting-started-item.complete .getting-started-item-copy strong { text-decoration: line-through; opacity: .8; }
+.page-help .secondary-button, .getting-started-checklist .secondary-button, .first-run-empty .secondary-button { white-space: nowrap; }
+@media (max-width: 760px) {
+  .page-help { align-items: stretch; flex-direction: column; }
+  .page-help > button { align-self: flex-start; }
+  .getting-started-checklist .section-head { flex-direction: column; }
+  .getting-started-item { align-items: flex-start; flex-wrap: wrap; }
+  .getting-started-item-copy { flex-basis: calc(100% - 3rem); }
+  .getting-started-item > button { margin-left: 2.35rem; }
+}
