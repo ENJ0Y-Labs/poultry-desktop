@@ -83,3 +83,13 @@ The nine page components live under `app/renderer/src/pages/`. Shared form state
 - Backend feed-stock alerts expose `feedTypeId`; low and insufficient inventory alerts expose `itemId`. Display names are not used as database identifiers.
 - Successful writes emit the shared mutation invalidation event. Relevant mutations refresh farm dashboard metrics, attention alerts, audit activity, reports, and the selected batch dashboard.
 - Vitest covers all supported alert mappings, missing/invalid context, encoded context parsing, and a dashboard-to-daily-record navigation with batch/date prefilled. Backend integration tests assert that stock alerts include their navigable IDs.
+
+
+## Getting-started checklist and page help
+
+- The dashboard keeps a getting-started checklist visible for partially configured farms until the setup tasks are complete or the owner dismisses it.
+- Checklist completion is derived from saved farm data: at least one house/pen, one batch, one feed type, and one inventory supply item. Opening a page does not count as completing a task.
+- Dismissal is stored locally in the renderer so the checklist does not keep returning after navigation or app restart on the same computer.
+- A farm with no setup data retains the first-run guidance. The dismissal control is available there as well.
+- Every top-level page shows a concise page guide explaining its purpose and a next-action link. The guide uses the existing hash navigation and does not create a separate navigation system.
+- When adding or changing setup tasks, keep the completion predicate aligned with persisted records and update App.test.jsx coverage for empty, partial, complete, and dismissed states.
