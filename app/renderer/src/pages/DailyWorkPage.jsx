@@ -13,7 +13,7 @@ export default function DailyWorkPage() {
       <PageSection page="daily-work" tab="daily-record">
         <section id="operations" className="card full">
           <div className="section-head"><h2>Daily record</h2><p className="muted">Record routine observations for one active batch. Population totals come from the backend ledger.</p></div>
-          <form className="form-grid" onSubmit={saveDailyRecord}>
+          <form className="form-grid" onSubmit={event => saveDailyRecord(event, "notes")}>
             <label>Batch<select required value={dailyForm.batchId} onChange={event => setDailyForm({...dailyForm,batchId:event.target.value})}>{batchOptions}</select></label>
             <label>Date<input required type="date" value={dailyForm.date} onChange={event => setDailyForm({...dailyForm,date:event.target.value})}/></label>
             <label className="full">Daily notes<input value={dailyForm.notes} onChange={event => setDailyForm({...dailyForm,notes:event.target.value})}/></label>

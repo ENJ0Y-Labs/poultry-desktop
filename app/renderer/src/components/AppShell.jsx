@@ -146,6 +146,7 @@ export default function AppShell({ farm, error, onRetry, children, startPage = "
   const [active, setActive] = useState(() => resolvePage(window.location.hash, startPage));
   const [activeTab, setActiveTab] = useState(() => resolveTab(window.location.hash, resolvePage(window.location.hash, startPage)));
   const [theme, setTheme] = useState(getThemePreference);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => localStorage.getItem("pomas:sidebar-collapsed") === "true");
   const [backendConnected, setBackendConnected] = useState(null);
   const [recoveryNeeded, setRecoveryNeeded] = useState(false);
   const [retrying, setRetrying] = useState(false);
@@ -168,6 +169,10 @@ export default function AppShell({ farm, error, onRetry, children, startPage = "
     setTheme(nextTheme);
   }
   const today = useMemo(localDateLabel, []);
+
+  useEffect(() => {
+    localStorage.setItem("pomas:sidebar-collapsed", String(sidebarCollapsed));
+  }, [sidebarCollapsed]);
   const connectionLabel = backendConnected === null
     ? "CONNECTING TO BACKEND"
     : recoveryNeeded
@@ -244,18 +249,10 @@ export default function AppShell({ farm, error, onRetry, children, startPage = "
     return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
 
-  const activities = [
-    { label: "Farm dashboard", target: "dashboard", icon: "dashboard" },
-    { label: "Houses, pens and batches", target: "flocks", icon: "batches" },
-    { label: "Daily operations", target: "daily-work", icon: "records" },
-    { label: "Feed and inventory", target: "feed-stock", icon: "feed" },
-    { label: "Health and vaccination", target: "health", icon: "health" },
-    { label: "Production", target: "production", icon: "eggs" },
-    { label: "Sales and finance", target: "sales-money", icon: "sales" },
-  ];
+
 
   return (
-    <div className="app-shell">
+    <div className={sidebarCollapsed ? "app-shell sidebar-collapsed" : "app-shell"}>
       <a
         className="skip-link"
         href="#main-content"
@@ -266,51 +263,23 @@ export default function AppShell({ farm, error, onRetry, children, startPage = "
       >
         Skip to main content
       </a>
-      <nav className="activity-bar" aria-label="Primary work areas">
-        <div className="activity-bar-main">
-          {activities.map(item => (
-            <button
-              key={item.target}
-              type="button"
-              className={active === item.target ? "activity-button active" : "activity-button"}
-              aria-label={item.label}
-              aria-current={active === item.target ? "page" : undefined}
-              title={item.label}
-              onClick={() => navigate(item.target)}
-            >
-              <Icon name={item.icon} />
-            </button>
-          ))}
-        </div>
-        <div className="activity-bar-footer">
-          <button
-            type="button"
-            className={active === "settings" && activeTab === "application" ? "activity-button active" : "activity-button"}
-            aria-label="Account"
-            title="Account"
-            onClick={() => { window.location.hash = "settings/application"; setActive("settings"); setActiveTab("application"); }}
-          >
-            <span className="activity-avatar" aria-hidden="true">{farmInitials(farm.name)}</span>
-          </button>
-          <button
-            type="button"
-            className={active === "settings" ? "activity-button active" : "activity-button"}
-            aria-label="Settings"
-            aria-current={active === "settings" ? "page" : undefined}
-            title="Settings"
-            onClick={() => navigate("settings")}
-          >
-            <Icon name="settings" />
-          </button>
-        </div>
-      </nav>
-      <aside className="sidebar">
+      <aside className={sidebarCollapsed ? "sidebar collapsed" : "sidebar"}>
         <div className="brand">
           <div className="brand-mark" aria-hidden="true"><img src={pomasLogo} alt="" draggable="false" /></div>
           <div className="brand-copy">
             <strong>Pomas</strong>
             <small>Farm management</small>
           </div>
+          <button
+            type="button"
+            className="sidebar-toggle"
+            aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            aria-expanded={!sidebarCollapsed}
+            title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            onClick={() => setSidebarCollapsed(value => !value)}
+          >
+            <span aria-hidden="true">{sidebarCollapsed ? "›" : "‹"}</span>
+          </button>
         </div>
 
         <div className="workspace-summary" aria-label="Active farm">
@@ -331,6 +300,7 @@ export default function AppShell({ farm, error, onRetry, children, startPage = "
                   onClick={() => navigate(item.target)}
                   title={item.shortcut ? `${item.label} · ${item.shortcut}` : item.label}
                   aria-label={item.label}
+                  aria-current={active === item.target ? "page" : undefined}
                 >
                   <span className="nav-icon-wrap"><Icon name={item.icon} /></span>
                   <span className="nav-label">{item.label}</span>
@@ -341,6 +311,18 @@ export default function AppShell({ farm, error, onRetry, children, startPage = "
           ))}
         </nav>
 
+        <div className="sidebar-footer">
+          <button
+            type="button"
+            className="nav-item"
+            aria-label="Account"
+            title="Account"
+            onClick={() => { window.location.hash = "settings/application"; setActive("settings"); setActiveTab("application"); }}
+          >
+            <span className="nav-icon-wrap"><span className="activity-avatar" aria-hidden="true">{farmInitials(farm.name)}</span></span>
+            <span className="nav-label">Account</span>
+          </button>
+        </div>
       </aside>
 
       <main className="app-main" id="main-content" tabIndex={-1} ref={mainContentRef}>
