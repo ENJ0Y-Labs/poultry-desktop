@@ -306,11 +306,17 @@ export default function App() {
   async function submitAuth(event) {
     event.preventDefault(); setSaving(true); setError("");
     try {
+      const identifier = authStatus?.setupRequired ? authForm.username : authForm.identifier;
       if (authStatus?.setupRequired) {
-        await authApi.setup(authForm);
+        await authApi.setup({
+          username: authForm.username,
+          email: authForm.email,
+          fullName: authForm.fullName,
+          password: authForm.password,
+        });
         setAuthStatus({ authenticated: false, setupRequired: false });
       }
-      await authApi.login({ identifier: authForm.identifier, password: authForm.password });
+      await authApi.login({ identifier, password: authForm.password });
       setAuthStatus({ authenticated: true, setupRequired: false });
       await load();
     } catch (err) {
