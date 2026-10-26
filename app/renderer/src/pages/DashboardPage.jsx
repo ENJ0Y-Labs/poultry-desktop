@@ -3,6 +3,7 @@ import { FarmManagerContext } from "../components/FarmManagerContext.jsx";
 // eslint-disable-next-line no-unused-vars
 import PageSection from "../components/PageSection.jsx";
 import { formatAuditAction, formatAuditEntity, formatAuditTimestamp } from "../utils/auditFormatting.js";
+import { todayLocalDate } from "../utils/farmUx.js";
 
 function formatBusinessDate(value, pattern = "YYYY-MM-DD") {
   if (!value || typeof value !== "string") return "—";
@@ -29,6 +30,18 @@ export default function DashboardPage() {
     attention,
     auditRows,
     applicationSettings,
+    selectedBatchId,
+    setMortalityForm,
+    setEggBatchId,
+    setEggCollectionForm,
+    setFeedUsageForm,
+    feedTypes,
+    setBroilerBatchId,
+    setBirdSaleForm,
+    setEggSaleForm,
+    setExpenseForm,
+    loadEggsForBatch,
+    loadBroilerForBatch,
   } = useContext(FarmManagerContext);
 
   const isFirstRunEmpty = dashboard
@@ -71,6 +84,53 @@ export default function DashboardPage() {
           </section>
         ) : (
           <>
+            <section className="subsection quick-actions" aria-labelledby="quick-actions-title">
+              <div className="section-head"><div><p className="eyebrow">DAILY WORK</p><h3 id="quick-actions-title">Quick actions</h3></div><p className="muted">Jump straight to a validated entry form.</p></div>
+              <div className="quick-action-grid">
+                <button type="button" onClick={() => {
+                  const batch = batches.find(item => item.id === selectedBatchId && item.status === "ACTIVE") || batches.find(item => item.status === "ACTIVE");
+                  setMortalityForm(form => ({ ...form, batchId: batch?.id || form.batchId, date: todayLocalDate() }));
+                  navigateTo("daily-work/mortality");
+                }}>Record mortality</button>
+                <button type="button" onClick={() => {
+                  const batch = batches.find(item => item.id === selectedBatchId && item.type === "LAYER" && item.status === "ACTIVE") || batches.find(item => item.type === "LAYER" && item.status === "ACTIVE");
+                  if (batch) {
+                    setEggBatchId(batch.id);
+                    setEggCollectionForm(form => ({ ...form, batchId: batch.id, date: todayLocalDate() }));
+                    loadEggsForBatch(batch.id);
+                  }
+                  navigateTo("production/eggs");
+                }}>Collect eggs</button>
+                <button type="button" onClick={() => {
+                  const batch = batches.find(item => item.id === selectedBatchId && item.status === "ACTIVE") || batches.find(item => item.status === "ACTIVE");
+                  const type = feedTypes.find(item => item.status === "ACTIVE" && (!batch || item.applicableType === "BOTH" || item.applicableType === batch.type));
+                  setFeedUsageForm(form => ({ ...form, batchId: batch?.id || form.batchId, feedTypeId: type?.id || form.feedTypeId, unit: type?.unit || form.unit, usageDate: todayLocalDate() }));
+                  navigateTo("feed-stock/feed");
+                }}>Record feed usage</button>
+                <button type="button" onClick={() => {
+                  const batch = batches.find(item => item.id === selectedBatchId && item.status === "ACTIVE") || batches.find(item => item.status === "ACTIVE");
+                  if (batch?.type === "BROILER") {
+                    setBroilerBatchId(batch.id);
+                    setBirdSaleForm(form => ({ ...form, batchId: batch.id, date: todayLocalDate() }));
+                    loadBroilerForBatch(batch.id);
+                    navigateTo("production/broiler");
+                  } else {
+                    const layer = batch?.type === "LAYER" ? batch : batches.find(item => item.type === "LAYER" && item.status === "ACTIVE");
+                    if (layer) {
+                      setEggBatchId(layer.id);
+                      setEggSaleForm(form => ({ ...form, batchId: layer.id, date: todayLocalDate() }));
+                      loadEggsForBatch(layer.id);
+                    }
+                    navigateTo("production/eggs");
+                  }
+                }}>Record a sale</button>
+                <button type="button" onClick={() => {
+                  const batch = batches.find(item => item.id === selectedBatchId && item.status === "ACTIVE") || batches.find(item => item.status === "ACTIVE");
+                  setExpenseForm(form => ({ ...form, batchId: batch?.id || form.batchId, occurredDate: todayLocalDate() }));
+                  navigateTo("sales-money/expenses");
+                }}>Record an expense</button>
+              </div>
+            </section>
             <div className="metric-grid">
               {[
                 ["Total birds", formatCount(dashboard.totalBirds), ""],
