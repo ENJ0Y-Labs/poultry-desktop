@@ -1259,3 +1259,12 @@ And never sacrifice poultry math for dashboard cosmetics.
 Show local Spring Boot API connection state in exactly one primary UI location: the top-bar status pill. Use a clear connecting label before the first health check completes, then connected or unavailable. When connectivity is lost or returns but data has not yet been refreshed, retain the prominent recovery alert and Retry connection action because it communicates the required recovery step, not a duplicate passive status. Do not reintroduce the same connection state in the sidebar or bottom status bar. Keep the app shell usable without a bottom status bar.
 
 Validate the renderer with the backend available, during startup, and with the backend stopped. Confirm the top-bar state updates and the outage alert remains understandable and retryable. These runtime checks must be recorded as not run unless actually performed.
+
+
+## 37. Audit activity presentation
+
+- Audit records are immutable source data. Humanize values in the renderer only; never rewrite stored action, entity, reason, or timestamp values to improve display.
+- Render audit timestamps in the farm's configured IANA timezone (for example, `Africa/Lagos`). Use a consistent day-month-year and 24-hour time format, including seconds. ISO fractional seconds beyond milliseconds may be truncated only for display parsing.
+- Handle invalid/missing timestamps and missing/unknown action/entity values with readable fallbacks. Unknown non-empty values should be humanized rather than hidden.
+- Keep the dashboard audit table inside its existing scroll container so long values do not force page-level horizontal overflow at the supported 1100×650 and 1366×768 window sizes.
+- Cover timestamp formatting, nanosecond ISO values, timezone fallback, known action/entity labels, and unknown/missing values with Vitest. Runtime table-width verification is a separate manual check.
