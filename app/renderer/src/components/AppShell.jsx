@@ -155,6 +155,11 @@ export default function AppShell({ farm, error, onRetry, children, startPage = "
     setTheme(nextTheme);
   }
   const today = useMemo(localDateLabel, []);
+  const connectionLabel = backendConnected === null
+    ? "CHECKING BACKEND"
+    : recoveryNeeded
+      ? (backendConnected ? "RECONNECTED · RETRY DATA" : "BACKEND UNAVAILABLE")
+      : backendConnected ? "BACKEND CONNECTED" : "BACKEND UNAVAILABLE";
 
   function navigate(target) {
     const page = resolvePage(`#${target}`, startPage);
@@ -316,7 +321,7 @@ export default function AppShell({ farm, error, onRetry, children, startPage = "
         <div className="sidebar-footer">
           <div className="node-status">
             <span className={backendConnected === true ? "status-dot online" : backendConnected === false ? "status-dot offline" : "status-dot"} />
-            <div><strong>{backendConnected === true ? "BACKEND CONNECTED" : backendConnected === false ? "BACKEND UNAVAILABLE" : "CHECKING BACKEND"}</strong><small>Local API connection</small></div>
+            <div><strong>{connectionLabel}</strong><small>Local API connection</small></div>
           </div>
         </div>
       </aside>
@@ -373,9 +378,9 @@ export default function AppShell({ farm, error, onRetry, children, startPage = "
 
       <footer className="app-statusbar">
         <span><b>DATA MODE</b> · Local-first</span>
-        <span><b>API</b> · {backendConnected === true ? "Connected" : backendConnected === false ? "Unavailable" : "Checking"}</span>
+        <span><b>API</b> · {recoveryNeeded ? "Recovery required" : backendConnected === true ? "Connected" : backendConnected === false ? "Unavailable" : "Checking"}</span>
         <span className="statusbar-spacer" />
-        <span><i className={backendConnected === true ? "status-dot online" : backendConnected === false ? "status-dot offline" : "status-dot"} /> {backendConnected === true ? "Backend responding" : backendConnected === false ? "Backend not responding" : "Checking connection"}</span>
+        <span><i className={backendConnected === true ? "status-dot online" : backendConnected === false ? "status-dot offline" : "status-dot"} /> {recoveryNeeded ? "Refresh farm data" : backendConnected === true ? "Backend responding" : backendConnected === false ? "Backend not responding" : "Checking connection"}</span>
       </footer>
     </div>
   );
