@@ -11,12 +11,14 @@ describe("MetricHelp", () => {
       </MetricHelp>
     );
 
+    const details = container.querySelector("details");
     const summary = container.querySelector("summary");
     expect(summary.tagName).toBe("SUMMARY");
-    expect(screen.queryByText(/Feed consumed in kilograms/)).not.toBeInTheDocument();
+    expect(details.open).toBe(false);
 
     fireEvent.click(summary);
 
+    expect(details.open).toBe(true);
     expect(screen.getByRole("tooltip")).toHaveTextContent(
       "Feed consumed in kilograms divided by live-weight gain in kilograms."
     );
