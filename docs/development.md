@@ -342,3 +342,18 @@ The current UI uses system fonts only. Do not add a web font, KaTeX, or a font d
 Pomas is a **Windows desktop application**, not a phone/tablet web app. The Electron window opens at 1366×768 and enforces a minimum of **1100×650 CSS pixels**. The renderer's minimum canvas width matches that supported minimum. Browser/device emulation below 1100px is useful for checking graceful clipping and scroll behavior, but it is not a supported application layout and must not be described as mobile support.
 
 See [responsive-layout-audit.md](responsive-layout-audit.md) for the source findings, supported-width test matrix, and manual browser/packaged-window validation checklist. Test the packaged Electron window by resizing it down to its minimum dimensions; do not add a hamburger menu unless runtime testing identifies a real navigation failure within the supported range.
+
+
+## Connection status UX validation
+
+The top-bar status pill is the only persistent connection-state indicator. The sidebar connection label and bottom status bar were removed to avoid repeating the same state in three places. The top bar distinguishes connecting, connected, and unavailable. When the backend is unavailable, or becomes available again while displayed farm data may be stale, the recovery alert provides the distinct explanation and Retry connection action.
+
+Manual validation (run against a disposable database, never real farm data):
+
+1. **Connecting:** start the browser renderer before the backend. Confirm the top bar says “CONNECTING TO BACKEND” while the first health check is pending.
+2. **Unavailable:** leave the backend stopped until the health check completes. Confirm the top bar says “BACKEND UNAVAILABLE” and the recovery alert explains that the local backend is unavailable and provides Retry connection.
+3. **Connected:** start the backend and retry. Confirm the top bar says “BACKEND CONNECTED” after recovery and the recovery alert clears only after the retry flow completes successfully.
+4. **Connection loss:** stop the backend after connecting. Confirm the top-bar state changes to unavailable and the recovery alert stays visible.
+5. Repeat at the supported desktop minimum (1100×650) and default window size (1366×768). Check the top-bar pill and recovery action remain visible and do not overlap the theme/date controls.
+
+Source edits do not prove these runtime states; record them as **Not run** until tested in the browser and packaged Electron app.
