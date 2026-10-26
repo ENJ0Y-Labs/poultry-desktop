@@ -76,6 +76,44 @@ class MigrationUpgradeTest {
         }
     }
 
+
+    @Test
+    void startPageConstraintUpgradePreservesExistingApplicationSettings() throws Exception {
+        Path database = tempDir.resolve("start-page-upgrade.db");
+        String databaseUrl = sqliteUrl(database);
+
+        Flyway.configure()
+                .dataSource(databaseUrl, "", "")
+                .locations(LOCATIONS)
+                .target(MigrationVersion.fromVersion("20"))
+                .load()
+                .migrate();
+
+        String farmId = seedV1Farm(databaseUrl, "20");
+        try (Connection connection = DriverManager.getConnection(databaseUrl);
+             PreparedStatement statement = connection.prepareStatement(
+                     "UPDATE application_settings SET start_page = 'settings', date_format = 'DD/MM/YYYY', updated_at = 'preserve-me' WHERE farm_id = ?")) {
+            statement.setString(1, farmId);
+            assertThat(statement.executeUpdate()).isEqualTo(1);
+        }
+
+        configuredFlyway(databaseUrl).migrate();
+
+        try (Connection connection = DriverManager.getConnection(databaseUrl);
+             PreparedStatement statement = connection.prepareStatement(
+                     "SELECT start_page, date_format, updated_at FROM application_settings WHERE farm_id = ?")) {
+            statement.setString(1, farmId);
+            try (ResultSet result = statement.executeQuery()) {
+                assertThat(result.next()).isTrue();
+                assertThat(result.getString("start_page")).isEqualTo("settings");
+                assertThat(result.getString("date_format")).isEqualTo("DD/MM/YYYY");
+                assertThat(result.getString("updated_at")).isEqualTo("preserve-me");
+            }
+        }
+
+        assertThat(farmExists(databaseUrl, farmId)).isTrue();
+    }
+
     @Test
     void failedMigrationDoesNotDestroyExistingDataOrLeavePartialSchemaChanges() throws Exception {
         Path failureMigrationDirectory = tempDir.resolve("intentional-failure");
