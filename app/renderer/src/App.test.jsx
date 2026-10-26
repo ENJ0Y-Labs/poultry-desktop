@@ -250,7 +250,7 @@ describe("App", () => {
       password: "correct-horse-battery",
     });
     expect(login).toHaveBeenCalledWith({
-      email: "owner@example.com",
+      loginIdentifier: "farm-owner",
       password: "correct-horse-battery",
       rememberMe: false,
     });
