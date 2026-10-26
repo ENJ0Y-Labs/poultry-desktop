@@ -133,7 +133,7 @@ describe("API client", () => {
       name: "ApiError",
       code: "BACKEND_UNAVAILABLE",
       status: 503,
-      message: "The local backend is not responding. Your unsaved form entries are still on this screen. Retry the connection when the backend is available.",
+      message: "The local backend is not responding. Retry the connection when the backend is available. The current screen will remain open during recovery.",
     });
     expect(fetchMock).toHaveBeenCalledWith(
       expect.stringContaining("/auth/me"),
