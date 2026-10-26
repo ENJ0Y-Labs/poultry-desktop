@@ -205,3 +205,14 @@ app/renderer/src/services/api.js
 ```
 
 It sends credentials with requests, translates failed responses into `ApiError`, and keeps the renderer independent from backend implementation details.
+
+
+## Authentication identifiers
+
+- Owner setup accepts a unique username (3–32 characters: letters, numbers, dots, underscores, or hyphens) and an optional email address.
+- Usernames are trimmed and stored in lowercase. Comparisons are case-insensitive.
+- Login accepts either a username or an existing email address. Existing email-based accounts remain valid after migration.
+- Email addresses remain optional account contact information; no email-based password recovery flow is currently provided.
+- Account updates validate username uniqueness and optional email format. Username/email uniqueness conflicts return HTTP 409.
+- Login rate limiting is keyed by client address and the normalized identifier, so changing username casing does not reset the failure counter.
+- Migration V22 preserves existing account IDs, password hashes, email addresses, and sessions. Existing accounts receive a generated username of the form `owner-xxxxxxxx`; owners can change it in Account settings after signing in.
