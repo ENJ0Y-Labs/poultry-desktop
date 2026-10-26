@@ -47,14 +47,15 @@ The installer ID (`appId`), repository name, Java packages, and database file na
 10. The application must remain fully usable without internet access.
 11. No telemetry, cloud dependency, CDN assets, or third-party network service in normal operation.
 12. Never edit a shipped migration. Add a new migration.
-13. Never weaken/delete a test to make it pass.
-14. Do not introduce TypeScript into the frontend. The frontend is React + JavaScript.
-15. Never commit `*.db`, `*.db-wal`, `*.db-shm`, backups, or real farm data.
-16. Keep one local farm data model. Do not unnecessarily split the farm into separate databases/accounts.
-17. Stage 1 has one primary owner/operator account. Multi-user roles can be added later.
-18. Opening a new batch creates a new permanent batch record. It does not overwrite an old batch.
-19. The broiler terminal status is **SOLD**, not COMPLETED.
-20. Reopening a SOLD batch is an exceptional, audited action and requires a reason.
+13. Keep the canonical start-page list aligned across Settings UI, backend request validation, SQLite CHECK constraints, and navigation routing: `dashboard`, `flocks`, `daily-work`, `feed-stock`, `health`, `production`, `sales-money`, `reports`, `settings`.
+14. Never weaken/delete a test to make it pass.
+15. Do not introduce TypeScript into the frontend. The frontend is React + JavaScript.
+16. Never commit `*.db`, `*.db-wal`, `*.db-shm`, backups, or real farm data.
+17. Keep one local farm data model. Do not unnecessarily split the farm into separate databases/accounts.
+18. Stage 1 has one primary owner/operator account. Multi-user roles can be added later.
+19. Opening a new batch creates a new permanent batch record. It does not overwrite an old batch.
+20. The broiler terminal status is **SOLD**, not COMPLETED.
+21. Reopening a SOLD batch is an exceptional, audited action and requires a reason.
 
 ## 3. Stack
 
@@ -1297,3 +1298,13 @@ Validate the renderer with the backend available, during startup, and with the b
 - PDF exports include the report title and as-of date, readable column headings, row separation, and repeated table headers when a report spans pages.
 - Values come from ReportService and its existing dashboard/domain calculation services. Export formatting may format values but must not recalculate farm metrics.
 - Test date scope, empty sections, CSV escaping/headers, money/unit formatting, and generated PDF text/output.
+
+## 40. Production trend charts
+
+- Layer production trend is backend-owned HDP% = total eggs collected on the business date (good + cracked) ÷ live layer birds on that date × 100. Use the historical bird-population calculation for each date; do not calculate the denominator in React.
+- Broiler daily average weight is total sampled weight in kilograms ÷ total sampled birds for all weight records on that date. Aggregate grams and sample counts before dividing; do not average record averages.
+- Layer HDP and broiler average-weight endpoints accept only their matching batch type. They must reject incompatible batch types and dates before placement.
+- Trend ranges are inclusive and limited to 366 days. If no start date is supplied, use the most recent 30 days but never start before batch placement.
+- Return a point for every calendar day in the selected period. A date with no production record has `value: null` and `recorded: false`; never turn a missing record into zero. An explicitly recorded zero-egg collection is a real 0% value.
+- Use kilograms for broiler average weight and percent for HDP. Backend responses include metric/unit and the missing-day policy.
+- Charts must display loading, empty, and error states; accessible names; dates and values in tooltips; and visible gaps for missing days. They must refresh after relevant successful production writes.
