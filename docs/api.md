@@ -215,4 +215,4 @@ It sends credentials with requests, translates failed responses into `ApiError`,
 - Email addresses remain optional account contact information; no email-based password recovery flow is currently provided.
 - Account updates validate username uniqueness and optional email format. Username/email uniqueness conflicts return HTTP 409.
 - Login rate limiting is keyed by client address and the normalized identifier, so changing username casing does not reset the failure counter.
-- Migration V22 preserves existing account IDs, password hashes, email addresses, and sessions. Existing accounts receive a generated username of the form `owner-xxxxxxxx`; owners can change it in Account settings after signing in.
+- Migration V22 preserves existing account IDs, password hashes, email addresses, and sessions. Existing accounts receive a generated username of the form `owner-N` (a deterministic sequence ordered by account ID); owners can change it in Account settings after signing in.
