@@ -65,6 +65,13 @@ async function request(path, options = {}) {
       body?.error?.details,
     );
   }
+
+  const method = String(options.method || "GET").toUpperCase();
+  if (method !== "GET" && typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("pomas:data-mutated", {
+      detail: { path, method },
+    }));
+  }
   return body.data;
 }
 

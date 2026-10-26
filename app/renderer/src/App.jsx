@@ -379,7 +379,31 @@ export default function App() {
   }
 
   useEffect(() => { initialize(); }, []);
-  useEffect(() => { if (farm) { loadDashboard(); loadReport(); } }, [farm, batches.length, inventoryItems.length, sales.length, expenses.length]);
+  useEffect(() => {
+    if (farm) {
+      void loadDashboard();
+      void loadReport();
+    }
+  }, [farm]);
+  useEffect(() => {
+    if (!farm) return undefined;
+
+    function refreshAfterMutation(event) {
+      const path = event.detail?.path || "";
+      const affectsDashboard = /^\/(?:farm(?:\/settings)?|farm\/houses|batches|feed|expenses|inventory|sales|pricing)(?:\/|$)/.test(path);
+      if (!affectsDashboard) return;
+
+      void loadDashboard();
+      void loadReport();
+      if (selectedBatchId && batches.some(batch => batch.id === selectedBatchId)) {
+        void loadBatchDashboard(selectedBatchId);
+        void loadBatchReport(selectedBatchId);
+      }
+    }
+
+    window.addEventListener("pomas:data-mutated", refreshAfterMutation);
+    return () => window.removeEventListener("pomas:data-mutated", refreshAfterMutation);
+  }, [farm, selectedBatchId, batches]);
   useEffect(() => {
     if (selectedBatchId && batches.some(batch => batch.id === selectedBatchId)) {
       loadBatchDashboard(selectedBatchId);
@@ -387,7 +411,7 @@ export default function App() {
     } else {
       setBatchReport(null);
     }
-  }, [selectedBatchId, batches.length]);
+  }, [selectedBatchId]);
 
   async function submitFarm(event) {
     event.preventDefault(); setSaving(true); setError("");
