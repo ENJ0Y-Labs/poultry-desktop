@@ -65,3 +65,8 @@ The nine page components live under `app/renderer/src/pages/`. Shared form state
 - Each action navigates to an existing page/tab using the local hash router. No route dependency or backend feature is added.
 - The empty state is inferred from the absence of houses, batches, calculated bird/financial/egg activity, feed types, and audit events. A zero metric by itself does not trigger it.
 - No sample or demo data is inserted. Existing/populated farms retain their normal dashboard.
+
+
+## Dashboard quick actions
+
+The populated dashboard exposes five keyboard-accessible shortcuts: record mortality, collect eggs, record feed usage, record a sale, and record an expense. Each shortcut opens the existing form route. The selected/last-used active batch is preferred where relevant; egg workflows require an active layer batch, bird sales require an active broiler batch, and feed usage defaults to an active feed type applicable to the chosen batch. Existing API and backend validation remain authoritative. Successful submissions announce a status and refresh farm metrics, attention alerts, audit activity, and the affected batch dashboard. The actions stack at narrow widths without introducing a new routing dependency.
