@@ -1,4 +1,4 @@
-import { useContext } from "react";
+import { useContext, useState } from "react";
 import { FarmManagerContext } from "../components/FarmManagerContext.jsx";
 // eslint-disable-next-line no-unused-vars
 import PageSection from "../components/PageSection.jsx";
@@ -26,6 +26,8 @@ export default function DashboardPage() {
     farm,
     houses,
     batches,
+    feedTypes,
+    dailyRecord,
     dashboard,
     attention,
     auditRows,
@@ -48,6 +50,21 @@ export default function DashboardPage() {
     window.location.hash = target;
   }
 
+  const [checklistDismissed, setChecklistDismissed] = useState(
+    () => localStorage.getItem("pomas:getting-started-dismissed") === "true"
+  );
+  const checklistItems = [
+    { id: "house", label: "Create a house or pen", description: "Set up the physical location for a flock.", done: houses.length > 0, target: "flocks/houses", action: "Manage houses" },
+    { id: "batch", label: "Open a batch", description: "Record flock type, placement date, and starting bird count.", done: batches.length > 0, target: "flocks/flocks", action: "Manage batches" },
+    { id: "feed", label: "Set up feed", description: "Create at least one feed type before recording purchases and usage.", done: feedTypes.length > 0, target: "feed-stock/feed", action: "Set up feed" },
+    { id: "daily", label: "Record a daily observation", description: "Save a daily record for the selected batch and date.", done: Boolean(dailyRecord), target: "daily-work/daily-record", action: "Record daily work" },
+  ];
+  const checklistComplete = checklistItems.every(item => item.done);
+  function dismissChecklist() {
+    localStorage.setItem("pomas:getting-started-dismissed", "true");
+    setChecklistDismissed(true);
+  }
+
   return (
     <div className="grid">
       <PageSection page="dashboard" tab="overview"><section id="dashboard" className="card full dashboard-page">
@@ -58,11 +75,36 @@ export default function DashboardPage() {
             <strong>{dashboard ? formatBusinessDate(dashboard.asOf, applicationSettings?.dateFormat) : "Loading..."}</strong>
           </p>
         </div>
+        {dashboard && !checklistDismissed && !checklistComplete && !isFirstRunEmpty && (
+          <section className="getting-started-checklist subsection" aria-labelledby="getting-started-title">
+            <div className="section-head">
+              <div>
+                <p className="eyebrow">GETTING STARTED</p>
+                <h3 id="getting-started-title">Finish setting up your farm</h3>
+                <p className="muted">Progress is calculated from saved farm records, not from which screens you have opened.</p>
+              </div>
+              <button type="button" className="secondary-button" onClick={dismissChecklist}>Dismiss checklist</button>
+            </div>
+            <ol className="getting-started-list">
+              {checklistItems.map(item => (
+                <li key={item.id} className={item.done ? "getting-started-item complete" : "getting-started-item"}>
+                  <span className="getting-started-status" aria-label={item.done ? "Complete" : "Not complete"}>{item.done ? "✓" : "○"}</span>
+                  <div className="getting-started-item-copy">
+                    <strong>{item.label}</strong>
+                    <p>{item.description}</p>
+                  </div>
+                  {!item.done && <button type="button" className="text-button" onClick={() => navigateTo(item.target)}>{item.action}</button>}
+                </li>
+              ))}
+            </ol>
+          </section>
+        )}
         {dashboard ? isFirstRunEmpty ? (
           <section className="first-run-empty" aria-labelledby="first-run-title">
             <p className="eyebrow">GETTING STARTED</p>
             <h3 id="first-run-title">Your farm is ready to be set up</h3>
             <p className="first-run-intro">These zeros are expected because no flock records have been entered yet. Start with your farm's physical setup, then add birds and record daily work. Nothing has been added automatically.</p>
+            <button type="button" className="secondary-button" onClick={dismissChecklist}>Dismiss getting-started guidance</button>
             <ol className="first-run-steps">
               <li><span className="first-run-step-number">1</span><div><strong>Create a house or pen</strong><p>Add the place where your birds will be kept. A house is required before you can create a batch.</p><button type="button" onClick={() => navigateTo("flocks/houses")}>Create house / pen</button></div></li>
               <li><span className="first-run-step-number">2</span><div><strong>Open your first batch</strong><p>Record whether the flock is for layers or broilers, its placement date, and starting bird count.</p><button type="button" onClick={() => navigateTo("flocks/flocks")}>Create batch</button></div></li>
