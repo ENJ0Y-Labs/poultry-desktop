@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { todayLocalDate, getLastBatchId, rememberLastBatchId } from "./utils/farmUx.js";
 import { parseNairaToKobo } from "./utils/moneyInput.js";
+import { formatMoney } from "./utils/money.js";
 // eslint-disable-next-line no-unused-vars
 import AppShell from "./components/AppShell.jsx";
 // eslint-disable-next-line no-unused-vars
@@ -25,7 +26,6 @@ import SalesMoneyPage from "./pages/SalesMoneyPage.jsx";
 import ReportsPage from "./pages/ReportsPage.jsx";
 // eslint-disable-next-line no-unused-vars
 import SettingsPage from "./pages/SettingsPage.jsx";
-function formatMoney(minor, currency = "NGN") { if (minor == null) return "—"; return new Intl.NumberFormat("en-NG", { style: "currency", currency, maximumFractionDigits: 2 }).format(Number(minor) / 100); }
 function formatQuantity(milli) { return milli == null ? "—" : (Number(milli) / 1000).toLocaleString() + " units"; }
 function formatPercent(value) { return value == null ? "—" : Number(value).toFixed(2) + "%"; }
 function formatKg(value) { return value == null ? "—" : Number(value).toFixed(2) + " kg"; }
