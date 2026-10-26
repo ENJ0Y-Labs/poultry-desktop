@@ -99,7 +99,7 @@ export default function DashboardPage() {
             </ol>
           </section>
         )}
-        {dashboard ? isFirstRunEmpty ? (
+        {dashboard ? isFirstRunEmpty && !checklistDismissed ? (
           <section className="first-run-empty" aria-labelledby="first-run-title">
             <p className="eyebrow">GETTING STARTED</p>
             <h3 id="first-run-title">Your farm is ready to be set up</h3>
