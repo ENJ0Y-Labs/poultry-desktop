@@ -125,7 +125,7 @@ describe("API client", () => {
     });
   });
   it("turns backend connection failures into a readable recovery error", async () => {
-    vi.spyOn(globalThis, "fetch").mockRejectedValue(new TypeError("Failed to fetch"));
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockRejectedValue(new TypeError("Failed to fetch"));
 
     await expect(authApi.me()).rejects.toMatchObject({
       name: "ApiError",
@@ -133,6 +133,10 @@ describe("API client", () => {
       status: 503,
       message: "The local backend is not responding. Your unsaved form entries are still on this screen. Retry the connection when the backend is available.",
     });
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining("/auth/me"),
+      expect.objectContaining({ credentials: "include", signal: expect.any(AbortSignal) })
+    );
   });
 
 });
