@@ -91,7 +91,7 @@ public class ReportExportService {
             for (int i = 0; i < node.size(); i++) {
                 JsonNode item = node.get(i);
                 String itemRecord = recordName(item, i);
-                appendRows(item, section, itemRecord, fieldPath, rows);
+                appendRows(item, section, itemRecord, "", rows);
             }
             return;
         }
@@ -122,7 +122,7 @@ public class ReportExportService {
                 NumberFormat currency = NumberFormat.getNumberInstance(Locale.forLanguageTag("en-NG"));
                 currency.setMinimumFractionDigits(2);
                 currency.setMaximumFractionDigits(2);
-                return "₦" + currency.format(minor / 100.0);
+                return "₦" + currency.format(java.math.BigDecimal.valueOf(minor, 2));
             } catch (RuntimeException ignored) {
                 return value.asText();
             }
