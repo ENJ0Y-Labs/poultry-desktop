@@ -150,6 +150,54 @@ Backend tests include:
 
 The backend integration tests use SQLite rather than mocking away the database behavior that matters to production.
 
+
+## Local backend outage and persistence drill
+
+Run this drill only against a disposable SQLite database. Never point it at the normal development database or a real farm database. The drill must not delete, reset, replace, or truncate a database.
+
+Open two PowerShell terminals at the repository root. Confirm port 18942 is not being used by another backend before starting.
+
+In Terminal 1, create a dedicated test-data directory and start the browser UI first, with the backend still stopped:
+
+```powershell
+New-Item -ItemType Directory -Force data\reliability-test | Out-Null
+npm run dev:browser
+```
+
+Open `http://127.0.0.1:5173`. Confirm the app reports that the local backend is unavailable, does not claim it is connected, and offers a retry action. Keep this browser open.
+
+In Terminal 2, start the backend against a separate disposable database and log:
+
+```powershell
+$env:DATABASE_PATH = Join-Path (Get-Location) "data\reliability-test\pomas-reliability.db"
+$env:LOG_FILE = Join-Path (Get-Location) "logs\reliability-test-backend.log"
+npm run dev:backend
+```
+
+Use the browser's Retry connection action. Complete owner setup if this disposable database is new. Create a clearly named test farm and at least one test batch. Record the batch code and verify it appears in the Flocks page.
+
+Test a temporary outage during a read workflow:
+
+1. Navigate to Flocks and confirm the test batch is visible.
+2. Stop only the test backend with Ctrl+C in Terminal 2. Do not close the browser.
+3. Wait for the connection state to change. Confirm the UI does not show Connected and that it provides a clear outage message and retry action.
+4. Start the backend again in Terminal 2 using the same `DATABASE_PATH` and `LOG_FILE` values. Do not change the path.
+5. Wait for the UI to report that the backend is responding again. Use Retry connection to reload data.
+6. Confirm the previously committed test batch still appears.
+
+Test a temporary outage during a write workflow:
+
+1. Open a form for a new test record and enter distinctive values, but do not submit yet.
+2. Stop the backend in Terminal 2.
+3. Confirm the form remains on screen and the entered values remain present. Confirm the UI clearly reports the outage.
+4. Restart the backend with the same disposable database path, then use Retry connection.
+5. Confirm the unsaved values remain. Submit once and wait for the success result.
+6. Stop and restart the backend again using the same path, retry the connection, and verify the committed record appears exactly once.
+
+Test a delayed startup by repeating the browser-first sequence with a fresh, separately named disposable database file. Leave the browser running before starting the backend, then confirm retry works after the backend becomes ready. Keep each test database isolated and never reuse a real farm database.
+
+Record the observed results for startup delay, failed reads, failed writes, unsaved input retention, and committed-record persistence. This is a manual runtime drill; passing unit tests or seeing zero browser localStorage keys is not proof of SQLite persistence. Keep the disposable database and logs until the results have been reviewed, then archive or remove them manually only after confirming their paths are test-only.
+
 ## Layer boundaries
 
 Electron owns lifecycle and native desktop capabilities.
