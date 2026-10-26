@@ -311,7 +311,7 @@ export default function App() {
     event.preventDefault(); setSaving(true); setError("");
     try {
       if (authStatus?.setupRequired) {
-        await authApi.setup(authForm);
+        await authApi.setup({ fullName: authForm.fullName, email: authForm.email, password: authForm.password });
         setAuthStatus({ authenticated: false, setupRequired: false });
       }
       await authApi.login({ email: authForm.email, password: authForm.password, rememberMe: authStatus?.setupRequired ? false : authForm.rememberMe });
