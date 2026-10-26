@@ -1277,3 +1277,12 @@ Validate the renderer with the backend available, during startup, and with the b
 - The empty state is presentation-only. Never seed, synthesize, or write demo records to the database.
 - Keep the normal dashboard metrics, feed, attention, and audit layout for populated farms or farms with meaningful recorded activity.
 - Cover the empty and populated states with renderer tests. Validate with a clean disposable database and a populated test farm; never reset or alter a user's real database.
+
+
+## 39. Report exports and date scope
+
+- Farm and batch reports must use the selected as-of date for the report preview and CSV/PDF exports; do not silently export the current date when the user selected a historical date.
+- CSV exports use a stable, documented column order with report type, as-of date, section, record, field, value, and unit. Do not regress to a path,value-only dump.
+- PDF exports include the report title and as-of date, readable column headings, row separation, and repeated table headers when a report spans pages.
+- Values come from ReportService and its existing dashboard/domain calculation services. Export formatting may format values but must not recalculate farm metrics.
+- Test date scope, empty sections, CSV escaping/headers, money/unit formatting, and generated PDF text/output.
