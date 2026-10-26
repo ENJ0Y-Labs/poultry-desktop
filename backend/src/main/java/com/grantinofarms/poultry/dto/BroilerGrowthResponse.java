@@ -9,6 +9,7 @@ public record BroilerGrowthResponse(
         LocalDate asOf,
         BigDecimal averageWeightKg,
         BigDecimal weightGainKg,
+        BigDecimal feedConsumedKg,
         BigDecimal fcr,
         List<WeightRecordResponse> trend
 ) {}
