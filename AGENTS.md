@@ -1314,3 +1314,11 @@ Validate the renderer with the backend available, during startup, and with the b
 - Return a point for every calendar day in the selected period. A date with no production record has `value: null` and `recorded: false`; never turn a missing record into zero. An explicitly recorded zero-egg collection is a real 0% value.
 - Use kilograms for broiler average weight and percent for HDP. Backend responses include metric/unit and the missing-day policy.
 - Charts must display loading, empty, and error states; accessible names; dates and values in tooltips; and visible gaps for missing days. They must refresh after relevant successful production writes.
+
+
+## Farm water unit label
+
+- The farm's water unit label is a display label, defaulting to `litres`. Changing it must never convert or rewrite stored container capacities, container counts, or historical water quantities.
+- Read the label from farm settings for water-entry forms and farm/batch report views and exports. Do not hard-code `units` or `litres` in a water-specific display.
+- Water unit setting changes must be audited with both the prior and updated settings snapshots so the change is traceable.
+- Keep the migration forward-only. Migration tests must start from a pre-label database containing existing water records and assert the label default plus unchanged numeric capacity/count values.

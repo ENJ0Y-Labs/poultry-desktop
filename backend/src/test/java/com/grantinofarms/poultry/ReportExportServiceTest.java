@@ -20,6 +20,7 @@ class ReportExportServiceTest {
         Map<String, Object> report = Map.of(
                 "reportType", "FARM_SUMMARY",
                 "asOf", "2026-10-03",
+                "waterUnitLabel", "gallons",
                 "dashboard", Map.of("totalBirds", 5000, "profitMinor", 300000),
                 "sales", List.of(Map.of("saleDate", "2026-10-03", "totalAmountMinor", 125000))
         );
@@ -30,6 +31,7 @@ class ReportExportServiceTest {
         assertThat(csv).contains("\"FARM_SUMMARY\",\"2026-10-03\",\"Dashboard\",\"—\",\"Total birds\",\"5000\",\"count\"");
         assertThat(csv).contains("₦3,000.00");
         assertThat(csv).contains("\"Sales\",\"2026-10-03\",\"Sale date\",\"2026-10-03\"");
+        assertThat(csv).contains("\"Water unit label\",\"gallons\"");
     }
 
     @Test
@@ -44,7 +46,7 @@ class ReportExportServiceTest {
     @Test
     void pdfHasReportTitleDateStructuredHeadingsAndFormattedMoney() throws Exception {
         byte[] pdf = service.pdf(
-                Map.of("reportType", "BATCH_SUMMARY", "asOf", "2026-10-03", "profitMinor", 500000, "farmName", "Grantino Farms"),
+                Map.of("reportType", "BATCH_SUMMARY", "asOf", "2026-10-03", "waterUnitLabel", "litres", "profitMinor", 500000, "farmName", "Grantino Farms"),
                 "Batch Report"
         );
 
@@ -52,7 +54,7 @@ class ReportExportServiceTest {
         assertThat(pdf).contains("%EOF".getBytes(StandardCharsets.US_ASCII));
         try (var document = Loader.loadPDF(pdf)) {
             String text = new PDFTextStripper().getText(document);
-            assertThat(text).contains("Batch Report", "As of: 2026-10-03", "Section", "Record", "Field", "Value", "Unit", "₦5,000.00");
+            assertThat(text).contains("Batch Report", "As of: 2026-10-03", "Section", "Record", "Field", "Value", "Unit", "₦5,000.00", "Water unit label", "litres");
         }
     }
 }

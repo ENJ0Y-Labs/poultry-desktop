@@ -1,6 +1,12 @@
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App.jsx";
+// eslint-disable-next-line no-unused-vars
+import DailyWorkPage from "./pages/DailyWorkPage.jsx";
+// eslint-disable-next-line no-unused-vars
+import { FarmManagerContext } from "./components/FarmManagerContext.jsx";
+// eslint-disable-next-line no-unused-vars
+import { NavigationContext } from "./components/NavigationContext.jsx";
 import {
   authApi, farmApi, batchApi, expenseApi, customerApi, salesApi, inventoryApi,
   feedApi, pricingApi, dashboardApi, attentionApi, auditApi,

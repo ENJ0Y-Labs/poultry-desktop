@@ -125,6 +125,7 @@ public class FarmService {
                     "The default water container size must be one of the configured sizes.");
         }
 
+        FarmSettingsResponse previousSettings = getSettings();
         String now = Instant.now().toString();
         settingsRepository.update(farm.id(), request.defaultCrateSize(),
                 request.defaultWaterContainerSize(), request.waterUnitLabel().trim(), now);
@@ -134,9 +135,10 @@ public class FarmService {
         }
         waterRepository.renameAllForFarm(farm.id(), request.waterUnitLabel().trim(), now);
 
+        FarmSettingsResponse updatedSettings = getSettings();
         auditRepository.append(farm.id(), "UPDATE", "FARM_SETTINGS", farm.id(), null,
-                null, json(request), now);
-        return getSettings();
+                json(previousSettings), json(updatedSettings), now);
+        return updatedSettings;
     }
 
     private String clean(String value) {
