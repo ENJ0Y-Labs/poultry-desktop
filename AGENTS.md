@@ -1297,3 +1297,13 @@ Validate the renderer with the backend available, during startup, and with the b
 - PDF exports include the report title and as-of date, readable column headings, row separation, and repeated table headers when a report spans pages.
 - Values come from ReportService and its existing dashboard/domain calculation services. Export formatting may format values but must not recalculate farm metrics.
 - Test date scope, empty sections, CSV escaping/headers, money/unit formatting, and generated PDF text/output.
+
+
+## 40. Daily farm day sheet and completion alerts
+
+- One daily-record header exists per batch and farm-local business date. Saving the same batch/date is an upsert, not a duplicate-record error.
+- A day-sheet form must only submit the fields it owns. A null/omitted notes field preserves saved notes; a null/omitted water list preserves saved water entries. A supplied water list replaces that day's water entries.
+- Validate all water container sizes against the active farm before mutating the sheet. Concurrent first saves must return a useful conflict and must not overwrite another save.
+- Feed usage, population events, egg collections, broiler weight records, health records, drug records and vaccinations remain their own authoritative records. The day sheet summarizes these records and must not create duplicate ledgers.
+- A missing-daily-record alert is emitted only when the batch has neither a daily-record header nor operational activity for the selected date. Creating activity must not be mistaken for missing work merely because the optional header has not been saved.
+- Cover first save, same-date edits, note/water preservation, invalid water sizes, concurrent conflict handling, and missing-alert suppression with automated tests.
