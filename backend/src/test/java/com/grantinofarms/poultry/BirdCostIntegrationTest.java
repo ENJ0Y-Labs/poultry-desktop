@@ -59,6 +59,34 @@ class BirdCostIntegrationTest {
     }
 
     @Test
+    void nonDivisiblePurchaseCostIsFullyAllocatedWhenAllBirdsLeave() {
+        farmService.create(new FarmCreateRequest(
+                "Grantino Farms", "Port Harcourt", "Africa/Lagos", "NGN"));
+        var house = houseService.create(new HouseCreateRequest(
+                "Broiler House", "BH1", null));
+
+        var batch = batchService.create(new BatchCreateRequest(
+                "BROILER", LocalDate.of(2026, 1, 1), house.id(), 3, null, 100L));
+
+        populationService.addSale(
+                batch.id(),
+                new BirdPopulationEventRequest(LocalDate.of(2026, 1, 2), 1, "First bird sold")
+        );
+        var afterFirstSale = costService.get(batch.id(), LocalDate.of(2026, 1, 2));
+        assertThat(afterFirstSale.soldBirdCostMinor()).isEqualTo(33L);
+        assertThat(afterFirstSale.carriedCostMinor()).isEqualTo(67L);
+
+        populationService.addSale(
+                batch.id(),
+                new BirdPopulationEventRequest(LocalDate.of(2026, 1, 3), 2, "Remaining birds sold")
+        );
+        var afterFinalSale = costService.get(batch.id(), LocalDate.of(2026, 1, 3));
+
+        assertThat(afterFinalSale.soldBirdCostMinor()).isEqualTo(100L);
+        assertThat(afterFinalSale.carriedCostMinor()).isEqualTo(0L);
+    }
+
+    @Test
     void additionalCostIsAttributableToBirdsBeforeSale() {
         farmService.create(new FarmCreateRequest(
                 "Grantino Farms", "Port Harcourt", "Africa/Lagos", "NGN"));
