@@ -29,7 +29,7 @@ export default function ReportsPage() {
                 ["Inventory items", formatCount(farmReport.inventory?.length)]
               ].map(([label,value]) => <div className="metric-card" key={label}><span>{label}</span><strong>{value ?? "—"}</strong></div>)}
             </div>
-            <p className="muted">As of {farmReport.asOf}. All report metrics are assembled from the same calculation services used by the dashboards.</p>
+            <p className="muted">As of {farmReport.asOf}. Water quantities use the farm display label: {farmReport.waterUnitLabel || "litres"}. All report metrics are assembled from the same calculation services used by the dashboards.</p>
           </> : <p className="muted">Report is loading…</p>}
         </section></PageSection>
 
@@ -82,7 +82,7 @@ export default function ReportsPage() {
                 </div>
               </div>
             </div>
-            <p className="muted">As of {batchReport.asOf}. Population, feed, production, costs, revenue and profit reuse the dashboard calculation services.</p>
+            <p className="muted">As of {batchReport.asOf}. Water quantities use the farm display label: {batchReport.waterUnitLabel || "litres"}. Population, feed, production, costs, revenue and profit reuse the dashboard calculation services.</p>
           </> : <p className="muted">{selectedBatchId ? "Batch report is loading…" : "Select a batch to inspect its report."}</p>}
         </section></PageSection>
     </div>

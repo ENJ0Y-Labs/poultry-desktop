@@ -19,6 +19,7 @@ const settings = {
   defaultCrateSize: 30,
   defaultWaterContainerSize: 25,
   waterContainerSizes: [25, 75],
+  waterUnitLabel: "litres",
 };
 
 const batches = [
@@ -677,5 +678,6 @@ describe("App", () => {
     await waitFor(() => expect(screen.queryByRole("button", { name: "Retry connection" })).not.toBeInTheDocument());
     expect(screen.getByLabelText("Farm name")).toHaveValue("Unsaved recovery test");
   });
+
 
 });
