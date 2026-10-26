@@ -130,7 +130,7 @@ function localDateLabel() {
   return new Intl.DateTimeFormat("en-NG", { day: "2-digit", month: "short", year: "numeric" }).format(new Date());
 }
 
-export default function AppShell({ farm, error, children, startPage = "dashboard", startPageReady = true }) {
+export default function AppShell({ farm, error, onRetry, children, startPage = "dashboard", startPageReady = true }) {
   const [active, setActive] = useState(() => resolvePage(window.location.hash, startPage));
   const [activeTab, setActiveTab] = useState(() => resolveTab(window.location.hash, resolvePage(window.location.hash, startPage)));
   const [theme, setTheme] = useState(getThemePreference);
@@ -181,7 +181,7 @@ export default function AppShell({ farm, error, children, startPage = "dashboard
       if (mounted) setBackendConnected(connected);
     };
     checkBackend();
-    const interval = window.setInterval(checkBackend, 15000);
+    const interval = window.setInterval(checkBackend, 5000);
     return () => {
       mounted = false;
       window.clearInterval(interval);
@@ -316,7 +316,13 @@ export default function AppShell({ farm, error, children, startPage = "dashboard
               <div className="date-chip">{today}</div>
             </div>
           </header>
-          {error && <div className="error">{error}</div>}
+          {error && <div className="error" role="alert">{error}</div>}
+          {backendConnected === false && (
+            <div className="error connection-recovery" role="alert">
+              The local backend is unavailable. Farm records remain in the local database. Restart the backend if needed, then retry loading farm data.
+              <button type="button" onClick={onRetry}>Retry connection</button>
+            </div>
+          )}
           {(pageTabs[active] || []).length > 0 && (
             <nav className="page-tabs" aria-label={`${active} sections`}>
               {pageTabs[active].map(tab => (
