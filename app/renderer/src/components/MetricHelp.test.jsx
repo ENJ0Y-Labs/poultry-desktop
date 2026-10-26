@@ -1,5 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
+// eslint-disable-next-line no-unused-vars
 import MetricHelp from "./MetricHelp.jsx";
 
 describe("MetricHelp", () => {
