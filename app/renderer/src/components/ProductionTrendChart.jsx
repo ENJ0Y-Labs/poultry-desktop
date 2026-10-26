@@ -36,7 +36,7 @@ export default function ProductionTrendChart({ batchId, title, description, unit
       const method = String(event.detail?.method || "").toUpperCase();
       if (method === "GET") return;
       const relevant = unit === "percent"
-        ? new RegExp("^/batches/" + batchId + "/eggs/(collections|sales)(?:/|$|\\?)").test(path)
+        ? new RegExp("^/batches/" + batchId + "/(?:eggs/(?:collections|sales)|mortality|culling|bird-sales|transfers)(?:/|$|\\?)").test(path)
         : new RegExp("^/batches/" + batchId + "/broiler/weights(?:/|$|\\?)").test(path);
       if (relevant) setRefreshKey(key => key + 1);
     }
