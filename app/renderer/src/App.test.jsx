@@ -335,6 +335,37 @@ describe("App", () => {
     expect(screen.getByText("No batches yet.")).toBeInTheDocument();
   });
 
+  it("renders readable audit timestamps and labels, including unknown values", async () => {
+    mockFarmApis();
+    vi.mocked(auditApi.list).mockResolvedValue([
+      {
+        id: "audit-farm-created",
+        occurredAt: "2026-10-26T08:21:44.123456789Z",
+        action: "CREATE",
+        entityType: "FARM",
+        reason: null,
+      },
+      {
+        id: "audit-unknown",
+        occurredAt: null,
+        action: "UNRECOGNIZED_ACTION",
+        entityType: "NEW_ENTITY_KIND",
+        reason: " ",
+      },
+    ]);
+
+    render(<App />);
+
+    await waitFor(() => expect(screen.getByRole("heading", { name: "Recent audit activity" })).toBeInTheDocument());
+    expect(screen.getByText("26 Oct 2026, 09:21:44")).toBeInTheDocument();
+    expect(screen.getByText("Created")).toBeInTheDocument();
+    expect(screen.getByText("Farm")).toBeInTheDocument();
+    expect(screen.getByText("—")).toBeInTheDocument();
+    expect(screen.getByText("Unknown time")).toBeInTheDocument();
+    expect(screen.getByText("Unrecognized Action")).toBeInTheDocument();
+    expect(screen.getByText("New Entity Kind")).toBeInTheDocument();
+  });
+
   it("renders backend-derived attention items on the dashboard", async () => {
     mockFarmApis();
     vi.mocked(attentionApi.list).mockResolvedValue([{
