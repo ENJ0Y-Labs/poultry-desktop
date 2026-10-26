@@ -52,8 +52,8 @@ class FarmManagementIntegrationTest {
         assertThat(auditRepository.find(farm.id(), 50))
                 .filteredOn(row -> "FARM_SETTINGS".equals(row.get("entityType")))
                 .anySatisfy(row -> {
-                    assertThat(String.valueOf(row.get("before"))).contains("\\\"waterUnitLabel\\\":\\\"litres\\\"");
-                    assertThat(String.valueOf(row.get("after"))).contains("\\\"waterUnitLabel\\\":\\\"gallons\\\"");
+                    assertThat(String.valueOf(row.get("before"))).contains("\"waterUnitLabel\":\"litres\"");
+                    assertThat(String.valueOf(row.get("after"))).contains("\"waterUnitLabel\":\"gallons\"");
                     assertThat(String.valueOf(row.get("changedFields"))).contains("waterUnitLabel");
                 });
 
