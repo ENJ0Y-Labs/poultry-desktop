@@ -103,4 +103,33 @@ describe("AppShell", () => {
     await waitFor(() => expect(onRetry).toHaveBeenCalledTimes(1));
   });
 
+
+  it("uses one navigation surface and persists collapse without changing the selected page", () => {
+    const { unmount } = render(
+      <AppShell farm={{ name: "Grantino", location: "", currency: "NGN", timezone: "Africa/Lagos" }}>
+        <section id="dashboard">Dashboard</section>
+      </AppShell>
+    );
+
+    expect(screen.getAllByRole("button", { name: "Flocks" })).toHaveLength(1);
+    fireEvent.click(screen.getByRole("button", { name: "Flocks" }));
+    expect(window.location.hash).toBe("#flocks/batch-dashboard");
+
+    fireEvent.click(screen.getByRole("button", { name: "Collapse sidebar" }));
+    expect(window.location.hash).toBe("#flocks/batch-dashboard");
+    expect(localStorage.getItem("pomas:sidebar-collapsed")).toBe("true");
+    expect(screen.getByRole("button", { name: "Expand sidebar" })).toHaveAttribute("aria-expanded", "false");
+
+    unmount();
+    render(
+      <AppShell farm={{ name: "Grantino", location: "", currency: "NGN", timezone: "Africa/Lagos" }}>
+        <section id="dashboard">Dashboard</section>
+      </AppShell>
+    );
+
+    expect(screen.getByRole("button", { name: "Expand sidebar" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Flocks" })).toHaveAttribute("aria-current", "page");
+    expect(window.location.hash).toBe("#flocks/batch-dashboard");
+  });
+
 });
