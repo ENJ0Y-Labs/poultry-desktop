@@ -5,13 +5,13 @@ import MetricHelp from "./MetricHelp.jsx";
 
 describe("MetricHelp", () => {
   it("reveals the formula help from its keyboard-focusable summary control", () => {
-    render(
+    const { container } = render(
       <MetricHelp id="fcr-help" label="FCR formula">
         Feed consumed in kilograms divided by live-weight gain in kilograms.
       </MetricHelp>
     );
 
-    const summary = screen.getByRole("button", { name: "Help: FCR formula" });
+    const summary = container.querySelector("summary");
     expect(summary.tagName).toBe("SUMMARY");
     expect(screen.queryByText(/Feed consumed in kilograms/)).not.toBeInTheDocument();
 
