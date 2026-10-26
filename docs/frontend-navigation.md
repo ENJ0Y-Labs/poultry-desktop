@@ -83,3 +83,10 @@ The nine page components live under `app/renderer/src/pages/`. Shared form state
 - Backend feed-stock alerts expose `feedTypeId`; low and insufficient inventory alerts expose `itemId`. Display names are not used as database identifiers.
 - Successful writes emit the shared mutation invalidation event. Relevant mutations refresh farm dashboard metrics, attention alerts, audit activity, reports, and the selected batch dashboard.
 - Vitest covers all supported alert mappings, missing/invalid context, encoded context parsing, and a dashboard-to-daily-record navigation with batch/date prefilled. Backend integration tests assert that stock alerts include their navigable IDs.
+
+
+## Light-theme IDE shell tokens
+
+- The activity bar, sidebar, workspace, cards, hover states, focus ring, tabs, and scrollbar use dedicated semantic IDE tokens.
+- Every shell token used by navigation and page tabs has an explicit light-theme value. Keep these values readable against the light surfaces and preserve a visible keyboard focus indicator.
+- CSS tests verify token presence and selector usage without depending on formatting or whitespace.
