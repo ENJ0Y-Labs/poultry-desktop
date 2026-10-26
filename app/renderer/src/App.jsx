@@ -209,7 +209,7 @@ export default function App() {
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [authStatus, setAuthStatus] = useState(null);
-  const [authForm, setAuthForm] = useState({ email: "", fullName: "", password: "", rememberMe: false });
+  const [authForm, setAuthForm] = useState({ username: "", identifier: "", email: "", fullName: "", password: "", rememberMe: false });
   const [dashboard, setDashboard] = useState(null);
   const [attention, setAttention] = useState([]);
   const [auditRows, setAuditRows] = useState([]);
