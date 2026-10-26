@@ -5,6 +5,7 @@ import ProductionTrendChart from "../components/ProductionTrendChart.jsx";
 import { FarmManagerContext } from "../components/FarmManagerContext.jsx";
 // eslint-disable-next-line no-unused-vars
 import PageSection from "../components/PageSection.jsx";
+// eslint-disable-next-line no-unused-vars
 import MetricHelp from "../components/MetricHelp.jsx";
 
 export default function ProductionPage() {
@@ -130,7 +131,7 @@ export default function ProductionPage() {
               <div className="subsection">
                 <h3>Growth summary</h3>
                 <div className="table">
-                  <div className="row header"><span>Average weight</span><span>Weight gain</span><span>Feed consumed (converted)</span><span>FCR</span><span>Trend records</span></div>
+                  <div className="row header"><span>Average weight</span><span>Weight gain</span><span>Feed consumed (converted)</span><span>FCR <MetricHelp id="production-fcr-help" label="FCR formula">Feed conversion ratio (FCR) = converted feed consumed in kilograms ÷ live-weight gain in kilograms for this batch. Both values must cover the same period. If feed conversion is unknown or live-weight gain is not positive, FCR is undefined.</MetricHelp></span><span>Trend records</span></div>
                   <div className="row">
                     <span>{broilerGrowth?.averageWeightKg ?? "—"} kg</span>
                     <span>{broilerGrowth?.weightGainKg ?? "—"} kg</span>
