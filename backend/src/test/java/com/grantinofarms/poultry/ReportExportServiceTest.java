@@ -13,41 +13,46 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class ReportExportServiceTest {
-
     private final ReportExportService service = new ReportExportService(new ObjectMapper());
 
     @Test
-    void csvFlattensTheCompleteReportInsteadOfJavaObjectToString() {
+    void csvUsesStableStructuredHeadersAndIncludesDateScope() {
         Map<String, Object> report = Map.of(
                 "reportType", "FARM_SUMMARY",
+                "asOf", "2026-10-03",
                 "dashboard", Map.of("totalBirds", 5000, "profitMinor", 300000),
                 "sales", List.of(Map.of("saleDate", "2026-10-03", "totalAmountMinor", 125000))
         );
 
         String csv = service.csv(report);
 
-        assertThat(csv).startsWith("\uFEFFpath,value\n");
-        assertThat(csv).contains("\"dashboard.totalBirds\",\"5000\"");
-        assertThat(csv).contains("\"dashboard.profitMinor\",\"300000\"");
-        assertThat(csv).contains("\"sales[0].saleDate\",\"2026-10-03\"");
-        assertThat(csv).contains("\"sales[0].totalAmountMinor\",\"125000\"");
-        assertThat(csv).doesNotContain("java.util.");
+        assertThat(csv).startsWith("\uFEFF\"report_type\",\"as_of\",\"section\",\"record\",\"field\",\"value\",\"unit\"");
+        assertThat(csv).contains("\"FARM_SUMMARY\",\"2026-10-03\",\"Dashboard\",\"—\",\"Total birds\",\"5000\",\"count\"");
+        assertThat(csv).contains("₦3,000.00");
+        assertThat(csv).contains("\"Sales\",\"2026-10-03\",\"Sale date\",\"2026-10-03\"");
     }
 
     @Test
-    void pdfProducesReadableUnicodeTextUsingPortableFonts() throws Exception {
+    void csvHandlesEmptySectionsAndEscapesFormulaLikeValues() {
+        String csv = service.csv(Map.of("reportType", "BATCH_SUMMARY", "asOf", "2026-01-01", "sales", List.of(), "customer", "=SUM(A1:A2)"));
+
+        assertThat(csv).contains("\"No records\"");
+        assertThat(csv).contains("'=SUM(A1:A2)");
+        assertThat(csv).contains("\"field\",\"value\",\"unit\"");
+    }
+
+    @Test
+    void pdfHasReportTitleDateStructuredHeadingsAndFormattedMoney() throws Exception {
         byte[] pdf = service.pdf(
-                Map.of("reportType", "BATCH_SUMMARY", "profitMinor", 500000, "farmName", "Café Grantino ₦"),
+                Map.of("reportType", "BATCH_SUMMARY", "asOf", "2026-10-03", "profitMinor", 500000, "farmName", "Grantino Farms"),
                 "Batch Report"
         );
 
         assertThat(pdf).startsWith("%PDF".getBytes(StandardCharsets.US_ASCII));
         assertThat(pdf).contains("%EOF".getBytes(StandardCharsets.US_ASCII));
-
         try (var document = Loader.loadPDF(pdf)) {
-            assertThat(document.getNumberOfPages()).isEqualTo(1);
-            assertThat(new PDFTextStripper().getText(document))
-                    .contains("Batch Report", "reportType: BATCH_SUMMARY", "profitMinor: 500000", "Café Grantino ₦");
+            String text = new PDFTextStripper().getText(document);
+            assertThat(text).contains("Batch Report", "As of: 2026-10-03", "Section", "Record", "Field", "Value", "Unit", "₦5,000.00");
         }
     }
 }
