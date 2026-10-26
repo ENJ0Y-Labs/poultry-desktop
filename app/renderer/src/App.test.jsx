@@ -373,6 +373,34 @@ describe("App", () => {
     expect(window.location.hash).toBe("#flocks/houses");
   });
 
+  it("keeps the normal dashboard when zero metrics belong to a farm with setup records", async () => {
+    mockFarmApis({
+      currentBatches: [],
+      dashboardValue: {
+        asOf: "2026-10-26",
+        totalBirds: 0,
+        layerBirds: 0,
+        broilerBirds: 0,
+        activeBatches: 0,
+        mortality: 0,
+        eggsGood: 0,
+        revenueMinor: 0,
+        expensesMinor: 0,
+        profitMinor: 0,
+        inventoryAlerts: 0,
+        feedSummary: { typeCount: 0, remainingQuantityMilli: 0, remainingCostMinor: 0, consumedCostMinor: 0 },
+      },
+    });
+    vi.spyOn(farmApi, "listHouses").mockResolvedValue([
+      { id: "house-1", name: "House 1", code: "H1", status: "ACTIVE" },
+    ]);
+
+    render(<App />);
+
+    expect(await screen.findByText("Total birds")).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Your farm is ready to be set up" })).not.toBeInTheDocument();
+  });
+
   it("renders readable audit timestamps and labels, including unknown values", async () => {
     mockFarmApis();
     vi.mocked(auditApi.list).mockResolvedValue([
