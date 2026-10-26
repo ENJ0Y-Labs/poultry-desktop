@@ -46,7 +46,8 @@ The installer ID (`appId`), repository name, Java packages, and database file na
 9. Backups use SQLite `backup` functionality or `VACUUM INTO`, never a raw copy of a live DB.
 10. The application must remain fully usable without internet access.
 11. No telemetry, cloud dependency, CDN assets, or third-party network service in normal operation.
-12. Never edit a shipped migration. Add a new migration.\n13. Keep the canonical start-page list aligned across Settings UI, backend request validation, SQLite CHECK constraints, and navigation routing: `dashboard`, `flocks`, `daily-work`, `feed-stock`, `health`, `production`, `sales-money`, `reports`, `settings`.
+12. Never edit a shipped migration. Add a new migration.
+13. Keep the canonical start-page list aligned across Settings UI, backend request validation, SQLite CHECK constraints, and navigation routing: `dashboard`, `flocks`, `daily-work`, `feed-stock`, `health`, `production`, `sales-money`, `reports`, `settings`.
 14. Never weaken/delete a test to make it pass.
 15. Do not introduce TypeScript into the frontend. The frontend is React + JavaScript.
 16. Never commit `*.db`, `*.db-wal`, `*.db-shm`, backups, or real farm data.
