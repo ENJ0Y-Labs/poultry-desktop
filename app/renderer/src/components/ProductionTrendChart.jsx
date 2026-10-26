@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+// JSX component usage is not counted by the configured core no-unused-vars rule.
+// eslint-disable-next-line no-unused-vars
 import {
   CartesianGrid,
   Line,
