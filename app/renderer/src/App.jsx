@@ -206,14 +206,14 @@ export default function App() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [authStatus, setAuthStatus] = useState(null);
-  const [authForm, setAuthForm] = useState({ email: "", fullName: "", password: "" });
+  const [authForm, setAuthForm] = useState({ username: "", identifier: "", email: "", fullName: "", password: "" });
   const [dashboard, setDashboard] = useState(null);
   const [attention, setAttention] = useState([]);
   const [auditRows, setAuditRows] = useState([]);
   const [expenseCategories, setExpenseCategories] = useState([]);
   const [expenseCategoryForm, setExpenseCategoryForm] = useState("");
   const [account, setAccount] = useState(null);
-  const [accountForm, setAccountForm] = useState({ email: "", fullName: "", currentPassword: "", newPassword: "" });
+  const [accountForm, setAccountForm] = useState({ username: "", email: "", fullName: "", currentPassword: "", newPassword: "" });
   const [applicationSettings, setApplicationSettings] = useState({ startPage: "dashboard", dateFormat: "YYYY-MM-DD" });
   const [backupSettings, setBackupSettings] = useState({ enabled: false, directory: "", intervalMs: 86400000 });
   const [selectedBatchId, setSelectedBatchId] = useState(() => getLastBatchId() || "");
@@ -268,7 +268,7 @@ export default function App() {
       ]);
       setExpenseCategories(categories);
       setAccount(currentAccount);
-      if (!preserveForms) setAccountForm({ email: currentAccount.email, fullName: currentAccount.fullName, currentPassword: "", newPassword: "" });
+      if (!preserveForms) setAccountForm({ username: currentAccount.username || "", email: currentAccount.email || "", fullName: currentAccount.fullName, currentPassword: "", newPassword: "" });
       if (!preserveForms) {
         setApplicationSettings({ ...appSettings, startPage: appSettings.startPage === "operations" ? "daily-work" : appSettings.startPage });
         setBackupSettings(backupConfig);
@@ -310,7 +310,7 @@ export default function App() {
         await authApi.setup(authForm);
         setAuthStatus({ authenticated: false, setupRequired: false });
       }
-      await authApi.login({ email: authForm.email, password: authForm.password });
+      await authApi.login({ identifier: authForm.identifier, password: authForm.password });
       setAuthStatus({ authenticated: true, setupRequired: false });
       await load();
     } catch (err) {
@@ -431,7 +431,7 @@ export default function App() {
   }
   async function saveAccount(event) {
     event.preventDefault(); setSaving(true); setError("");
-    try { const updated = await accountApi.update(accountForm); setAccount(updated); setAccountForm({ email: updated.email, fullName: updated.fullName, currentPassword: "", newPassword: "" }); }
+    try { const updated = await accountApi.update(accountForm); setAccount(updated); setAccountForm({ username: updated.username || "", email: updated.email || "", fullName: updated.fullName, currentPassword: "", newPassword: "" }); }
     catch (err) { setError(displayApiError(err)); } finally { setSaving(false); }
   }
   async function saveApplicationSettings(event) {
@@ -910,7 +910,7 @@ export default function App() {
       {authStatus ? (
         <form className="card form-grid" onSubmit={submitAuth}>
           {authStatus.setupRequired && <label>Full name<input required maxLength="120" autoComplete="name" value={authForm.fullName} onChange={e=>setAuthForm({...authForm,fullName:e.target.value})}/></label>}
-          <label>Email<input required type="email" autoComplete="username" value={authForm.email} onChange={e=>setAuthForm({...authForm,email:e.target.value})}/></label>
+          {authStatus.setupRequired ? <><label>Username<input required minLength="3" maxLength="32" autoComplete="username" pattern="[A-Za-z0-9][A-Za-z0-9._-]{2,31}" value={authForm.username} onChange={e=>setAuthForm({...authForm,username:e.target.value})}/><small>3–32 characters: letters, numbers, dots, underscores, or hyphens.</small></label><label>Email (optional)<input type="email" autoComplete="email" value={authForm.email} onChange={e=>setAuthForm({...authForm,email:e.target.value})}/></label></> : <label>Username or email<input required autoComplete="username" value={authForm.identifier} onChange={e=>setAuthForm({...authForm,identifier:e.target.value})}/></label>}
           <label>Password<input required type="password" minLength={authStatus.setupRequired ? 10 : undefined} autoComplete={authStatus.setupRequired ? "new-password" : "current-password"} value={authForm.password} onChange={e=>setAuthForm({...authForm,password:e.target.value})}/>{authStatus.setupRequired && <small>Use at least 10 characters.</small>}</label>
           <button disabled={saving} type="submit">{saving ? "Please wait..." : authStatus.setupRequired ? "Create account and sign in" : "Sign in"}</button>
         </form>
