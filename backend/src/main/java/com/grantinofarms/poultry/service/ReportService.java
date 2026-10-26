@@ -23,6 +23,7 @@ public class ReportService {
     private final SalesService sales;
     private final InventoryService inventory;
     private final HealthManagementService health;
+    private final FarmService farmService;
 
     public ReportService(
             DashboardService dashboard,
@@ -35,7 +36,8 @@ public class ReportService {
             ExpenseService expenses,
             SalesService sales,
             InventoryService inventory,
-            HealthManagementService health
+            HealthManagementService health,
+            FarmService farmService
     ) {
         this.dashboard = dashboard;
         this.batches = batches;
@@ -48,6 +50,7 @@ public class ReportService {
         this.sales = sales;
         this.inventory = inventory;
         this.health = health;
+        this.farmService = farmService;
     }
 
     public Map<String, Object> farm(LocalDate asOf) {
@@ -84,6 +87,7 @@ public class ReportService {
         Map<String, Object> report = new LinkedHashMap<>();
         report.put("reportType", "FARM_SUMMARY");
         report.put("asOf", date);
+        report.put("waterUnitLabel", farmService.getWaterUnitLabel());
         report.put("dashboard", dashboardData);
         report.put("farmSummary", dashboardData);
         report.put("birdPopulation", populationRows);
@@ -117,6 +121,7 @@ public class ReportService {
         Map<String, Object> report = new LinkedHashMap<>();
         report.put("reportType", "BATCH_SUMMARY");
         report.put("asOf", date);
+        report.put("waterUnitLabel", farmService.getWaterUnitLabel());
         report.put("dashboard", dashboardData);
         report.put("batchSummary", dashboardData);
         report.put("population", populationData);

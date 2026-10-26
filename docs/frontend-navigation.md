@@ -66,10 +66,20 @@ The nine page components live under `app/renderer/src/pages/`. Shared form state
 - The empty state is inferred from the absence of houses, batches, calculated bird/financial/egg activity, feed types, and audit events. A zero metric by itself does not trigger it.
 - No sample or demo data is inserted. Existing/populated farms retain their normal dashboard.
 
-## Light-theme navigation and page tabs (Issue #68)
 
-- The activity bar, sidebar, selected navigation item, page tabs, hover states, borders, scrollbar, and keyboard focus ring use semantic IDE theme tokens.
-- Both light and dark themes define values for the shell tokens; light mode must not inherit dark-only hardcoded surface colors.
-- Page tabs use the shared --border, --text, and --muted tokens plus explicit tab surface tokens. Avoid hardcoded dark fallbacks where semantic theme tokens exist.
-- The renderer test suite checks that required light-theme tokens and navigation/tab interaction rules remain present. Run `npm test -- --run app/renderer/src/styles.theme.test.js` and `npm run build`.
-- Manual visual verification is still required in the running Electron app: check sidebar/activity bar contrast, active and hovered items, tabs, borders, and visible keyboard focus in both Light and Dark modes. Do not report manual verification as complete unless actually performed.
+## Dashboard invalidation after mutations
+
+- Successful write requests from the shared API client emit one `pomas:data-mutated` browser event containing the request path and method. Failed writes and read requests do not emit it.
+- The app shell filters those events to farm, batch, feed, health/operations, production, inventory, sales, expense, pricing, and farm-setting endpoints, then refreshes farm dashboard metrics, attention items, audit activity, reports, and the selected batch dashboard.
+- Dashboard refreshes must not depend on unrelated collection lengths. The mutation event is the invalidation signal; dashboard/report GET requests do not emit mutation events, preventing refresh loops.
+- Vitest covers both successful-write event emission and dashboard/attention reload after a relevant mutation. Runtime validation should include mortality, culling, feed use/purchase, egg collection/sale, health/vaccination, inventory movement, sales, expenses, and relevant settings.
+
+
+## Actionable dashboard attention items
+
+- Alerts with known routes render as keyboard-accessible buttons. Alerts with missing required identifiers or an unsupported type remain readable but are not clickable.
+- Supported destinations: missing daily record → Daily Work / Daily record; high mortality → Flocks / Batch dashboard; vaccination due → Health / Vaccination; production drop → Production / Egg production; batch nearing sale → Production / Weight & growth; low feed → Feed & Stock / Purchases; low/insufficient inventory → Feed & Stock / Other stock; overdue backup → Settings / Backup & restore.
+- Alert context is encoded in additional hash-route segments (batch ID, feed type ID, inventory item ID, and/or business date). The route resolver continues to use the first two segments for page and tab selection; the app reads only allow-listed context keys and pre-fills the corresponding form state.
+- Backend feed-stock alerts expose `feedTypeId`; low and insufficient inventory alerts expose `itemId`. Display names are not used as database identifiers.
+- Successful writes emit the shared mutation invalidation event. Relevant mutations refresh farm dashboard metrics, attention alerts, audit activity, reports, and the selected batch dashboard.
+- Vitest covers all supported alert mappings, missing/invalid context, encoded context parsing, and a dashboard-to-daily-record navigation with batch/date prefilled. Backend integration tests assert that stock alerts include their navigable IDs.
