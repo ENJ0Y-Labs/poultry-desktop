@@ -1,4 +1,7 @@
 import { useContext } from "react";
+import { productionTrendApi } from "../services/api.js";
+// eslint-disable-next-line no-unused-vars
+import ProductionTrendChart from "../components/ProductionTrendChart.jsx";
 import { FarmManagerContext } from "../components/FarmManagerContext.jsx";
 // eslint-disable-next-line no-unused-vars
 import PageSection from "../components/PageSection.jsx";
@@ -30,6 +33,13 @@ export default function ProductionPage() {
 
           {eggBatchId && (
             <>
+              <ProductionTrendChart
+                batchId={eggBatchId}
+                title="Layer HDP%"
+                description="Daily egg production as a percentage of live birds. Uses total collected eggs (good + cracked) and backend population calculations. Missing production records appear as gaps."
+                unit="percent"
+                loadTrend={productionTrendApi.layerHdp}
+              />
               <div className="subsection">
                 <h3>Egg inventory</h3>
                 <div className="table">
@@ -109,18 +119,26 @@ export default function ProductionPage() {
 
           {broilerBatchId && (
             <>
+              <ProductionTrendChart
+                batchId={broilerBatchId}
+                title="Broiler average weight"
+                description="Average sampled bird weight by record date, in kilograms. Days without weight records appear as gaps."
+                unit="kg"
+                loadTrend={productionTrendApi.broilerAverageWeight}
+              />
               <div className="subsection">
                 <h3>Growth summary</h3>
                 <div className="table">
-                  <div className="row header"><span>Average weight</span><span>Weight gain</span><span>FCR</span><span>Trend records</span></div>
+                  <div className="row header"><span>Average weight</span><span>Weight gain</span><span>Feed consumed (converted)</span><span>FCR</span><span>Trend records</span></div>
                   <div className="row">
                     <span>{broilerGrowth?.averageWeightKg ?? "—"} kg</span>
                     <span>{broilerGrowth?.weightGainKg ?? "—"} kg</span>
+                    <span>{broilerGrowth?.feedConsumedKg ?? "—"} kg</span>
                     <span>{broilerGrowth?.fcr ?? "—"}</span>
                     <span>{broilerGrowth?.trend?.length ?? 0}</span>
                   </div>
                 </div>
-                <p className="muted">FCR uses kilograms of feed consumed divided by live-weight gain. Feed types must use <strong>kg</strong> to contribute to this calculation.</p>
+                <p className="muted">FCR uses converted kilograms of all recorded feed divided by live-weight gain. Configure each non-kg feed type’s kg-per-unit factor in Feed management. If any consumed feed type has an unknown conversion, feed consumed and FCR display — until the factor is configured.</p>
               </div>
 
               <div className="subsection">

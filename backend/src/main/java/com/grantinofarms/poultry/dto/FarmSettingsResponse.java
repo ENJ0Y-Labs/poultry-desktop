@@ -5,5 +5,6 @@ import java.util.List;
 public record FarmSettingsResponse(
         Integer defaultCrateSize,
         Integer defaultWaterContainerSize,
-        List<Integer> waterContainerSizes
+        List<Integer> waterContainerSizes,
+        String waterUnitLabel
 ) {}

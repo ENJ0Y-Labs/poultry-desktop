@@ -4,7 +4,7 @@ import { FarmManagerContext } from "../components/FarmManagerContext.jsx";
 import PageSection from "../components/PageSection.jsx";
 
 export default function DailyWorkPage() {
-  const { batches, dailyForm, setDailyForm, dailyRecord, mortalityForm, setMortalityForm, cullingForm, setCullingForm, saving, saveDailyRecord, recordPopulationEvent } = useContext(FarmManagerContext);
+  const { batches, dailyForm, setDailyForm, dailyRecord, waterUnitLabel, mortalityForm, setMortalityForm, cullingForm, setCullingForm, saving, saveDailyRecord, recordPopulationEvent } = useContext(FarmManagerContext);
   const activeBatches = batches.filter(batch => batch.status === "ACTIVE");
   const batchOptions = <><option value="">Batch</option>{activeBatches.map(batch => <option key={batch.id} value={batch.id}>{batch.code}</option>)}</>;
 
@@ -21,7 +21,7 @@ export default function DailyWorkPage() {
           </form>
           {dailyRecord && <div className="subsection"><h3>Saved daily summary · {dailyRecord.date}</h3><div className="table">
             <div className="row header"><span>Birds</span><span>Mortality</span><span>Culling</span><span>Feed entries</span><span>Water</span><span>Notes</span></div>
-            <div className="row"><span>{dailyRecord.birds}</span><span>{dailyRecord.mortality}</span><span>{dailyRecord.culling}</span><span>{dailyRecord.feed.length}</span><span>{dailyRecord.totalWaterUnits} units</span><span>{dailyRecord.notes || "—"}</span></div>
+            <div className="row"><span>{dailyRecord.birds}</span><span>{dailyRecord.mortality}</span><span>{dailyRecord.culling}</span><span>{dailyRecord.feed.length}</span><span>{dailyRecord.totalWaterUnits} {waterUnitLabel || "litres"}</span><span>{dailyRecord.notes || "—"}</span></div>
           </div><p className="muted">Feed usage is recorded in Feed & Stock and appears here automatically.</p></div>}
         </section>
       </PageSection>
@@ -53,11 +53,11 @@ export default function DailyWorkPage() {
       </PageSection>
 
       <PageSection page="daily-work" tab="water">
-        <section className="card full"><div className="section-head"><h2>Water usage</h2><p className="muted">Enter configured container sizes and counts, for example 25:4, 75:2. This saves the water figures as part of that date's daily record.</p></div>
+        <section className="card full"><div className="section-head"><h2>Water usage</h2><p className="muted">Enter configured container sizes and counts, for example 25:4, 75:2. Values are displayed using the farm unit label ({waterUnitLabel || "litres"}); no conversion is applied. This saves the water figures as part of that date's daily record.</p></div>
           <form className="form-grid" onSubmit={saveDailyRecord}>
             <label>Batch<select required value={dailyForm.batchId} onChange={event => setDailyForm({...dailyForm,batchId:event.target.value})}>{batchOptions}</select></label>
             <label>Date<input required type="date" value={dailyForm.date} onChange={event => setDailyForm({...dailyForm,date:event.target.value})}/></label>
-            <label className="full">Water containers<input required value={dailyForm.water} onChange={event => setDailyForm({...dailyForm,water:event.target.value})}/></label>
+            <label className="full">Water containers ({waterUnitLabel || "litres"})<input required value={dailyForm.water} onChange={event => setDailyForm({...dailyForm,water:event.target.value})}/></label>
             <p className="muted">Water is stored in the daily record rather than as a separate transaction. Saving here preserves existing notes for the selected record form.</p>
             <button disabled={saving}>Save water usage</button>
           </form>

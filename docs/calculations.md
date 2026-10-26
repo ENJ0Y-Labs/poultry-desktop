@@ -174,7 +174,7 @@ Known vector:
 
 If live-weight gain is zero or negative, FCR is undefined and the API returns null.
 
-Only feed usage whose configured unit is kg contributes to FCR until a canonical conversion for other units exists.
+Each feed type has an optional `kg_per_unit` conversion factor. Feed consumed in a configured unit is converted using `entered quantity × kg_per_unit` before FCR is calculated. Kilogram units always use a factor of 1. Other units with unknown conversions are not guessed: if a batch has any feed usage whose conversion is unknown, converted feed kilograms and FCR are undefined (`null`, displayed as —). If there are no feed usage records, converted feed kilograms and FCR are also undefined.\n\nConversion factors are configured explicitly in Feed management. For example, a confirmed 25 kg bag uses `25 kg per bag`. Existing bag and other non-kg feed types migrate with no assumed factor; their historical quantities, purchase records, FIFO allocations, and costs remain unchanged. Updating a feed type conversion is audited and changes how its historical usage is interpreted for FCR, so operators should only enter a verified package weight.
 
 ## Broiler sales and revenue
 

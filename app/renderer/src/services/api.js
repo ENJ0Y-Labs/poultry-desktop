@@ -6,6 +6,14 @@ function signalBackendUnavailable() {
   }
 }
 
+function dateRangeQuery(from, to) {
+  const params = new URLSearchParams();
+  if (from) params.set("from", from);
+  if (to) params.set("to", to);
+  const query = params.toString();
+  return query ? "?" + query : "";
+}
+
 async function getApiBase() {
   const desktopBase = window.poultryDesktop?.getApiBaseUrl
     ? await window.poultryDesktop.getApiBaseUrl()
@@ -64,6 +72,13 @@ async function request(path, options = {}) {
       response.status,
       body?.error?.details,
     );
+  }
+
+  const method = String(options.method || "GET").toUpperCase();
+  if (method !== "GET" && typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("pomas:data-mutated", {
+      detail: { path, method },
+    }));
   }
   return body.data;
 }
@@ -209,6 +224,11 @@ export const authApi = {
   login: (data) => request("/auth/login", { method: "POST", body: JSON.stringify(data) }),
   logout: () => request("/auth/logout", { method: "POST" }),
   me: () => request("/auth/me"),
+};
+
+export const productionTrendApi = {
+  layerHdp: (batchId, from, to) => request("/batches/" + encodeURIComponent(batchId) + "/production-trends/layer-hdp" + dateRangeQuery(from, to)),
+  broilerAverageWeight: (batchId, from, to) => request("/batches/" + encodeURIComponent(batchId) + "/production-trends/broiler-average-weight" + dateRangeQuery(from, to)),
 };
 
 export const dashboardApi = {
