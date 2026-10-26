@@ -38,8 +38,9 @@ public class ProductionTrendService {
                 FROM egg_collections
                 WHERE batch_id = ? AND record_date BETWEEN ? AND ?
                 GROUP BY record_date
-                """, rs -> eggsByDate.put(LocalDate.parse(rs.getString("record_date")), rs.getInt("eggs")),
-                batchId, range.from().toString(), range.to().toString());
+                """, (org.springframework.jdbc.core.RowCallbackHandler) rs -> {
+                    eggsByDate.put(LocalDate.parse(rs.getString("record_date")), rs.getInt("eggs"));
+                }, batchId, range.from().toString(), range.to().toString());
 
         List<Map<String, Object>> points = new ArrayList<>();
         for (LocalDate date = range.from(); !date.isAfter(range.to()); date = date.plusDays(1)) {
