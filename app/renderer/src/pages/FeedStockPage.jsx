@@ -5,7 +5,27 @@ import { FarmManagerContext } from "../components/FarmManagerContext.jsx";
 import PageSection from "../components/PageSection.jsx";
 
 export default function FeedStockPage() {
-  const { formatMoney, farm, batches, feedTypes, setFeedTypes, feedInventory, feedTypeForm, setFeedTypeForm, setError, setSaving, saving, feedPurchaseForm, setFeedPurchaseForm, feedUsageForm, setFeedUsageForm, inventoryItems, inventoryItemForm, setInventoryItemForm, inventoryMovementForm, setInventoryMovementForm, inventoryMovements, suppliers, supplierForm, setSupplierForm, saveSupplier, archiveSupplier, saving, saveInventoryItem, loadInventoryMovements, saveInventoryMovement, createFeedType, purchaseFeed, useFeed, feedQuantity } = useContext(FarmManagerContext);
+  const { formatMoney, farm, batches, feedTypes, setFeedTypes, feedInventory, feedTypeForm, setFeedTypeForm, setError, setSaving, feedPurchaseForm, setFeedPurchaseForm, feedUsageForm, setFeedUsageForm, inventoryItems, inventoryItemForm, setInventoryItemForm, inventoryMovementForm, setInventoryMovementForm, inventoryMovements, suppliers, supplierForm, setSupplierForm, saveSupplier, archiveSupplier, saving, saveInventoryItem, loadInventoryMovements, saveInventoryMovement, createFeedType, purchaseFeed, useFeed, feedQuantity } = useContext(FarmManagerContext);
+
+  async function saveConversion(event, type) {
+    event.preventDefault();
+    const raw = event.currentTarget.elements.kgPerUnit.value.trim();
+    const kgPerUnit = raw === "" ? null : Number(raw);
+    if (kgPerUnit !== null && (!Number.isFinite(kgPerUnit) || kgPerUnit <= 0)) {
+      setError("Kilograms per unit must be greater than zero, or left blank when unknown.");
+      return;
+    }
+    setSaving(true);
+    setError("");
+    try {
+      const updated = await feedApi.updateConversion(type.id, kgPerUnit);
+      setFeedTypes(current => current.map(item => item.id === updated.id ? updated : item));
+    } catch (error) {
+      setError(error.message || "Could not update feed conversion.");
+    } finally {
+      setSaving(false);
+    }
+  }
 
   return (
     <div className="grid">
