@@ -178,7 +178,11 @@ Audit history is read-only through the normal application API.
 
 The desktop checks `/auth/status` before loading protected farm or account data. The status endpoint returns whether a valid session exists and whether the initial owner setup is still required; it does not expose account credentials or require authentication. If setup is required, the renderer creates the owner account and signs in. Otherwise it prompts the owner to sign in.
 
-Production requires an authenticated owner session. Authentication uses an HTTP-only, SameSite=Strict session cookie. `/auth/me` returns HTTP 401 without an active session; use `/auth/status` to check session state without an expected authorization error.
+Production requires an authenticated owner session. The `poultry_session` cookie emitted by `POST /auth/login` uses `Path=/; HttpOnly; SameSite=None; Secure` and has no `Max-Age` or `Expires` attribute, so it is a browser-session cookie. The server-side session expires after 12 hours regardless of whether the browser retains the cookie. `HttpOnly` prevents renderer JavaScript from reading the token; `Path=/` scopes it to API paths on the loopback host; `Secure` is retained for Chromium secure-cookie handling on the local loopback API.
+
+`SameSite=None` is intentional for the current supported origins: packaged Electron loads its renderer from a local `file://` origin, while browser development can load it from the Vite origin. Both make credentialed requests to the API at `http://127.0.0.1:18942`, which is a different origin/site context. `SameSite=Strict` can prevent the cookie from being sent in these contexts. The API must remain loopback-only; do not loosen cookie attributes or expose the API to remote origins to make another deployment mode work. This policy is shared across development, packaged Electron, and browser development rather than switching cookie security by environment.
+
+`POST /auth/logout` invalidates the server-side session and returns a clearing cookie with the same `Path=/; HttpOnly; SameSite=None; Secure` scope plus `Max-Age=0`. Cookie-header unit tests verify these emitted attributes. Automated header tests do not replace a manual Chromium check in browser development and the packaged Electron app. `/auth/me` returns HTTP 401 without an active session; use `/auth/status` to check session state without an expected authorization error.
 
 ## Application and backup settings
 
