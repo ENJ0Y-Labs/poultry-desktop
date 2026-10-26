@@ -443,7 +443,7 @@ describe("App", () => {
     render(<App />);
 
     await waitFor(() => expect(screen.getByRole("heading", { name: "Farm dashboard" })).toBeInTheDocument());
-    fireEvent.click(screen.getByRole("button", { name: "Settings" }));
+    fireEvent.click(within(screen.getByRole("navigation", { name: "Main navigation" })).getByRole("button", { name: "Settings" }));
 
     const farmName = await screen.findByLabelText("Farm name");
     fireEvent.change(farmName, { target: { value: "Unsaved recovery test" } });
