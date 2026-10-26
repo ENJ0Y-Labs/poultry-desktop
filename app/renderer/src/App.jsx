@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { todayLocalDate, getLastBatchId, rememberLastBatchId } from "./utils/farmUx.js";
 import { parseNairaToKobo } from "./utils/moneyInput.js";
+import { formatMoney } from "./utils/money.js";
+import { parseAttentionContext } from "./utils/attentionNavigation.js";
 // eslint-disable-next-line no-unused-vars
 import AppShell from "./components/AppShell.jsx";
 // eslint-disable-next-line no-unused-vars
@@ -25,7 +27,6 @@ import SalesMoneyPage from "./pages/SalesMoneyPage.jsx";
 import ReportsPage from "./pages/ReportsPage.jsx";
 // eslint-disable-next-line no-unused-vars
 import SettingsPage from "./pages/SettingsPage.jsx";
-function formatMoney(minor, currency = "NGN") { if (minor == null) return "—"; return new Intl.NumberFormat("en-NG", { style: "currency", currency, maximumFractionDigits: 2 }).format(Number(minor) / 100); }
 function formatQuantity(milli) { return milli == null ? "—" : (Number(milli) / 1000).toLocaleString() + " units"; }
 function formatPercent(value) { return value == null ? "—" : Number(value).toFixed(2) + "%"; }
 function formatKg(value) { return value == null ? "—" : Number(value).toFixed(2) + " kg"; }
@@ -76,7 +77,7 @@ const emptyCost = {
   amountMinor: "",
   reason: "",
 };
-const emptyFeedType = { name: "", unit: "bag", applicableType: "BOTH" };
+const emptyFeedType = { name: "", unit: "bag", applicableType: "BOTH", kgPerUnit: "" };
 const emptyFeedPurchase = {
   feedTypeId: "",
   supplierId: "",
@@ -380,8 +381,60 @@ export default function App() {
     }
   }
 
+  useEffect(() => {
+    function applyAttentionContext() {
+      const context = parseAttentionContext(window.location.hash);
+      if (context.batchId) {
+        setSelectedBatchId(context.batchId);
+        setDailyForm(form => ({ ...form, batchId: context.batchId, ...(context.date ? { date: context.date } : {}) }));
+        setVaccinationForm(form => ({ ...form, batchId: context.batchId }));
+        setEggBatchId(context.batchId);
+        setEggCollectionForm(form => ({ ...form, batchId: context.batchId }));
+        setBroilerBatchId(context.batchId);
+        setWeightForm(form => ({ ...form, batchId: context.batchId }));
+        setBirdSaleForm(form => ({ ...form, batchId: context.batchId }));
+      }
+      if (context.date) {
+        setDailyForm(form => ({ ...form, date: context.date }));
+      }
+      if (context.feedTypeId) {
+        setFeedPurchaseForm(form => ({ ...form, feedTypeId: context.feedTypeId }));
+      }
+      if (context.itemId) {
+        setInventoryMovementForm(form => ({ ...form, itemId: context.itemId }));
+      }
+    }
+    window.addEventListener("hashchange", applyAttentionContext);
+    applyAttentionContext();
+    return () => window.removeEventListener("hashchange", applyAttentionContext);
+  }, []);
+
   useEffect(() => { initialize(); }, []);
-  useEffect(() => { if (farm) { loadDashboard(); loadReport(); } }, [farm, batches.length, inventoryItems.length, sales.length, expenses.length]);
+  useEffect(() => {
+    if (farm) {
+      void loadDashboard();
+      void loadReport();
+    }
+  }, [farm]);
+  useEffect(() => {
+    if (!farm) return undefined;
+
+    function refreshAfterMutation(event) {
+      const path = event.detail?.path || "";
+      const affectsDashboard = /^\/(?:farm(?:\/settings)?|farm\/houses|batches|feed|expenses|inventory|sales|pricing|settings|backup)(?:\/|$)/.test(path);
+      if (!affectsDashboard) return;
+
+      void loadDashboard();
+      void loadReport();
+      if (selectedBatchId && batches.some(batch => batch.id === selectedBatchId)) {
+        void loadBatchDashboard(selectedBatchId);
+        void loadBatchReport(selectedBatchId);
+      }
+    }
+
+    window.addEventListener("pomas:data-mutated", refreshAfterMutation);
+    return () => window.removeEventListener("pomas:data-mutated", refreshAfterMutation);
+  }, [farm, selectedBatchId, batches]);
   useEffect(() => {
     if (selectedBatchId && batches.some(batch => batch.id === selectedBatchId)) {
       loadBatchDashboard(selectedBatchId);
@@ -389,7 +442,7 @@ export default function App() {
     } else {
       setBatchReport(null);
     }
-  }, [selectedBatchId, batches.length]);
+  }, [selectedBatchId]);
 
   async function submitFarm(event) {
     event.preventDefault(); setSaving(true); setError("");
@@ -612,7 +665,7 @@ export default function App() {
   async function createFeedType(event) {
     event.preventDefault(); setSaving(true); setError("");
     try {
-      const created = await feedApi.createType(feedTypeForm);
+      const created = await feedApi.createType({ ...feedTypeForm, kgPerUnit: feedTypeForm.kgPerUnit === "" ? null : Number(feedTypeForm.kgPerUnit) });
       setFeedTypes(current => [...current, created].sort((a, b) => a.name.localeCompare(b.name)));
       setFeedTypeForm(emptyFeedType);
     } catch (err) { setError(displayApiError(err)); } finally { setSaving(false); }
