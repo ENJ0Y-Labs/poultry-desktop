@@ -1233,3 +1233,13 @@ And never sacrifice poultry math for dashboard cosmetics.
 - Navigation must not depend on scroll position, scroll listeners, or `scrollIntoView`.
 - Wrap page content in `PageSection` so inactive pages are not mounted. Keep domain calculations and persistence in the existing backend/API layers.
 - Add or update renderer tests for route changes and inactive-page rendering. Keep all source in JavaScript/JSX.
+
+## 35. Renderer font assets and network requests
+
+- The renderer uses the system UI stack documented in `docs/font-audit.md`; do not assume Inter is installed or bundle a font without a documented UI need.
+- Do not add remote font services, CDNs, or external stylesheet imports. The app must remain usable offline.
+- Do not remove KaTeX or any other font/package based solely on a browser report. Verify tracked assets, dependency manifests, CSS declarations/imports, and request initiators first.
+- If a web font is deliberately approved, document its exact UI use, local/offline packaging behavior, license, asset size, and use `font-display: swap` where applicable.
+- Run `npm run build`; the build must run `scripts/audit-font-assets.mjs` against both renderer source and built output.
+- Development and packaged renderer Network/Console checks are separate manual validation. Do not claim the packaged renderer has no missing-font errors until the packaged app has actually been launched and inspected.
+- Record before/after font request counts and transferred bytes when a runtime report is supplied. Distinguish repository asset inventory from actual browser transfer measurements.

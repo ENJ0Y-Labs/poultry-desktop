@@ -322,3 +322,16 @@ The `doc/` directory contains phase implementation notes.
 The `docs/` directory contains durable developer/operator documentation.
 
 When behavior changes, update the durable documentation in `docs/` rather than leaving the repository dependent on old phase notes.
+
+
+## Renderer font audit
+
+Run the renderer font audit as part of the production build:
+
+```powershell
+npm run build
+```
+
+The build invokes `scripts/audit-font-assets.mjs` after bundling. The script checks source and production-renderer assets for unreviewed font files, `@font-face`, CSS imports, remote font providers, and font-file URLs, and prints the font file count and byte total. See [font-audit.md](font-audit.md) for the inventory, retained font use, and manual development/packaged DevTools verification steps.
+
+The current UI uses system fonts only. Do not add a web font, KaTeX, or a font dependency based only on a browser audit report. First identify the actual asset/request and its initiator, document which UI needs it, and review the packaged build as well as development mode. Use `font-display: swap` only if a deliberately retained web-loaded font is introduced.
