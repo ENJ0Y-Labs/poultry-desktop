@@ -45,7 +45,6 @@ export default function DashboardPage() {
     setEggBatchId,
     setEggCollectionForm,
     setFeedUsageForm,
-    feedTypes,
     setBroilerBatchId,
     setBirdSaleForm,
     setEggSaleForm,
