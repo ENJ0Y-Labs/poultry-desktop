@@ -221,12 +221,13 @@ export default function App() {
   const [farmReport, setFarmReport] = useState(null);
   const [batchReport, setBatchReport] = useState(null);
 
-  async function load() {
-    setLoading(true); setError("");
+  async function load({ showLoading = true, preserveForms = false } = {}) {
+    if (showLoading) setLoading(true);
+    setError("");
     try {
       const currentFarm = await farmApi.get();
       setFarm(currentFarm);
-      setFarmForm({name:currentFarm.name,location:currentFarm.location||"",timezone:currentFarm.timezone,currency:currentFarm.currency});
+      if (!preserveForms) setFarmForm({name:currentFarm.name,location:currentFarm.location||"",timezone:currentFarm.timezone,currency:currentFarm.currency});
       const settings = await farmApi.getSettings();
       setCrateSize(settings.defaultCrateSize);
       setDefaultWater(settings.defaultWaterContainerSize ?? "");
@@ -264,7 +265,7 @@ export default function App() {
       ]);
       setExpenseCategories(categories);
       setAccount(currentAccount);
-      setAccountForm({ email: currentAccount.email, fullName: currentAccount.fullName, currentPassword: "", newPassword: "" });
+      if (!preserveForms) setAccountForm({ email: currentAccount.email, fullName: currentAccount.fullName, currentPassword: "", newPassword: "" });
       setApplicationSettings({ ...appSettings, startPage: appSettings.startPage === "operations" ? "daily-work" : appSettings.startPage });
       setSettingsReady(true);
       setBackupSettings(backupConfig);
@@ -274,21 +275,24 @@ export default function App() {
       } else if (err.message !== "No farm has been created yet.") {
         setError(displayApiError(err));
       }
-    } finally { setLoading(false); }
+    } finally {
+      if (showLoading) setLoading(false);
+    }
   }
-  async function initialize() {
-    setLoading(true); setError("");
+  async function initialize({ preserveScreen = false } = {}) {
+    if (!preserveScreen) setLoading(true);
+    setError("");
     try {
       const status = await authApi.status();
       setAuthStatus(status);
       if (status.authenticated) {
-        await load();
-      } else {
+        await load({ showLoading: !preserveScreen, preserveForms: preserveScreen });
+      } else if (!preserveScreen) {
         setLoading(false);
       }
     } catch (err) {
       setError(displayApiError(err));
-      setLoading(false);
+      if (!preserveScreen) setLoading(false);
     }
   }
   async function submitAuth(event) {
@@ -925,7 +929,7 @@ export default function App() {
   const pageModel = { suppliers, supplierForm, setSupplierForm, saveSupplier, archiveSupplier, formatMoney, formatQuantity, formatPercent, formatKg, formatMetric, formatCount, displayApiError, emptyWeight, emptyBirdSale, emptyPricing, emptyFarm, emptyHouse, emptyBatch, emptyCost, emptyFeedType, emptyFeedPurchase, emptyFeedUsage, emptyDaily, emptyPopulationEvent, emptyHealth, emptyDrug, emptyVaccination, emptyExpense, emptyCustomer, emptyInventoryItem, emptyInventoryMovement, farm, setFarm, farmForm, setFarmForm, houses, setHouses, batches, setBatches, batchForm, setBatchForm, costForm, setCostForm, feedTypes, setFeedTypes, feedInventory, setFeedInventory, feedTypeForm, setFeedTypeForm, feedPurchaseForm, setFeedPurchaseForm, feedUsageForm, setFeedUsageForm, dailyForm, setDailyForm, dailyRecord, setDailyRecord, mortalityForm, setMortalityForm, cullingForm, setCullingForm, healthForm, setHealthForm, drugForm, setDrugForm, vaccinationForm, setVaccinationForm, healthRecords, setHealthRecords, drugRecords, setDrugRecords, vaccinationRecords, setVaccinationRecords, expenseForm, setExpenseForm, expenses, setExpenses, expenseBatchFilter, setExpenseBatchFilter, inventoryItems, setInventoryItems, inventoryItemForm, setInventoryItemForm, inventoryMovementForm, setInventoryMovementForm, inventoryMovements, setInventoryMovements, customers, setCustomers, customerForm, setCustomerForm, sales, setSales, eggBatchId, setEggBatchId, broilerBatchId, setBroilerBatchId, broilerGrowth, setBroilerGrowth, broilerWeights, setBroilerWeights, broilerSales, setBroilerSales, weightForm, setWeightForm, birdSaleForm, setBirdSaleForm, pricingSettings, setPricingSettings, pricing, setPricing, pricingForm, setPricingForm, eggInventory, setEggInventory, eggCollections, setEggCollections, eggSales, setEggSales, eggCollectionForm, setEggCollectionForm, eggSaleForm, setEggSaleForm, houseForm, setHouseForm, crateSize, setCrateSize, defaultWater, setDefaultWater, waterSizes, setWaterSizes, loading, setLoading, saving, setSaving, error, setError, dashboard, setDashboard, attention, setAttention, auditRows, setAuditRows, expenseCategories, setExpenseCategories, expenseCategoryForm, setExpenseCategoryForm, account, setAccount, accountForm, setAccountForm, applicationSettings, setApplicationSettings, backupSettings, setBackupSettings, selectedBatchId, setSelectedBatchId, batchDashboard, setBatchDashboard, farmReport, setFarmReport, batchReport, setBatchReport, load, loadReport, loadBatchReport, exportCsv, exportPdf, loadBatchDashboard, loadDashboard, submitFarm, saveFarm, createExpenseCategory, archiveExpenseCategory, saveAccount, saveApplicationSettings, chooseBackupSettingsDirectory, saveBackupSettings, createBackup, restoreBackup, saveSettings, loadExpenses, loadSales, saveCustomer, saveInventoryItem, loadInventoryMovements, saveInventoryMovement, saveExpense, createBatch, addBirdCost, createFeedType, purchaseFeed, useFeed, feedQuantity, parseWaterEntries, saveDailyRecord, recordPopulationEvent, loadPricingForBatch, savePricingSettings, loadBroilerForBatch, saveWeight, saveBirdSale, loadEggsForBatch, saveEggCollection, saveEggSale, saveHealth, saveDrug, saveVaccination, loadHealthForBatch, markBatchSold, reopenBatch, addHouse };
 
   return (
-    <AppShell farm={farm} error={error} startPage={applicationSettings.startPage} startPageReady={settingsReady}>
+    <AppShell farm={farm} error={error} onRetry={() => initialize({ preserveScreen: true })} startPage={applicationSettings.startPage} startPageReady={settingsReady}>
       <FarmManagerContext.Provider value={pageModel}>
         <PageSection page="dashboard"><DashboardPage /></PageSection>
         <PageSection page="flocks"><FlocksPage /></PageSection>
