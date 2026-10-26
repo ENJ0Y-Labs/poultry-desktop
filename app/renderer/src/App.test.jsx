@@ -584,11 +584,8 @@ describe("App", () => {
 
   it("loads the farm water unit label into farm defaults", async () => {
     mockFarmApis();
+    window.location.hash = "#/settings/farm-defaults";
     render(<App />);
-
-    await waitFor(() => expect(screen.getByRole("heading", { name: "Farm dashboard" })).toBeInTheDocument());
-    fireEvent.click(within(screen.getByRole("navigation", { name: "Main navigation" })).getByRole("button", { name: "Settings" }));
-    fireEvent.click(await screen.findByRole("button", { name: "Farm defaults" }));
 
     expect(await screen.findByLabelText("Water unit label")).toHaveValue("litres");
     expect(screen.getByText(/Existing water figures are not converted/i)).toBeInTheDocument();
