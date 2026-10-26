@@ -17,6 +17,18 @@ The repeatable build check in `scripts/verify-a11y.mjs` computes WCAG relative-l
 
 WCAG contrast thresholds used by the checker are 4.5:1 for normal text. The current checked text pairs are not large-text exceptions. The 3:1 large-text allowance is therefore not used to excuse small labels.
 
+## Skip navigation
+
+The application shell places a `Skip to main content` link before the primary work-area and sidebar navigation in DOM order. It stays outside the normal visual layout until focused, then appears at the top of the window with a high-contrast focus outline. Activating it focuses the main landmark without changing the hash route, so the existing hash-based navigation does not interpret the skip action as a page change.
+
+Keyboard-only smoke test:
+
+1. Launch the app and sign in.
+2. Press `Tab` once from the page's initial focus state. The first focusable control should be `Skip to main content`, visibly displayed.
+3. Press `Enter`. Focus should move to the main content landmark; the URL hash and active page should remain unchanged.
+4. Press `Tab` again and confirm focus continues from the main content rather than restarting at the primary navigation.
+5. Repeat on Dashboard and Flocks (including a nested tab if useful). Confirm the link remains visually hidden when it is not focused and does not occupy layout space.
+
 ## Required manual rendered review
 
 The token check does not measure every live text node. To re-measure actual rendered text counts and computed styles, open DevTools in the running desktop app and paste the contents of `scripts/audit-rendered-ui.js` into the Console. Run it once with Light selected and again with Dark selected. Repeat at 1366×768 and 1100×700. Save the returned summary/counts with the release checklist. Do not reuse counts from a previous build.
