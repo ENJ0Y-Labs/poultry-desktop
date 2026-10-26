@@ -1,7 +1,11 @@
 import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
-const stylesheet = readFileSync(new URL("./styles.css", import.meta.url), "utf8");
+const stylesheet = readFileSync(
+  resolve(process.cwd(), "app/renderer/src/styles.css"),
+  "utf8"
+);
 
 describe("navigation theme tokens", () => {
   it("defines light-theme values for every IDE shell surface and interaction token", () => {
