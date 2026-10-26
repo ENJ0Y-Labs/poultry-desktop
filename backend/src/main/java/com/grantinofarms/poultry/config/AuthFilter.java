@@ -37,7 +37,9 @@ public class AuthFilter extends OncePerRequestFilter {
         if (stateChanging && !"XMLHttpRequest".equals(request.getHeader("X-Requested-With"))) {
             response.setStatus(HttpServletResponse.SC_FORBIDDEN);
             response.setContentType("application/json");
-            response.getWriter().write("{\\"ok\\":false,\\"error\\":{\\"code\\":\\"CSRF_CHECK_FAILED\\",\\"message\\":\\"The request could not be verified.\\"}}");
+            response.getWriter().write("""
+                    {"ok":false,"error":{"code":"CSRF_CHECK_FAILED","message":"The request could not be verified."}}
+                    """);
             return;
         }
 
@@ -59,7 +61,9 @@ public class AuthFilter extends OncePerRequestFilter {
                 if (!bootstrap && user == null) {
                     response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                     response.setContentType("application/json");
-                    response.getWriter().write("{\\"ok\\":false,\\"error\\":{\\"code\\":\\"UNAUTHENTICATED\\",\\"message\\":\\"Login is required.\\"}}");
+                    response.getWriter().write("""
+                            {"ok":false,"error":{"code":"UNAUTHENTICATED","message":"Login is required."}}
+                            """);
                     return;
                 }
             }
