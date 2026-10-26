@@ -37,6 +37,7 @@ export default function DashboardPage() {
     houses,
     batches,
     feedTypes,
+    feedInventory = [],
     inventoryItems,
     dashboard,
     attention,
