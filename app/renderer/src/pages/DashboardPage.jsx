@@ -4,6 +4,7 @@ import { FarmManagerContext } from "../components/FarmManagerContext.jsx";
 import PageSection from "../components/PageSection.jsx";
 import { formatAuditAction, formatAuditEntity, formatAuditTimestamp } from "../utils/auditFormatting.js";
 import { attentionTarget } from "../utils/attentionNavigation.js";
+// eslint-disable-next-line no-unused-vars
 import GettingStartedChecklist from "../components/GettingStartedChecklist.jsx";
 
 function todayLocalDate() {

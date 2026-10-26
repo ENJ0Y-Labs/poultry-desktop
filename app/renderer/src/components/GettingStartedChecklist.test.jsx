@@ -1,6 +1,8 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it } from "vitest";
+// eslint-disable-next-line no-unused-vars
 import GettingStartedChecklist from "./GettingStartedChecklist.jsx";
+// eslint-disable-next-line no-unused-vars
 import PageHelp from "./PageHelp.jsx";
 
 beforeEach(() => {
