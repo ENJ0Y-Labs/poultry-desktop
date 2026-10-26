@@ -12,9 +12,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.Map;
+import java.util.LinkedHashMap;
+import java.util.Locale;
+import java.util.regex.Pattern;
 
 @Service
-public class AccountService {
+public class AccountService {\n    private static final Pattern USERNAME_PATTERN = Pattern.compile("[a-z0-9][a-z0-9._-]{2,31}");\n    private static final Pattern EMAIL_PATTERN = Pattern.compile("^[^\\\\s@]+@[^\\\\s@]+\\\\.[^\\\\s@]+$");
     private final UserRepository users;
     private final PasswordHasher passwords;
     private final FarmRepository farms;
@@ -58,9 +61,9 @@ public class AccountService {
         String oldEmail = String.valueOf(current.get("email"));
         String oldName = String.valueOf(current.get("full_name"));
         try {
-            users.updateProfile(id, email, fullName, Instant.now().toString());
+            users.updateProfile(id, username, email, fullName, Instant.now().toString());
         } catch (DataIntegrityViolationException e) {
-            throw new ApiException(HttpStatus.CONFLICT, "EMAIL_ALREADY_EXISTS", "That email is already in use.");
+            throw new ApiException(HttpStatus.CONFLICT, "ACCOUNT_IDENTIFIER_ALREADY_EXISTS", "That username or email is already in use.");
         }
 
         var farm = farms.findActive();
