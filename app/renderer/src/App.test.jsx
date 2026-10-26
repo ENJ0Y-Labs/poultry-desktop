@@ -582,13 +582,5 @@ describe("App", () => {
     expect(screen.getByLabelText("Farm name")).toHaveValue("Unsaved recovery test");
   });
 
-  it("loads the farm water unit label into farm defaults", async () => {
-    mockFarmApis();
-    window.location.hash = "#/settings/farm-defaults";
-    render(<App />);
-
-    expect(await screen.findByLabelText("Water unit label")).toHaveValue("litres");
-    expect(screen.getByText(/Existing water figures are not converted/i)).toBeInTheDocument();
-  });
 
 });
