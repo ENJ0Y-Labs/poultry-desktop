@@ -30,6 +30,8 @@ public class AuthService {
     private final PasswordHasher passwords;
     private final SecureRandom random = new SecureRandom();
     private static final int MAX_FAILED_LOGINS = 5;
+    private static final long SESSION_ONLY_HOURS = 12;
+    private static final long PERSISTENT_SESSION_DAYS = 30;
     private static final long LOGIN_WINDOW_MILLIS = ChronoUnit.MINUTES.getDuration().toMillis() * 15;
     private final ConcurrentMap<String, LoginAttempts> loginAttempts = new ConcurrentHashMap<>();
 
@@ -68,11 +70,16 @@ public class AuthService {
 
     @Transactional
     public Session login(LoginRequest request) {
-        return login(request, "unknown");
+        return login(request, "unknown", false);
     }
 
     @Transactional
     public Session login(LoginRequest request, String clientAddress) {
+        return login(request, clientAddress, request.persistentSession());
+    }
+
+    @Transactional
+    public Session login(LoginRequest request, String clientAddress, boolean persistentSession) {
         long totalStarted = System.nanoTime();
         String email = request.email().trim().toLowerCase(java.util.Locale.ROOT);
         String address = clientAddress == null || clientAddress.isBlank() ? "unknown" : clientAddress;
@@ -107,7 +114,10 @@ public class AuthService {
 
         String raw = newToken();
         String now = Instant.now().toString();
-        String expires = Instant.now().plus(12, ChronoUnit.HOURS).toString();
+        String expires = Instant.now().plus(
+                persistentSession ? PERSISTENT_SESSION_DAYS : SESSION_ONLY_HOURS,
+                persistentSession ? ChronoUnit.DAYS : ChronoUnit.HOURS
+        ).toString();
         stageStarted = System.nanoTime();
         sessions.purgeExpired(now);
         long sessionPurgeMs = elapsedMs(stageStarted);
