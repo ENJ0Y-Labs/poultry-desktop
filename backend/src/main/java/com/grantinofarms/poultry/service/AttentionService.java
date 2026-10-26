@@ -195,6 +195,36 @@ public class AttentionService {
                       SELECT 1 FROM daily_records d
                       WHERE d.batch_id = b.id AND d.record_date = ?
                   )
+                  -- A day with recorded operational activity is not "missing" just because
+                  -- its optional daily-sheet header has not yet been created.
+                  AND NOT EXISTS (
+                      SELECT 1 FROM bird_population_events e
+                      WHERE e.batch_id = b.id AND e.event_date = ?
+                  )
+                  AND NOT EXISTS (
+                      SELECT 1 FROM feed_usage u
+                      WHERE u.batch_id = b.id AND u.usage_date = ?
+                  )
+                  AND NOT EXISTS (
+                      SELECT 1 FROM egg_collections ec
+                      WHERE ec.batch_id = b.id AND ec.record_date = ?
+                  )
+                  AND NOT EXISTS (
+                      SELECT 1 FROM weight_records wr
+                      WHERE wr.batch_id = b.id AND wr.record_date = ?
+                  )
+                  AND NOT EXISTS (
+                      SELECT 1 FROM health_records h
+                      WHERE h.batch_id = b.id AND h.record_date = ?
+                  )
+                  AND NOT EXISTS (
+                      SELECT 1 FROM drug_records dr
+                      WHERE dr.batch_id = b.id AND dr.record_date = ?
+                  )
+                  AND NOT EXISTS (
+                      SELECT 1 FROM vaccination_records vr
+                      WHERE vr.batch_id = b.id AND vr.record_date = ?
+                  )
                 """,
                 (RowCallbackHandler) rs -> {
                     result.add(alert(
@@ -208,7 +238,7 @@ public class AttentionService {
                                 "date", date
                         )
                     ));
-                }, farmId, date.toString());
+                }, farmId, date.toString(), date.toString(), date.toString(), date.toString(), date.toString(), date.toString(), date.toString(), date.toString());
     }
 
     private void addVaccinationAlerts(List<Map<String, Object>> result, String farmId, LocalDate date) {
