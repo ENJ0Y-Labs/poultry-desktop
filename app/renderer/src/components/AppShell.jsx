@@ -4,6 +4,8 @@ import { NavigationContext } from "./NavigationContext.jsx";
 import { getThemePreference, setThemePreference } from "../utils/theme.js";
 import { connectionApi } from "../services/api.js";
 import pomasLogo from "../assets/pomas-logo.png";
+// eslint-disable-next-line no-unused-vars
+import PageHelp from "./PageHelp.jsx";
 
 const groups = [
   { label: "WORKSPACE", items: [
@@ -354,6 +356,7 @@ export default function AppShell({ farm, error, onRetry, children, startPage = "
               </button>
             </div>
           )}
+          <PageHelp page={active} tab={activeTab} />
           {(pageTabs[active] || []).length > 0 && (
             <nav className="page-tabs" aria-label={`${active} sections`}>
               {pageTabs[active].map(tab => (
