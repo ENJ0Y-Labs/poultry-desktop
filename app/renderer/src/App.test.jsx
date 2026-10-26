@@ -564,7 +564,7 @@ describe("App", () => {
     render(<App />);
 
     await waitFor(() => {
-      expect(screen.getByLabelText("Batch")).toHaveValue("broiler-1");
+      expect(screen.getByLabelText("Batch dashboard")).toHaveValue("broiler-1");
     });
   });
 
