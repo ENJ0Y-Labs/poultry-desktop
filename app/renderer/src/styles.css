@@ -427,7 +427,7 @@ kbd{font-size:11px;font-weight:800;color:var(--muted-2);border:1px solid var(--p
   font-weight: 800;
 }
 .activity-button:focus-visible {
-  outline: 2px solid var(--ide-accent);
+  outline: 2px solid var(--ide-focus-ring);
   outline-offset: -3px;
   z-index: 1;
 }
@@ -546,3 +546,31 @@ kbd{font-size:11px;font-weight:800;color:var(--muted-2);border:1px solid var(--p
 
 
 .production-trend-chart{width:100%;min-width:0;min-height:260px;margin-top:12px}.production-trend-filters{grid-template-columns:repeat(2,minmax(150px,220px));margin-bottom:12px}.production-trend .section-head{margin-bottom:8px}.production-trend .section-head .muted{max-width:760px}
+
+
+/* Light-theme values for every token used by the IDE-style shell. */
+:root[data-theme="light"] {
+  --ide-titlebar: #ffffff;
+  --ide-activity: #f1f4f8;
+  --ide-sidebar: #ffffff;
+  --ide-workspace: #f5f7fa;
+  --ide-card: #ffffff;
+  --ide-hover: #edf2f7;
+  --ide-border: #d6dde6;
+  --ide-accent: #1A4D5C;
+  --ide-accent-hover: #123945;
+  --ide-success: #087b52;
+  --ide-warning: #945b00;
+  --ide-danger: #a52a35;
+  --ide-text: #202b38;
+  --ide-muted: #5e6b7b;
+  --ide-focus-ring: #007a91;
+  --ide-tab-bg: #edf2f7;
+  --ide-tab-hover-bg: #e2eaf2;
+  --ide-tab-active-bg: #e8f6fa;
+  --ide-tab-active-border: #b9dce4;
+  --ide-activity-icon: #435164;
+  --ide-activity-active-bg: #e8f6fa;
+  --ide-scrollbar: #c4ced9;
+  --ide-scrollbar-hover: #9aa8b8;
+}
