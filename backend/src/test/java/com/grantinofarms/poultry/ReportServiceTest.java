@@ -75,6 +75,7 @@ class ReportServiceTest {
         assertThat(report.get("dashboard")).isSameAs(dashboardData);
         assertThat(report.get("revenueMinor")).isEqualTo(500000L);
         assertThat(report.get("profitMinor")).isEqualTo(300000L);
+        assertThat(report.get("waterUnitLabel")).isEqualTo("litres");
 
         verify(dashboard).farm(asOf);
         verify(population).get("layer-1", asOf);
@@ -141,6 +142,7 @@ class ReportServiceTest {
         assertThat(report.get("population")).isSameAs(populationData);
         assertThat(report.get("mortality")).isEqualTo(12);
         assertThat(report.get("profitMinor")).isEqualTo(500000L);
+        assertThat(report.get("waterUnitLabel")).isEqualTo("litres");
 
         verify(dashboard).batch("batch-1", asOf);
         verify(population).get("batch-1", asOf);
