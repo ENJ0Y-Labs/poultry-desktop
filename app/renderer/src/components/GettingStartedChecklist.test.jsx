@@ -42,7 +42,7 @@ describe("PageHelp", () => {
     render(<PageHelp page="health" tab="vaccination" />);
     expect(screen.getByText(/Record the vaccine, date, dose, quantity, and notes/)).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Record a health observation" }));
-    expect(window.location.hash).toBe("health/health-record");
+    expect(window.location.hash).toBe("#health/health-record");
   });
 
   it("renders guidance for all top-level pages", () => {
