@@ -1279,6 +1279,14 @@ Validate the renderer with the backend available, during startup, and with the b
 - Cover the empty and populated states with renderer tests. Validate with a clean disposable database and a populated test farm; never reset or alter a user's real database.
 
 
+## Stock alert rules
+
+- An active feed type with no purchase history and no usage history is configured but not yet stocked; do not emit a low-feed-stock alert for it.
+- Once a feed type has purchase or usage history, a depleted balance is a critical alert. When stock remains, warn only when estimated cover is at or below three days.
+- Inventory reorder level `0` disables low-stock alerts for that item. Positive reorder levels are active thresholds: stock at or below the threshold alerts, with zero stock critical and positive stock warning.
+- Archived inventory items are excluded from alerts. Never rewrite existing reorder levels to suppress an alert.
+- Farm dashboard inventory-alert counts must use the same positive-threshold rule as the attention list.
+
 ## 39. Report exports and date scope
 
 - Farm and batch reports must use the selected as-of date for the report preview and CSV/PDF exports; do not silently export the current date when the user selected a historical date.
