@@ -533,6 +533,46 @@ describe("App", () => {
     expect(screen.getByText("Layer Mash has about 2.0 days of stock.")).toBeInTheDocument();
   });
 
+  it("opens a missing daily-record alert with batch and date prefilled", async () => {
+    mockFarmApis({ currentBatches: batches });
+    vi.mocked(attentionApi.list).mockResolvedValue([{
+      type: "MISSING_DAILY_RECORD",
+      severity: "WARNING",
+      title: "Missing daily record",
+      message: "No daily record has been entered for L-2026-001 for 2026-10-25.",
+      batchId: "layer-1",
+      batchCode: "L-2026-001",
+      date: "2026-10-25",
+    }]);
+
+    render(<App />);
+
+    const alert = await screen.findByRole("button", { name: /Missing daily record.*Open related record/ });
+    fireEvent.click(alert);
+
+    await waitFor(() => expect(window.location.hash).toBe(
+      "#daily-work/daily-record/batchId=layer-1/date=2026-10-25"
+    ));
+    expect(await screen.findByLabelText("Batch")).toHaveValue("layer-1");
+    expect(screen.getByLabelText("Date")).toHaveValue("2026-10-25");
+  });
+
+  it("keeps alerts with missing required identifiers non-clickable", async () => {
+    mockFarmApis();
+    vi.mocked(attentionApi.list).mockResolvedValue([{
+      type: "LOW_FEED_STOCK",
+      severity: "WARNING",
+      title: "Low feed stock",
+      message: "Layer Mash has low stock.",
+      item: "Layer Mash",
+    }]);
+
+    render(<App />);
+
+    expect(await screen.findByText("Low feed stock")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Low feed stock/ })).not.toBeInTheDocument();
+  });
+
   it("renders an em dash for undefined backend metrics", async () => {
     mockFarmApis({
       dashboardValue: {

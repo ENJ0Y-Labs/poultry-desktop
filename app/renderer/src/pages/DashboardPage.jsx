@@ -3,6 +3,7 @@ import { FarmManagerContext } from "../components/FarmManagerContext.jsx";
 // eslint-disable-next-line no-unused-vars
 import PageSection from "../components/PageSection.jsx";
 import { formatAuditAction, formatAuditEntity, formatAuditTimestamp } from "../utils/auditFormatting.js";
+import { attentionTarget } from "../utils/attentionNavigation.js";
 
 function formatBusinessDate(value, pattern = "YYYY-MM-DD") {
   if (!value || typeof value !== "string") return "—";
@@ -103,7 +104,13 @@ export default function DashboardPage() {
               </div></div>
               <div className="subsection dashboard-attention-panel"><h3>Attention</h3>
                 {attention.length === 0 ? <p className="muted">Nothing currently requires attention.</p> :
-                  <div className="attention-list">{attention.map((item, index) => <div className="attention-item" key={item.type + index}><span className={"severity " + String(item.severity).toLowerCase()}>{item.severity}</span><div><strong>{item.title}</strong><p>{item.message}</p></div></div>)}</div>}
+                  <div className="attention-list">{attention.map((item, index) => {
+                    const target = attentionTarget(item);
+                    const content = <><span className={"severity " + String(item.severity).toLowerCase()}>{item.severity}</span><span className="attention-item-copy"><strong>{item.title}</strong><span>{item.message}</span></span>{target && <span className="attention-item-action" aria-hidden="true">Open <span>→</span></span>}</>;
+                    return target
+                      ? <button type="button" className="attention-item attention-item-clickable" key={item.type + index} onClick={() => { window.location.hash = target; }} aria-label={`${item.title}. ${item.message}. Open related record`}>{content}</button>
+                      : <div className="attention-item" key={item.type + index}>{content}</div>;
+                  })}</div>}
               </div>
             </div>
             <div className="subsection"><h3>Recent audit activity</h3>{auditRows.length === 0 ? <p className="muted">No audit records yet.</p> :

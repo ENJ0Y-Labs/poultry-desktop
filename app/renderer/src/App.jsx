@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { todayLocalDate, getLastBatchId, rememberLastBatchId } from "./utils/farmUx.js";
 import { parseNairaToKobo } from "./utils/moneyInput.js";
 import { formatMoney } from "./utils/money.js";
+import { parseAttentionContext } from "./utils/attentionNavigation.js";
 // eslint-disable-next-line no-unused-vars
 import AppShell from "./components/AppShell.jsx";
 // eslint-disable-next-line no-unused-vars
@@ -378,6 +379,34 @@ export default function App() {
     }
   }
 
+  useEffect(() => {
+    function applyAttentionContext() {
+      const context = parseAttentionContext(window.location.hash);
+      if (context.batchId) {
+        setSelectedBatchId(context.batchId);
+        setDailyForm(form => ({ ...form, batchId: context.batchId, ...(context.date ? { date: context.date } : {}) }));
+        setVaccinationForm(form => ({ ...form, batchId: context.batchId }));
+        setEggBatchId(context.batchId);
+        setEggCollectionForm(form => ({ ...form, batchId: context.batchId }));
+        setBroilerBatchId(context.batchId);
+        setWeightForm(form => ({ ...form, batchId: context.batchId }));
+        setBirdSaleForm(form => ({ ...form, batchId: context.batchId }));
+      }
+      if (context.date) {
+        setDailyForm(form => ({ ...form, date: context.date }));
+      }
+      if (context.feedTypeId) {
+        setFeedPurchaseForm(form => ({ ...form, feedTypeId: context.feedTypeId }));
+      }
+      if (context.itemId) {
+        setInventoryMovementForm(form => ({ ...form, itemId: context.itemId }));
+      }
+    }
+    window.addEventListener("hashchange", applyAttentionContext);
+    applyAttentionContext();
+    return () => window.removeEventListener("hashchange", applyAttentionContext);
+  }, []);
+
   useEffect(() => { initialize(); }, []);
   useEffect(() => {
     if (farm) {
@@ -390,7 +419,7 @@ export default function App() {
 
     function refreshAfterMutation(event) {
       const path = event.detail?.path || "";
-      const affectsDashboard = /^\/(?:farm(?:\/settings)?|farm\/houses|batches|feed|expenses|inventory|sales|pricing)(?:\/|$)/.test(path);
+      const affectsDashboard = /^\/(?:farm(?:\/settings)?|farm\/houses|batches|feed|expenses|inventory|sales|pricing|settings|backup)(?:\/|$)/.test(path);
       if (!affectsDashboard) return;
 
       void loadDashboard();
