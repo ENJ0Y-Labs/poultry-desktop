@@ -129,15 +129,16 @@ export default function ProductionPage() {
               <div className="subsection">
                 <h3>Growth summary</h3>
                 <div className="table">
-                  <div className="row header"><span>Average weight</span><span>Weight gain</span><span>FCR</span><span>Trend records</span></div>
+                  <div className="row header"><span>Average weight</span><span>Weight gain</span><span>Feed consumed (converted)</span><span>FCR</span><span>Trend records</span></div>
                   <div className="row">
                     <span>{broilerGrowth?.averageWeightKg ?? "—"} kg</span>
                     <span>{broilerGrowth?.weightGainKg ?? "—"} kg</span>
+                    <span>{broilerGrowth?.feedConsumedKg ?? "—"} kg</span>
                     <span>{broilerGrowth?.fcr ?? "—"}</span>
                     <span>{broilerGrowth?.trend?.length ?? 0}</span>
                   </div>
                 </div>
-                <p className="muted">FCR uses kilograms of feed consumed divided by live-weight gain. Feed types must use <strong>kg</strong> to contribute to this calculation.</p>
+                <p className="muted">FCR uses converted kilograms of all recorded feed divided by live-weight gain. Configure each non-kg feed type’s kg-per-unit factor in Feed management. If any consumed feed type has an unknown conversion, feed consumed and FCR display — until the factor is configured.</p>
               </div>
 
               <div className="subsection">

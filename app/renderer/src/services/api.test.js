@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import { authApi, attentionApi, reportApi, settingsApi, expenseCategoryApi, accountApi, productionTrendApi, eggApi } from "./api.js";
+import { authApi, attentionApi, reportApi, settingsApi, expenseCategoryApi, accountApi, populationApi } from "./api.js";
 
 describe("API client", () => {
   beforeEach(() => {
@@ -23,6 +23,30 @@ describe("API client", () => {
         headers: expect.objectContaining({ "Content-Type": "application/json", "X-Requested-With": "XMLHttpRequest" }),
       })
     );
+  });
+
+  it("emits a dashboard invalidation event after a successful write", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ ok: true, data: { id: "mortality-1" } }), {
+        status: 201,
+        headers: { "Content-Type": "application/json" },
+      })
+    );
+    const mutationHandler = vi.fn();
+    window.addEventListener("pomas:data-mutated", mutationHandler);
+
+    await populationApi.mortality("batch-1", {
+      eventDate: "2026-10-26",
+      quantity: 1,
+      reason: "Test",
+    });
+
+    expect(mutationHandler).toHaveBeenCalledTimes(1);
+    expect(mutationHandler.mock.calls[0][0].detail).toEqual({
+      path: "/batches/batch-1/mortality",
+      method: "POST",
+    });
+    window.removeEventListener("pomas:data-mutated", mutationHandler);
   });
 
   it("checks authentication status without requiring a session", async () => {
