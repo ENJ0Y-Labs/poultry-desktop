@@ -187,7 +187,7 @@ Production requires an authenticated owner session. Authentication uses an HTTP-
 - GET `/settings/backup`
 - PUT `/settings/backup`
 
-Application settings currently include start page and date format. Backup settings include automatic-backup state, directory and interval.
+Application settings include start page and date format. Supported start-page values are `dashboard`, `flocks`, `daily-work`, `feed-stock`, `health`, `production`, `sales-money`, `reports`, and `settings`. Any other value is rejected with HTTP 400. Backup settings include automatic-backup state, directory and interval.
 
 ## Backup
 
