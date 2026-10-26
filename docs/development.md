@@ -335,3 +335,10 @@ npm run build
 The build invokes `scripts/audit-font-assets.mjs` after bundling. The script checks source and production-renderer assets for unreviewed font files, `@font-face`, CSS imports, remote font providers, and font-file URLs, and prints the font file count and byte total. See [font-audit.md](font-audit.md) for the inventory, retained font use, and manual development/packaged DevTools verification steps.
 
 The current UI uses system fonts only. Do not add a web font, KaTeX, or a font dependency based only on a browser audit report. First identify the actual asset/request and its initiator, document which UI needs it, and review the packaged build as well as development mode. Use `font-display: swap` only if a deliberately retained web-loaded font is introduced.
+
+
+## Supported window size and responsive layout
+
+Pomas is a **Windows desktop application**, not a phone/tablet web app. The Electron window opens at 1366×768 and enforces a minimum of **1100×650 CSS pixels**. The renderer's minimum canvas width matches that supported minimum. Browser/device emulation below 1100px is useful for checking graceful clipping and scroll behavior, but it is not a supported application layout and must not be described as mobile support.
+
+See [responsive-layout-audit.md](responsive-layout-audit.md) for the source findings, supported-width test matrix, and manual browser/packaged-window validation checklist. Test the packaged Electron window by resizing it down to its minimum dimensions; do not add a hamburger menu unless runtime testing identifies a real navigation failure within the supported range.
