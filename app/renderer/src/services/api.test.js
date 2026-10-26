@@ -124,8 +124,10 @@ describe("API client", () => {
       details: { available: 3 },
     });
   });
-  it("turns backend connection failures into a readable recovery error", async () => {
+  it("turns backend connection failures into a readable recovery error and connection-state event", async () => {
     const fetchMock = vi.spyOn(globalThis, "fetch").mockRejectedValue(new TypeError("Failed to fetch"));
+    const outageHandler = vi.fn();
+    window.addEventListener("pomas:backend-unavailable", outageHandler);
 
     await expect(authApi.me()).rejects.toMatchObject({
       name: "ApiError",
@@ -137,6 +139,8 @@ describe("API client", () => {
       expect.stringContaining("/auth/me"),
       expect.objectContaining({ credentials: "include", signal: expect.any(AbortSignal) })
     );
+    expect(outageHandler).toHaveBeenCalledTimes(1);
+    window.removeEventListener("pomas:backend-unavailable", outageHandler);
   });
 
 });
