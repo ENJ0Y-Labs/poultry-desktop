@@ -50,7 +50,7 @@ async function request(path, options = {}) {
     signalBackendUnavailable();
     throw new ApiError(
       "BACKEND_UNAVAILABLE",
-      "The local backend is not responding. Retry the connection when the backend is available. The current screen will remain open during recovery. The current screen will remain open during recovery.",
+      "The local backend is not responding. Retry the connection when the backend is available. The current screen will remain open during recovery.",
       503,
     );
   }
