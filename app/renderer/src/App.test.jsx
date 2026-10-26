@@ -438,4 +438,22 @@ describe("App", () => {
     expect(screen.getByRole("option", { name: /B-2026-001 · BROILER/ })).toBeInTheDocument();
     expect(localStorage.getItem("grantino:lastBatchId")).toBe("broiler-1");
   });
+  it("preserves unsaved farm form input while retrying after a backend outage", async () => {
+    mockFarmApis();
+    render(<App />);
+
+    await waitFor(() => expect(screen.getByRole("heading", { name: "Farm dashboard" })).toBeInTheDocument());
+    fireEvent.click(screen.getByRole("button", { name: "Settings" }));
+
+    const farmName = await screen.findByLabelText("Farm name");
+    fireEvent.change(farmName, { target: { value: "Unsaved recovery test" } });
+    fireEvent(window, new Event("pomas:backend-unavailable"));
+
+    const retryButton = await screen.findByRole("button", { name: "Retry connection" });
+    fireEvent.click(retryButton);
+
+    await waitFor(() => expect(screen.queryByRole("button", { name: "Retry connection" })).not.toBeInTheDocument());
+    expect(screen.getByLabelText("Farm name")).toHaveValue("Unsaved recovery test");
+  });
+
 });
