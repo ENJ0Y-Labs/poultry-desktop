@@ -52,9 +52,9 @@ class FarmManagementIntegrationTest {
         assertThat(auditRepository.find(farm.id(), 50))
                 .filteredOn(row -> "FARM_SETTINGS".equals(row.get("entityType")))
                 .anySatisfy(row -> {
-                    assertThat(row.get("before")).as("previous farm settings").isNotNull().toString().contains("\\\"waterUnitLabel\\\":\\\"litres\\\"");
-                    assertThat(row.get("after")).as("updated farm settings").isNotNull().toString().contains("\\\"waterUnitLabel\\\":\\\"gallons\\\"");
-                    assertThat(row.get("changedFields")).as("audited changed fields").isNotNull().toString().contains("waterUnitLabel");
+                    assertThat(String.valueOf(row.get("before"))).contains("\\\"waterUnitLabel\\\":\\\"litres\\\"");
+                    assertThat(String.valueOf(row.get("after"))).contains("\\\"waterUnitLabel\\\":\\\"gallons\\\"");
+                    assertThat(String.valueOf(row.get("changedFields"))).contains("waterUnitLabel");
                 });
 
         var house = houseService.create(new HouseCreateRequest(
