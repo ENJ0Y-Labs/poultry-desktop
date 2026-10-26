@@ -378,3 +378,21 @@ Manual seeded-data check:
 5. Verify the original audit records remain unchanged in the disposable database.
 
 Automated test coverage does not substitute for the manual browser/Electron width check. Record runtime validation only after performing it.
+
+
+## First-run dashboard empty-state validation
+
+Run the focused renderer tests:
+
+```powershell
+npm test -- App.test.jsx
+npm run lint
+npm run build
+```
+
+Manual validation must use two separate test states:
+
+1. **Clean disposable database:** start the app against a newly created test-only SQLite path. Complete owner setup and create a farm, but do not add houses, batches, feed, or other farm activity. Confirm the dashboard explains why values are zero and offers navigation to house/pen, batch, feed & stock, and daily-work screens. Click the house/pen action and confirm it opens Flocks → Houses / pens.
+2. **Populated test farm:** use a separate disposable database with at least one house and batch plus recorded farm activity. Confirm normal dashboard metrics, feed, attention, and audit sections remain visible.
+3. Confirm no demo/sample records are created by opening the empty state or clicking its navigation actions. Navigation must not write to the database.
+4. Never reset, delete, or reuse the user's real farm database for this test. Record runtime checks as not run until they have actually been performed.
