@@ -91,10 +91,10 @@ class MigrationUpgradeTest {
 
         String farmId = seedV1Farm(databaseUrl, "20");
         try (Connection connection = DriverManager.getConnection(databaseUrl);
-             PreparedStatement statement = connection.prepareStatement(
-                     "UPDATE application_settings SET start_page = 'settings', date_format = 'DD/MM/YYYY', updated_at = 'preserve-me' WHERE farm_id = ?")) {
-            statement.setString(1, farmId);
-            assertThat(statement.executeUpdate()).isEqualTo(1);
+             PreparedStatement insert = connection.prepareStatement(
+                     "INSERT INTO application_settings (farm_id, start_page, date_format, created_at, updated_at) VALUES (?, 'settings', 'DD/MM/YYYY', 'created-before-upgrade', 'preserve-me')")) {
+            insert.setString(1, farmId);
+            assertThat(insert.executeUpdate()).isEqualTo(1);
         }
 
         configuredFlyway(databaseUrl).migrate();
