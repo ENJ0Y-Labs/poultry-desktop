@@ -21,7 +21,20 @@ CREATE TABLE transaction_reversals (
     ),
     original_id TEXT NOT NULL CHECK (length(trim(original_id)) > 0),
     operation_type TEXT NOT NULL CHECK (operation_type IN ('VOID', 'CORRECT')),
-    replacement_type TEXT,
+    replacement_type TEXT CHECK (
+        replacement_type IS NULL OR replacement_type IN (
+            'BIRD_POPULATION_EVENT',
+            'BIRD_COST_EVENT',
+            'FEED_PURCHASE',
+            'FEED_USAGE',
+            'EGG_COLLECTION',
+            'EGG_SALE',
+            'BIRD_SALE',
+            'EXPENSE',
+            'DRUG_RECORD',
+            'WEIGHT_RECORD'
+        )
+    ),
     replacement_id TEXT,
     reason TEXT NOT NULL CHECK (length(trim(reason)) > 0),
     actor_user_id TEXT NOT NULL,
@@ -49,3 +62,15 @@ CREATE INDEX idx_transaction_reversals_batch_time
 
 CREATE INDEX idx_transaction_reversals_replacement
     ON transaction_reversals(replacement_type, replacement_id);
+
+CREATE TRIGGER transaction_reversals_no_update
+BEFORE UPDATE ON transaction_reversals
+BEGIN
+    SELECT RAISE(ABORT, 'TRANSACTION_REVERSALS_APPEND_ONLY');
+END;
+
+CREATE TRIGGER transaction_reversals_no_delete
+BEFORE DELETE ON transaction_reversals
+BEGIN
+    SELECT RAISE(ABORT, 'TRANSACTION_REVERSALS_APPEND_ONLY');
+END;
