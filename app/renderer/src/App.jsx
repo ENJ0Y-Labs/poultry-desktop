@@ -310,12 +310,11 @@ export default function App() {
   async function submitAuth(event) {
     event.preventDefault(); setSaving(true); setError("");
     try {
-      const identifier = authStatus?.setupRequired ? authForm.username : authForm.identifier;
       if (authStatus?.setupRequired) {
-        await authApi.setup({ fullName: authForm.fullName, email: authForm.email, password: authForm.password });
+        await authApi.setup({ username: authForm.username, fullName: authForm.fullName, email: authForm.email || null, password: authForm.password });
         setAuthStatus({ authenticated: false, setupRequired: false });
       }
-      await authApi.login({ email: authForm.email, password: authForm.password, rememberMe: authStatus?.setupRequired ? false : authForm.rememberMe });
+      await authApi.login({ loginIdentifier: authStatus?.setupRequired ? authForm.username : authForm.identifier, password: authForm.password, rememberMe: authStatus?.setupRequired ? false : authForm.rememberMe });
       setAuthStatus({ authenticated: true, setupRequired: false });
       await load();
     } catch (err) {
