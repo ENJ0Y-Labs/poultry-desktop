@@ -70,7 +70,7 @@ public class AuthService {
 
     @Transactional
     public Session login(LoginRequest request) {
-        return login(request, "unknown", false);
+        return login(request, "unknown", request.persistentSession());
     }
 
     @Transactional
