@@ -152,7 +152,11 @@ public class AuthService {
         } catch (Exception e) { throw new IllegalStateException(e); }
     }
 
-    private long elapsedMs(long startedAtNanos) {\n        return (System.nanoTime() - startedAtNanos) / 1_000_000;\n    }\n\n    private record LoginAttempts(long windowStartedAt, int failures) {}
+    private long elapsedMs(long startedAtNanos) {
+        return (System.nanoTime() - startedAtNanos) / 1_000_000;
+    }
+
+    private record LoginAttempts(long windowStartedAt, int failures) {}
 
     public record Session(String token, Map<String, Object> user) {}
 }
