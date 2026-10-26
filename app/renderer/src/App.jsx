@@ -390,7 +390,7 @@ export default function App() {
 
     function refreshAfterMutation(event) {
       const path = event.detail?.path || "";
-      const affectsDashboard = /^\\/(?:farm(?:\\/settings)?|farm\\/houses|batches|feed|expenses|inventory|sales|pricing)(?:\\/|$)/.test(path);
+      const affectsDashboard = /^\/(?:farm(?:\/settings)?|farm\/houses|batches|feed|expenses|inventory|sales|pricing)(?:\/|$)/.test(path);
       if (!affectsDashboard) return;
 
       void loadDashboard();
