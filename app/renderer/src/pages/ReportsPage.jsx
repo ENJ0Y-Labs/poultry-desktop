@@ -2,7 +2,9 @@ import { useContext } from "react";
 import { FarmManagerContext } from "../components/FarmManagerContext.jsx";
 // eslint-disable-next-line no-unused-vars
 import PageSection from "../components/PageSection.jsx";
-import { reportApi } from "../services/api.js";
+import { reportApi, productionTrendApi } from "../services/api.js";
+// eslint-disable-next-line no-unused-vars
+import ProductionTrendChart from "../components/ProductionTrendChart.jsx";
 import { rememberLastBatchId } from "../utils/farmUx.js";
 
 export default function ReportsPage() {
@@ -84,6 +86,24 @@ export default function ReportsPage() {
             </div>
             <p className="muted">As of {batchReport.asOf}. Population, feed, production, costs, revenue and profit reuse the dashboard calculation services.</p>
           </> : <p className="muted">{selectedBatchId ? "Batch report is loading…" : "Select a batch to inspect its report."}</p>}
+          {selectedBatchId && batches.find(batch => batch.id === selectedBatchId)?.type === "LAYER" && (
+            <ProductionTrendChart
+              batchId={selectedBatchId}
+              title="Layer HDP%"
+              description="Daily eggs collected (good + cracked) as a percentage of the historical live-bird population."
+              unit="percent"
+              loadTrend={productionTrendApi.layerHdp}
+            />
+          )}
+          {selectedBatchId && batches.find(batch => batch.id === selectedBatchId)?.type === "BROILER" && (
+            <ProductionTrendChart
+              batchId={selectedBatchId}
+              title="Broiler average weight"
+              description="Daily average sampled bird weight in kilograms, calculated by the backend."
+              unit="kg"
+              loadTrend={productionTrendApi.broilerAverageWeight}
+            />
+          )}
         </section></PageSection>
     </div>
   );
