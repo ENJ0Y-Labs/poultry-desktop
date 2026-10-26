@@ -71,7 +71,7 @@ Used by Electron during startup.
 
 - GET `/feed/types`
 - POST `/feed/types`
-- POST `/feed/types/{id}/archive`
+- PUT `/feed/types/{id}/conversion` (body: `kgPerUnit`, positive number or `null` when unknown)\n- POST `/feed/types/{id}/archive`
 - POST `/feed/purchases`
 - GET `/feed/inventory`
 - POST `/feed/batches/{id}/usage`

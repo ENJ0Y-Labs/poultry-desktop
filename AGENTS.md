@@ -37,7 +37,7 @@ The installer ID (`appId`), repository name, Java packages, and database file na
 
 1. Derived state is calculated, never manually stored or maintained.
 2. Each formula has exactly one implementation in the shared domain/calculation layer and is tested.
-3. Money is integer minor units. Never use floating-point money.
+3. Money is integer minor units. Never use floating-point money. In the renderer, format every user-visible monetary amount with `app/renderer/src/utils/money.js`; never display raw minor-unit fields. See `docs/money-display.md`.
 4. Transactions are voided, not deleted. Important changes are audited.
 5. The Electron renderer has no Node.js, filesystem, or database access.
 6. Electron IPC validates every input.
@@ -280,7 +280,7 @@ Stage 12 Broiler rules:
 - Average weight is calculated as total sample weight divided by sampled birds.
 - Growth is calculated from ordered weight records; the first recorded average weight is the baseline for the batch growth series.
 - FCR is calculated only by Spring Boot: feed consumed in kilograms divided by live-weight gain in kilograms. Frontend code must display the backend result and never calculate FCR.
-- Feed types using kg contribute to FCR. Other feed units do not contribute until a canonical kilogram conversion exists.
+- FCR uses feed consumed in kilograms divided by live-weight gain in kilograms. Each feed type has a nullable `kg_per_unit`; kg uses 1, while non-kg units require an explicit positive conversion. If any feed usage in the batch has an unknown conversion, converted feed kilograms and FCR are undefined (`null`, displayed as —). Never guess a bag size. Conversion changes are audited and affect interpretation of historical feed usage for FCR, while original feed quantities and FIFO costs remain unchanged.
 - Bird sales are recorded separately from mortality/culling and create SOLD population events.
 - A Broiler becomes SOLD automatically when a bird sale leaves zero live birds as of the current farm date. SOLD batches reject ordinary production/population writes.
 - Weight and sales records cannot be dated before batch placement.

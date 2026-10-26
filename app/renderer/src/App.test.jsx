@@ -302,6 +302,45 @@ describe("App", () => {
     expect(secondaryMetric).not.toHaveClass("metric-card-primary");
   });
 
+  it("formats expense history and inventory remaining cost as naira", async () => {
+    mockFarmApis();
+    vi.mocked(expenseApi.list).mockResolvedValue([
+      {
+        id: "expense-1",
+        occurredDate: "2026-10-04",
+        description: "Mock medicine expense",
+        amountMinor: 1234,
+        category: "OTHER",
+        batchId: null,
+      },
+    ]);
+    vi.mocked(feedApi.inventory).mockResolvedValue([
+      {
+        feedTypeId: "feed-1",
+        feedTypeName: "Starter",
+        unit: "bag",
+        purchasedQuantityMilli: 2000,
+        consumedQuantityMilli: 500,
+        remainingQuantityMilli: 1500,
+        remainingCostMinor: 5678,
+      },
+    ]);
+
+    render(<App />);
+
+    await waitFor(() => expect(screen.getByRole("heading", { name: "Farm dashboard" })).toBeInTheDocument());
+    fireEvent.click(screen.getByRole("button", { name: "Sales & Money" }));
+    fireEvent.click(screen.getByRole("button", { name: "Expenses" }));
+    expect(await screen.findByText("Mock medicine expense")).toBeInTheDocument();
+    expect(screen.getByText("₦12.34")).toBeInTheDocument();
+    expect(screen.queryByText("1234")).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Feed & Stock" }));
+    fireEvent.click(screen.getByRole("button", { name: "Other stock" }));
+    expect(await screen.findByText("₦56.78")).toBeInTheDocument();
+    expect(screen.queryByText("5678")).not.toBeInTheDocument();
+  });
+
   it("exposes the theme selector through its visible label and allows changing it", async () => {
     mockFarmApis();
 

@@ -15,6 +15,8 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/v1/auth")
 public class AuthController {
+    private static final String COOKIE_ATTRIBUTES = "; Path=/; HttpOnly; SameSite=None; Secure";
+
     private final AuthService service;
     public AuthController(AuthService service) { this.service = service; }
 
@@ -31,15 +33,23 @@ public class AuthController {
     @PostMapping("/login")
     ResponseEntity<?> login(@Valid @RequestBody LoginRequest request, HttpServletRequest httpRequest, HttpServletResponse response) {
         AuthService.Session session = service.login(request, httpRequest.getRemoteAddr());
-        response.addHeader("Set-Cookie", AuthService.COOKIE + "=" + session.token() + "; Path=/; HttpOnly; SameSite=None; Secure");
+        response.addHeader("Set-Cookie", sessionCookieHeader(session.token()));
         return ResponseEntity.ok(Map.of("ok", true, "data", session.user()));
     }
 
     @PostMapping("/logout")
     ResponseEntity<?> logout(HttpServletRequest request, HttpServletResponse response) {
         service.logout(sessionToken(request));
-        response.addHeader("Set-Cookie", AuthService.COOKIE + "=; Path=/; HttpOnly; Max-Age=0; SameSite=None; Secure");
+        response.addHeader("Set-Cookie", logoutCookieHeader());
         return ResponseEntity.ok(Map.of("ok", true, "data", Map.of()));
+    }
+
+    static String sessionCookieHeader(String token) {
+        return AuthService.COOKIE + "=" + token + COOKIE_ATTRIBUTES;
+    }
+
+    static String logoutCookieHeader() {
+        return AuthService.COOKIE + "=; Path=/; HttpOnly; Max-Age=0; SameSite=None; Secure";
     }
 
     @GetMapping("/me")

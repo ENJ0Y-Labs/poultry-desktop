@@ -86,7 +86,7 @@ public class BroilerProductionService {
         LocalDate effective = asOf == null ? LocalDate.now() : asOf;
         List<WeightRecordResponse> trend = growthTrend(batchId, effective);
         if (trend.isEmpty()) {
-            return new BroilerGrowthResponse(batchId, effective, null, null, null, trend);
+            return new BroilerGrowthResponse(batchId, effective, null, null, null, null, trend);
         }
 
         WeightRecordResponse first = trend.get(0);
@@ -105,7 +105,7 @@ public class BroilerProductionService {
                 : null;
 
         return new BroilerGrowthResponse(batchId, effective, currentAverage,
-                liveWeightGain, fcr, trend);
+                liveWeightGain, feedKg, fcr, trend);
     }
 
     @Transactional
