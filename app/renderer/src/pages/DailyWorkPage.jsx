@@ -13,7 +13,7 @@ export default function DailyWorkPage() {
       <PageSection page="daily-work" tab="daily-record">
         <section id="operations" className="card full">
           <div className="section-head"><h2>Daily record</h2><p className="muted">Record routine observations for one active batch. Population totals come from the backend ledger.</p></div>
-          <form className="form-grid" onSubmit={saveDailyRecord}>
+          <form className="form-grid" onSubmit={event => saveDailyRecord(event, "notes")}>
             <label>Batch<select required value={dailyForm.batchId} onChange={event => setDailyForm({...dailyForm,batchId:event.target.value})}>{batchOptions}</select></label>
             <label>Date<input required type="date" value={dailyForm.date} onChange={event => setDailyForm({...dailyForm,date:event.target.value})}/></label>
             <label className="full">Daily notes<input value={dailyForm.notes} onChange={event => setDailyForm({...dailyForm,notes:event.target.value})}/></label>
@@ -54,11 +54,11 @@ export default function DailyWorkPage() {
 
       <PageSection page="daily-work" tab="water">
         <section className="card full"><div className="section-head"><h2>Water usage</h2><p className="muted">Enter configured container sizes and counts, for example 25:4, 75:2. This saves the water figures as part of that date's daily record.</p></div>
-          <form className="form-grid" onSubmit={saveDailyRecord}>
+          <form className="form-grid" onSubmit={event => saveDailyRecord(event, "water")}>
             <label>Batch<select required value={dailyForm.batchId} onChange={event => setDailyForm({...dailyForm,batchId:event.target.value})}>{batchOptions}</select></label>
             <label>Date<input required type="date" value={dailyForm.date} onChange={event => setDailyForm({...dailyForm,date:event.target.value})}/></label>
             <label className="full">Water containers<input required value={dailyForm.water} onChange={event => setDailyForm({...dailyForm,water:event.target.value})}/></label>
-            <p className="muted">Water is stored in the daily record rather than as a separate transaction. Saving here preserves existing notes for the selected record form.</p>
+            <p className="muted">Water is stored in the daily record rather than as a separate transaction. Saving water updates only water entries. Existing notes and other day-sheet values are preserved.</p>
             <button disabled={saving}>Save water usage</button>
           </form>
         </section>
