@@ -386,7 +386,9 @@ export default function App() {
         setSelectedBatchId(context.batchId);
         setDailyForm(form => ({ ...form, batchId: context.batchId, ...(context.date ? { date: context.date } : {}) }));
         setVaccinationForm(form => ({ ...form, batchId: context.batchId }));
+        setEggBatchId(context.batchId);
         setEggCollectionForm(form => ({ ...form, batchId: context.batchId }));
+        setBroilerBatchId(context.batchId);
         setWeightForm(form => ({ ...form, batchId: context.batchId }));
         setBirdSaleForm(form => ({ ...form, batchId: context.batchId }));
       }
