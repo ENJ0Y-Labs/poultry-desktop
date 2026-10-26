@@ -46,12 +46,14 @@ The nine page components live under `app/renderer/src/pages/`. Shared form state
 - The shell name and initials are derived from the saved farm profile.
 
 
-## IDE-style activity bar
+## Single collapsible navigation
 
-- The fixed 48px activity bar maps only to the existing Dashboard, Flocks, Daily Work, Feed & Stock, Health, Production, and Sales & Money pages.
-- The account control opens the existing Settings → App, appearance & account section; the gear opens the existing Settings page.
-- The adjacent sidebar remains the existing navigation for the same application routes. No new farm modules or route system is introduced.
-- The dark palette is expressed through CSS tokens; existing appearance preference support and page/form/table/dialog styling remain in place.
+- One sidebar contains the nine existing top-level destinations. Do not render a second activity rail with duplicate destinations.
+- The collapse/expand control switches between a labeled sidebar and a compact icon rail. Each icon retains an accessible name and tooltip.
+- The compact-mode preference is stored locally in renderer localStorage under `pomas:sidebar-collapsed`; it does not require a backend request or network access.
+- The active page and subpage remain encoded in the URL hash when the sidebar is collapsed or expanded.
+- Account opens the existing Settings → App, appearance & account section. Settings remains available in the main navigation.
+- The sidebar and main-content offset adapt at narrow viewport widths without introducing another route system or farm module.
 
 ## Theme selector accessibility
 
