@@ -76,11 +76,11 @@ public class ReportExportService {
 
     private void appendRows(JsonNode node, String section, String record, String fieldPath, List<ExportRow> rows) {
         if (node == null || node.isNull()) {
-            rows.add(new ExportRow(section, record, humanize(fieldPath), "", unit(fieldPath)));
+            rows.add(new ExportRow(section, displayRecord(record), humanize(fieldPath), "", unit(fieldPath)));
             return;
         }
         if (node.isValueNode()) {
-            rows.add(new ExportRow(section, record, humanize(fieldPath), formatValue(node, fieldPath), unit(fieldPath)));
+            rows.add(new ExportRow(section, displayRecord(record), humanize(fieldPath), formatValue(node, fieldPath), unit(fieldPath)));
             return;
         }
         if (node.isArray()) {
@@ -99,10 +99,14 @@ public class ReportExportService {
             Iterator<Map.Entry<String, JsonNode>> fields = node.fields();
             while (fields.hasNext()) {
                 Map.Entry<String, JsonNode> field = fields.next();
-                String childPath = fieldPath.isEmpty() ? field.getKey() : fieldPath + "." + field.getKey();
+                String childPath = field.getKey();
                 appendRows(field.getValue(), section, record, childPath, rows);
             }
         }
+    }
+
+    private String displayRecord(String record) {
+        return record == null || record.isBlank() ? "—" : record;
     }
 
     private String recordName(JsonNode item, int index) {
