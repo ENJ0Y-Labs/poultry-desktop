@@ -74,6 +74,14 @@ export default function DashboardPage() {
 
 
 
+  const [checklistDismissed, setChecklistDismissed] = useState(
+    () => localStorage.getItem("pomas:getting-started-dismissed") === "true"
+  );
+  function dismissChecklist() {
+    localStorage.setItem("pomas:getting-started-dismissed", "true");
+    setChecklistDismissed(true);
+  }
+
   return (
     <div className="grid">
       <PageSection page="dashboard" tab="overview"><section id="dashboard" className="card full dashboard-page">
