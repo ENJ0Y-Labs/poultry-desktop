@@ -19,6 +19,7 @@ const settings = {
   defaultCrateSize: 30,
   defaultWaterContainerSize: 25,
   waterContainerSizes: [25, 75],
+  waterUnitLabel: "litres",
 };
 
 const batches = [
@@ -248,7 +249,11 @@ describe("App", () => {
       fullName: "Farm Owner",
       password: "correct-horse-battery",
     });
-    expect(login).toHaveBeenCalledWith({ identifier: "farm-owner", password: "correct-horse-battery" });
+    expect(login).toHaveBeenCalledWith({
+      email: "owner@example.com",
+      password: "correct-horse-battery",
+      rememberMe: false,
+    });
   });
 
   it("blocks an invalid setup form before calling the API", async () => {
@@ -304,6 +309,45 @@ describe("App", () => {
     expect(secondaryMetric).not.toHaveClass("metric-card-primary");
   });
 
+  it("formats expense history and inventory remaining cost as naira", async () => {
+    mockFarmApis();
+    vi.mocked(expenseApi.list).mockResolvedValue([
+      {
+        id: "expense-1",
+        occurredDate: "2026-10-04",
+        description: "Mock medicine expense",
+        amountMinor: 1234,
+        category: "OTHER",
+        batchId: null,
+      },
+    ]);
+    vi.mocked(feedApi.inventory).mockResolvedValue([
+      {
+        feedTypeId: "feed-1",
+        feedTypeName: "Starter",
+        unit: "bag",
+        purchasedQuantityMilli: 2000,
+        consumedQuantityMilli: 500,
+        remainingQuantityMilli: 1500,
+        remainingCostMinor: 5678,
+      },
+    ]);
+
+    render(<App />);
+
+    await waitFor(() => expect(screen.getByRole("heading", { name: "Farm dashboard" })).toBeInTheDocument());
+    fireEvent.click(screen.getByRole("button", { name: "Sales & Money" }));
+    fireEvent.click(screen.getByRole("button", { name: "Expenses" }));
+    expect(await screen.findByText("Mock medicine expense")).toBeInTheDocument();
+    expect(screen.getByText("₦12.34")).toBeInTheDocument();
+    expect(screen.queryByText("1234")).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Feed & Stock" }));
+    fireEvent.click(screen.getByRole("button", { name: "Other stock" }));
+    expect(await screen.findByText("₦56.78")).toBeInTheDocument();
+    expect(screen.queryByText("5678")).not.toBeInTheDocument();
+  });
+
   it("exposes the theme selector through its visible label and allows changing it", async () => {
     mockFarmApis();
 
@@ -335,6 +379,24 @@ describe("App", () => {
     fireEvent.click(screen.getByRole("button", { name: "Flocks" }));
     fireEvent.click(screen.getByRole("button", { name: "Batches & bird costs" }));
     expect(screen.getByText("No batches yet.")).toBeInTheDocument();
+  });
+
+  it("refreshes dashboard metrics and attention after a relevant mutation event", async () => {
+    mockFarmApis();
+    render(<App />);
+
+    await waitFor(() => expect(screen.getByRole("heading", { name: "Farm dashboard" })).toBeInTheDocument());
+    const dashboardCallsBeforeMutation = vi.mocked(dashboardApi.farm).mock.calls.length;
+    const attentionCallsBeforeMutation = vi.mocked(attentionApi.list).mock.calls.length;
+
+    window.dispatchEvent(new CustomEvent("pomas:data-mutated", {
+      detail: { path: "/batches/layer-1/mortality", method: "POST" },
+    }));
+
+    await waitFor(() => {
+      expect(dashboardApi.farm).toHaveBeenCalledTimes(dashboardCallsBeforeMutation + 1);
+      expect(attentionApi.list).toHaveBeenCalledTimes(attentionCallsBeforeMutation + 1);
+    });
   });
 
   it("allows egg sales to use a walk-in buyer without selecting a saved customer", async () => {
@@ -478,6 +540,46 @@ describe("App", () => {
     expect(screen.getByText("Layer Mash has about 2.0 days of stock.")).toBeInTheDocument();
   });
 
+  it("opens a missing daily-record alert with batch and date prefilled", async () => {
+    mockFarmApis({ currentBatches: batches });
+    vi.mocked(attentionApi.list).mockResolvedValue([{
+      type: "MISSING_DAILY_RECORD",
+      severity: "WARNING",
+      title: "Missing daily record",
+      message: "No daily record has been entered for L-2026-001 for 2026-10-25.",
+      batchId: "layer-1",
+      batchCode: "L-2026-001",
+      date: "2026-10-25",
+    }]);
+
+    render(<App />);
+
+    const alert = await screen.findByRole("button", { name: /Missing daily record.*Open related record/ });
+    fireEvent.click(alert);
+
+    await waitFor(() => expect(window.location.hash).toBe(
+      "#daily-work/daily-record/batchId=layer-1/date=2026-10-25"
+    ));
+    expect(await screen.findByLabelText("Batch")).toHaveValue("layer-1");
+    expect(screen.getByLabelText("Date")).toHaveValue("2026-10-25");
+  });
+
+  it("keeps alerts with missing required identifiers non-clickable", async () => {
+    mockFarmApis();
+    vi.mocked(attentionApi.list).mockResolvedValue([{
+      type: "LOW_FEED_STOCK",
+      severity: "WARNING",
+      title: "Low feed stock",
+      message: "Layer Mash has low stock.",
+      item: "Layer Mash",
+    }]);
+
+    render(<App />);
+
+    expect(await screen.findByText("Low feed stock")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Low feed stock/ })).not.toBeInTheDocument();
+  });
+
   it("renders an em dash for undefined backend metrics", async () => {
     mockFarmApis({
       dashboardValue: {
@@ -565,6 +667,41 @@ describe("App", () => {
     expect(screen.getByRole("option", { name: /B-2026-001 · BROILER/ })).toBeInTheDocument();
     expect(localStorage.getItem("grantino:lastBatchId")).toBe("broiler-1");
   });
+  it("routes dashboard quick actions to validated forms with the last-used batch context", async () => {
+    mockFarmApis({ currentBatches: batches });
+    vi.mocked(feedApi.listTypes).mockResolvedValue([
+      { id: "feed-layer", name: "Layer mash", unit: "bag", applicableType: "LAYER", status: "ACTIVE" },
+      { id: "feed-broiler", name: "Broiler starter", unit: "bag", applicableType: "BROILER", status: "ACTIVE" },
+    ]);
+    render(<App />);
+    await screen.findByRole("heading", { name: "Farm dashboard" });
+    const dashboardNav = () => fireEvent.click(within(screen.getByRole("navigation", { name: "Main navigation" })).getByRole("button", { name: "Dashboard" }));
+
+    fireEvent.click(await screen.findByRole("button", { name: "Record mortality" }));
+    expect(window.location.hash).toContain("daily-work/mortality");
+    expect(await screen.findByRole("combobox", { name: "Batch" })).toHaveValue("layer-1");
+
+    dashboardNav();
+    fireEvent.click(await screen.findByRole("button", { name: "Collect eggs" }));
+    expect(window.location.hash).toContain("production/eggs");
+    expect(await screen.findByRole("combobox", { name: "Layer batch" })).toHaveValue("layer-1");
+
+    dashboardNav();
+    fireEvent.click(await screen.findByRole("button", { name: "Record feed usage" }));
+    expect(window.location.hash).toContain("feed-stock/feed");
+    expect(await screen.findByRole("combobox", { name: "Feed type" })).toHaveValue("feed-layer");
+
+    dashboardNav();
+    fireEvent.click(await screen.findByRole("button", { name: "Record a sale" }));
+    expect(window.location.hash).toContain("production/eggs");
+    expect(await screen.findByRole("combobox", { name: "Layer batch" })).toHaveValue("layer-1");
+
+    dashboardNav();
+    fireEvent.click(await screen.findByRole("button", { name: "Record an expense" }));
+    expect(window.location.hash).toContain("sales-money/expenses");
+    expect(await screen.findByLabelText("Batch association")).toHaveValue("layer-1");
+  });
+
   it("preserves unsaved farm form input while retrying after a backend outage", async () => {
     mockFarmApis();
     render(<App />);
@@ -582,5 +719,6 @@ describe("App", () => {
     await waitFor(() => expect(screen.queryByRole("button", { name: "Retry connection" })).not.toBeInTheDocument());
     expect(screen.getByLabelText("Farm name")).toHaveValue("Unsaved recovery test");
   });
+
 
 });
