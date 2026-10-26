@@ -52,7 +52,7 @@ class ProductionTrendIntegrationTest {
                 """, "egg-1", batch.id(), "2026-10-01", 9, 1, null, "2026-10-01T08:00:00Z");
         jdbc.update("""
                 INSERT INTO bird_population_events
-                    (id, batch_id, event_date, event_type, quantity, related_batch_id, reason, notes, created_at)
+                    (id, batch_id, event_date, event_type, quantity, reference_batch_id, reason, notes, created_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """, "mortality-1", batch.id(), "2026-10-02", "MORTALITY", 10, null, null, null, "2026-10-02T08:00:00Z");
         jdbc.update("""
