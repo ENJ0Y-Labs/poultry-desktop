@@ -104,6 +104,12 @@ class DatabaseSchemaTest {
         );
         assertThat(itemColumns).contains("name", "category", "unit", "reorder_level", "status");
 
+        List<String> feedTypeColumns = jdbcTemplate.query(
+                "PRAGMA table_info(feed_types)",
+                (rs, rowNum) -> rs.getString("name")
+        );
+        assertThat(feedTypeColumns).contains("kg_per_unit");
+
         List<String> movementColumns = jdbcTemplate.query(
                 "PRAGMA table_info(inventory_movements)",
                 (rs, rowNum) -> rs.getString("name")

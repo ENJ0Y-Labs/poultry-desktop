@@ -81,7 +81,7 @@ export default function SalesMoneyPage() {
               {expenses.map(row=><div className="row" key={row.id}>
                 <span>{row.occurredDate}</span>
                 <span>{row.description}</span>
-                <span>{row.amountMinor}</span>
+                <span>{formatMoney(row.amountMinor, farm.currency)}</span>
                 <span>{row.category}</span>
                 <span>{row.batchId ? (batches.find(b=>b.id===row.batchId)?.code || row.batchId) : "Farm"}</span>
               </div>)}
