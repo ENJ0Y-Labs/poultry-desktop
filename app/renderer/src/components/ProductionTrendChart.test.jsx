@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
+// JSX component usage is not counted by the configured core no-unused-vars rule.
+// eslint-disable-next-line no-unused-vars
 import ProductionTrendChart from "./ProductionTrendChart.jsx";
 
 vi.mock("recharts", () => ({
