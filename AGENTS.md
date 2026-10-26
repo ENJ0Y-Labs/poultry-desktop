@@ -56,6 +56,7 @@ The installer ID (`appId`), repository name, Java packages, and database file na
 19. Opening a new batch creates a new permanent batch record. It does not overwrite an old batch.
 20. The broiler terminal status is **SOLD**, not COMPLETED.
 21. Reopening a SOLD batch is an exceptional, audited action and requires a reason.
+22. Posted farm transactions are corrected by an audited reversal plus a separate replacement, never by editing or deleting the original. Corrections must be atomic, reasoned, actor-attributed, and validated against later dependent records. Preserve FIFO feed costing, bird-cost allocation, bird populations, egg balances, common sales rows, and generated expenses. See `docs/decisions/2026-10-26-auditable-transaction-corrections.md`.
 
 ## 3. Stack
 
@@ -1283,6 +1284,11 @@ Validate the renderer with the backend available, during startup, and with the b
 - Cover the empty and populated states with renderer tests. Validate with a clean disposable database and a populated test farm; never reset or alter a user's real database.
 
 
+- Keep setup guidance data-driven after the first house is created. The dashboard checklist must derive completion from saved house, batch, feed-type, and inventory-item records, and remain visible until complete or dismissed.
+- Keep the checklist dismissal local to the current computer. Do not treat page visits as completed setup tasks.
+- Every top-level page must provide concise contextual help and a next-action link. Keep those links aligned with the documented hash routes in docs/frontend-navigation.md.
+- Cover empty, partially configured, completed, and dismissed checklist states in renderer tests; test page-help navigation as well.
+
 ## Stock alert rules
 
 - An active feed type with no purchase history and no usage history is configured but not yet stocked; do not emit a low-feed-stock alert for it.
@@ -1308,3 +1314,11 @@ Validate the renderer with the backend available, during startup, and with the b
 - Return a point for every calendar day in the selected period. A date with no production record has `value: null` and `recorded: false`; never turn a missing record into zero. An explicitly recorded zero-egg collection is a real 0% value.
 - Use kilograms for broiler average weight and percent for HDP. Backend responses include metric/unit and the missing-day policy.
 - Charts must display loading, empty, and error states; accessible names; dates and values in tooltips; and visible gaps for missing days. They must refresh after relevant successful production writes.
+
+
+## Farm water unit label
+
+- The farm's water unit label is a display label, defaulting to `litres`. Changing it must never convert or rewrite stored container capacities, container counts, or historical water quantities.
+- Read the label from farm settings for water-entry forms and farm/batch report views and exports. Do not hard-code `units` or `litres` in a water-specific display.
+- Water unit setting changes must be audited with both the prior and updated settings snapshots so the change is traceable.
+- Keep the migration forward-only. Migration tests must start from a pre-label database containing existing water records and assert the label default plus unchanged numeric capacity/count values.

@@ -17,6 +17,21 @@ vi.mock("recharts", () => ({
 afterEach(() => cleanup());
 
 describe("ProductionTrendChart", () => {
+  it("renders accessible metric help alongside the chart title", () => {
+    render(
+      <ProductionTrendChart
+        batchId="batch-1"
+        title="Layer HDP%"
+        titleHelp={<details><summary>HDP formula help</summary><p>Eggs divided by live birds times 100.</p></details>}
+        description="Layer trend"
+        unit="percent"
+        loadTrend={vi.fn().mockResolvedValue({ points: [] })}
+      />
+    );
+
+    expect(screen.getByRole("heading", { name: /Layer HDP%/ })).toBeInTheDocument();
+    expect(screen.getByText("HDP formula help")).toBeInTheDocument();
+  });
   it("shows loading, then an accessible chart using backend points", async () => {
     const loadTrend = vi.fn().mockResolvedValue({
       from: "2026-10-01",

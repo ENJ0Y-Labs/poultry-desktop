@@ -115,6 +115,51 @@ class MigrationUpgradeTest {
     }
 
     @Test
+    void freshDatabaseAcceptsEverySupportedStartPageAndRejectsUnsupportedValues() throws Exception {
+        Path database = tempDir.resolve("fresh-start-page.db");
+        String databaseUrl = sqliteUrl(database);
+        configuredFlyway(databaseUrl).migrate();
+
+        String farmId = seedV1Farm(databaseUrl, "fresh-start-page");
+        try (Connection connection = DriverManager.getConnection(databaseUrl);
+             PreparedStatement insert = connection.prepareStatement(
+                     "INSERT INTO application_settings (farm_id, start_page, date_format, created_at, updated_at) VALUES (?, 'dashboard', 'YYYY-MM-DD', 'created', 'updated')")) {
+            insert.setString(1, farmId);
+            assertThat(insert.executeUpdate()).isEqualTo(1);
+        }
+
+        List<String> supportedPages = List.of(
+                "dashboard", "flocks", "daily-work", "feed-stock", "health",
+                "production", "sales-money", "reports", "settings"
+        );
+
+        try (Connection connection = DriverManager.getConnection(databaseUrl);
+             PreparedStatement update = connection.prepareStatement(
+                     "UPDATE application_settings SET start_page = ? WHERE farm_id = ?");
+             PreparedStatement select = connection.prepareStatement(
+                     "SELECT start_page FROM application_settings WHERE farm_id = ?")) {
+            for (String page : supportedPages) {
+                update.setString(1, page);
+                update.setString(2, farmId);
+                assertThat(update.executeUpdate()).isEqualTo(1);
+
+                select.setString(1, farmId);
+                try (ResultSet result = select.executeQuery()) {
+                    assertThat(result.next()).isTrue();
+                    assertThat(result.getString("start_page")).isEqualTo(page);
+                }
+            }
+
+            update.setString(1, "not-a-supported-page");
+            update.setString(2, farmId);
+            assertThatThrownBy(update::executeUpdate)
+                    .isInstanceOf(java.sql.SQLException.class);
+        }
+
+        assertThat(farmExists(databaseUrl, farmId)).isTrue();
+    }
+
+    @Test
     void failedMigrationDoesNotDestroyExistingDataOrLeavePartialSchemaChanges() throws Exception {
         Path failureMigrationDirectory = tempDir.resolve("intentional-failure");
         Files.createDirectories(failureMigrationDirectory);
