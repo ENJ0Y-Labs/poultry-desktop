@@ -4,6 +4,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
 import java.util.Map;
+import java.util.LinkedHashMap;
 
 @Repository
 public class SessionRepository {
@@ -21,17 +22,20 @@ public class SessionRepository {
 
     public Map<String, Object> findUserByTokenHash(String tokenHash, String now) {
         return jdbc.query("""
-                SELECT u.id, u.email, u.full_name, u.role, u.status
+                SELECT u.id, u.username, u.email, u.full_name, u.role, u.status
                 FROM user_sessions s
                 JOIN users u ON u.id = s.user_id
                 WHERE s.token_hash = ? AND s.expires_at > ? AND u.status = 'ACTIVE'
-                """, (rs, n) -> Map.<String, Object>of(
-                "id", rs.getString("id"),
-                "email", rs.getString("email"),
-                "fullName", rs.getString("full_name"),
-                "role", rs.getString("role"),
-                "status", rs.getString("status")
-        ), tokenHash, now).stream().findFirst().orElse(null);
+                """, (rs, n) -> {
+                    Map<String, Object> user = new LinkedHashMap<>();
+                    user.put("id", rs.getString("id"));
+                    user.put("username", rs.getString("username"));
+                    user.put("email", rs.getString("email"));
+                    user.put("fullName", rs.getString("full_name"));
+                    user.put("role", rs.getString("role"));
+                    user.put("status", rs.getString("status"));
+                    return user;
+                }, tokenHash, now).stream().findFirst().orElse(null);
     }
 
     public void touch(String tokenHash, String now) {
