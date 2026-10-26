@@ -105,7 +105,7 @@ public class FarmService {
                     "Farm settings are missing.");
         }
         return new FarmSettingsResponse(base.defaultCrateSize(), base.defaultWaterContainerSize(),
-                waterRepository.findActiveSizes(farm.id()));
+                waterRepository.findActiveSizes(farm.id()), base.waterUnitLabel());
     }
 
     @Transactional
@@ -120,7 +120,7 @@ public class FarmService {
 
         String now = Instant.now().toString();
         settingsRepository.update(farm.id(), request.defaultCrateSize(),
-                request.defaultWaterContainerSize(), now);
+                request.defaultWaterContainerSize(), request.waterUnitLabel().trim(), now);
         waterRepository.archiveAllExcept(farm.id(), sizes, now);
         for (Integer size : sizes) {
             waterRepository.upsertActive(farm.id(), size, now);
