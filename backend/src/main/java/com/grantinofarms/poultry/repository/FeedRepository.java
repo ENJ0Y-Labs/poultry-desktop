@@ -20,18 +20,18 @@ public class FeedRepository {
 
     public List<FeedTypeResponse> findTypes(String farmId) {
         return jdbc.query("""
-                SELECT id, name, unit, applicable_type, status
+                SELECT id, name, unit, applicable_type, status, kg_per_unit
                 FROM feed_types WHERE farm_id = ? ORDER BY name
                 """,
                 (rs, n) -> new FeedTypeResponse(
                         rs.getString("id"), rs.getString("name"), rs.getString("unit"),
-                        rs.getString("applicable_type"), rs.getString("status")
+                        rs.getString("applicable_type"), rs.getString("status"), rs.getBigDecimal("kg_per_unit")
                 ), farmId);
     }
 
     public FeedTypeResponse findType(String id) {
         List<FeedTypeResponse> rows = jdbc.query("""
-                SELECT id, name, unit, applicable_type, status
+                SELECT id, name, unit, applicable_type, status, kg_per_unit
                 FROM feed_types WHERE id = ?
                 """,
                 (rs, n) -> new FeedTypeResponse(
@@ -53,12 +53,16 @@ public class FeedRepository {
         return jdbc.queryForObject("SELECT applicable_type FROM feed_types WHERE id = ?", String.class, id);
     }
 
-    public void insertType(String id, String farmId, String name, String unit, String scope, String now) {
+    public void insertType(String id, String farmId, String name, String unit, String scope, java.math.BigDecimal kgPerUnit, String now) {
         jdbc.update("""
                 INSERT INTO feed_types
-                    (id, farm_id, name, unit, applicable_type, status, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, 'ACTIVE', ?, ?)
-                """, id, farmId, name, unit, scope, now, now);
+                    (id, farm_id, name, unit, applicable_type, status, kg_per_unit, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, 'ACTIVE', ?, ?, ?)
+                """, id, farmId, name, unit, scope, kgPerUnit, now, now);
+    }
+
+    public void updateKgPerUnit(String id, java.math.BigDecimal kgPerUnit, String now) {
+        jdbc.update("UPDATE feed_types SET kg_per_unit = ?, updated_at = ? WHERE id = ?", kgPerUnit, now, id);
     }
 
     public void archiveType(String id, String now) {
