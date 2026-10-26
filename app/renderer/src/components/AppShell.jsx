@@ -157,7 +157,7 @@ export default function AppShell({ farm, error, onRetry, children, startPage = "
   }
   const today = useMemo(localDateLabel, []);
   const connectionLabel = backendConnected === null
-    ? "CHECKING BACKEND"
+    ? "CONNECTING TO BACKEND"
     : recoveryNeeded
       ? (backendConnected ? "RECONNECTED · RETRY DATA" : "BACKEND UNAVAILABLE")
       : backendConnected ? "BACKEND CONNECTED" : "BACKEND UNAVAILABLE";
@@ -329,12 +329,6 @@ export default function AppShell({ farm, error, onRetry, children, startPage = "
           ))}
         </nav>
 
-        <div className="sidebar-footer">
-          <div className="node-status">
-            <span className={backendConnected === true && !recoveryNeeded ? "status-dot online" : backendConnected === false || recoveryNeeded ? "status-dot offline" : "status-dot"} />
-            <div><strong>{connectionLabel}</strong><small>Local API connection</small></div>
-          </div>
-        </div>
       </aside>
 
       <main className="app-main" id="main-content" tabIndex={-1} ref={mainContentRef}>
@@ -387,12 +381,6 @@ export default function AppShell({ farm, error, onRetry, children, startPage = "
         </div>
       </main>
 
-      <footer className="app-statusbar">
-        <span><b>DATA MODE</b> · Local-first</span>
-        <span><b>API</b> · {recoveryNeeded ? "Recovery required" : backendConnected === true ? "Connected" : backendConnected === false ? "Unavailable" : "Checking"}</span>
-        <span className="statusbar-spacer" />
-        <span><i className={backendConnected === true && !recoveryNeeded ? "status-dot online" : backendConnected === false || recoveryNeeded ? "status-dot offline" : "status-dot"} /> {recoveryNeeded ? "Refresh farm data" : backendConnected === true ? "Backend responding" : backendConnected === false ? "Backend not responding" : "Checking connection"}</span>
-      </footer>
     </div>
   );
 }
