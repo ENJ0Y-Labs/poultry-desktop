@@ -151,6 +151,38 @@ Backend tests include:
 The backend integration tests use SQLite rather than mocking away the database behavior that matters to production.
 
 
+## Authentication timing investigation
+
+Run authentication timing only against a fresh, disposable SQLite database. Do not use the normal development database or a real farm database. The benchmark creates an owner account and must not be pointed at an existing installation.
+
+In Terminal 1, create a uniquely named database path and start the backend with it:
+
+```powershell
+$stamp = Get-Date -Format "yyyyMMdd-HHmmss"
+New-Item -ItemType Directory -Force "data\auth-benchmark-$stamp" | Out-Null
+$env:DATABASE_PATH = Join-Path (Get-Location) "data\auth-benchmark-$stamp\pomas-auth-benchmark.db"
+$env:LOG_FILE = Join-Path (Get-Location) "logs\auth-benchmark-$stamp.log"
+npm run dev:backend
+```
+
+Wait until Spring Boot reports that it has started. In Terminal 2, from the repository root, run:
+
+```powershell
+.\scripts\benchmark-auth.ps1
+```
+
+The script records the first successful setup request, three rejected duplicate-setup requests, and five successful login requests to a timestamped CSV under `logs\`. It records HTTP status and elapsed request time without recording passwords or session tokens. The backend emits `auth_setup_timing` and `auth_login_timing` entries that break successful/invalid authentication work into database lookup, password hashing/verification, session cleanup, session write, and total service time.
+
+For each run, preserve:
+- whether the backend was a clean launch or already warm
+- backend startup duration (start the stopwatch immediately before `npm run dev:backend`, stop when the ready message appears)
+- the generated CSV and matching backend log
+- machine/runtime details and the Git commit
+- medians for repeated login requests, while keeping the first request separate
+
+Repeat the full procedure at least three times using a new disposable database path each time. Compare cold-start and warm-request timings separately. A single sample is not a performance conclusion. Do not cache passwords, password-verification results, setup state across writes, or session authentication results. Keep PBKDF2 parameters unchanged unless a separate security review explicitly approves a migration plan.
+
+
 ## Local backend outage and persistence drill
 
 Run this drill only against a disposable SQLite database. Never point it at the normal development database or a real farm database. The drill must not delete, reset, replace, or truncate a database.
