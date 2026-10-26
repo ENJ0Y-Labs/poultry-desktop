@@ -47,6 +47,7 @@ CREATE TABLE transaction_reversals (
         OR
         (operation_type = 'CORRECT'
             AND replacement_type IS NOT NULL
+            AND replacement_type = original_type
             AND length(trim(replacement_type)) > 0
             AND replacement_id IS NOT NULL
             AND length(trim(replacement_id)) > 0)
