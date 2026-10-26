@@ -33,6 +33,11 @@ class WaterUnitLabelMigrationTest {
                 INSERT INTO farm_settings(farm_id, default_crate_size, default_water_container_size, created_at, updated_at)
                 VALUES ('farm-water-test', 30, 25, '2026-10-26T00:00:00Z', '2026-10-26T00:00:00Z')
                 """);
+            statement.executeUpdate("""
+                INSERT INTO water_container_sizes(id, farm_id, name, capacity_units, status, created_at, updated_at)
+                VALUES ('water-size-test', 'farm-water-test', '25 units', 25, 'ACTIVE',
+                        '2026-10-26T00:00:00Z', '2026-10-26T00:00:00Z')
+                """);
         }
 
         Flyway.configure().dataSource(url, "", "").locations("classpath:db/migration").load().migrate();
@@ -47,6 +52,12 @@ class WaterUnitLabelMigrationTest {
             assertThat(result.getInt("default_crate_size")).isEqualTo(30);
             assertThat(result.getInt("default_water_container_size")).isEqualTo(25);
             assertThat(result.getString("water_unit_label")).isEqualTo("litres");
+        }
+        try (Connection connection = DriverManager.getConnection(url);
+             Statement statement = connection.createStatement();
+             ResultSet result = statement.executeQuery("SELECT name FROM water_container_sizes WHERE id = 'water-size-test'")) {
+            assertThat(result.next()).isTrue();
+            assertThat(result.getString("name")).isEqualTo("25 litres");
         }
     }
 }
