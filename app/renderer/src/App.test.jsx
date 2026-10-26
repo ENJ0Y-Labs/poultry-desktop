@@ -336,7 +336,7 @@ describe("App", () => {
     expect(screen.queryByText("1234")).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Feed & Stock" }));
-    fireEvent.click(screen.getByRole("button", { name: "Inventory" }));
+    fireEvent.click(screen.getByRole("button", { name: "Other stock" }));
     expect(await screen.findByText("₦56.78")).toBeInTheDocument();
     expect(screen.queryByText("5678")).not.toBeInTheDocument();
   });
