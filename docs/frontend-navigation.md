@@ -57,3 +57,11 @@ The nine page components live under `app/renderer/src/pages/`. Shared form state
 
 - The theme selector uses its visible “Theme” label as its accessible name through the wrapping label element; do not add a competing `aria-label`.
 - Keep the selector keyboard-operable and retain readable label/control contrast in light, dark, and automatic themes.
+
+
+## First-run farm dashboard
+
+- A genuinely empty farm shows an actionable setup sequence instead of a dashboard full of unexplained zeros: create a house/pen, create a batch, set up and record feed, then enter daily records.
+- Each action navigates to an existing page/tab using the local hash router. No route dependency or backend feature is added.
+- The empty state is inferred from the absence of houses, batches, calculated bird/financial/egg activity, feed types, and audit events. A zero metric by itself does not trigger it.
+- No sample or demo data is inserted. Existing/populated farms retain their normal dashboard.
