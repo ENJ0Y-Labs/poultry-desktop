@@ -69,8 +69,8 @@ public class FeedService {
                     "A feed type with this name already exists.");
         }
         auditRepository.append(farmId, "CREATE", "FEED_TYPE", id, null, null,
-                String.format("{\"name\":\"%s\",\"unit\":\"%s\",\"applicableType\":\"%s\"}",
-                        name, unit, scope), now);
+                String.format("{\"name\":\"%s\",\"unit\":\"%s\",\"applicableType\":\"%s\",\"kgPerUnit\":%s}",
+                        name, unit, scope, kgPerUnit == null ? "null" : kgPerUnit.toPlainString()), now);
         return repository.findType(id);
     }
 
