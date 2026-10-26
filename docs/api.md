@@ -63,7 +63,11 @@ Used by Electron during startup.
 
 ## Daily operations
 
-- POST `/batches/{id}/daily-records`
+- POST `/batches/{id}/daily-records` creates a day sheet or updates the existing batch/date sheet.
+  - Send `notes: null` to preserve notes when editing water.
+  - Send `waterContainers: null` to preserve water entries when editing notes.
+  - Send a water-entry array to replace the day's water entries.
+  - Concurrent creation attempts return a conflict that instructs the operator to reload.
 - GET `/batches/{id}/daily-records`
 - GET `/batches/{id}/daily-records/{date}`
 
