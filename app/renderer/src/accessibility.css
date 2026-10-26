@@ -240,6 +240,12 @@ button:focus-visible {
   --a11y-accent-text: #F4B41A;
   --a11y-nav-active-bg: #1A4D5C;
   --a11y-shortcut-bg: #12282e;
+  --a11y-warning-bg: #3a2d17;
+  --a11y-warning-text: #ffd28a;
+  --a11y-critical-bg: #3a1d20;
+  --a11y-critical-text: #ffb4b4;
+  --a11y-error-bg: #28181b;
+  --a11y-error-text: #ffc2c2;
 }
 :root[data-theme="light"] {
   --brand-teal: #1A4D5C;
@@ -252,6 +258,12 @@ button:focus-visible {
   --a11y-accent-text: #1A4D5C;
   --a11y-nav-active-bg: #dcebed;
   --a11y-shortcut-bg: #e7f0f1;
+  --a11y-warning-bg: #fff1cf;
+  --a11y-warning-text: #7a4b00;
+  --a11y-critical-bg: #ffe4e6;
+  --a11y-critical-text: #9f1239;
+  --a11y-error-bg: #fff0f0;
+  --a11y-error-text: #9f2525;
 }
 
 /* Primary actions use teal with white text; gold remains an accent, not body text. */
