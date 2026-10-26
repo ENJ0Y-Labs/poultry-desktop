@@ -1252,3 +1252,10 @@ And never sacrifice poultry math for dashboard cosmetics.
 - At supported dimensions, keep primary navigation reachable, prevent page-level horizontal overflow, and contain wide data tables in their own scroll region. Forms and action buttons must remain operable.
 - Before introducing a hamburger menu or other navigation redesign, reproduce and record the failure at a supported window size. Follow `docs/responsive-layout-audit.md` and distinguish static source inspection from actual browser/Electron runtime verification.
 - Resize and test the packaged Electron app at its 1100×650 minimum and at the 1366×768 default. Do not claim runtime validation unless those checks were actually performed.
+
+
+## Connection status presentation
+
+Show local Spring Boot API connection state in exactly one primary UI location: the top-bar status pill. Use a clear connecting label before the first health check completes, then connected or unavailable. When connectivity is lost or returns but data has not yet been refreshed, retain the prominent recovery alert and Retry connection action because it communicates the required recovery step, not a duplicate passive status. Do not reintroduce the same connection state in the sidebar or bottom status bar. Keep the app shell usable without a bottom status bar.
+
+Validate the renderer with the backend available, during startup, and with the backend stopped. Confirm the top-bar state updates and the outage alert remains understandable and retryable. These runtime checks must be recorded as not run unless actually performed.
