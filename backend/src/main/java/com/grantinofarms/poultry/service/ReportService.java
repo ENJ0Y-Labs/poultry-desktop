@@ -87,7 +87,7 @@ public class ReportService {
         Map<String, Object> report = new LinkedHashMap<>();
         report.put("reportType", "FARM_SUMMARY");
         report.put("asOf", date);
-        report.put("waterUnitLabel", farmService.getSettings().waterUnitLabel());
+        report.put("waterUnitLabel", farmService.getWaterUnitLabel());
         report.put("dashboard", dashboardData);
         report.put("farmSummary", dashboardData);
         report.put("birdPopulation", populationRows);
@@ -121,7 +121,7 @@ public class ReportService {
         Map<String, Object> report = new LinkedHashMap<>();
         report.put("reportType", "BATCH_SUMMARY");
         report.put("asOf", date);
-        report.put("waterUnitLabel", farmService.getSettings().waterUnitLabel());
+        report.put("waterUnitLabel", farmService.getWaterUnitLabel());
         report.put("dashboard", dashboardData);
         report.put("batchSummary", dashboardData);
         report.put("population", populationData);
