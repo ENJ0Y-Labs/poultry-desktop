@@ -760,8 +760,9 @@ describe("App", () => {
     expect(await screen.findByRole("heading", { name: "Finish setting up your farm" })).toBeInTheDocument();
     expect(screen.getByText("Create a house or pen")).toBeInTheDocument();
     expect(screen.getByText("Open a batch")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Set up feed" })).toBeInTheDocument();
-    expect(screen.getByText("Add a farm supply item")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Configure feed" })).toBeInTheDocument();
+    expect(screen.getByText("Record a feed purchase")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Record purchase" })).toBeInTheDocument();
   });
 
   it("hides the getting-started checklist when all setup tasks have saved data", async () => {
@@ -769,6 +770,7 @@ describe("App", () => {
     vi.spyOn(farmApi, "listHouses").mockResolvedValue([{ id: "house-1", name: "House 1" }]);
     vi.spyOn(feedApi, "listTypes").mockResolvedValue([{ id: "feed-1", name: "Starter feed" }]);
     vi.spyOn(inventoryApi, "listItems").mockResolvedValue([{ id: "stock-1", name: "Disinfectant" }]);
+    vi.spyOn(feedApi, "inventory").mockResolvedValue([{ feedTypeId: "feed-1", purchasedQuantityMilli: 2500 }]);
     render(<App />);
     await waitFor(() => expect(screen.getByRole("heading", { name: "Farm dashboard" })).toBeInTheDocument());
     expect(screen.queryByRole("heading", { name: "Finish setting up your farm" })).not.toBeInTheDocument();
@@ -778,7 +780,7 @@ describe("App", () => {
     mockFarmApis({ currentBatches: [batches[0]] });
     vi.spyOn(farmApi, "listHouses").mockResolvedValue([{ id: "house-1", name: "House 1" }]);
     render(<App />);
-    fireEvent.click(await screen.findByRole("button", { name: "Dismiss checklist" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Dismiss" }));
     expect(localStorage.getItem("pomas:getting-started-dismissed")).toBe("true");
     expect(screen.queryByRole("heading", { name: "Finish setting up your farm" })).not.toBeInTheDocument();
   });
