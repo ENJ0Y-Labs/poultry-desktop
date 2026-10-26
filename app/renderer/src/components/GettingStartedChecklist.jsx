@@ -3,14 +3,14 @@ import "./PageHelp.css";
 
 const DISMISSED_KEY = "pomas:getting-started-dismissed";
 
-export default function GettingStartedChecklist({ houses = [], batches = [], feedTypes = [], dashboard }) {
+export default function GettingStartedChecklist({ houses = [], batches = [], feedTypes = [], feedInventory = [] }) {
   const [dismissed, setDismissed] = useState(() => localStorage.getItem(DISMISSED_KEY) === "true");
-  const stockMilli = Number(dashboard?.feedSummary?.remainingQuantityMilli || 0);
+  const hasPurchaseHistory = feedInventory.some(item => Number(item.purchasedQuantityMilli || 0) > 0);
   const tasks = [
     { id: "house", title: "Create a house or pen", description: "Define where birds will be kept.", done: houses.length > 0, route: "flocks/houses", action: "Open houses" },
     { id: "batch", title: "Open a batch", description: "Record the flock type, placement date, and starting bird count.", done: batches.length > 0, route: "flocks/flocks", action: "Open batches" },
     { id: "feed-type", title: "Configure a feed type", description: "Add the feed types used by this farm.", done: feedTypes.some(item => item.status !== "ARCHIVED"), route: "feed-stock/feed", action: "Configure feed" },
-    { id: "feed-stock", title: "Record a feed purchase", description: "Make sure a purchase has left positive stock available.", done: stockMilli > 0, route: "feed-stock/purchases", action: "Record purchase" },
+    { id: "feed-stock", title: "Record a feed purchase", description: "Record at least one purchase so stock and purchase cost are tracked.", done: hasPurchaseHistory, route: "feed-stock/purchases", action: "Record purchase" },
   ];
   const completed = tasks.filter(task => task.done).length;
   if (dismissed || completed === tasks.length) return null;

@@ -46,6 +46,7 @@ export default function DashboardPage() {
     setEggCollectionForm,
     setFeedUsageForm,
     feedTypes,
+    feedInventory,
     setBroilerBatchId,
     setBirdSaleForm,
     setEggSaleForm,
@@ -85,7 +86,7 @@ export default function DashboardPage() {
             <p className="eyebrow">GETTING STARTED</p>
             <h3 id="first-run-title">Your farm is ready to be set up</h3>
             <p className="first-run-intro">These zeros are expected because no flock records have been entered yet. Start with your farm's physical setup, then add birds and record daily work. Nothing has been added automatically.</p>
-            <GettingStartedChecklist houses={houses} batches={batches} feedTypes={feedTypes} dashboard={dashboard} />
+            <GettingStartedChecklist houses={houses} batches={batches} feedTypes={feedTypes} feedInventory={feedInventory} />
 
           </section>
         ) : (

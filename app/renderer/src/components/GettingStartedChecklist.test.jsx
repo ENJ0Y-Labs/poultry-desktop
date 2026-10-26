@@ -12,7 +12,7 @@ beforeEach(() => {
 
 describe("GettingStartedChecklist", () => {
   it("derives completion from farm setup data rather than house existence alone", () => {
-    render(<GettingStartedChecklist houses={[{ id: "h1" }]} dashboard={{ feedSummary: { remainingQuantityMilli: 0 } }} />);
+    render(<GettingStartedChecklist houses={[{ id: "h1" }]} feedInventory={[]} />);
     expect(screen.getByText("1 of 4 complete")).toBeInTheDocument();
     expect(screen.getByText("Open a batch")).toBeInTheDocument();
     expect(screen.getByText("Configure a feed type")).toBeInTheDocument();
@@ -24,7 +24,7 @@ describe("GettingStartedChecklist", () => {
       houses={[{ id: "h1" }]}
       batches={[{ id: "b1" }]}
       feedTypes={[{ id: "f1", status: "ACTIVE" }]}
-      dashboard={{ feedSummary: { remainingQuantityMilli: 2500 } }}
+      feedInventory={[{ purchasedQuantityMilli: 2500 }]}
     />);
     expect(container).toBeEmptyDOMElement();
   });
