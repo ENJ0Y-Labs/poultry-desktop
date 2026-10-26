@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { todayLocalDate, getLastBatchId, rememberLastBatchId } from "./utils/farmUx.js";
 import { parseNairaToKobo } from "./utils/moneyInput.js";
 import { formatMoney } from "./utils/money.js";
+import { parseAttentionContext } from "./utils/attentionNavigation.js";
 // eslint-disable-next-line no-unused-vars
 import AppShell from "./components/AppShell.jsx";
 // eslint-disable-next-line no-unused-vars
