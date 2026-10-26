@@ -158,7 +158,7 @@ public class ReportExportService {
             String value = values.get(i) == null ? "" : values.get(i);
             boolean numeric = value.matches("-?\\d+(\\.\\d+)?");
             if (!numeric && value.matches("(?s)^[\\s\\p{Cc}]*[=+@-].*")) value = "'" + value;
-            csv.append('"').append(value.replace(""", """")).append('"');
+            csv.append('"').append(value.replace("\"", "\"\"")).append('"');
         }
         csv.append('\n');
     }
