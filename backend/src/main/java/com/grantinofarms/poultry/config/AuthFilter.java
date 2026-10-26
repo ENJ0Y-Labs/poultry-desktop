@@ -37,27 +37,31 @@ public class AuthFilter extends OncePerRequestFilter {
         if (stateChanging && !"XMLHttpRequest".equals(request.getHeader("X-Requested-With"))) {
             response.setStatus(HttpServletResponse.SC_FORBIDDEN);
             response.setContentType("application/json");
-            response.getWriter().write("{\"ok\":false,\"error\":{\"code\":\"CSRF_CHECK_FAILED\",\"message\":\"The request could not be verified.\"}}");
+            response.getWriter().write("{\\"ok\\":false,\\"error\\":{\\"code\\":\\"CSRF_CHECK_FAILED\\",\\"message\\":\\"The request could not be verified.\\"}}");
             return;
         }
 
-        String token = token(request);
-        Map<String, Object> user = auth.current(token);
+        String path = request.getRequestURI();
+        boolean publicEndpoint = path.startsWith("/api/v1/auth/") || path.equals("/api/v1/health");
+        boolean needsFilterSession = !publicEndpoint || path.equals("/api/v1/auth/me");
+        Map<String, Object> user = needsFilterSession ? auth.current(token(request)) : null;
         if (user != null) {
             request.setAttribute("poultry.user", user);
             CurrentUserContext.set(String.valueOf(user.get("id")));
         }
 
         boolean required = environment.getProperty("poultry.auth-required", Boolean.class, false);
-        boolean bootstrap = users.count() == 0;
-        boolean publicEndpoint = request.getRequestURI().startsWith("/api/v1/auth/")
-                || request.getRequestURI().equals("/api/v1/health");
         try {
-            if (required && !bootstrap && !publicEndpoint && user == null) {
-                response.setStatus(401);
-                response.setContentType("application/json");
-                response.getWriter().write("{\"ok\":false,\"error\":{\"code\":\"UNAUTHENTICATED\",\"message\":\"Login is required.\"}}");
-                return;
+            // Public setup/login/status routes do not need the filter's session lookup.
+            // Only count users when auth enforcement needs to decide whether bootstrap is active.
+            if (required && !publicEndpoint) {
+                boolean bootstrap = users.count() == 0;
+                if (!bootstrap && user == null) {
+                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    response.setContentType("application/json");
+                    response.getWriter().write("{\\"ok\\":false,\\"error\\":{\\"code\\":\\"UNAUTHENTICATED\\",\\"message\\":\\"Login is required.\\"}}");
+                    return;
+                }
             }
             chain.doFilter(request, response);
         } finally {
