@@ -12,7 +12,7 @@ async function getApiBase() {
 export const connectionApi = {
   async check() {
     try {
-      const response = await fetch((await getApiBase()) + "/health", { credentials: "include" });
+      const response = await fetch((await getApiBase()) + "/health", { credentials: "include", signal: AbortSignal.timeout(2000) });
       const health = await response.json().catch(() => ({}));
       return response.ok && health.schema === "VALID";
     } catch {
@@ -37,12 +37,13 @@ async function request(path, options = {}) {
     response = await fetch((await getApiBase()) + path, {
       credentials: "include",
       headers: { "Content-Type": "application/json", "X-Requested-With": "XMLHttpRequest", ...(options.headers || {}) },
+      signal: AbortSignal.timeout(8000),
       ...options,
     });
   } catch {
     throw new ApiError(
       "BACKEND_UNAVAILABLE",
-      "The local backend is unavailable. Restart the application and try again.",
+      "The local backend is not responding. Your unsaved form entries are still on this screen. Retry the connection when the backend is available.",
       503,
     );
   }
