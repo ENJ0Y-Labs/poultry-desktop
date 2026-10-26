@@ -229,9 +229,11 @@ export default function App() {
       setFarm(currentFarm);
       if (!preserveForms) setFarmForm({name:currentFarm.name,location:currentFarm.location||"",timezone:currentFarm.timezone,currency:currentFarm.currency});
       const settings = await farmApi.getSettings();
-      setCrateSize(settings.defaultCrateSize);
-      setDefaultWater(settings.defaultWaterContainerSize ?? "");
-      setWaterSizes(settings.waterContainerSizes.join(", "));
+      if (!preserveForms) {
+        setCrateSize(settings.defaultCrateSize);
+        setDefaultWater(settings.defaultWaterContainerSize ?? "");
+        setWaterSizes(settings.waterContainerSizes.join(", "));
+      }
       const currentHouses = await farmApi.listHouses();
       setHouses(currentHouses);
       setBatchForm(form => ({ ...form, houseId: form.houseId || currentHouses[0]?.id || "" }));
@@ -266,9 +268,11 @@ export default function App() {
       setExpenseCategories(categories);
       setAccount(currentAccount);
       if (!preserveForms) setAccountForm({ email: currentAccount.email, fullName: currentAccount.fullName, currentPassword: "", newPassword: "" });
-      setApplicationSettings({ ...appSettings, startPage: appSettings.startPage === "operations" ? "daily-work" : appSettings.startPage });
+      if (!preserveForms) {
+        setApplicationSettings({ ...appSettings, startPage: appSettings.startPage === "operations" ? "daily-work" : appSettings.startPage });
+        setBackupSettings(backupConfig);
+      }
       setSettingsReady(true);
-      setBackupSettings(backupConfig);
       return true;
     } catch (err) {
       if (err.code === "UNAUTHENTICATED") {
