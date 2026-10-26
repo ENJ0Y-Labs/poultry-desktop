@@ -46,6 +46,14 @@ public class DailyOperationsRepository {
         ).stream().findFirst().orElse(null);
     }
 
+    public void updateNotes(String id, String notes, String now) {
+        jdbc.update("UPDATE daily_records SET notes = ?, updated_at = ? WHERE id = ?", notes, now, id);
+    }
+
+    public void deleteWater(String dailyRecordId) {
+        jdbc.update("DELETE FROM water_usage WHERE daily_record_id = ?", dailyRecordId);
+    }
+
     public void insertDailyRecord(String id, String batchId, LocalDate date, String notes, String now) {
         jdbc.update("""
                 INSERT INTO daily_records

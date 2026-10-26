@@ -22,22 +22,23 @@ public class FarmSettingsRepository {
                 """, farmId, crateSize, defaultWaterSize, now, now);
     }
 
-    public void update(String farmId, int crateSize, Integer defaultWaterSize, String now) {
+    public void update(String farmId, int crateSize, Integer defaultWaterSize, String waterUnitLabel, String now) {
         jdbc.update("""
                 UPDATE farm_settings
-                SET default_crate_size = ?, default_water_container_size = ?, updated_at = ?
+                SET default_crate_size = ?, default_water_container_size = ?, water_unit_label = ?, updated_at = ?
                 WHERE farm_id = ?
-                """, crateSize, defaultWaterSize, now, farmId);
+                """, crateSize, defaultWaterSize, waterUnitLabel, now, farmId);
     }
 
     public FarmSettingsResponse find(String farmId) {
         return jdbc.query("""
-                SELECT default_crate_size, default_water_container_size
+                SELECT default_crate_size, default_water_container_size, water_unit_label
                 FROM farm_settings WHERE farm_id = ?
                 """, (rs, rowNum) -> new FarmSettingsResponse(
                 rs.getInt("default_crate_size"),
                 (Integer) rs.getObject("default_water_container_size"),
-                List.of()
+                List.of(),
+                rs.getString("water_unit_label")
         ), farmId).stream().findFirst().orElse(null);
     }
 }

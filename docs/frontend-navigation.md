@@ -46,12 +46,14 @@ The nine page components live under `app/renderer/src/pages/`. Shared form state
 - The shell name and initials are derived from the saved farm profile.
 
 
-## IDE-style activity bar
+## Single collapsible navigation
 
-- The fixed 48px activity bar maps only to the existing Dashboard, Flocks, Daily Work, Feed & Stock, Health, Production, and Sales & Money pages.
-- The account control opens the existing Settings → App, appearance & account section; the gear opens the existing Settings page.
-- The adjacent sidebar remains the existing navigation for the same application routes. No new farm modules or route system is introduced.
-- The dark palette is expressed through CSS tokens; existing appearance preference support and page/form/table/dialog styling remain in place.
+- One sidebar contains the nine existing top-level destinations. Do not render a second activity rail with duplicate destinations.
+- The collapse/expand control switches between a labeled sidebar and a compact icon rail. Each icon retains an accessible name and tooltip.
+- The compact-mode preference is stored locally in renderer localStorage under `pomas:sidebar-collapsed`; it does not require a backend request or network access.
+- The active page and subpage remain encoded in the URL hash when the sidebar is collapsed or expanded.
+- Account opens the existing Settings → App, appearance & account section. Settings remains available in the main navigation.
+- The sidebar and main-content offset adapt at narrow viewport widths without introducing another route system or farm module.
 
 ## Theme selector accessibility
 
@@ -84,3 +86,10 @@ The nine page components live under `app/renderer/src/pages/`. Shared form state
 - Backend feed-stock alerts expose `feedTypeId`; low and insufficient inventory alerts expose `itemId`. Display names are not used as database identifiers.
 - Successful writes emit the shared mutation invalidation event. Relevant mutations refresh farm dashboard metrics, attention alerts, audit activity, reports, and the selected batch dashboard.
 - Vitest covers all supported alert mappings, missing/invalid context, encoded context parsing, and a dashboard-to-daily-record navigation with batch/date prefilled. Backend integration tests assert that stock alerts include their navigable IDs.
+
+
+## Light-theme IDE shell tokens
+
+- The activity bar, sidebar, workspace, cards, hover states, focus ring, tabs, and scrollbar use dedicated semantic IDE tokens.
+- Every shell token used by navigation and page tabs has an explicit light-theme value. Keep these values readable against the light surfaces and preserve a visible keyboard focus indicator.
+- CSS tests verify token presence and selector usage without depending on formatting or whitespace.
