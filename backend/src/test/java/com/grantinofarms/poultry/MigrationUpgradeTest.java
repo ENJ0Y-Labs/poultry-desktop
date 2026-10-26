@@ -175,7 +175,7 @@ class MigrationUpgradeTest {
         Flyway.configure()
                 .dataSource(databaseUrl, "", "")
                 .locations(LOCATIONS)
-                .target(MigrationVersion.fromVersion("21"))
+                .target(MigrationVersion.fromVersion("22"))
                 .load()
                 .migrate();
 
