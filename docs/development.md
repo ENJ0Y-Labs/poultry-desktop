@@ -357,3 +357,24 @@ Manual validation (run against a disposable database, never real farm data):
 5. Repeat at the supported desktop minimum (1100×650) and default window size (1366×768). Check the top-bar pill and recovery action remain visible and do not overlap the theme/date controls.
 
 Source edits do not prove these runtime states; record them as **Not run** until tested in the browser and packaged Electron app.
+
+
+## Audit activity display validation
+
+The dashboard formats audit timestamps for display in the farm's configured timezone (default: `Africa/Lagos`) and humanizes action/entity labels in the renderer. Stored audit events are not changed. Missing timestamps display as `—`; invalid timestamps display as `Unknown time`; missing action/entity values use explicit fallback labels. Unknown non-empty action/entity values are converted to readable title case.
+
+Run the focused formatting and dashboard tests:
+
+```powershell
+npm test -- auditFormatting
+npm test -- App.test.jsx
+```
+
+Manual seeded-data check:
+1. Use a disposable test database and create a farm, producing a `CREATE` / `FARM` audit event.
+2. Confirm the dashboard shows a readable local timestamp (for `Africa/Lagos`, UTC timestamps display one hour ahead) and labels such as `Created` and `Farm`.
+3. Include a timestamp with fractional seconds beyond milliseconds, a missing timestamp, an unknown action/entity, and an empty reason. Confirm safe fallback text and no raw nanosecond timestamp is shown.
+4. Inspect the audit table at the supported 1100×650 minimum and 1366×768 default sizes. The table may scroll internally for long content, but must not cause page-level horizontal overflow.
+5. Verify the original audit records remain unchanged in the disposable database.
+
+Automated test coverage does not substitute for the manual browser/Electron width check. Record runtime validation only after performing it.
