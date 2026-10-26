@@ -335,6 +335,24 @@ describe("App", () => {
     expect(screen.getByText("No batches yet.")).toBeInTheDocument();
   });
 
+  it("refreshes dashboard metrics and attention after a relevant mutation event", async () => {
+    mockFarmApis();
+    render(<App />);
+
+    await waitFor(() => expect(screen.getByRole("heading", { name: "Farm dashboard" })).toBeInTheDocument());
+    const dashboardCallsBeforeMutation = vi.mocked(dashboardApi.farm).mock.calls.length;
+    const attentionCallsBeforeMutation = vi.mocked(attentionApi.list).mock.calls.length;
+
+    window.dispatchEvent(new CustomEvent("pomas:data-mutated", {
+      detail: { path: "/batches/layer-1/mortality", method: "POST" },
+    }));
+
+    await waitFor(() => {
+      expect(dashboardApi.farm).toHaveBeenCalledTimes(dashboardCallsBeforeMutation + 1);
+      expect(attentionApi.list).toHaveBeenCalledTimes(attentionCallsBeforeMutation + 1);
+    });
+  });
+
   it("allows egg sales to use a walk-in buyer without selecting a saved customer", async () => {
     mockFarmApis({ currentBatches: batches });
     vi.mocked(customerApi.list).mockResolvedValue([
