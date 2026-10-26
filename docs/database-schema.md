@@ -222,7 +222,7 @@ farm
 
 ## Migration history
 
-The repository currently contains V1 through V21.
+The repository currently contains V1 through V23.
 
 Broad progression:
 
@@ -247,4 +247,11 @@ Broad progression:
 - V19: performance indexes
 - V20: settings management and configurable expense categories\n- V21: optional feed kilogram conversion factors
 
-Never edit an applied migration. Add V21 or later for future schema changes.
+Never edit an applied migration. Add a new version greater than V23 for future schema changes.
+
+
+## Auditable transaction reversals (planned by ADR)
+
+The approved correction design requires a forward-only migration adding a transaction reversal/correction relationship record. It will identify the original domain transaction, required reason, authenticated actor, server UTC action timestamp, optional replacement transaction reference, and creation metadata. A uniqueness constraint prevents more than one successful reversal of an original transaction. Type-specific foreign-key limitations must be validated in domain services. Original business rows and append-only audit rows remain intact.
+
+This schema is not permission to implement a generic table-name dispatcher. Domain services remain responsible for transaction-specific validation and atomic recalculation. See `decisions/2026-10-26-auditable-transaction-corrections.md`.

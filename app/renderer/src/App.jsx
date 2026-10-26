@@ -207,15 +207,16 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
   const [authStatus, setAuthStatus] = useState(null);
-  const [authForm, setAuthForm] = useState({ email: "", fullName: "", password: "" });
+  const [authForm, setAuthForm] = useState({ username: "", identifier: "", email: "", fullName: "", password: "", rememberMe: false });
   const [dashboard, setDashboard] = useState(null);
   const [attention, setAttention] = useState([]);
   const [auditRows, setAuditRows] = useState([]);
   const [expenseCategories, setExpenseCategories] = useState([]);
   const [expenseCategoryForm, setExpenseCategoryForm] = useState("");
   const [account, setAccount] = useState(null);
-  const [accountForm, setAccountForm] = useState({ email: "", fullName: "", currentPassword: "", newPassword: "" });
+  const [accountForm, setAccountForm] = useState({ username: "", email: "", fullName: "", currentPassword: "", newPassword: "" });
   const [applicationSettings, setApplicationSettings] = useState({ startPage: "dashboard", dateFormat: "YYYY-MM-DD" });
   const [backupSettings, setBackupSettings] = useState({ enabled: false, directory: "", intervalMs: 86400000 });
   const [selectedBatchId, setSelectedBatchId] = useState(() => getLastBatchId() || "");
@@ -244,7 +245,15 @@ export default function App() {
       const currentBatches = await batchApi.list();
       setBatches(currentBatches);
       const lastBatchId = getLastBatchId();
-      const preferredBatchId = currentBatches.some(batch => batch.id === lastBatchId) ? lastBatchId : currentBatches[0]?.id || "";
+      // A dashboard alert may open the app directly on a contextual hash route.
+      // Prefer that valid batch over the remembered/default batch so initial
+      // loading cannot silently discard the alert's target.
+      const contextBatchId = parseAttentionContext(window.location.hash).batchId;
+      const preferredBatchId = currentBatches.some(batch => batch.id === contextBatchId)
+        ? contextBatchId
+        : currentBatches.some(batch => batch.id === lastBatchId)
+          ? lastBatchId
+          : currentBatches[0]?.id || "";
       if (preferredBatchId) {
         rememberLastBatchId(preferredBatchId);
         setSelectedBatchId(preferredBatchId);
@@ -271,7 +280,7 @@ export default function App() {
       ]);
       setExpenseCategories(categories);
       setAccount(currentAccount);
-      if (!preserveForms) setAccountForm({ email: currentAccount.email, fullName: currentAccount.fullName, currentPassword: "", newPassword: "" });
+      if (!preserveForms) setAccountForm({ username: currentAccount.username || "", email: currentAccount.email || "", fullName: currentAccount.fullName, currentPassword: "", newPassword: "" });
       if (!preserveForms) {
         setApplicationSettings({ ...appSettings, startPage: appSettings.startPage === "operations" ? "daily-work" : appSettings.startPage });
         setBackupSettings(backupConfig);
@@ -310,10 +319,10 @@ export default function App() {
     event.preventDefault(); setSaving(true); setError("");
     try {
       if (authStatus?.setupRequired) {
-        await authApi.setup(authForm);
+        await authApi.setup({ username: authForm.username, fullName: authForm.fullName, email: authForm.email || null, password: authForm.password });
         setAuthStatus({ authenticated: false, setupRequired: false });
       }
-      await authApi.login({ email: authForm.email, password: authForm.password });
+      await authApi.login({ loginIdentifier: authStatus?.setupRequired ? authForm.username : authForm.identifier, password: authForm.password, rememberMe: authStatus?.setupRequired ? false : authForm.rememberMe });
       setAuthStatus({ authenticated: true, setupRequired: false });
       await load();
     } catch (err) {
@@ -487,7 +496,7 @@ export default function App() {
   }
   async function saveAccount(event) {
     event.preventDefault(); setSaving(true); setError("");
-    try { const updated = await accountApi.update(accountForm); setAccount(updated); setAccountForm({ email: updated.email, fullName: updated.fullName, currentPassword: "", newPassword: "" }); }
+    try { const updated = await accountApi.update(accountForm); setAccount(updated); setAccountForm({ username: updated.username || "", email: updated.email || "", fullName: updated.fullName, currentPassword: "", newPassword: "" }); }
     catch (err) { setError(displayApiError(err)); } finally { setSaving(false); }
   }
   async function saveApplicationSettings(event) {
@@ -618,7 +627,7 @@ export default function App() {
   }
 
   async function saveExpense(event) {
-    event.preventDefault(); setSaving(true); setError("");
+    event.preventDefault(); setSaving(true); setError(""); setSuccessMessage("");
     try {
       const created = await expenseApi.create({
         occurredDate: expenseForm.occurredDate,
@@ -629,6 +638,8 @@ export default function App() {
       });
       setExpenses(current => [created, ...current]);
       setExpenseForm(form => ({ ...emptyExpense, batchId: form.batchId }));
+      setSuccessMessage("Expense recorded successfully.");
+      await Promise.all([loadDashboard(), loadBatchDashboard(expenseForm.batchId || selectedBatchId)]);
     } catch (err) { setError(displayApiError(err)); } finally { setSaving(false); }
   }
 
@@ -689,7 +700,7 @@ export default function App() {
   }
 
   async function useFeed(event) {
-    event.preventDefault(); setSaving(true); setError("");
+    event.preventDefault(); setSaving(true); setError(""); setSuccessMessage("");
     try {
       const type = feedTypes.find(item => item.id === feedUsageForm.feedTypeId);
       await feedApi.use(feedUsageForm.batchId, {
@@ -701,6 +712,8 @@ export default function App() {
       });
       setFeedUsageForm(form => ({ ...emptyFeedUsage, batchId: form.batchId, feedTypeId: form.feedTypeId }));
       setFeedInventory(await feedApi.inventory());
+      setSuccessMessage("Feed usage recorded successfully.");
+      await Promise.all([loadDashboard(), loadBatchDashboard(feedUsageForm.batchId)]);
     } catch (err) { setError(displayApiError(err)); } finally { setSaving(false); }
   }
 
@@ -718,20 +731,23 @@ export default function App() {
     });
   }
 
-  async function saveDailyRecord(event) {
+  async function saveDailyRecord(event, mode = "all") {
     event.preventDefault(); setSaving(true); setError("");
     try {
-      const created = await dailyApi.create(dailyForm.batchId, {
+      const payload = {
         recordDate: dailyForm.date,
-        notes: dailyForm.notes.trim() || null,
-        waterContainers: parseWaterEntries(dailyForm.water),
-      });
-      setDailyRecord(created);
+        // Omitted fields are preserved by the backend. Each form only writes fields it owns.
+        notes: mode === "water" ? null : (dailyForm.notes.trim() || null),
+        waterContainers: mode === "notes" ? null : parseWaterEntries(dailyForm.water),
+      };
+      const saved = await dailyApi.create(dailyForm.batchId, payload);
+      setDailyRecord(saved);
+      setDailyForm(form => ({ ...form, notes: saved.notes || "", water: saved.water.map(entry => `${entry.capacityUnits}:${entry.containerCount}`).join(", ") }));
     } catch (err) { setError(displayApiError(err)); } finally { setSaving(false); }
   }
 
   async function recordPopulationEvent(event, type) {
-    event.preventDefault(); setSaving(true); setError("");
+    event.preventDefault(); setSaving(true); setError(""); setSuccessMessage("");
     try {
       const form = type === "MORTALITY" ? mortalityForm : cullingForm;
       const save = type === "MORTALITY" ? populationApi.mortality : populationApi.culling;
@@ -745,6 +761,8 @@ export default function App() {
       setDailyRecord(record);
       if (type === "MORTALITY") setMortalityForm({ ...emptyPopulationEvent, batchId: form.batchId });
       else setCullingForm({ ...emptyPopulationEvent, batchId: form.batchId });
+      setSuccessMessage(type === "MORTALITY" ? "Mortality recorded successfully." : "Culling recorded successfully.");
+      await Promise.all([loadDashboard(), loadBatchDashboard(form.batchId)]);
     } catch (err) { setError(displayApiError(err)); } finally { setSaving(false); }
   }
 
@@ -798,7 +816,7 @@ export default function App() {
   }
 
   async function saveBirdSale(event) {
-    event.preventDefault(); setSaving(true); setError("");
+    event.preventDefault(); setSaving(true); setError(""); setSuccessMessage("");
     try {
       const batchId = birdSaleForm.batchId;
       const sale = {
@@ -819,6 +837,8 @@ export default function App() {
       setBatches(await batchApi.list());
       setBirdSaleForm(form => ({ ...form, quantity: "", pricePerBirdMinor: "", customer: "", customerId: "" }));
       await loadSales();
+      setSuccessMessage("Bird sale recorded successfully.");
+      await Promise.all([loadDashboard(), loadBatchDashboard(batchId)]);
     } catch (err) { setError(displayApiError(err)); } finally { setSaving(false); }
   }
 
@@ -840,7 +860,7 @@ export default function App() {
   }
 
   async function saveEggCollection(event) {
-    event.preventDefault(); setSaving(true); setError("");
+    event.preventDefault(); setSaving(true); setError(""); setSuccessMessage("");
     try {
       const batchId = eggCollectionForm.batchId;
       await eggApi.addCollection(batchId, {
@@ -851,11 +871,13 @@ export default function App() {
       });
       await loadEggsForBatch(batchId);
       setEggCollectionForm(form => ({ ...form, good: "", cracked: "", notes: "" }));
+      setSuccessMessage("Egg collection recorded successfully.");
+      await Promise.all([loadDashboard(), loadBatchDashboard(batchId)]);
     } catch (err) { setError(displayApiError(err)); } finally { setSaving(false); }
   }
 
   async function saveEggSale(event) {
-    event.preventDefault(); setSaving(true); setError("");
+    event.preventDefault(); setSaving(true); setError(""); setSuccessMessage("");
     try {
       const batchId = eggSaleForm.batchId;
       await eggApi.addSale(batchId, {
@@ -868,6 +890,8 @@ export default function App() {
       await loadEggsForBatch(batchId);
       setEggSaleForm(form => ({ ...form, customer: "", customerId: "", crates: "", pricePerCrateMinor: "" }));
       await loadSales();
+      setSuccessMessage("Egg sale recorded successfully.");
+      await Promise.all([loadDashboard(), loadBatchDashboard(batchId)]);
     } catch (err) { setError(displayApiError(err)); } finally { setSaving(false); }
   }
 
@@ -968,8 +992,9 @@ export default function App() {
       {authStatus ? (
         <form className="card form-grid" onSubmit={submitAuth}>
           {authStatus.setupRequired && <label>Full name<input required maxLength="120" autoComplete="name" value={authForm.fullName} onChange={e=>setAuthForm({...authForm,fullName:e.target.value})}/></label>}
-          <label>Email<input required type="email" autoComplete="username" value={authForm.email} onChange={e=>setAuthForm({...authForm,email:e.target.value})}/></label>
+          {authStatus.setupRequired ? <><label>Username<input required minLength="3" maxLength="32" autoComplete="username" pattern="[A-Za-z0-9][A-Za-z0-9._-]{2,31}" value={authForm.username} onChange={e=>setAuthForm({...authForm,username:e.target.value})}/><small>3–32 characters: letters, numbers, dots, underscores, or hyphens.</small></label><label>Email (optional)<input type="email" autoComplete="email" value={authForm.email} onChange={e=>setAuthForm({...authForm,email:e.target.value})}/></label></> : <label>Username or email<input required autoComplete="username" value={authForm.identifier} onChange={e=>setAuthForm({...authForm,identifier:e.target.value})}/></label>}
           <label>Password<input required type="password" minLength={authStatus.setupRequired ? 10 : undefined} autoComplete={authStatus.setupRequired ? "new-password" : "current-password"} value={authForm.password} onChange={e=>setAuthForm({...authForm,password:e.target.value})}/>{authStatus.setupRequired && <small>Use at least 10 characters.</small>}</label>
+          {!authStatus.setupRequired && <label className="checkbox-label"><input type="checkbox" checked={authForm.rememberMe} onChange={e=>setAuthForm({...authForm,rememberMe:e.target.checked})}/> Keep me signed in on this computer <small>Stay signed in for up to 30 days. Only use this on a computer you trust.</small></label>}
           <button disabled={saving} type="submit">{saving ? "Please wait..." : authStatus.setupRequired ? "Create account and sign in" : "Sign in"}</button>
         </form>
       ) : (
@@ -997,6 +1022,7 @@ export default function App() {
   return (
     <AppShell farm={farm} error={error} onRetry={() => initialize({ preserveScreen: true })} startPage={applicationSettings.startPage} startPageReady={settingsReady}>
       <FarmManagerContext.Provider value={pageModel}>
+        {successMessage && <p className="success-message" role="status">{successMessage}</p>}
         <PageSection page="dashboard"><DashboardPage /></PageSection>
         <PageSection page="flocks"><FlocksPage /></PageSection>
         <PageSection page="daily-work"><DailyWorkPage /></PageSection>

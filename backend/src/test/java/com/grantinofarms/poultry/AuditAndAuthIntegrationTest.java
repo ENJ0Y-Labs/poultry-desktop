@@ -40,19 +40,42 @@ class AuditAndAuthIntegrationTest {
     void ownerCanSetupAndLogin() {
         var setup=auth.setup(new AuthSetupRequest("owner@example.com","correct-horse-battery","Farm Owner"));
         assertThat(setup.get("email")).isEqualTo("owner@example.com");
+        assertThat(setup.get("username")).isEqualTo("owner");
 
         assertThatThrownBy(() -> auth.setup(
                 new AuthSetupRequest("another@example.com", "another-secure-password", "Another Owner")))
                 .isInstanceOf(com.grantinofarms.poultry.exception.ApiException.class);
-        assertThatThrownBy(() -> auth.login(new LoginRequest("owner@example.com", "wrong-password")))
+        assertThatThrownBy(() -> auth.login(new LoginRequest("owner@example.com", "wrong-password", false)))
                 .isInstanceOf(com.grantinofarms.poultry.exception.ApiException.class);
 
-        var session=auth.login(new LoginRequest("OWNER@example.com","correct-horse-battery"));
+        var session=auth.login(new LoginRequest("OWNER@example.com","correct-horse-battery", false));
         assertThat(session.token()).isNotBlank();
         assertThat(session.user().get("role")).isEqualTo("OWNER");
         assertThat(auth.current(session.token()).get("email")).isEqualTo("owner@example.com");
         auth.logout(session.token());
         assertThat(auth.current(session.token())).isNull();
         CurrentUserContext.clear();
+
+        jdbc.update("DELETE FROM user_sessions");
+        jdbc.update("DELETE FROM users");
+        assertThatThrownBy(() -> auth.setup(
+                new AuthSetupRequest("x", null, "correct-horse-battery", "Invalid Username")))
+                .isInstanceOf(com.grantinofarms.poultry.exception.ApiException.class);
+
+        var usernameOnly = auth.setup(new AuthSetupRequest("Noble_Dev", null,
+                "another-secure-password", "Owner Without Email"));
+        assertThat(usernameOnly.get("username")).isEqualTo("noble_dev");
+        assertThat(usernameOnly.get("email")).isNull();
+        var usernameOnlySession = auth.login(new LoginRequest("NOBLE_DEV", "another-secure-password"));
+        assertThat(usernameOnlySession.user().get("email")).isNull();
+        assertThat(usernameOnlySession.user().get("username")).isEqualTo("noble_dev");
+
+        assertThatThrownBy(() -> jdbc.update("""
+                INSERT INTO users
+                (id, username, email, password_hash, full_name, role, status, created_at, updated_at)
+                VALUES (?, ?, NULL, ?, ?, 'OWNER', 'ACTIVE', ?, ?)
+                """, UUID.randomUUID().toString(), "NOBLE_DEV", "hash", "Duplicate Owner",
+                "2026-10-26T00:00:00Z", "2026-10-26T00:00:00Z"))
+                .isInstanceOf(Exception.class);
     }
 }

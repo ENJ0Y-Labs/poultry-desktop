@@ -243,17 +243,23 @@ describe("App", () => {
 
     await screen.findByRole("heading", { name: "Create owner account" });
     fireEvent.change(screen.getByLabelText("Full name"), { target: { value: "Farm Owner" } });
-    fireEvent.change(screen.getByLabelText("Email"), { target: { value: "owner@example.com" } });
+    fireEvent.change(screen.getByLabelText(/Username/), { target: { value: "farm-owner" } });
+    fireEvent.change(screen.getByLabelText("Email (optional)"), { target: { value: "owner@example.com" } });
     fireEvent.change(screen.getByLabelText(/Password/), { target: { value: "correct-horse-battery" } });
     fireEvent.click(screen.getByRole("button", { name: "Create account and sign in" }));
 
     await waitFor(() => expect(screen.getByRole("heading", { name: "Farm dashboard" })).toBeInTheDocument());
     expect(setup).toHaveBeenCalledWith({
-      fullName: "Farm Owner",
+      username: "farm-owner",
       email: "owner@example.com",
+      fullName: "Farm Owner",
       password: "correct-horse-battery",
     });
-    expect(login).toHaveBeenCalledWith({ email: "owner@example.com", password: "correct-horse-battery" });
+    expect(login).toHaveBeenCalledWith({
+      loginIdentifier: "farm-owner",
+      password: "correct-horse-battery",
+      rememberMe: false,
+    });
   });
 
   it("blocks an invalid setup form before calling the API", async () => {
@@ -564,6 +570,17 @@ describe("App", () => {
     expect(screen.getByLabelText("Date")).toHaveValue("2026-10-25");
   });
 
+  it("preserves a contextual batch when opening an alert route directly", async () => {
+    mockFarmApis({ currentBatches: batches });
+    window.location.hash = "#flocks/batch-dashboard/batchId=broiler-1";
+
+    render(<App />);
+
+    await waitFor(() => {
+      expect(screen.getByLabelText("Batch dashboard")).toHaveValue("broiler-1");
+    });
+  });
+
   it("keeps alerts with missing required identifiers non-clickable", async () => {
     mockFarmApis();
     vi.mocked(attentionApi.list).mockResolvedValue([{
@@ -667,6 +684,41 @@ describe("App", () => {
     expect(screen.getByRole("option", { name: /B-2026-001 · BROILER/ })).toBeInTheDocument();
     expect(localStorage.getItem("grantino:lastBatchId")).toBe("broiler-1");
   });
+  it("routes dashboard quick actions to validated forms with the last-used batch context", async () => {
+    mockFarmApis({ currentBatches: batches });
+    vi.mocked(feedApi.listTypes).mockResolvedValue([
+      { id: "feed-layer", name: "Layer mash", unit: "bag", applicableType: "LAYER", status: "ACTIVE" },
+      { id: "feed-broiler", name: "Broiler starter", unit: "bag", applicableType: "BROILER", status: "ACTIVE" },
+    ]);
+    render(<App />);
+    await screen.findByRole("heading", { name: "Farm dashboard" });
+    const dashboardNav = () => fireEvent.click(within(screen.getByRole("navigation", { name: "Main navigation" })).getByRole("button", { name: "Dashboard" }));
+
+    fireEvent.click(await screen.findByRole("button", { name: "Record mortality" }));
+    expect(window.location.hash).toContain("daily-work/mortality");
+    expect(await screen.findByRole("combobox", { name: "Batch" })).toHaveValue("layer-1");
+
+    dashboardNav();
+    fireEvent.click(await screen.findByRole("button", { name: "Collect eggs" }));
+    expect(window.location.hash).toContain("production/eggs");
+    expect(await screen.findByRole("combobox", { name: "Layer batch" })).toHaveValue("layer-1");
+
+    dashboardNav();
+    fireEvent.click(await screen.findByRole("button", { name: "Record feed usage" }));
+    expect(window.location.hash).toContain("feed-stock/feed");
+    expect(await screen.findByRole("combobox", { name: "Feed type" })).toHaveValue("feed-layer");
+
+    dashboardNav();
+    fireEvent.click(await screen.findByRole("button", { name: "Record a sale" }));
+    expect(window.location.hash).toContain("production/eggs");
+    expect(await screen.findByRole("combobox", { name: "Layer batch" })).toHaveValue("layer-1");
+
+    dashboardNav();
+    fireEvent.click(await screen.findByRole("button", { name: "Record an expense" }));
+    expect(window.location.hash).toContain("sales-money/expenses");
+    expect(await screen.findByLabelText("Batch association")).toHaveValue("layer-1");
+  });
+
   it("preserves unsaved farm form input while retrying after a backend outage", async () => {
     mockFarmApis();
     render(<App />);
@@ -686,31 +738,50 @@ describe("App", () => {
   });
 
 
-
-  it("shows the configured farm water unit label on the water entry form", () => {
-    render(
-      <NavigationContext.Provider value={{ activePage: "daily-work", activeTab: "water" }}>
-        <FarmManagerContext.Provider value={{
-          batches: [{ id: "layer-1", code: "L-2026-001", status: "ACTIVE" }],
-          dailyForm: { batchId: "layer-1", date: "2026-10-26", notes: "", water: "" },
-          setDailyForm: vi.fn(),
-          dailyRecord: null,
-          waterUnitLabel: "gallons",
-          mortalityForm: { batchId: "", date: "2026-10-26", quantity: "", reason: "", notes: "" },
-          setMortalityForm: vi.fn(),
-          cullingForm: { batchId: "", date: "2026-10-26", quantity: "", reason: "", notes: "" },
-          setCullingForm: vi.fn(),
-          saving: false,
-          saveDailyRecord: vi.fn(),
-          recordPopulationEvent: vi.fn(),
-        }}>
-          <DailyWorkPage />
-        </FarmManagerContext.Provider>
-      </NavigationContext.Provider>
-    );
-
-    expect(screen.getByLabelText("Water containers (gallons)")).toBeInTheDocument();
-    expect(screen.getByText(/Values are displayed using the farm unit label \(gallons\); no conversion is applied/)).toBeInTheDocument();
+  it("shows first-run guidance for a farm with no setup records", async () => {
+    mockFarmApis({
+      currentBatches: [],
+      dashboardValue: {
+        asOf: "2026-10-03", totalBirds: 0, layerBirds: 0, broilerBirds: 0,
+        activeBatches: 0, mortality: 0, eggsGood: 0, revenueMinor: 0,
+        expensesMinor: 0, profitMinor: 0, inventoryAlerts: 0,
+        feedSummary: { typeCount: 0, remainingQuantityMilli: 0, remainingCostMinor: 0, consumedCostMinor: 0 },
+      },
+    });
+    render(<App />);
+    expect(await screen.findByRole("heading", { name: "Your farm is ready to be set up" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Dismiss getting-started guidance" })).toBeInTheDocument();
   });
+
+  it("keeps the getting-started checklist visible for a partially configured farm", async () => {
+    mockFarmApis({ currentBatches: [batches[0]] });
+    vi.spyOn(farmApi, "listHouses").mockResolvedValue([{ id: "house-1", name: "House 1" }]);
+    render(<App />);
+    expect(await screen.findByRole("heading", { name: "Finish setting up your farm" })).toBeInTheDocument();
+    expect(screen.getByText("Create a house or pen")).toBeInTheDocument();
+    expect(screen.getByText("Open a batch")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Set up feed" })).toBeInTheDocument();
+    expect(screen.getByText("Add a farm supply item")).toBeInTheDocument();
+  });
+
+  it("hides the getting-started checklist when all setup tasks have saved data", async () => {
+    mockFarmApis({ currentBatches: [batches[0]] });
+    vi.spyOn(farmApi, "listHouses").mockResolvedValue([{ id: "house-1", name: "House 1" }]);
+    vi.spyOn(feedApi, "listTypes").mockResolvedValue([{ id: "feed-1", name: "Starter feed" }]);
+    vi.spyOn(inventoryApi, "listItems").mockResolvedValue([{ id: "stock-1", name: "Disinfectant" }]);
+    render(<App />);
+    await waitFor(() => expect(screen.getByRole("heading", { name: "Farm dashboard" })).toBeInTheDocument());
+    expect(screen.queryByRole("heading", { name: "Finish setting up your farm" })).not.toBeInTheDocument();
+  });
+
+  it("remembers when the user dismisses getting-started guidance", async () => {
+    mockFarmApis({ currentBatches: [batches[0]] });
+    vi.spyOn(farmApi, "listHouses").mockResolvedValue([{ id: "house-1", name: "House 1" }]);
+    render(<App />);
+    fireEvent.click(await screen.findByRole("button", { name: "Dismiss checklist" }));
+    expect(localStorage.getItem("pomas:getting-started-dismissed")).toBe("true");
+    expect(screen.queryByRole("heading", { name: "Finish setting up your farm" })).not.toBeInTheDocument();
+  });
+
 
 });

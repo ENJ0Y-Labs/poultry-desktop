@@ -72,7 +72,7 @@ class BackendIntegrationTest {
                                 .contentType("application/json")
                                 .content("""
                                                 {
-                                                  "email": "owner@example.com",
+                                                  "loginIdentifier": "owner@example.com",
                                                   "password": "correct-horse-battery"
                                                 }
                                                 """))

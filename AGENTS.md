@@ -56,6 +56,7 @@ The installer ID (`appId`), repository name, Java packages, and database file na
 19. Opening a new batch creates a new permanent batch record. It does not overwrite an old batch.
 20. The broiler terminal status is **SOLD**, not COMPLETED.
 21. Reopening a SOLD batch is an exceptional, audited action and requires a reason.
+22. Posted farm transactions are corrected by an audited reversal plus a separate replacement, never by editing or deleting the original. Corrections must be atomic, reasoned, actor-attributed, and validated against later dependent records. Preserve FIFO feed costing, bird-cost allocation, bird populations, egg balances, common sales rows, and generated expenses. See `docs/decisions/2026-10-26-auditable-transaction-corrections.md`.
 
 ## 3. Stack
 
@@ -1282,6 +1283,11 @@ Validate the renderer with the backend available, during startup, and with the b
 - Keep the normal dashboard metrics, feed, attention, and audit layout for populated farms or farms with meaningful recorded activity.
 - Cover the empty and populated states with renderer tests. Validate with a clean disposable database and a populated test farm; never reset or alter a user's real database.
 
+
+- Keep setup guidance data-driven after the first house is created. The dashboard checklist must derive completion from saved house, batch, feed-type, and inventory-item records, and remain visible until complete or dismissed.
+- Keep the checklist dismissal local to the current computer. Do not treat page visits as completed setup tasks.
+- Every top-level page must provide concise contextual help and a next-action link. Keep those links aligned with the documented hash routes in docs/frontend-navigation.md.
+- Cover empty, partially configured, completed, and dismissed checklist states in renderer tests; test page-help navigation as well.
 
 ## Stock alert rules
 

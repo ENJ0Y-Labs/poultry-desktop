@@ -63,7 +63,11 @@ Used by Electron during startup.
 
 ## Daily operations
 
-- POST `/batches/{id}/daily-records`
+- POST `/batches/{id}/daily-records` creates a day sheet or updates the existing batch/date sheet.
+  - Send `notes: null` to preserve notes when editing water.
+  - Send `waterContainers: null` to preserve water entries when editing notes.
+  - Send a water-entry array to replace the day's water entries.
+  - Concurrent creation attempts return a conflict that instructs the operator to reload.
 - GET `/batches/{id}/daily-records`
 - GET `/batches/{id}/daily-records/{date}`
 
@@ -178,7 +182,9 @@ Audit history is read-only through the normal application API.
 
 The desktop checks `/auth/status` before loading protected farm or account data. The status endpoint returns whether a valid session exists and whether the initial owner setup is still required; it does not expose account credentials or require authentication. If setup is required, the renderer creates the owner account and signs in. Otherwise it prompts the owner to sign in.
 
-Production requires an authenticated owner session. Authentication uses an HTTP-only, SameSite=Strict session cookie. `/auth/me` returns HTTP 401 without an active session; use `/auth/status` to check session state without an expected authorization error.
+Production requires an authenticated owner session. Login accepts an optional `rememberMe` boolean (defaults to false). When false, the cookie is session-only and the server session expires after 12 hours. When true, the cookie has `Max-Age=2592000` (30 days) and the server session expires after 30 days. The UI warns users to enable this only on a trusted computer. Logout deletes the server-side session and clears the cookie.
+
+The session cookie is `HttpOnly; Path=/; SameSite=None; Secure`. `HttpOnly` prevents renderer JavaScript from reading the token. `SameSite=None` supports credentialed requests from the packaged Electron renderer origin; `Secure` is retained for Chromium's secure-cookie handling on the local loopback API. The app must only use the loopback backend and must not weaken these attributes to support remote origins. Tokens are never stored in renderer storage. `/auth/me` returns HTTP 401 without an active session; use `/auth/status` to check session state without an expected authorization error.
 
 ## Application and backup settings
 
@@ -205,3 +211,14 @@ app/renderer/src/services/api.js
 ```
 
 It sends credentials with requests, translates failed responses into `ApiError`, and keeps the renderer independent from backend implementation details.
+
+
+## Authentication identifiers
+
+- Owner setup accepts a unique username (3–32 characters: letters, numbers, dots, underscores, or hyphens) and an optional email address.
+- Usernames are trimmed and stored in lowercase. Comparisons are case-insensitive.
+- Login accepts either a username or an existing email address. Existing email-based accounts remain valid after migration.
+- Email addresses remain optional account contact information; no email-based password recovery flow is currently provided.
+- Account updates validate username uniqueness and optional email format. Username/email uniqueness conflicts return HTTP 409.
+- Login rate limiting is keyed by client address and the normalized identifier, so changing username casing does not reset the failure counter.
+- Migration V22 preserves existing account IDs, password hashes, email addresses, and sessions. Existing accounts receive a generated username of the form `owner-N` (a deterministic sequence ordered by account ID); owners can change it in Account settings after signing in.

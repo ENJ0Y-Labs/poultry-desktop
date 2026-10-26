@@ -80,6 +80,18 @@ const pageTabs = {
     { id: "pricing", label: "Pricing" },
   ],
 };
+const pageHelp = {
+  dashboard: { title: "Understand the farm at a glance", body: "Review bird counts, production, money, stock, alerts, and recent audited changes. Investigate attention items before relying on summary figures.", action: "Review flock setup", target: "flocks/houses" },
+  flocks: { title: "Manage houses and flock lifecycles", body: "Create houses or pens first, then open layer or broiler batches. Use the batch dashboard to inspect a single flock and its records.", action: "Manage houses and pens", target: "flocks/houses" },
+  "daily-work": { title: "Record routine farm operations", body: "Enter daily observations, water use, mortality, and culling against the correct batch and business date. Correct records at source so reports stay consistent.", action: "Open daily record", target: "daily-work/daily-record" },
+  "feed-stock": { title: "Track feed and farm supplies", body: "Create feed types, record purchases from suppliers, and assign feed usage to batches. Feed purchases and consumption are different events; avoid counting consumption as a second purchase.", action: "Open feed and usage", target: "feed-stock/feed" },
+  health: { title: "Keep treatment history traceable", body: "Record health problems, drugs, treatments, and vaccinations with the correct batch and date. Use the history to support follow-up and reporting.", action: "Open health records", target: "health/health-record" },
+  production: { title: "Record production by flock type", body: "Use egg collection and quality workflows for layers, and weight and growth workflows for broilers. The available workflow depends on the selected batch type.", action: "Open production", target: "production/eggs" },
+  "sales-money": { title: "Track sales and farm costs", body: "Record customers, sales, and expenses with accurate dates and amounts. Use the common ledger and batch links to understand the farm's financial position.", action: "Open sales", target: "sales-money/sales" },
+  reports: { title: "Review farm-wide and batch results", body: "Farm reports combine relevant records; batch reports focus on one flock. Export only after checking the selected date range and batch context.", action: "Open farm report", target: "reports/farm-report" },
+  settings: { title: "Configure and protect local farm data", body: "Review farm profile, units and defaults, application settings, account details, pricing, and backup options. Keep backups current before major changes.", action: "Open backup settings", target: "settings/backup" },
+};
+
 const defaultTabs = {
   dashboard: "overview", flocks: "batch-dashboard", "daily-work": "daily-record",
   health: "health-record", "feed-stock": "feed", production: "eggs",
@@ -134,6 +146,7 @@ export default function AppShell({ farm, error, onRetry, children, startPage = "
   const [active, setActive] = useState(() => resolvePage(window.location.hash, startPage));
   const [activeTab, setActiveTab] = useState(() => resolveTab(window.location.hash, resolvePage(window.location.hash, startPage)));
   const [theme, setTheme] = useState(getThemePreference);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => localStorage.getItem("pomas:sidebar-collapsed") === "true");
   const [backendConnected, setBackendConnected] = useState(null);
   const [recoveryNeeded, setRecoveryNeeded] = useState(false);
   const [retrying, setRetrying] = useState(false);
@@ -156,6 +169,10 @@ export default function AppShell({ farm, error, onRetry, children, startPage = "
     setTheme(nextTheme);
   }
   const today = useMemo(localDateLabel, []);
+
+  useEffect(() => {
+    localStorage.setItem("pomas:sidebar-collapsed", String(sidebarCollapsed));
+  }, [sidebarCollapsed]);
   const connectionLabel = backendConnected === null
     ? "CONNECTING TO BACKEND"
     : recoveryNeeded
@@ -232,18 +249,10 @@ export default function AppShell({ farm, error, onRetry, children, startPage = "
     return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
 
-  const activities = [
-    { label: "Farm dashboard", target: "dashboard", icon: "dashboard" },
-    { label: "Houses, pens and batches", target: "flocks", icon: "batches" },
-    { label: "Daily operations", target: "daily-work", icon: "records" },
-    { label: "Feed and inventory", target: "feed-stock", icon: "feed" },
-    { label: "Health and vaccination", target: "health", icon: "health" },
-    { label: "Production", target: "production", icon: "eggs" },
-    { label: "Sales and finance", target: "sales-money", icon: "sales" },
-  ];
+
 
   return (
-    <div className="app-shell">
+    <div className={sidebarCollapsed ? "app-shell sidebar-collapsed" : "app-shell"}>
       <a
         className="skip-link"
         href="#main-content"
@@ -254,51 +263,23 @@ export default function AppShell({ farm, error, onRetry, children, startPage = "
       >
         Skip to main content
       </a>
-      <nav className="activity-bar" aria-label="Primary work areas">
-        <div className="activity-bar-main">
-          {activities.map(item => (
-            <button
-              key={item.target}
-              type="button"
-              className={active === item.target ? "activity-button active" : "activity-button"}
-              aria-label={item.label}
-              aria-current={active === item.target ? "page" : undefined}
-              title={item.label}
-              onClick={() => navigate(item.target)}
-            >
-              <Icon name={item.icon} />
-            </button>
-          ))}
-        </div>
-        <div className="activity-bar-footer">
-          <button
-            type="button"
-            className={active === "settings" && activeTab === "application" ? "activity-button active" : "activity-button"}
-            aria-label="Account"
-            title="Account"
-            onClick={() => { window.location.hash = "settings/application"; setActive("settings"); setActiveTab("application"); }}
-          >
-            <span className="activity-avatar" aria-hidden="true">{farmInitials(farm.name)}</span>
-          </button>
-          <button
-            type="button"
-            className={active === "settings" ? "activity-button active" : "activity-button"}
-            aria-label="Settings"
-            aria-current={active === "settings" ? "page" : undefined}
-            title="Settings"
-            onClick={() => navigate("settings")}
-          >
-            <Icon name="settings" />
-          </button>
-        </div>
-      </nav>
-      <aside className="sidebar">
+      <aside className={sidebarCollapsed ? "sidebar collapsed" : "sidebar"}>
         <div className="brand">
           <div className="brand-mark" aria-hidden="true"><img src={pomasLogo} alt="" draggable="false" /></div>
           <div className="brand-copy">
             <strong>Pomas</strong>
             <small>Farm management</small>
           </div>
+          <button
+            type="button"
+            className="sidebar-toggle"
+            aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            aria-expanded={!sidebarCollapsed}
+            title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            onClick={() => setSidebarCollapsed(value => !value)}
+          >
+            <span aria-hidden="true">{sidebarCollapsed ? "›" : "‹"}</span>
+          </button>
         </div>
 
         <div className="workspace-summary" aria-label="Active farm">
@@ -319,6 +300,7 @@ export default function AppShell({ farm, error, onRetry, children, startPage = "
                   onClick={() => navigate(item.target)}
                   title={item.shortcut ? `${item.label} · ${item.shortcut}` : item.label}
                   aria-label={item.label}
+                  aria-current={active === item.target ? "page" : undefined}
                 >
                   <span className="nav-icon-wrap"><Icon name={item.icon} /></span>
                   <span className="nav-label">{item.label}</span>
@@ -329,6 +311,18 @@ export default function AppShell({ farm, error, onRetry, children, startPage = "
           ))}
         </nav>
 
+        <div className="sidebar-footer">
+          <button
+            type="button"
+            className="nav-item"
+            aria-label="Account"
+            title="Account"
+            onClick={() => { window.location.hash = "settings/application"; setActive("settings"); setActiveTab("application"); }}
+          >
+            <span className="nav-icon-wrap"><span className="activity-avatar" aria-hidden="true">{farmInitials(farm.name)}</span></span>
+            <span className="nav-label">Account</span>
+          </button>
+        </div>
       </aside>
 
       <main className="app-main" id="main-content" tabIndex={-1} ref={mainContentRef}>
@@ -375,6 +369,16 @@ export default function AppShell({ farm, error, onRetry, children, startPage = "
               ))}
             </nav>
           )}
+          <section className="page-help" aria-label="Page help">
+            <div className="page-help-copy">
+              <p className="eyebrow">PAGE GUIDE</p>
+              <h2>{pageHelp[active]?.title || "Work with your farm records"}</h2>
+              <p>{pageHelp[active]?.body || "Use this section to manage farm records. Choose the correct batch and business date before saving."}</p>
+            </div>
+            <button type="button" className="secondary-button" onClick={() => { window.location.hash = pageHelp[active]?.target || "dashboard/overview"; }}>
+              {pageHelp[active]?.action || "Open dashboard"}
+            </button>
+          </section>
           <NavigationContext.Provider value={{ activePage: active, activeTab }}>
             {children}
           </NavigationContext.Provider>

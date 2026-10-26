@@ -115,6 +115,51 @@ class MigrationUpgradeTest {
     }
 
     @Test
+    void freshDatabaseAcceptsEverySupportedStartPageAndRejectsUnsupportedValues() throws Exception {
+        Path database = tempDir.resolve("fresh-start-page.db");
+        String databaseUrl = sqliteUrl(database);
+        configuredFlyway(databaseUrl).migrate();
+
+        String farmId = seedV1Farm(databaseUrl, "fresh-start-page");
+        try (Connection connection = DriverManager.getConnection(databaseUrl);
+             PreparedStatement insert = connection.prepareStatement(
+                     "INSERT INTO application_settings (farm_id, start_page, date_format, created_at, updated_at) VALUES (?, 'dashboard', 'YYYY-MM-DD', 'created', 'updated')")) {
+            insert.setString(1, farmId);
+            assertThat(insert.executeUpdate()).isEqualTo(1);
+        }
+
+        List<String> supportedPages = List.of(
+                "dashboard", "flocks", "daily-work", "feed-stock", "health",
+                "production", "sales-money", "reports", "settings"
+        );
+
+        try (Connection connection = DriverManager.getConnection(databaseUrl);
+             PreparedStatement update = connection.prepareStatement(
+                     "UPDATE application_settings SET start_page = ? WHERE farm_id = ?");
+             PreparedStatement select = connection.prepareStatement(
+                     "SELECT start_page FROM application_settings WHERE farm_id = ?")) {
+            for (String page : supportedPages) {
+                update.setString(1, page);
+                update.setString(2, farmId);
+                assertThat(update.executeUpdate()).isEqualTo(1);
+
+                select.setString(1, farmId);
+                try (ResultSet result = select.executeQuery()) {
+                    assertThat(result.next()).isTrue();
+                    assertThat(result.getString("start_page")).isEqualTo(page);
+                }
+            }
+
+            update.setString(1, "not-a-supported-page");
+            update.setString(2, farmId);
+            assertThatThrownBy(update::executeUpdate)
+                    .isInstanceOf(java.sql.SQLException.class);
+        }
+
+        assertThat(farmExists(databaseUrl, farmId)).isTrue();
+    }
+
+    @Test
     void failedMigrationDoesNotDestroyExistingDataOrLeavePartialSchemaChanges() throws Exception {
         Path failureMigrationDirectory = tempDir.resolve("intentional-failure");
         Files.createDirectories(failureMigrationDirectory);
@@ -165,6 +210,73 @@ class MigrationUpgradeTest {
         assertThat(currentVersion(databaseUrl))
                 .as("Failed migration must not advance the production schema version")
                 .isEqualTo(latestVersion);
+    }
+
+
+    @Test
+    void usernameMigrationPreservesExistingAccountCredentialsAndSessions() throws Exception {
+        Path database = tempDir.resolve("username-upgrade.db");
+        String databaseUrl = sqliteUrl(database);
+        Flyway.configure()
+                .dataSource(databaseUrl, "", "")
+                .locations(LOCATIONS)
+                .target(MigrationVersion.fromVersion("22"))
+                .load()
+                .migrate();
+
+        String userId = UUID.randomUUID().toString();
+        String sessionId = UUID.randomUUID().toString();
+        String created = "2026-10-20T10:00:00Z";
+        String expires = "2026-10-20T22:00:00Z";
+        try (Connection connection = DriverManager.getConnection(databaseUrl)) {
+            try (PreparedStatement user = connection.prepareStatement("""
+                    INSERT INTO users
+                    (id, email, password_hash, full_name, role, status, created_at, updated_at)
+                    VALUES (?, ?, ?, ?, 'OWNER', 'ACTIVE', ?, ?)
+                    """)) {
+                user.setString(1, userId);
+                user.setString(2, "owner@example.com");
+                user.setString(3, "existing-password-hash");
+                user.setString(4, "Existing Owner");
+                user.setString(5, created);
+                user.setString(6, created);
+                user.executeUpdate();
+            }
+            try (PreparedStatement session = connection.prepareStatement("""
+                    INSERT INTO user_sessions
+                    (id, user_id, token_hash, created_at, expires_at, last_seen_at)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                    """)) {
+                session.setString(1, sessionId);
+                session.setString(2, userId);
+                session.setString(3, "existing-session-hash");
+                session.setString(4, created);
+                session.setString(5, expires);
+                session.setString(6, created);
+                session.executeUpdate();
+            }
+        }
+
+        configuredFlyway(databaseUrl).migrate();
+
+        try (Connection connection = DriverManager.getConnection(databaseUrl);
+             PreparedStatement query = connection.prepareStatement("""
+                     SELECT u.username, u.email, u.password_hash, u.full_name, s.id
+                     FROM users u JOIN user_sessions s ON s.user_id = u.id
+                     WHERE u.id = ? AND s.id = ?
+                     """)) {
+            query.setString(1, userId);
+            query.setString(2, sessionId);
+            try (ResultSet result = query.executeQuery()) {
+                assertThat(result.next()).isTrue();
+                assertThat(result.getString("username")).isEqualTo("owner-1");
+                assertThat(result.getString("email")).isEqualTo("owner@example.com");
+                assertThat(result.getString("password_hash")).isEqualTo("existing-password-hash");
+                assertThat(result.getString("full_name")).isEqualTo("Existing Owner");
+                assertThat(result.getString("id")).isEqualTo(sessionId);
+                assertThat(result.next()).isFalse();
+            }
+        }
     }
 
     private static Flyway configuredFlyway(String databaseUrl) {
