@@ -65,3 +65,11 @@ The nine page components live under `app/renderer/src/pages/`. Shared form state
 - Each action navigates to an existing page/tab using the local hash router. No route dependency or backend feature is added.
 - The empty state is inferred from the absence of houses, batches, calculated bird/financial/egg activity, feed types, and audit events. A zero metric by itself does not trigger it.
 - No sample or demo data is inserted. Existing/populated farms retain their normal dashboard.
+
+## Light-theme navigation and page tabs (Issue #68)
+
+- The activity bar, sidebar, selected navigation item, page tabs, hover states, borders, scrollbar, and keyboard focus ring use semantic IDE theme tokens.
+- Both light and dark themes define values for the shell tokens; light mode must not inherit dark-only hardcoded surface colors.
+- Page tabs use the shared --border, --text, and --muted tokens plus explicit tab surface tokens. Avoid hardcoded dark fallbacks where semantic theme tokens exist.
+- The renderer test suite checks that required light-theme tokens and navigation/tab interaction rules remain present. Run `npm test -- --run app/renderer/src/styles.theme.test.js` and `npm run build`.
+- Manual visual verification is still required in the running Electron app: check sidebar/activity bar contrast, active and hovered items, tabs, borders, and visible keyboard focus in both Light and Dark modes. Do not report manual verification as complete unless actually performed.
