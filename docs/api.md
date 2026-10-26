@@ -205,3 +205,13 @@ app/renderer/src/services/api.js
 ```
 
 It sends credentials with requests, translates failed responses into `ApiError`, and keeps the renderer independent from backend implementation details.
+
+
+## Auditable transaction correction and void workflows
+
+Corrections use a reversal plus replacement; posted originals are never edited or deleted. These operations require an authenticated owner, a non-blank reason, and server-generated action time. The original business date and facts remain unchanged.
+
+- `POST /transactions/{transactionType}/{transactionId}/void` — void an eligible posted transaction with a reason.
+- `POST /transactions/{transactionType}/{transactionId}/correct` — reverse an eligible posted transaction and create a validated replacement atomically. The request contains a reason and transaction-type-specific replacement facts.
+
+The transaction type is a documented domain type, not a database table name. Only explicitly supported types are accepted. Repeated reversals return HTTP 409. Invalid replacements return HTTP 400. Missing records return HTTP 404. A correction that makes a later dependent record invalid returns HTTP 409 and leaves all records and audit entries unchanged. Feed-related corrections must preserve FIFO lot and bird-cost reconciliation; bird and egg corrections must preserve non-negative historical population and good-egg inventory. See `decisions/2026-10-26-auditable-transaction-corrections.md`.
