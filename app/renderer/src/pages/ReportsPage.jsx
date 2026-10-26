@@ -12,7 +12,7 @@ export default function ReportsPage() {
     <div className="grid">
       <PageSection page="reports" tab="farm-report"><section id="reports" className="card full">
           <div className="section-head"><div><p className="eyebrow">REPORTING</p><h2>Farm reports</h2></div>
-            <div className="inline-form"><label>As of <input aria-label="Report as-of date" type="date" value={reportAsOf} onChange={e => setReportAsOf(e.target.value)} /></label><button type="button" onClick={() => loadReport(reportAsOf)}>Refresh</button><button type="button" onClick={() => exportCsv(() => reportApi.farmCsv(), "farm-report.csv")}>Export CSV</button><button type="button" onClick={() => exportPdf(() => reportApi.farmPdf(), "farm-report.pdf")}>Export PDF</button></div>
+            <div className="inline-form"><label>As of <input aria-label="Report as-of date" type="date" value={reportAsOf} onChange={e => setReportAsOf(e.target.value)} /></label><button type="button" onClick={() => loadReport(reportAsOf)}>Refresh</button><button type="button" onClick={() => exportCsv(() => reportApi.farmCsv(reportAsOf), "farm-report.csv")}>Export CSV</button><button type="button" onClick={() => exportPdf(() => reportApi.farmPdf(reportAsOf), "farm-report.pdf")}>Export PDF</button></div>
           </div>
           {farmReport ? <>
             <div className="metric-grid">
@@ -40,8 +40,8 @@ export default function ReportsPage() {
                 <option value="">Select a batch</option>{batches.map(batch => <option key={batch.id} value={batch.id}>{batch.code} · {batch.type}</option>)}
               </select>
               <button type="button" onClick={() => loadBatchReport(selectedBatchId, reportAsOf)}>Refresh</button>
-              <button type="button" disabled={!selectedBatchId} onClick={() => exportCsv(() => reportApi.batchCsv(selectedBatchId), "batch-report.csv")}>Export CSV</button>
-              <button type="button" disabled={!selectedBatchId} onClick={() => exportPdf(() => reportApi.batchPdf(selectedBatchId), "batch-report.pdf")}>Export PDF</button>
+              <button type="button" disabled={!selectedBatchId} onClick={() => exportCsv(() => reportApi.batchCsv(selectedBatchId, reportAsOf), "batch-report.csv")}>Export CSV</button>
+              <button type="button" disabled={!selectedBatchId} onClick={() => exportPdf(() => reportApi.batchPdf(selectedBatchId, reportAsOf), "batch-report.pdf")}>Export PDF</button>
             </div>
           </div>
           {batchReport ? <>
