@@ -28,7 +28,7 @@ INSERT INTO users_new
     (id, username, email, password_hash, full_name, role, status, created_at, updated_at)
 SELECT
     id,
-    'owner-' || lower(substr(replace(id, '-', ''), 1, 8)),
+    'owner-' || row_number() OVER (ORDER BY id),
     email,
     password_hash,
     full_name,
