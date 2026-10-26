@@ -15,7 +15,9 @@ CREATE TABLE application_settings_new (
 );
 
 INSERT INTO application_settings_new (farm_id, start_page, date_format, created_at, updated_at)
-SELECT farm_id, start_page, date_format, created_at, updated_at
+SELECT farm_id,
+       CASE WHEN start_page = 'operations' THEN 'daily-work' ELSE start_page END,
+       date_format, created_at, updated_at
 FROM application_settings;
 
 DROP TABLE application_settings;
