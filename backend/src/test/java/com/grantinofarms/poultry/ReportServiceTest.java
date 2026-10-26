@@ -31,7 +31,7 @@ class ReportServiceTest {
         InventoryService inventory = mock(InventoryService.class);
         HealthManagementService health = mock(HealthManagementService.class);
         FarmService farmService = mock(FarmService.class);
-        when(farmService.getSettings()).thenReturn(new FarmSettingsResponse(30, 25, List.of(25, 75), "litres"));
+        when(farmService.getWaterUnitLabel()).thenReturn("litres");
 
         BatchResponse layer = mock(BatchResponse.class);
         when(layer.id()).thenReturn("layer-1");
