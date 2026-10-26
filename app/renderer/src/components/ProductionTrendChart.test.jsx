@@ -46,6 +46,11 @@ describe("ProductionTrendChart", () => {
     }));
 
     await waitFor(() => expect(loadTrend).toHaveBeenCalledTimes(2));
+
+    window.dispatchEvent(new CustomEvent("pomas:data-mutated", {
+      detail: { path: "/batches/batch-1/mortality", method: "POST" },
+    }));
+    await waitFor(() => expect(loadTrend).toHaveBeenCalledTimes(3));
   });
 
   it("shows an explicit empty state when all days have missing records", async () => {
