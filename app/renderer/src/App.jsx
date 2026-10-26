@@ -207,6 +207,7 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
   const [authStatus, setAuthStatus] = useState(null);
   const [authForm, setAuthForm] = useState({ email: "", fullName: "", password: "" });
   const [dashboard, setDashboard] = useState(null);
@@ -618,7 +619,7 @@ export default function App() {
   }
 
   async function saveExpense(event) {
-    event.preventDefault(); setSaving(true); setError("");
+    event.preventDefault(); setSaving(true); setError(""); setSuccessMessage("");
     try {
       const created = await expenseApi.create({
         occurredDate: expenseForm.occurredDate,
@@ -629,6 +630,8 @@ export default function App() {
       });
       setExpenses(current => [created, ...current]);
       setExpenseForm(form => ({ ...emptyExpense, batchId: form.batchId }));
+      setSuccessMessage("Expense recorded successfully.");
+      await Promise.all([loadDashboard(), loadBatchDashboard(expenseForm.batchId || selectedBatchId)]);
     } catch (err) { setError(displayApiError(err)); } finally { setSaving(false); }
   }
 
@@ -689,7 +692,7 @@ export default function App() {
   }
 
   async function useFeed(event) {
-    event.preventDefault(); setSaving(true); setError("");
+    event.preventDefault(); setSaving(true); setError(""); setSuccessMessage("");
     try {
       const type = feedTypes.find(item => item.id === feedUsageForm.feedTypeId);
       await feedApi.use(feedUsageForm.batchId, {
@@ -701,6 +704,8 @@ export default function App() {
       });
       setFeedUsageForm(form => ({ ...emptyFeedUsage, batchId: form.batchId, feedTypeId: form.feedTypeId }));
       setFeedInventory(await feedApi.inventory());
+      setSuccessMessage("Feed usage recorded successfully.");
+      await Promise.all([loadDashboard(), loadBatchDashboard(feedUsageForm.batchId)]);
     } catch (err) { setError(displayApiError(err)); } finally { setSaving(false); }
   }
 
@@ -731,7 +736,7 @@ export default function App() {
   }
 
   async function recordPopulationEvent(event, type) {
-    event.preventDefault(); setSaving(true); setError("");
+    event.preventDefault(); setSaving(true); setError(""); setSuccessMessage("");
     try {
       const form = type === "MORTALITY" ? mortalityForm : cullingForm;
       const save = type === "MORTALITY" ? populationApi.mortality : populationApi.culling;
@@ -745,6 +750,8 @@ export default function App() {
       setDailyRecord(record);
       if (type === "MORTALITY") setMortalityForm({ ...emptyPopulationEvent, batchId: form.batchId });
       else setCullingForm({ ...emptyPopulationEvent, batchId: form.batchId });
+      setSuccessMessage(type === "MORTALITY" ? "Mortality recorded successfully." : "Culling recorded successfully.");
+      await Promise.all([loadDashboard(), loadBatchDashboard(form.batchId)]);
     } catch (err) { setError(displayApiError(err)); } finally { setSaving(false); }
   }
 
@@ -798,7 +805,7 @@ export default function App() {
   }
 
   async function saveBirdSale(event) {
-    event.preventDefault(); setSaving(true); setError("");
+    event.preventDefault(); setSaving(true); setError(""); setSuccessMessage("");
     try {
       const batchId = birdSaleForm.batchId;
       const sale = {
@@ -819,6 +826,8 @@ export default function App() {
       setBatches(await batchApi.list());
       setBirdSaleForm(form => ({ ...form, quantity: "", pricePerBirdMinor: "", customer: "", customerId: "" }));
       await loadSales();
+      setSuccessMessage("Bird sale recorded successfully.");
+      await Promise.all([loadDashboard(), loadBatchDashboard(batchId)]);
     } catch (err) { setError(displayApiError(err)); } finally { setSaving(false); }
   }
 
@@ -840,7 +849,7 @@ export default function App() {
   }
 
   async function saveEggCollection(event) {
-    event.preventDefault(); setSaving(true); setError("");
+    event.preventDefault(); setSaving(true); setError(""); setSuccessMessage("");
     try {
       const batchId = eggCollectionForm.batchId;
       await eggApi.addCollection(batchId, {
@@ -851,11 +860,13 @@ export default function App() {
       });
       await loadEggsForBatch(batchId);
       setEggCollectionForm(form => ({ ...form, good: "", cracked: "", notes: "" }));
+      setSuccessMessage("Egg collection recorded successfully.");
+      await Promise.all([loadDashboard(), loadBatchDashboard(batchId)]);
     } catch (err) { setError(displayApiError(err)); } finally { setSaving(false); }
   }
 
   async function saveEggSale(event) {
-    event.preventDefault(); setSaving(true); setError("");
+    event.preventDefault(); setSaving(true); setError(""); setSuccessMessage("");
     try {
       const batchId = eggSaleForm.batchId;
       await eggApi.addSale(batchId, {
@@ -868,6 +879,8 @@ export default function App() {
       await loadEggsForBatch(batchId);
       setEggSaleForm(form => ({ ...form, customer: "", customerId: "", crates: "", pricePerCrateMinor: "" }));
       await loadSales();
+      setSuccessMessage("Egg sale recorded successfully.");
+      await Promise.all([loadDashboard(), loadBatchDashboard(batchId)]);
     } catch (err) { setError(displayApiError(err)); } finally { setSaving(false); }
   }
 
@@ -997,6 +1010,7 @@ export default function App() {
   return (
     <AppShell farm={farm} error={error} onRetry={() => initialize({ preserveScreen: true })} startPage={applicationSettings.startPage} startPageReady={settingsReady}>
       <FarmManagerContext.Provider value={pageModel}>
+        {successMessage && <p className="success-message" role="status">{successMessage}</p>}
         <PageSection page="dashboard"><DashboardPage /></PageSection>
         <PageSection page="flocks"><FlocksPage /></PageSection>
         <PageSection page="daily-work"><DailyWorkPage /></PageSection>
