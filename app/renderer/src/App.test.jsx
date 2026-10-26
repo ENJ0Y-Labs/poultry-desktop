@@ -347,7 +347,7 @@ describe("App", () => {
       },
       {
         id: "audit-unknown",
-        occurredAt: null,
+        occurredAt: "not-a-timestamp",
         action: "UNRECOGNIZED_ACTION",
         entityType: "NEW_ENTITY_KIND",
         reason: " ",
