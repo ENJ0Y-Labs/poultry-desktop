@@ -196,10 +196,17 @@ export default function AppShell({ farm, error, onRetry, children, startPage = "
         if (!connected) setRecoveryNeeded(true);
       }
     };
+    const onBackendUnavailable = () => {
+      if (!mounted) return;
+      setBackendConnected(false);
+      setRecoveryNeeded(true);
+    };
+    window.addEventListener("pomas:backend-unavailable", onBackendUnavailable);
     checkBackend();
     const interval = window.setInterval(checkBackend, 5000);
     return () => {
       mounted = false;
+      window.removeEventListener("pomas:backend-unavailable", onBackendUnavailable);
       window.clearInterval(interval);
     };
   }, []);
