@@ -37,7 +37,7 @@ The installer ID (`appId`), repository name, Java packages, and database file na
 
 1. Derived state is calculated, never manually stored or maintained.
 2. Each formula has exactly one implementation in the shared domain/calculation layer and is tested.
-3. Money is integer minor units. Never use floating-point money.
+3. Money is integer minor units. Never use floating-point money. In the renderer, format every user-visible monetary amount with `app/renderer/src/utils/money.js`; never display raw minor-unit fields. See `docs/money-display.md`.
 4. Transactions are voided, not deleted. Important changes are audited.
 5. The Electron renderer has no Node.js, filesystem, or database access.
 6. Electron IPC validates every input.
