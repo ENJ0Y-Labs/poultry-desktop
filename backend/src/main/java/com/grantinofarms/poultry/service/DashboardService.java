@@ -54,7 +54,8 @@ public class DashboardService {
                     LEFT JOIN inventory_movements m ON m.inventory_item_id=i.id
                     WHERE i.farm_id=? AND i.status='ACTIVE'
                     GROUP BY i.id, i.reorder_level
-                    HAVING COALESCE(SUM(CASE WHEN m.movement_type IN ('RECEIVE','ADJUST_IN') THEN m.quantity
+                    HAVING i.reorder_level > 0
+                       AND COALESCE(SUM(CASE WHEN m.movement_type IN ('RECEIVE','ADJUST_IN') THEN m.quantity
                                              WHEN m.movement_type IN ('ISSUE','ADJUST_OUT','WASTE') THEN -m.quantity ELSE 0 END),0) <= i.reorder_level
                 )
                 """, farm.id()));

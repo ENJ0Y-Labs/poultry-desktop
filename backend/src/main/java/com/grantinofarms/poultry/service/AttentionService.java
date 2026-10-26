@@ -74,12 +74,14 @@ public class AttentionService {
                                WHEN m.movement_type IN ('ISSUE','ADJUST_OUT','WASTE') THEN -m.quantity
                                ELSE 0
                            END
-                       ), 0) AS stock
+                       ), 0) AS stock,
+                       COUNT(m.id) AS movement_count
                 FROM inventory_items i
                 LEFT JOIN inventory_movements m ON m.inventory_item_id = i.id
                 WHERE i.farm_id = ? AND i.status = 'ACTIVE'
                 GROUP BY i.id, i.name, i.unit, i.reorder_level
-                HAVING COALESCE(SUM(
+                HAVING i.reorder_level > 0
+                   AND COALESCE(SUM(
                     CASE
                         WHEN m.movement_type IN ('RECEIVE','ADJUST_IN') THEN m.quantity
                         WHEN m.movement_type IN ('ISSUE','ADJUST_OUT','WASTE') THEN -m.quantity
@@ -112,10 +114,10 @@ public class AttentionService {
                 SELECT f.id, f.name, f.unit,
                        COALESCE((SELECT SUM(p.quantity_milli)
                                  FROM feed_purchases p
-                                 WHERE p.feed_type_id = f.id AND p.purchase_date <= ?), 0)
-                       - COALESCE((SELECT SUM(u.quantity_milli)
-                                   FROM feed_usage u
-                                   WHERE u.feed_type_id = f.id AND u.usage_date <= ?), 0) AS remaining,
+                                 WHERE p.feed_type_id = f.id AND p.purchase_date <= ?), 0) AS purchased,
+                       COALESCE((SELECT SUM(u.quantity_milli)
+                                 FROM feed_usage u
+                                 WHERE u.feed_type_id = f.id AND u.usage_date <= ?), 0) AS used,
                        COALESCE((SELECT SUM(u.quantity_milli)
                                  FROM feed_usage u
                                  WHERE u.feed_type_id = f.id
@@ -125,8 +127,13 @@ public class AttentionService {
                 WHERE f.farm_id = ? AND f.status = 'ACTIVE'
                 """,
                 rs -> {
-                    long remaining = rs.getLong("remaining");
+                    long purchased = rs.getLong("purchased");
+                    long used = rs.getLong("used");
+                    long remaining = purchased - used;
                     long usedLast7 = rs.getLong("used_last_7_days");
+                    // A feed type with no purchase or usage history is configured, not stocked.
+                    // Do not create an empty-stock alert until records show it is expected to be used.
+                    if (purchased == 0 && used == 0) return;
                     double averageDaily = usedLast7 / 7.0;
                     double daysCover = averageDaily <= 0 ? (remaining <= 0 ? 0 : Double.POSITIVE_INFINITY)
                             : remaining / averageDaily;
