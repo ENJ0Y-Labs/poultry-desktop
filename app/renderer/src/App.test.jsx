@@ -1,6 +1,9 @@
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App.jsx";
+import DailyWorkPage from "./pages/DailyWorkPage.jsx";
+import { FarmManagerContext } from "./components/FarmManagerContext.jsx";
+import { NavigationContext } from "./components/NavigationContext.jsx";
 import {
   authApi, farmApi, batchApi, expenseApi, customerApi, salesApi, inventoryApi,
   feedApi, pricingApi, dashboardApi, attentionApi, auditApi,
@@ -679,5 +682,32 @@ describe("App", () => {
     expect(screen.getByLabelText("Farm name")).toHaveValue("Unsaved recovery test");
   });
 
+
+
+  it("shows the configured farm water unit label on the water entry form", () => {
+    render(
+      <NavigationContext.Provider value={{ activePage: "daily-work", activeTab: "water" }}>
+        <FarmManagerContext.Provider value={{
+          batches: [{ id: "layer-1", code: "L-2026-001", status: "ACTIVE" }],
+          dailyForm: { batchId: "layer-1", date: "2026-10-26", notes: "", water: "" },
+          setDailyForm: vi.fn(),
+          dailyRecord: null,
+          waterUnitLabel: "gallons",
+          mortalityForm: { batchId: "", date: "2026-10-26", quantity: "", reason: "", notes: "" },
+          setMortalityForm: vi.fn(),
+          cullingForm: { batchId: "", date: "2026-10-26", quantity: "", reason: "", notes: "" },
+          setCullingForm: vi.fn(),
+          saving: false,
+          saveDailyRecord: vi.fn(),
+          recordPopulationEvent: vi.fn(),
+        }}>
+          <DailyWorkPage />
+        </FarmManagerContext.Provider>
+      </NavigationContext.Provider>
+    );
+
+    expect(screen.getByLabelText("Water containers (gallons)")).toBeInTheDocument();
+    expect(screen.getByText(/Values are displayed using the farm unit label \(gallons\); no conversion is applied/)).toBeInTheDocument();
+  });
 
 });
