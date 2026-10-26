@@ -123,7 +123,7 @@ public class FarmService {
                 request.defaultWaterContainerSize(), request.waterUnitLabel().trim(), now);
         waterRepository.archiveAllExcept(farm.id(), sizes, now);
         for (Integer size : sizes) {
-            waterRepository.upsertActive(farm.id(), size, now);
+            waterRepository.upsertActive(farm.id(), size, request.waterUnitLabel().trim(), now);
         }
 
         auditRepository.append(farm.id(), "UPDATE", "FARM_SETTINGS", farm.id(), null,
