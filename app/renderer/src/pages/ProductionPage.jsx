@@ -15,7 +15,7 @@ export default function ProductionPage() {
     <div className="grid">
       <PageSection page="production" tab="eggs"><section id="eggs" className="card full">
           <div className="section-head">
-            <h2>Layer egg production <MetricHelp id="hdp-formula-help" label="HDP formula">Hen-day production (HDP) measures eggs produced relative to the average number of live layer birds over the same reporting period: eggs produced ÷ average live layer birds × 100. Use matching dates for both inputs. A value of 85% means an average of 85 eggs per 100 live hens per day.</MetricHelp></h2>
+            <h2>Layer egg production <MetricHelp id="hdp-formula-help" label="HDP formula">Hen-day production (HDP) is calculated for each date: total eggs collected that day (good + cracked) ÷ live layer birds on that date × 100. The numerator is in eggs and the denominator is birds, so the result is a percentage for that day. For example, 850 eggs from 1,000 live hens = 85%. The backend calculates the historical live-bird count; missing egg records are shown as gaps, not zero.</MetricHelp></h2>
             <p className="muted">Only LAYER batches can record eggs. Good and cracked eggs are stored as individual eggs. Cracked eggs remain historical and are never sellable.</p>
           </div>
 
@@ -38,7 +38,8 @@ export default function ProductionPage() {
               <ProductionTrendChart
                 batchId={eggBatchId}
                 title="Layer HDP%"
-                description="Daily egg production as a percentage of live birds. Uses total collected eggs (good + cracked) and backend population calculations. Missing production records appear as gaps."
+                titleHelp={<MetricHelp id="production-hdp-chart-help" label="HDP chart formula">HDP% for each date = total eggs collected that date (good + cracked, in eggs) ÷ live layer birds on that date × 100. The backend calculates the historical live-bird count. Missing egg records are gaps, not zero.</MetricHelp>}
+                description="Daily eggs collected (good + cracked) as a percentage of the historical live-bird population."
                 unit="percent"
                 loadTrend={productionTrendApi.layerHdp}
               />
@@ -131,7 +132,7 @@ export default function ProductionPage() {
               <div className="subsection">
                 <h3>Growth summary</h3>
                 <div className="table">
-                  <div className="row header"><span>Average weight</span><span>Weight gain</span><span>Feed consumed (converted)</span><span>FCR <MetricHelp id="production-fcr-help" label="FCR formula">Feed conversion ratio (FCR) = converted feed consumed in kilograms ÷ live-weight gain in kilograms for this batch. Both values must cover the same period. If feed conversion is unknown or live-weight gain is not positive, FCR is undefined.</MetricHelp></span><span>Trend records</span></div>
+                  <div className="row header"><span>Average weight</span><span>Weight gain</span><span>Feed consumed (converted)</span><span>FCR <MetricHelp id="production-fcr-help" label="FCR formula">Feed conversion ratio (FCR) = converted feed consumed (kg) ÷ live-weight gain (kg), for this broiler batch as of the selected report date. The backend converts each feed unit using its configured kg-per-unit factor. Feed consumption and weight gain are batch-to-date values, not a daily ratio. If any consumed feed conversion is unknown, or live-weight gain is zero or negative, FCR is undefined and shown as —. A result of 2.0 means 2 kg of feed per 1 kg of live-weight gain.</MetricHelp></span><span>Trend records</span></div>
                   <div className="row">
                     <span>{broilerGrowth?.averageWeightKg ?? "—"} kg</span>
                     <span>{broilerGrowth?.weightGainKg ?? "—"} kg</span>

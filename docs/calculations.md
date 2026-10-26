@@ -107,6 +107,17 @@ drug expense = recorded drug cost
 
 The same drug cost is not charged again when reports are read.
 
+## Hen-day production (HDP)
+
+The backend calculates daily HDP for each LAYER batch:
+
+```
+HDP % = total eggs collected on the date (good + cracked)
+        / live layer birds on that date × 100
+```
+
+The numerator is eggs collected that business date, including cracked eggs; the denominator is the historical live-bird population calculated for that same date. For example, 850 eggs collected with 1,000 live layer birds gives 85.00%. The trend endpoint returns a point for each calendar date. A date without an egg collection has a null value and is displayed as a gap, not as zero. The renderer must display this backend result and must not recalculate the population or HDP.
+
 ## Layer egg production
 
 ```
