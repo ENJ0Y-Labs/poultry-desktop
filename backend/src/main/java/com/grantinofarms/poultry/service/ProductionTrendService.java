@@ -107,7 +107,7 @@ public class ProductionTrendService {
 
     private DateRange range(LocalDate placementDate, LocalDate from, LocalDate to) {
         LocalDate end = to == null ? LocalDate.now() : to;
-        LocalDate start = from == null ? end.minusDays(29) : from;
+        LocalDate start = from == null ? (end.minusDays(29).isBefore(placementDate) ? placementDate : end.minusDays(29)) : from;
         if (start.isAfter(end)) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_DATE_RANGE", "The start date must be on or before the end date.");
         }
