@@ -342,7 +342,7 @@ describe("App", () => {
     ]);
     render(<App />);
 
-    fireEvent.click(await screen.findByRole("button", { name: "Production" }));
+    fireEvent.click(within(screen.getByRole("navigation", { name: "Main navigation" })).getByRole("button", { name: "Production" }));
     fireEvent.change(await screen.findByLabelText("Layer batch"), { target: { value: "layer-1" } });
 
     const savedCustomer = await screen.findByLabelText("Saved customer");
