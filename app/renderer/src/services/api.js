@@ -1,5 +1,11 @@
 const configuredApiBase = import.meta.env?.VITE_API_BASE_URL || window.poultryDesktop?.apiBaseUrl;
 
+function signalBackendUnavailable() {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("pomas:backend-unavailable"));
+  }
+}
+
 async function getApiBase() {
   const desktopBase = window.poultryDesktop?.getApiBaseUrl
     ? await window.poultryDesktop.getApiBaseUrl()
@@ -41,6 +47,7 @@ async function request(path, options = {}) {
       ...options,
     });
   } catch {
+    signalBackendUnavailable();
     throw new ApiError(
       "BACKEND_UNAVAILABLE",
       "The local backend is not responding. Your unsaved form entries are still on this screen. Retry the connection when the backend is available.",
@@ -50,6 +57,7 @@ async function request(path, options = {}) {
 
   const body = await response.json().catch(() => ({}));
   if (!response.ok) {
+    if (response.status >= 500) signalBackendUnavailable();
     throw new ApiError(
       body?.error?.code || "REQUEST_FAILED",
       body?.error?.message || "Request failed.",
@@ -213,14 +221,32 @@ export const attentionApi = {
 };
 
 async function downloadText(path) {
-  const response = await fetch((await getApiBase()) + path, { credentials: "include" });
-  if (!response.ok) throw new ApiError("EXPORT_FAILED", "Report export failed.", response.status);
+  let response;
+  try {
+    response = await fetch((await getApiBase()) + path, { credentials: "include", signal: AbortSignal.timeout(8000) });
+  } catch {
+    signalBackendUnavailable();
+    throw new ApiError("BACKEND_UNAVAILABLE", "The local backend is not responding. Retry the connection when the backend is available.", 503);
+  }
+  if (!response.ok) {
+    if (response.status >= 500) signalBackendUnavailable();
+    throw new ApiError("EXPORT_FAILED", "Report export failed.", response.status);
+  }
   return response.text();
 }
 
 async function downloadBlob(path) {
-  const response = await fetch((await getApiBase()) + path, { credentials: "include" });
-  if (!response.ok) throw new ApiError("EXPORT_FAILED", "Report export failed.", response.status);
+  let response;
+  try {
+    response = await fetch((await getApiBase()) + path, { credentials: "include", signal: AbortSignal.timeout(8000) });
+  } catch {
+    signalBackendUnavailable();
+    throw new ApiError("BACKEND_UNAVAILABLE", "The local backend is not responding. Retry the connection when the backend is available.", 503);
+  }
+  if (!response.ok) {
+    if (response.status >= 500) signalBackendUnavailable();
+    throw new ApiError("EXPORT_FAILED", "Report export failed.", response.status);
+  }
   return response.blob();
 }
 
