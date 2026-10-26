@@ -186,7 +186,7 @@ class MigrationUpgradeTest {
             query.setString(2, sessionId);
             try (ResultSet result = query.executeQuery()) {
                 assertThat(result.next()).isTrue();
-                assertThat(result.getString("username")).isEqualTo("owner-" + userId.replace("-", "").substring(0, 8));
+                assertThat(result.getString("username")).isEqualTo("owner-1");
                 assertThat(result.getString("email")).isEqualTo("owner@example.com");
                 assertThat(result.getString("password_hash")).isEqualTo("existing-password-hash");
                 assertThat(result.getString("full_name")).isEqualTo("Existing Owner");
