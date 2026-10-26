@@ -280,7 +280,7 @@ Stage 12 Broiler rules:
 - Average weight is calculated as total sample weight divided by sampled birds.
 - Growth is calculated from ordered weight records; the first recorded average weight is the baseline for the batch growth series.
 - FCR is calculated only by Spring Boot: feed consumed in kilograms divided by live-weight gain in kilograms. Frontend code must display the backend result and never calculate FCR.
-- Feed types using kg contribute to FCR. Other feed units do not contribute until a canonical kilogram conversion exists.
+- FCR uses feed consumed in kilograms divided by live-weight gain in kilograms. Each feed type has a nullable `kg_per_unit`; kg uses 1, while non-kg units require an explicit positive conversion. If any feed usage in the batch has an unknown conversion, converted feed kilograms and FCR are undefined (`null`, displayed as —). Never guess a bag size. Conversion changes are audited and affect interpretation of historical feed usage for FCR, while original feed quantities and FIFO costs remain unchanged.
 - Bird sales are recorded separately from mortality/culling and create SOLD population events.
 - A Broiler becomes SOLD automatically when a bird sale leaves zero live birds as of the current farm date. SOLD batches reject ordinary production/population writes.
 - Weight and sales records cannot be dated before batch placement.

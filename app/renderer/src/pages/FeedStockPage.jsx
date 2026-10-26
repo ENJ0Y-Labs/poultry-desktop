@@ -1,28 +1,50 @@
 import { useContext } from "react";
+import { feedApi } from "../services/api.js";
 import { FarmManagerContext } from "../components/FarmManagerContext.jsx";
 // eslint-disable-next-line no-unused-vars
 import PageSection from "../components/PageSection.jsx";
 
 export default function FeedStockPage() {
-  const { formatMoney, farm, batches, feedTypes, feedInventory, feedTypeForm, setFeedTypeForm, feedPurchaseForm, setFeedPurchaseForm, feedUsageForm, setFeedUsageForm, inventoryItems, inventoryItemForm, setInventoryItemForm, inventoryMovementForm, setInventoryMovementForm, inventoryMovements, suppliers, supplierForm, setSupplierForm, saveSupplier, archiveSupplier, saving, saveInventoryItem, loadInventoryMovements, saveInventoryMovement, createFeedType, purchaseFeed, useFeed, feedQuantity } = useContext(FarmManagerContext);
+  const { formatMoney, farm, batches, feedTypes, setFeedTypes, feedInventory, feedTypeForm, setFeedTypeForm, setError, setSaving, feedPurchaseForm, setFeedPurchaseForm, feedUsageForm, setFeedUsageForm, inventoryItems, inventoryItemForm, setInventoryItemForm, inventoryMovementForm, setInventoryMovementForm, inventoryMovements, suppliers, supplierForm, setSupplierForm, saveSupplier, archiveSupplier, saving, saveInventoryItem, loadInventoryMovements, saveInventoryMovement, createFeedType, purchaseFeed, useFeed, feedQuantity } = useContext(FarmManagerContext);
+
+  async function saveConversion(event, type) {
+    event.preventDefault();
+    const raw = event.currentTarget.elements.kgPerUnit.value.trim();
+    const kgPerUnit = raw === "" ? null : Number(raw);
+    if (kgPerUnit !== null && (!Number.isFinite(kgPerUnit) || kgPerUnit <= 0)) {
+      setError("Kilograms per unit must be greater than zero, or left blank when unknown.");
+      return;
+    }
+    setSaving(true);
+    setError("");
+    try {
+      const updated = await feedApi.updateConversion(type.id, kgPerUnit);
+      setFeedTypes(current => current.map(item => item.id === updated.id ? updated : item));
+    } catch (error) {
+      setError(error.message || "Could not update feed conversion.");
+    } finally {
+      setSaving(false);
+    }
+  }
 
   return (
     <div className="grid">
       <PageSection page="feed-stock" tab="feed"><section id="feed" className="card full">
-          <div className="section-head"><h2>Feed management</h2><p className="muted">Purchases create inventory and one expense. Usage consumes FIFO stock and adds its cost to the batch once.</p></div>
+          <div className="section-head"><h2>Feed management</h2><p className="muted">Purchases create inventory and one expense. Usage consumes FIFO stock and adds its cost to the batch once. FCR converts feed usage to kilograms using each feed type’s configured kg-per-unit factor. Leave unknown units unset until the farm confirms the package weight.</p></div>
           <div className="subsection">
             <h3>Feed types</h3>
             <form className="inline-form" onSubmit={createFeedType}>
               <label className="field"><span>Name e.g. Starter</span><input required value={feedTypeForm.name} onChange={e=>setFeedTypeForm({...feedTypeForm,name:e.target.value})}/></label>
-              <label className="field"><span>Unit e.g. bag or kg</span><input required value={feedTypeForm.unit} onChange={e=>setFeedTypeForm({...feedTypeForm,unit:e.target.value})}/></label>
+              <label className="field"><span>Unit e.g. bag or kg</span><input required value={feedTypeForm.unit} onChange={e=>setFeedTypeForm({...feedTypeForm,unit:e.target.value,kgPerUnit:e.target.value.trim().toLowerCase()==="kg"?"1":feedTypeForm.kgPerUnit})}/></label>
+              <label className="field"><span>Kg per unit (leave blank if unknown)</span><input min="0.001" step="0.001" type="number" value={feedTypeForm.unit.trim().toLowerCase()==="kg"?"1":feedTypeForm.kgPerUnit} disabled={feedTypeForm.unit.trim().toLowerCase()==="kg"} onChange={e=>setFeedTypeForm({...feedTypeForm,kgPerUnit:e.target.value})}/></label>
               <label className="field"><span>Applicable to</span><select value={feedTypeForm.applicableType} onChange={e=>setFeedTypeForm({...feedTypeForm,applicableType:e.target.value})}>
                 <option value="BOTH">Both</option><option value="LAYER">Layers</option><option value="BROILER">Broilers</option>
               </select></label>
               <button disabled={saving}>Add feed type</button>
             </form>
             <div className="table">
-              <div className="row header"><span>Name</span><span>Unit</span><span>For</span><span>Status</span></div>
-              {feedTypes.map(type=><div className="row" key={type.id}><span>{type.name}</span><span>{type.unit}</span><span>{type.applicableType}</span><span>{type.status}</span></div>)}
+              <div className="row header"><span>Name</span><span>Unit</span><span>For</span><span>Kg per unit</span><span>Conversion setup</span><span>Status</span></div>
+              {feedTypes.map(type=><div className="row" key={type.id}><span>{type.name}</span><span>{type.unit}</span><span>{type.applicableType}</span><span>{type.kgPerUnit == null ? "Unknown" : `${type.kgPerUnit} kg`}</span><span>{type.status === "ACTIVE" ? <form className="inline-form" onSubmit={event=>saveConversion(event,type)}><label className="field"><span>Kg per {type.unit}</span><input name="kgPerUnit" aria-label={`Kilograms per ${type.unit} for ${type.name}`} type="number" min="0.001" step="0.001" defaultValue={type.kgPerUnit ?? ""} placeholder="Unknown" disabled={type.unit.trim().toLowerCase()==="kg"} /></label><button disabled={saving || type.unit.trim().toLowerCase()==="kg"}>Save conversion</button></form> : "Archived"}</span><span>{type.status}</span></div>)}
               {feedTypes.length===0 && <p className="muted empty">No feed types yet.</p>}
             </div>
           </div>
