@@ -39,7 +39,7 @@ class DailyOperationsIntegrationTest {
                 "LAYER", LocalDate.of(2026, 1, 1), house.id(), 500, null, 5_000_000L));
 
         var settings = farmService.updateSettings(new FarmSettingsRequest(
-                30, 25, java.util.List.of(25, 75)));
+                30, 25, java.util.List.of(25, 75), "litres"));
 
         var feedType = feedService.createType(new FeedTypeCreateRequest("Layer Mash", "bag", "LAYER"));
         feedService.purchase(new FeedPurchaseRequest(
@@ -81,20 +81,35 @@ class DailyOperationsIntegrationTest {
     }
 
     @Test
-    void dailyRecordCannotBeDuplicatedForSameBatchAndDate() {
+    void savingSameBatchAndDateUpdatesOnlySubmittedFieldsAndPreservesOthers() {
         setupFarm();
         var house = houseService.create(new HouseCreateRequest("Layer House", "LH1", null));
         var batch = batchService.create(new BatchCreateRequest(
                 "LAYER", LocalDate.of(2026, 1, 1), house.id(), 100, null, 1_000_000L));
+        farmService.updateSettings(new FarmSettingsRequest(30, 25, java.util.List.of(25, 75), "litres"));
 
-        dailyOperationsService.create(batch.id(), new DailyRecordRequest(
-                LocalDate.of(2026, 1, 2), "First record", java.util.List.of()
+        var first = dailyOperationsService.create(batch.id(), new DailyRecordRequest(
+                LocalDate.of(2026, 1, 2), "Keep these notes",
+                java.util.List.of(new WaterContainerEntryRequest(25, 2))
         ));
+        assertThat(first.totalWaterUnits()).isEqualTo(50);
 
-        assertThatThrownBy(() -> dailyOperationsService.create(batch.id(), new DailyRecordRequest(
-                LocalDate.of(2026, 1, 2), "Duplicate", java.util.List.of()
-        )))
-                .hasMessage("A daily record already exists for this batch and date.");
+        var waterEdit = dailyOperationsService.create(batch.id(), new DailyRecordRequest(
+                LocalDate.of(2026, 1, 2), null,
+                java.util.List.of(new WaterContainerEntryRequest(75, 1))
+        ));
+        assertThat(waterEdit.id()).isEqualTo(first.id());
+        assertThat(waterEdit.notes()).isEqualTo("Keep these notes");
+        assertThat(waterEdit.totalWaterUnits()).isEqualTo(75);
+        assertThat(waterEdit.water()).hasSize(1);
+
+        var notesEdit = dailyOperationsService.create(batch.id(), new DailyRecordRequest(
+                LocalDate.of(2026, 1, 2), "Updated notes", null
+        ));
+        assertThat(notesEdit.id()).isEqualTo(first.id());
+        assertThat(notesEdit.notes()).isEqualTo("Updated notes");
+        assertThat(notesEdit.totalWaterUnits()).isEqualTo(75);
+        assertThat(notesEdit.water()).hasSize(1);
     }
 
     private void setupFarm() {
