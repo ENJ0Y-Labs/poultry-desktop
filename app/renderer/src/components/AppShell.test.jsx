@@ -80,7 +80,7 @@ describe("AppShell", () => {
     fireEvent.click(screen.getByRole("button", { name: "Suppliers" }));
     expect(window.location.hash).toBe("#feed-stock/suppliers");
   });
-  it("shows contextual page help with a useful next action", () => {
+  it("shows contextual page help with a useful next action", async () => {
     render(
       <AppShell farm={{ name: "Grantino", location: "", currency: "NGN", timezone: "Africa/Lagos" }}>
         <section id="dashboard">Dashboard</section>
@@ -90,7 +90,7 @@ describe("AppShell", () => {
     expect(screen.getByRole("region", { name: "Page help" })).toHaveTextContent(/Understand the farm at a glance/);
     fireEvent.click(screen.getByRole("button", { name: "Review flock setup" }));
     expect(window.location.hash).toBe("#flocks/houses");
-    expect(screen.getByRole("region", { name: "Page help" })).toHaveTextContent(/Manage houses and flock lifecycles/);
+    await waitFor(() => expect(screen.getByRole("region", { name: "Page help" })).toHaveTextContent(/Manage houses and flock lifecycles/));
   });
 
   it("shows a retry action when the local backend is unavailable", async () => {
