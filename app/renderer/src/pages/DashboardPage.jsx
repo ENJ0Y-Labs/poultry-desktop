@@ -2,6 +2,7 @@ import { useContext } from "react";
 import { FarmManagerContext } from "../components/FarmManagerContext.jsx";
 // eslint-disable-next-line no-unused-vars
 import PageSection from "../components/PageSection.jsx";
+import { formatAuditAction, formatAuditEntity, formatAuditTimestamp } from "../utils/auditFormatting.js";
 
 function formatBusinessDate(value, pattern = "YYYY-MM-DD") {
   if (!value || typeof value !== "string") return "—";
@@ -77,7 +78,7 @@ export default function DashboardPage() {
             </div>
             <div className="subsection"><h3>Recent audit activity</h3>{auditRows.length === 0 ? <p className="muted">No audit records yet.</p> :
               <div className="table"><div className="row header"><span>Time</span><span>Action</span><span>Entity</span><span>Reason</span></div>
-              {auditRows.slice(0, 8).map(row => <div className="row" key={row.id}><span>{row.occurredAt}</span><span>{row.action}</span><span>{row.entityType}</span><span>{row.reason || "—"}</span></div>)}</div>}</div>
+              {auditRows.slice(0, 8).map(row => <div className="row" key={row.id}><span>{formatAuditTimestamp(row.occurredAt, farm?.timezone)}</span><span>{formatAuditAction(row.action)}</span><span>{formatAuditEntity(row.entityType)}</span><span>{typeof row.reason === "string" && row.reason.trim() ? row.reason : "—"}</span></div>)}</div>}</div>
           </>
         ) : <p className="muted">Dashboard is loading…</p>}
       </section></PageSection>
