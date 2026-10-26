@@ -14,14 +14,14 @@ public class WaterContainerSizeRepository {
         this.jdbc = jdbc;
     }
 
-    public void upsertActive(String farmId, int capacity, String now) {
+    public void upsertActive(String farmId, int capacity, String unitLabel, String now) {
         jdbc.update("""
                 INSERT INTO water_container_sizes
                     (id, farm_id, name, capacity_units, status, created_at, updated_at)
                 VALUES (?, ?, ?, ?, 'ACTIVE', ?, ?)
                 ON CONFLICT (farm_id, capacity_units)
                 DO UPDATE SET status = 'ACTIVE', name = excluded.name, updated_at = excluded.updated_at
-                """, UUID.randomUUID().toString(), farmId, capacity + " units", capacity, now, now);
+                """, UUID.randomUUID().toString(), farmId, capacity + " " + unitLabel, capacity, now, now);
     }
 
     public List<Integer> findActiveSizes(String farmId) {
