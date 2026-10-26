@@ -39,7 +39,7 @@ class DailyOperationsIntegrationTest {
                 "LAYER", LocalDate.of(2026, 1, 1), house.id(), 500, null, 5_000_000L));
 
         var settings = farmService.updateSettings(new FarmSettingsRequest(
-                30, 25, java.util.List.of(25, 75)));
+                30, 25, java.util.List.of(25, 75), "litres"));
 
         var feedType = feedService.createType(new FeedTypeCreateRequest("Layer Mash", "bag", "LAYER"));
         feedService.purchase(new FeedPurchaseRequest(

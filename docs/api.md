@@ -75,7 +75,7 @@ Used by Electron during startup.
 
 - GET `/feed/types`
 - POST `/feed/types`
-- POST `/feed/types/{id}/archive`
+- PUT `/feed/types/{id}/conversion` (body: `kgPerUnit`, positive number or `null` when unknown)\n- POST `/feed/types/{id}/archive`
 - POST `/feed/purchases`
 - GET `/feed/inventory`
 - POST `/feed/batches/{id}/usage`
@@ -191,7 +191,7 @@ Production requires an authenticated owner session. Authentication uses an HTTP-
 - GET `/settings/backup`
 - PUT `/settings/backup`
 
-Application settings currently include start page and date format. Backup settings include automatic-backup state, directory and interval.
+Application settings include start page and date format. Supported start-page values are `dashboard`, `flocks`, `daily-work`, `feed-stock`, `health`, `production`, `sales-money`, `reports`, and `settings`. Any other value is rejected with HTTP 400. Backup settings include automatic-backup state, directory and interval.
 
 ## Backup
 
