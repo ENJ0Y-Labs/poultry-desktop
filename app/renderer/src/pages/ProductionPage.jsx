@@ -1,4 +1,7 @@
 import { useContext } from "react";
+import { productionTrendApi } from "../services/api.js";
+// eslint-disable-next-line no-unused-vars
+import ProductionTrendChart from "../components/ProductionTrendChart.jsx";
 import { FarmManagerContext } from "../components/FarmManagerContext.jsx";
 // eslint-disable-next-line no-unused-vars
 import PageSection from "../components/PageSection.jsx";
@@ -30,6 +33,13 @@ export default function ProductionPage() {
 
           {eggBatchId && (
             <>
+              <ProductionTrendChart
+                batchId={eggBatchId}
+                title="Layer HDP%"
+                description="Daily egg production as a percentage of live birds. Uses total collected eggs (good + cracked) and backend population calculations. Missing production records appear as gaps."
+                unit="percent"
+                loadTrend={productionTrendApi.layerHdp}
+              />
               <div className="subsection">
                 <h3>Egg inventory</h3>
                 <div className="table">
@@ -109,6 +119,13 @@ export default function ProductionPage() {
 
           {broilerBatchId && (
             <>
+              <ProductionTrendChart
+                batchId={broilerBatchId}
+                title="Broiler average weight"
+                description="Average sampled bird weight by record date, in kilograms. Days without weight records appear as gaps."
+                unit="kg"
+                loadTrend={productionTrendApi.broilerAverageWeight}
+              />
               <div className="subsection">
                 <h3>Growth summary</h3>
                 <div className="table">
