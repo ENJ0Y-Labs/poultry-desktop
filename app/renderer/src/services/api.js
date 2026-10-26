@@ -50,7 +50,7 @@ async function request(path, options = {}) {
     signalBackendUnavailable();
     throw new ApiError(
       "BACKEND_UNAVAILABLE",
-      "The local backend is not responding. Your unsaved form entries are still on this screen. Retry the connection when the backend is available.",
+      "The local backend is not responding. Retry the connection when the backend is available. The current screen will remain open during recovery. The current screen will remain open during recovery.",
       503,
     );
   }
@@ -226,7 +226,7 @@ async function downloadText(path) {
     response = await fetch((await getApiBase()) + path, { credentials: "include", signal: AbortSignal.timeout(8000) });
   } catch {
     signalBackendUnavailable();
-    throw new ApiError("BACKEND_UNAVAILABLE", "The local backend is not responding. Retry the connection when the backend is available.", 503);
+    throw new ApiError("BACKEND_UNAVAILABLE", "The local backend is not responding. Retry the connection when the backend is available. The current screen will remain open during recovery.", 503);
   }
   if (!response.ok) {
     if (response.status >= 500) signalBackendUnavailable();
@@ -241,7 +241,7 @@ async function downloadBlob(path) {
     response = await fetch((await getApiBase()) + path, { credentials: "include", signal: AbortSignal.timeout(8000) });
   } catch {
     signalBackendUnavailable();
-    throw new ApiError("BACKEND_UNAVAILABLE", "The local backend is not responding. Retry the connection when the backend is available.", 503);
+    throw new ApiError("BACKEND_UNAVAILABLE", "The local backend is not responding. Retry the connection when the backend is available. The current screen will remain open during recovery.", 503);
   }
   if (!response.ok) {
     if (response.status >= 500) signalBackendUnavailable();
