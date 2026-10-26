@@ -110,6 +110,55 @@ class AttentionServiceIntegrationTest {
     }
 
     @Test
+    void emptyUnstockedFeedAndZeroReorderItemsDoNotCreateFalseStockAlerts() {
+        setupFarm();
+        feedService.createType(new FeedTypeCreateRequest("Unused Broiler Feed", "bag", "BROILER"));
+        var noThreshold = inventoryService.createItem(new InventoryItemCreateRequest(
+                "Optional Supply", "SUPPLY", "pack", BigDecimal.ZERO));
+
+        List<Map<String, Object>> attention = attentionService.list(AS_OF);
+        Set<String> alertedItems = attention.stream()
+                .filter(row -> Set.of("LOW_INVENTORY", "INSUFFICIENT_INVENTORY").contains(row.get("type")))
+                .map(row -> String.valueOf(row.get("item")))
+                .collect(Collectors.toSet());
+
+        assertThat(attention.stream()
+                .filter(row -> "LOW_FEED_STOCK".equals(row.get("type")))
+                .map(row -> row.get("item")))
+                .doesNotContain("Unused Broiler Feed");
+        assertThat(alertedItems).doesNotContain(noThreshold.name());
+        assertThat(dashboardService.farm(AS_OF).get("inventoryAlerts")).isEqualTo(0);
+    }
+
+    @Test
+    void depletedPreviouslyStockedFeedRemainsCriticalAndPositiveReorderThresholdStillAlerts() {
+        setupFarm();
+        var feedType = feedService.createType(new FeedTypeCreateRequest("Layer Mash", "bag", "LAYER"));
+        var house = houseService.create(new HouseCreateRequest("Layer House", "LH1", null));
+        var layer = batchService.create(new BatchCreateRequest(
+                "LAYER", LocalDate.of(2026, 8, 1), house.id(), 100, null, 1_000_000L));
+        feedService.purchase(new FeedPurchaseRequest(
+                feedType.id(), null, LocalDate.of(2026, 8, 1),
+                new BigDecimal("1"), "bag", 10_000L));
+        feedService.use(layer.id(), new FeedUsageRequest(
+                feedType.id(), AS_OF.minusDays(1), new BigDecimal("1"), "bag"));
+
+        var lowInventory = inventoryService.createItem(new InventoryItemCreateRequest(
+                "Vitamin Bottle", "SUPPLY", "bottle", new BigDecimal("2")));
+        inventoryService.recordMovement(lowInventory.id(), new InventoryMovementRequest(
+                AS_OF, "RECEIVE", BigDecimal.ONE, "Test stock", "TEST", null));
+
+        List<Map<String, Object>> attention = attentionService.list(AS_OF);
+        assertThat(attention.stream()
+                .filter(row -> "LOW_FEED_STOCK".equals(row.get("type")))
+                .anyMatch(row -> "Layer Mash".equals(row.get("item"))
+                        && "CRITICAL".equals(row.get("severity")))).isTrue();
+        assertThat(attention.stream()
+                .filter(row -> "LOW_INVENTORY".equals(row.get("type")))
+                .anyMatch(row -> lowInventory.name().equals(row.get("item")))).isTrue();
+    }
+
+    @Test
     void farmDashboardAttentionCountUsesTheSameBackendAttentionSystem() {
         setupFarm();
         var house = houseService.create(new HouseCreateRequest("Layer House", "LH1", null));
