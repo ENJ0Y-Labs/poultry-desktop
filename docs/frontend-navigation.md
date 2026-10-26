@@ -65,3 +65,13 @@ The nine page components live under `app/renderer/src/pages/`. Shared form state
 - Each action navigates to an existing page/tab using the local hash router. No route dependency or backend feature is added.
 - The empty state is inferred from the absence of houses, batches, calculated bird/financial/egg activity, feed types, and audit events. A zero metric by itself does not trigger it.
 - No sample or demo data is inserted. Existing/populated farms retain their normal dashboard.
+
+## Backend-backed production trend charts
+
+- Production shows a separate Layer HDP% chart for the selected LAYER batch and an average-weight chart for the selected BROILER batch. The two metrics are not mixed or compared across incompatible batch types.
+- HDP% is calculated by Spring Boot as (good eggs + cracked eggs collected on the date) divided by the historical live-bird population for that date, multiplied by 100. The chart displays percent.
+- Broiler average weight is calculated by Spring Boot per business date from the sum of sampled weight divided by the sum of sampled birds. The chart displays kilograms.
+- Trend endpoints are `GET /batches/{batchId}/production-trends/layer-hdp` and `GET /batches/{batchId}/production-trends/broiler-average-weight`, with optional inclusive `from` and `to` dates. A range is limited to 366 days and cannot start before batch placement.
+- Each day is present in the returned series. A missing production record is `value: null`, not zero, so Recharts draws a gap rather than inventing production. Explicit zero-egg records remain a measured zero.
+- The charts expose loading, empty, and error states, accessible chart descriptions, and date/value tooltips. Successful writes dispatch `pomas:data-mutated`; relevant egg collection/sale and broiler weight mutations refresh the corresponding chart.
+- Frontend code formats and renders the returned series only; it does not calculate HDP%, live population, or average weight.
