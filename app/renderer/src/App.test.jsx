@@ -335,6 +335,44 @@ describe("App", () => {
     expect(screen.getByText("No batches yet.")).toBeInTheDocument();
   });
 
+  it("shows actionable setup guidance only when the farm is genuinely empty", async () => {
+    mockFarmApis({
+      currentBatches: [],
+      dashboardValue: {
+        asOf: "2026-10-26",
+        totalBirds: 0,
+        layerBirds: 0,
+        broilerBirds: 0,
+        activeBatches: 0,
+        mortality: 0,
+        eggsGood: 0,
+        revenueMinor: 0,
+        expensesMinor: 0,
+        profitMinor: 0,
+        inventoryAlerts: 0,
+        feedSummary: {
+          typeCount: 0,
+          remainingQuantityMilli: 0,
+          remainingCostMinor: 0,
+          consumedCostMinor: 0,
+        },
+      },
+    });
+
+    render(<App />);
+
+    expect(await screen.findByRole("heading", { name: "Your farm is ready to be set up" })).toBeInTheDocument();
+    expect(screen.getByText(/Nothing has been added automatically/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Create house / pen" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Create batch" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Open feed & stock" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Record daily work" })).toBeInTheDocument();
+    expect(screen.queryByText("Total birds")).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Create house / pen" }));
+    expect(window.location.hash).toBe("#flocks/houses");
+  });
+
   it("renders readable audit timestamps and labels, including unknown values", async () => {
     mockFarmApis();
     vi.mocked(auditApi.list).mockResolvedValue([
