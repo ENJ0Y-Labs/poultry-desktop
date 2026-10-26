@@ -38,6 +38,28 @@ class WaterUnitLabelMigrationTest {
                 VALUES ('water-size-test', 'farm-water-test', '25 units', 25, 'ACTIVE',
                         '2026-10-26T00:00:00Z', '2026-10-26T00:00:00Z')
                 """);
+            statement.executeUpdate("""
+                INSERT INTO houses(id, farm_id, name, code, status, created_at, updated_at)
+                VALUES ('house-water-test', 'farm-water-test', 'Water Test House', 'WTH',
+                        'ACTIVE', '2026-10-26T00:00:00Z', '2026-10-26T00:00:00Z')
+                """);
+            statement.executeUpdate("""
+                INSERT INTO batches(id, farm_id, house_id, code, batch_type, placement_date,
+                    initial_bird_count, status, created_at, updated_at)
+                VALUES ('batch-water-test', 'farm-water-test', 'house-water-test', 'B-WATER-TEST',
+                    'BROILER', '2026-10-01', 100, 'ACTIVE',
+                    '2026-10-26T00:00:00Z', '2026-10-26T00:00:00Z')
+                """);
+            statement.executeUpdate("""
+                INSERT INTO daily_records(id, batch_id, record_date, notes, created_at, updated_at)
+                VALUES ('daily-water-test', 'batch-water-test', '2026-10-26', 'Existing water record',
+                    '2026-10-26T00:00:00Z', '2026-10-26T00:00:00Z')
+                """);
+            statement.executeUpdate("""
+                INSERT INTO water_usage(id, daily_record_id, container_size_id, container_count, created_at)
+                VALUES ('water-usage-test', 'daily-water-test', 'water-size-test', 4,
+                    '2026-10-26T00:00:00Z')
+                """);
         }
 
         Flyway.configure().dataSource(url, "", "").locations("classpath:db/migration").load().migrate();
@@ -58,6 +80,18 @@ class WaterUnitLabelMigrationTest {
              ResultSet result = statement.executeQuery("SELECT name FROM water_container_sizes WHERE id = 'water-size-test'")) {
             assertThat(result.next()).isTrue();
             assertThat(result.getString("name")).isEqualTo("25 litres");
+        }
+        try (Connection connection = DriverManager.getConnection(url);
+             Statement statement = connection.createStatement();
+             ResultSet result = statement.executeQuery("""
+                SELECT w.capacity_units, u.container_count
+                FROM water_container_sizes w
+                JOIN water_usage u ON u.container_size_id = w.id
+                WHERE w.id = 'water-size-test' AND u.id = 'water-usage-test'
+                """)) {
+            assertThat(result.next()).isTrue();
+            assertThat(result.getInt("capacity_units")).isEqualTo(25);
+            assertThat(result.getInt("container_count")).isEqualTo(4);
         }
     }
 }

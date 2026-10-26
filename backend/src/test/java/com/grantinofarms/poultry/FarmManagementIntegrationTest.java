@@ -3,6 +3,7 @@ package com.grantinofarms.poultry;
 import com.grantinofarms.poultry.dto.FarmCreateRequest;
 import com.grantinofarms.poultry.dto.FarmSettingsRequest;
 import com.grantinofarms.poultry.dto.HouseCreateRequest;
+import com.grantinofarms.poultry.repository.AuditRepository;
 import com.grantinofarms.poultry.service.FarmService;
 import com.grantinofarms.poultry.service.HouseService;
 import org.junit.jupiter.api.Test;
@@ -21,6 +22,7 @@ class FarmManagementIntegrationTest {
 
     @Autowired FarmService farmService;
     @Autowired HouseService houseService;
+    @Autowired AuditRepository auditRepository;
 
     @Test
     @Transactional
@@ -45,6 +47,15 @@ class FarmManagementIntegrationTest {
         var updatedSettings = farmService.updateSettings(new FarmSettingsRequest(30, 25, List.of(25, 75), "gallons"));
         assertThat(updatedSettings.defaultWaterContainerSize()).isEqualTo(25);
         assertThat(updatedSettings.waterUnitLabel()).isEqualTo("gallons");
+        assertThat(updatedSettings.waterContainerSizes()).containsExactly(25, 75);
+
+        assertThat(auditRepository.find(farm.id(), 50))
+                .filteredOn(row -> "FARM_SETTINGS".equals(row.get("entityType")))
+                .anySatisfy(row -> {
+                    assertThat(String.valueOf(row.get("before"))).contains("\"waterUnitLabel\":\"litres\"");
+                    assertThat(String.valueOf(row.get("after"))).contains("\"waterUnitLabel\":\"gallons\"");
+                    assertThat(String.valueOf(row.get("changedFields"))).contains("waterUnitLabel");
+                });
 
         var house = houseService.create(new HouseCreateRequest(
                 "Layer House 1", "LH1", "North block"));

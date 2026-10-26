@@ -1,6 +1,12 @@
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App.jsx";
+// eslint-disable-next-line no-unused-vars
+import DailyWorkPage from "./pages/DailyWorkPage.jsx";
+// eslint-disable-next-line no-unused-vars
+import { FarmManagerContext } from "./components/FarmManagerContext.jsx";
+// eslint-disable-next-line no-unused-vars
+import { NavigationContext } from "./components/NavigationContext.jsx";
 import {
   authApi, farmApi, batchApi, expenseApi, customerApi, salesApi, inventoryApi,
   feedApi, pricingApi, dashboardApi, attentionApi, auditApi,
@@ -564,6 +570,17 @@ describe("App", () => {
     expect(screen.getByLabelText("Date")).toHaveValue("2026-10-25");
   });
 
+  it("preserves a contextual batch when opening an alert route directly", async () => {
+    mockFarmApis({ currentBatches: batches });
+    window.location.hash = "#flocks/batch-dashboard/batchId=broiler-1";
+
+    render(<App />);
+
+    await waitFor(() => {
+      expect(screen.getByLabelText("Batch dashboard")).toHaveValue("broiler-1");
+    });
+  });
+
   it("keeps alerts with missing required identifiers non-clickable", async () => {
     mockFarmApis();
     vi.mocked(attentionApi.list).mockResolvedValue([{
@@ -718,6 +735,52 @@ describe("App", () => {
 
     await waitFor(() => expect(screen.queryByRole("button", { name: "Retry connection" })).not.toBeInTheDocument());
     expect(screen.getByLabelText("Farm name")).toHaveValue("Unsaved recovery test");
+  });
+
+
+  it("shows first-run guidance for a farm with no setup records", async () => {
+    mockFarmApis({
+      currentBatches: [],
+      dashboardValue: {
+        asOf: "2026-10-03", totalBirds: 0, layerBirds: 0, broilerBirds: 0,
+        activeBatches: 0, mortality: 0, eggsGood: 0, revenueMinor: 0,
+        expensesMinor: 0, profitMinor: 0, inventoryAlerts: 0,
+        feedSummary: { typeCount: 0, remainingQuantityMilli: 0, remainingCostMinor: 0, consumedCostMinor: 0 },
+      },
+    });
+    render(<App />);
+    expect(await screen.findByRole("heading", { name: "Your farm is ready to be set up" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Dismiss getting-started guidance" })).toBeInTheDocument();
+  });
+
+  it("keeps the getting-started checklist visible for a partially configured farm", async () => {
+    mockFarmApis({ currentBatches: [batches[0]] });
+    vi.spyOn(farmApi, "listHouses").mockResolvedValue([{ id: "house-1", name: "House 1" }]);
+    render(<App />);
+    expect(await screen.findByRole("heading", { name: "Finish setting up your farm" })).toBeInTheDocument();
+    expect(screen.getByText("Create a house or pen")).toBeInTheDocument();
+    expect(screen.getByText("Open a batch")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Set up feed" })).toBeInTheDocument();
+    expect(screen.getByText("Add a farm supply item")).toBeInTheDocument();
+  });
+
+  it("hides the getting-started checklist when all setup tasks have saved data", async () => {
+    mockFarmApis({ currentBatches: [batches[0]] });
+    vi.spyOn(farmApi, "listHouses").mockResolvedValue([{ id: "house-1", name: "House 1" }]);
+    vi.spyOn(feedApi, "listTypes").mockResolvedValue([{ id: "feed-1", name: "Starter feed" }]);
+    vi.spyOn(inventoryApi, "listItems").mockResolvedValue([{ id: "stock-1", name: "Disinfectant" }]);
+    render(<App />);
+    await waitFor(() => expect(screen.getByRole("heading", { name: "Farm dashboard" })).toBeInTheDocument());
+    expect(screen.queryByRole("heading", { name: "Finish setting up your farm" })).not.toBeInTheDocument();
+  });
+
+  it("remembers when the user dismisses getting-started guidance", async () => {
+    mockFarmApis({ currentBatches: [batches[0]] });
+    vi.spyOn(farmApi, "listHouses").mockResolvedValue([{ id: "house-1", name: "House 1" }]);
+    render(<App />);
+    fireEvent.click(await screen.findByRole("button", { name: "Dismiss checklist" }));
+    expect(localStorage.getItem("pomas:getting-started-dismissed")).toBe("true");
+    expect(screen.queryByRole("heading", { name: "Finish setting up your farm" })).not.toBeInTheDocument();
   });
 
 
