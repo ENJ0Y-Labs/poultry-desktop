@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 // eslint-disable-next-line no-unused-vars
 import { NavigationContext } from "./NavigationContext.jsx";
 import { getThemePreference, setThemePreference } from "../utils/theme.js";
@@ -138,6 +138,7 @@ export default function AppShell({ farm, error, onRetry, children, startPage = "
   const [recoveryNeeded, setRecoveryNeeded] = useState(false);
   const [retrying, setRetrying] = useState(false);
   const [hasUserNavigated, setHasUserNavigated] = useState(Boolean(window.location.hash));
+  const mainContentRef = useRef(null);
 
   async function retryBackend() {
     if (!onRetry || retrying) return;
@@ -243,6 +244,16 @@ export default function AppShell({ farm, error, onRetry, children, startPage = "
 
   return (
     <div className="app-shell">
+      <a
+        className="skip-link"
+        href="#main-content"
+        onClick={(event) => {
+          event.preventDefault();
+          mainContentRef.current?.focus();
+        }}
+      >
+        Skip to main content
+      </a>
       <nav className="activity-bar" aria-label="Primary work areas">
         <div className="activity-bar-main">
           {activities.map(item => (
@@ -326,7 +337,7 @@ export default function AppShell({ farm, error, onRetry, children, startPage = "
         </div>
       </aside>
 
-      <main className="app-main">
+      <main className="app-main" id="main-content" tabIndex={-1} ref={mainContentRef}>
         <div className="shell">
           <header className="app-topbar">
             <div className="topbar-title">

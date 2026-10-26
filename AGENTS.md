@@ -881,6 +881,13 @@ The UI presents data returned by the backend. It does not own authoritative farm
 - Keep persistent form labels and primary navigation at 12 px or larger; navigation labels should target 13 px. Table headers, metric labels, and keyboard shortcut hints should be at least 12 px.
 - Supporting metadata may remain 11 px only when it is genuinely secondary and still meets contrast requirements. Do not make primary information rely on decorative kickers, color alone, or tiny text.
 - Check both Light and Dark themes. Run `node scripts/verify-a11y.mjs` as part of the production build, then manually review the rendered app at 1366×768 and 1100×700. Automated token checks do not replace rendered keyboard/visual review.
+## Accessibility and keyboard navigation
+
+- Place a skip-to-main-content link before primary navigation in DOM order.
+- Keep the skip link out of the normal layout, but make it clearly visible with a high-contrast focus treatment when keyboard-focused.
+- The skip link must move focus to a focusable main landmark without breaking the hash-based route.
+- Manually test keyboard-only navigation on Dashboard and at least one other main screen.
+
 ## 29. Navigation
 
 Main navigation:
