@@ -24,6 +24,14 @@ public class WaterContainerSizeRepository {
                 """, UUID.randomUUID().toString(), farmId, capacity + " " + unitLabel, capacity, now, now);
     }
 
+    public void renameAllForFarm(String farmId, String unitLabel, String now) {
+        jdbc.update("""
+                UPDATE water_container_sizes
+                SET name = CAST(capacity_units AS TEXT) || ' ' || ?, updated_at = ?
+                WHERE farm_id = ?
+                """, unitLabel, now, farmId);
+    }
+
     public List<Integer> findActiveSizes(String farmId) {
         return jdbc.query("""
                 SELECT capacity_units FROM water_container_sizes
