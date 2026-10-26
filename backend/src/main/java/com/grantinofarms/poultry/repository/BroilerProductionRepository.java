@@ -121,22 +121,21 @@ public class BroilerProductionRepository {
 
     public BigDecimal feedConsumedKg(String batchId, LocalDate asOf) {
         List<BigDecimal> quantities = jdbc.query("""
-                SELECT ft.unit, fu.quantity_milli
+                SELECT ft.kg_per_unit, fu.quantity_milli
                 FROM feed_usage fu
                 JOIN feed_types ft ON ft.id = fu.feed_type_id
                 WHERE fu.batch_id = ?
                   AND fu.usage_date <= ?
                 """,
                 (rs, rowNum) -> {
-                    if (!"kg".equalsIgnoreCase(rs.getString("unit"))) {
-                        return null;
-                    }
-                    return BigDecimal.valueOf(rs.getLong("quantity_milli")).movePointLeft(3);
+                    BigDecimal kgPerUnit = rs.getBigDecimal("kg_per_unit");
+                    if (kgPerUnit == null) return null;
+                    BigDecimal enteredQuantity = BigDecimal.valueOf(rs.getLong("quantity_milli")).movePointLeft(3);
+                    return enteredQuantity.multiply(kgPerUnit);
                 },
                 batchId, asOf.toString());
 
-        return quantities.stream()
-                .filter(java.util.Objects::nonNull)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        if (quantities.isEmpty() || quantities.stream().anyMatch(java.util.Objects::isNull)) return null;
+        return quantities.stream().reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 }

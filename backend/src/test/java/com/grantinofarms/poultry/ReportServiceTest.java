@@ -29,6 +29,8 @@ class ReportServiceTest {
         SalesService sales = mock(SalesService.class);
         InventoryService inventory = mock(InventoryService.class);
         HealthManagementService health = mock(HealthManagementService.class);
+        FarmService farmService = mock(FarmService.class);
+        when(farmService.getWaterUnitLabel()).thenReturn("litres");
 
         BatchResponse layer = mock(BatchResponse.class);
         when(layer.id()).thenReturn("layer-1");
@@ -64,7 +66,7 @@ class ReportServiceTest {
 
         ReportService service = new ReportService(
                 dashboard, batches, population, birdCost, feed, eggs, broilers,
-                expenses, sales, inventory, health
+                expenses, sales, inventory, health, farmService
         );
 
         Map<String, Object> report = service.farm(asOf);
@@ -72,6 +74,7 @@ class ReportServiceTest {
         assertThat(report.get("dashboard")).isSameAs(dashboardData);
         assertThat(report.get("revenueMinor")).isEqualTo(500000L);
         assertThat(report.get("profitMinor")).isEqualTo(300000L);
+        assertThat(report.get("waterUnitLabel")).isEqualTo("litres");
 
         verify(dashboard).farm(asOf);
         verify(population).get("layer-1", asOf);
@@ -96,6 +99,8 @@ class ReportServiceTest {
         SalesService sales = mock(SalesService.class);
         InventoryService inventory = mock(InventoryService.class);
         HealthManagementService health = mock(HealthManagementService.class);
+        FarmService farmService = mock(FarmService.class);
+        when(farmService.getWaterUnitLabel()).thenReturn("litres");
 
         BatchResponse batch = mock(BatchResponse.class);
         when(batch.id()).thenReturn("batch-1");
@@ -127,7 +132,7 @@ class ReportServiceTest {
 
         ReportService service = new ReportService(
                 dashboard, batches, population, birdCost, feed, eggs, broilers,
-                expenses, sales, inventory, health
+                expenses, sales, inventory, health, farmService
         );
 
         Map<String, Object> report = service.batch("batch-1", asOf);
@@ -136,6 +141,7 @@ class ReportServiceTest {
         assertThat(report.get("population")).isSameAs(populationData);
         assertThat(report.get("mortality")).isEqualTo(12);
         assertThat(report.get("profitMinor")).isEqualTo(500000L);
+        assertThat(report.get("waterUnitLabel")).isEqualTo("litres");
 
         verify(dashboard).batch("batch-1", asOf);
         verify(population).get("batch-1", asOf);

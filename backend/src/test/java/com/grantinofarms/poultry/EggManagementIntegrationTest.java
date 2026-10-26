@@ -143,7 +143,7 @@ class EggManagementIntegrationTest {
     @Test
     void configurableCrateSizeIsUsedForSales() {
         setupFarm();
-        farmService.updateSettings(new FarmSettingsRequest(24, null, java.util.List.of(25, 50)));
+        farmService.updateSettings(new FarmSettingsRequest(24, null, java.util.List.of(25, 50), "litres"));
         var house = houseService.create(new HouseCreateRequest("Layer House", "LH1", null));
         var batch = batchService.create(new BatchCreateRequest(
                 "LAYER", LocalDate.of(2026, 1, 1), house.id(), 100, null, 1_000_000L));
