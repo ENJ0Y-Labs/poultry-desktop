@@ -1268,3 +1268,12 @@ Validate the renderer with the backend available, during startup, and with the b
 - Handle invalid/missing timestamps and missing/unknown action/entity values with readable fallbacks. Unknown non-empty values should be humanized rather than hidden.
 - Keep the dashboard audit table inside its existing scroll container so long values do not force page-level horizontal overflow at the supported 1100×650 and 1366×768 window sizes.
 - Cover timestamp formatting, nanosecond ISO values, timezone fallback, known action/entity labels, and unknown/missing values with Vitest. Runtime table-width verification is a separate manual check.
+
+
+## 38. First-run farm dashboard empty state
+
+- Show first-run guidance only when the farm has no houses or batches, core calculated metrics and feed type count are zero, and there are no audit records. Do not classify a farm as empty solely because one metric is zero.
+- Explain the sequence: create a house/pen, create a batch, set up and record feed, then enter daily records. Actions must navigate to the existing local hash routes.
+- The empty state is presentation-only. Never seed, synthesize, or write demo records to the database.
+- Keep the normal dashboard metrics, feed, attention, and audit layout for populated farms or farms with meaningful recorded activity.
+- Cover the empty and populated states with renderer tests. Validate with a clean disposable database and a populated test farm; never reset or alter a user's real database.
