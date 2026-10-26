@@ -34,7 +34,7 @@ public class CustomerRepository {
         List<CustomerResponse> rows = jdbc.query("""
                 SELECT id, farm_id, name, phone, notes, created_at, updated_at
                 FROM customers
-                WHERE farm_id = ? AND name = ?
+                WHERE farm_id = ? AND name = ? COLLATE NOCASE
                 ORDER BY created_at
                 LIMIT 1
                 """, (rs, n) -> map(rs), farmId, name);

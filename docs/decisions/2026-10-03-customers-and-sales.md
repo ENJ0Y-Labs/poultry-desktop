@@ -10,6 +10,12 @@ Keep `egg_sales` and `bird_sales` as the type-specific authoritative sale record
 
 Each new type-specific sale resolves a customer, writes its existing type-specific record, and writes one common sale row in the same transaction.
 
+The sales UI supports two explicit paths:
+- select a saved customer; the customer name and ID are taken from that record
+- leave the saved-customer selector empty and enter the walk-in buyer's name
+
+Walk-in names are matched case-insensitively within the active farm before a customer record is created. Repeated sales for the same name reuse the existing customer ID rather than creating duplicates. A blank walk-in name is invalid; sale records must remain attributable to a named buyer until the data model explicitly supports anonymous sales.
+
 The common ledger uses:
 - `CRATE` for Layer egg sales, preserving the exact crate quantity
 - `BIRD` for Broiler sales

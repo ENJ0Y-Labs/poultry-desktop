@@ -9,6 +9,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class BirdCostCalculatorTest {
 
@@ -97,6 +98,37 @@ class BirdCostCalculatorTest {
 
         assertThat(snapshot.allocatedCostMinor()).isEqualTo(100L);
         assertThat(snapshot.carriedCostMinor()).isEqualTo(0L);
+    }
+
+    @Test
+    void largeNonDivisiblePurchaseTotalReconcilesWithoutOverflow() {
+        long purchaseCost = Long.MAX_VALUE;
+        List<BirdPopulationEvent> population = List.of(
+                new BirdPopulationEvent(LocalDate.of(2026, 1, 2), "SOLD", 1),
+                new BirdPopulationEvent(LocalDate.of(2026, 1, 3), "SOLD", 2)
+        );
+
+        var snapshot = BirdCostCalculator.calculate(
+                3,
+                purchaseCost,
+                population,
+                List.of(),
+                LocalDate.of(2026, 1, 3)
+        );
+
+        assertThat(snapshot.currentBirds()).isZero();
+        assertThat(snapshot.allocatedCostMinor()).isEqualTo(purchaseCost);
+        assertThat(snapshot.carriedCostMinor()).isZero();
+    }
+
+    @Test
+    void rejectsInvalidCostAllocationInputs() {
+        assertThatThrownBy(() -> BirdCostCalculator.allocateCost(-1L, 3, 1))
+                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> BirdCostCalculator.allocateCost(100L, 0, 1))
+                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> BirdCostCalculator.allocateCost(100L, 3, 4))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
