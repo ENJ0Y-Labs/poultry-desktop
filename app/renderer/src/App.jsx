@@ -400,6 +400,7 @@ export default function App() {
       setCrateSize(settings.defaultCrateSize);
       setDefaultWater(settings.defaultWaterContainerSize ?? "");
       setWaterSizes(settings.waterContainerSizes.join(", "));
+      setWaterUnitLabel(settings.waterUnitLabel || "litres");
       setHouses([]);
       setBatches([]);
       setExpenses([]);
@@ -472,11 +473,13 @@ export default function App() {
       const updated = await farmApi.updateSettings({
         defaultCrateSize:Number(crateSize),
         defaultWaterContainerSize:defaultWater === "" ? null : Number(defaultWater),
-        waterContainerSizes:sizes
+        waterContainerSizes:sizes,
+        waterUnitLabel:waterUnitLabel.trim()
       });
       setCrateSize(updated.defaultCrateSize);
       setDefaultWater(updated.defaultWaterContainerSize ?? "");
       setWaterSizes(updated.waterContainerSizes.join(", "));
+      setWaterUnitLabel(updated.waterUnitLabel || "litres");
     } catch (err) { setError(displayApiError(err)); } finally { setSaving(false); }
   }
 
