@@ -132,6 +132,7 @@ public class FarmService {
         for (Integer size : sizes) {
             waterRepository.upsertActive(farm.id(), size, request.waterUnitLabel().trim(), now);
         }
+        waterRepository.renameAllForFarm(farm.id(), request.waterUnitLabel().trim(), now);
 
         auditRepository.append(farm.id(), "UPDATE", "FARM_SETTINGS", farm.id(), null,
                 null, json(request), now);
