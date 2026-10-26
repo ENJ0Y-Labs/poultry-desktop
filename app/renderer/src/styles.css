@@ -543,3 +543,76 @@ kbd{font-size:11px;font-weight:800;color:var(--muted-2);border:1px solid var(--p
   --alpha-65217245p4: rgba(26, 77, 92, .34);
   --alpha-65217245p55: rgba(26, 77, 92, .42);
 }
+
+
+/* Issue #68: keep IDE navigation, tabs, and focus states readable in both themes. */
+:root {
+  --ide-titlebar: #18181c;
+  --ide-activity: #121215;
+  --ide-sidebar: #16161a;
+  --ide-workspace: #0e0e11;
+  --ide-card: #1a1a20;
+  --ide-hover: #26262e;
+  --ide-border: #272730;
+  --ide-accent: var(--brand-gold, #f4b41a);
+  --ide-accent-hover: #d99b00;
+  --ide-success: #22c55e;
+  --ide-warning: #eab308;
+  --ide-danger: #ef4444;
+  --ide-text: #e4e4e7;
+  --ide-muted: #a1a1aa;
+  --ide-focus-ring: var(--ide-accent);
+  --ide-tab-bg: var(--ide-sidebar);
+  --ide-tab-hover-bg: var(--ide-hover);
+  --ide-tab-active-bg: var(--ide-card);
+  --ide-tab-active-border: var(--ide-accent);
+  --ide-activity-icon: var(--ide-muted);
+  --ide-activity-active-bg: var(--ide-card);
+  --ide-scrollbar: #3f3f46;
+  --ide-scrollbar-hover: #52525b;
+}
+:root[data-theme="light"] {
+  --ide-titlebar: #f8fafc;
+  --ide-activity: #eef2f6;
+  --ide-sidebar: #ffffff;
+  --ide-workspace: #f5f7fa;
+  --ide-card: #ffffff;
+  --ide-hover: #e8eef4;
+  --ide-border: #d4dde7;
+  --ide-accent: var(--brand-teal, #1a4d5c);
+  --ide-accent-hover: #123945;
+  --ide-success: #087b52;
+  --ide-warning: #945b00;
+  --ide-danger: #b42332;
+  --ide-text: #202b38;
+  --ide-muted: #536274;
+  --ide-focus-ring: #1a4d5c;
+  --ide-tab-bg: #edf2f7;
+  --ide-tab-hover-bg: #e3ebf3;
+  --ide-tab-active-bg: #ffffff;
+  --ide-tab-active-border: #1a4d5c;
+  --ide-activity-icon: #526174;
+  --ide-activity-active-bg: #ffffff;
+  --ide-scrollbar: #c4ced9;
+  --ide-scrollbar-hover: #9aa9ba;
+}
+.activity-button { color: var(--ide-activity-icon); }
+.activity-button:hover:not(:disabled) { background: var(--ide-hover); color: var(--ide-text); }
+.activity-button.active { background: var(--ide-activity-active-bg); color: var(--ide-accent); }
+.activity-avatar { border-color: var(--ide-border); background: var(--ide-hover); color: var(--ide-text); }
+.activity-button:focus-visible { outline-color: var(--ide-focus-ring); }
+.sidebar-nav { scrollbar-color: var(--ide-scrollbar) transparent; }
+.sidebar-nav::-webkit-scrollbar-thumb,
+.table::-webkit-scrollbar-thumb { background: var(--ide-scrollbar); }
+.sidebar-nav::-webkit-scrollbar-thumb:hover,
+.table::-webkit-scrollbar-thumb:hover { background: var(--ide-scrollbar-hover); }
+.nav-item.active { background: var(--ide-activity-active-bg); color: var(--ide-accent); border-color: var(--ide-border); }
+.page-tabs { border-color: var(--border); background: var(--ide-tab-bg); }
+.page-tab { color: var(--muted); }
+.page-tab:hover { color: var(--text); background: var(--ide-tab-hover-bg); }
+.page-tab.active { color: var(--text); border-color: var(--ide-tab-active-border); background: var(--ide-tab-active-bg); }
+:root[data-theme="light"] .activity-bar { border-right-color: var(--ide-border); }
+:root[data-theme="light"] .app-topbar { background: linear-gradient(to bottom, var(--topbar-bg-start), var(--topbar-bg-end)); }
+:root[data-theme="light"] .sidebar-nav,
+:root[data-theme="light"] .table { scrollbar-color: var(--ide-scrollbar) transparent; }
+:root[data-theme="light"] .system-pill.disconnected { color: var(--red); border-color: color-mix(in srgb, var(--red) 35%, transparent); }
