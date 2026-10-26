@@ -38,7 +38,6 @@ export default function DashboardPage() {
     batches,
     feedTypes,
     feedInventory = [],
-    inventoryItems,
     dashboard,
     attention,
     auditRows,
