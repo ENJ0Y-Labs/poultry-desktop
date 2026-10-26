@@ -17,19 +17,31 @@ public class UserRepository {
         return count == null ? 0 : count;
     }
 
-    public void insert(String id, String email, String passwordHash, String fullName, String now) {
+    public void insert(String id, String username, String email, String passwordHash, String fullName, String now) {
         jdbc.update("""
-                INSERT INTO users (id, email, password_hash, full_name, role, status, created_at, updated_at)
-                VALUES (?, ?, ?, ?, 'OWNER', 'ACTIVE', ?, ?)
-                """, id, email, passwordHash, fullName, now, now);
+                INSERT INTO users (id, username, email, password_hash, full_name, role, status, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, 'OWNER', 'ACTIVE', ?, ?)
+                """, id, username, email, passwordHash, fullName, now, now);
     }
 
-    public Map<String, Object> findByEmail(String email) {
+    public Map<String, Object> findByIdentifier(String identifier) {
         try {
             return jdbc.queryForMap("""
-                    SELECT id, email, password_hash, full_name, role, status
-                    FROM users WHERE email = ? COLLATE NOCASE
-                    """, email);
+                    SELECT id, username, email, password_hash, full_name, role, status
+                    FROM users
+                    WHERE username = ? COLLATE NOCASE OR email = ? COLLATE NOCASE
+                    """, identifier, identifier);
+        } catch (EmptyResultDataAccessException e) {
+            return null;
+        }
+    }
+
+    public Map<String, Object> findByUsername(String username) {
+        try {
+            return jdbc.queryForMap("""
+                    SELECT id, username, email, password_hash, full_name, role, status
+                    FROM users WHERE username = ? COLLATE NOCASE
+                    """, username);
         } catch (EmptyResultDataAccessException e) {
             return null;
         }
@@ -38,7 +50,7 @@ public class UserRepository {
     public Map<String, Object> findById(String id) {
         try {
             return jdbc.queryForMap("""
-                    SELECT id, email, password_hash, full_name, role, status
+                    SELECT id, username, email, password_hash, full_name, role, status
                     FROM users WHERE id = ?
                     """, id);
         } catch (EmptyResultDataAccessException e) {
@@ -46,13 +58,12 @@ public class UserRepository {
         }
     }
 
-    public void updateProfile(String id, String email, String fullName, String now) {
-        jdbc.update("UPDATE users SET email = ?, full_name = ?, updated_at = ? WHERE id = ?",
-                email, fullName, now, id);
+    public void updateProfile(String id, String username, String email, String fullName, String now) {
+        jdbc.update("UPDATE users SET username = ?, email = ?, full_name = ?, updated_at = ? WHERE id = ?",
+                username, email, fullName, now, id);
     }
 
     public void updatePassword(String id, String passwordHash, String now) {
-        jdbc.update("UPDATE users SET password_hash = ?, updated_at = ? WHERE id = ?",
-                passwordHash, now, id);
+        jdbc.update("UPDATE users SET password_hash = ?, updated_at = ? WHERE id = ?", passwordHash, now, id);
     }
 }

@@ -4,6 +4,7 @@ import com.grantinofarms.poultry.dto.*;
 import com.grantinofarms.poultry.exception.ApiException;
 import com.grantinofarms.poultry.repository.AuditRepository;
 import com.grantinofarms.poultry.repository.DailyOperationsRepository;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,11 +20,8 @@ public class DailyOperationsService {
     private final BirdPopulationService populationService;
     private final AuditRepository auditRepository;
 
-    public DailyOperationsService(
-            DailyOperationsRepository repository,
-            BirdPopulationService populationService,
-            AuditRepository auditRepository
-    ) {
+    public DailyOperationsService(DailyOperationsRepository repository, BirdPopulationService populationService,
+                                  AuditRepository auditRepository) {
         this.repository = repository;
         this.populationService = populationService;
         this.auditRepository = auditRepository;
@@ -37,35 +35,53 @@ public class DailyOperationsService {
             throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_DAILY_RECORD_DATE",
                     "Daily records cannot be dated before the batch placement date.");
         }
-        if (repository.dailyRecordId(batchId, request.recordDate()) != null) {
-            throw new ApiException(HttpStatus.CONFLICT, "DAILY_RECORD_EXISTS",
-                    "A daily record already exists for this batch and date.");
-        }
 
-        String id = UUID.randomUUID().toString();
+        String existingId = repository.dailyRecordId(batchId, request.recordDate());
         String now = java.time.Instant.now().toString();
-        repository.insertDailyRecord(id, batchId, request.recordDate(), clean(request.notes()), now);
+        boolean created = existingId == null;
+        String id = created ? UUID.randomUUID().toString() : existingId;
 
-        if (request.waterContainers() != null) {
-            for (WaterContainerEntryRequest entry : request.waterContainers()) {
-                if (!repository.waterSizeBelongsToFarm(entry.containerSizeUnits(), farmId)) {
-                    throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_WATER_CONTAINER",
-                            "Water container size does not belong to the active farm.");
+        validateWaterEntries(request.waterContainers(), farmId);
+        try {
+            if (created) {
+                repository.insertDailyRecord(id, batchId, request.recordDate(), clean(request.notes()), now);
+            } else {
+                // Null means that this form did not edit the field. Never erase another form's data.
+                if (request.notes() != null && !request.notes().isBlank()) {
+                    repository.updateNotes(id, clean(request.notes()), now);
                 }
-                repository.insertWater(
-                        UUID.randomUUID().toString(), id, repository.waterSizeId(entry.containerSizeUnits(), farmId),
-                        entry.containerCount(), now
-                );
+                if (request.waterContainers() != null) {
+                    repository.deleteWater(id);
+                }
             }
+            if (request.waterContainers() != null) {
+                for (WaterContainerEntryRequest entry : request.waterContainers()) {
+                    repository.insertWater(UUID.randomUUID().toString(), id,
+                            repository.waterSizeId(entry.containerSizeUnits(), farmId),
+                            entry.containerCount(), now);
+                }
+            }
+        } catch (DuplicateKeyException ex) {
+            throw new ApiException(HttpStatus.CONFLICT, "DAILY_RECORD_CONCURRENT_UPDATE",
+                    "Another save created or changed this day's record at the same time. Reload the day sheet and retry.");
         }
 
         auditRepository.append(
-                farmId, "CREATE", "DAILY_RECORD", id, clean(request.notes()), null,
-                String.format("{\"batchId\":\"%s\",\"recordDate\":\"%s\"}",
-                        batchId, request.recordDate()), now
+                farmId, created ? "CREATE" : "UPDATE", "DAILY_RECORD", id,
+                clean(request.notes()), created ? null : "{\"batchId\":\"" + batchId + "\",\"recordDate\":\"" + request.recordDate() + "\"}",
+                "{\"batchId\":\"" + batchId + "\",\"recordDate\":\"" + request.recordDate() + "\"}", now
         );
-
         return get(batchId, request.recordDate());
+    }
+
+    private void validateWaterEntries(List<WaterContainerEntryRequest> entries, String farmId) {
+        if (entries == null) return;
+        for (WaterContainerEntryRequest entry : entries) {
+            if (!repository.waterSizeBelongsToFarm(entry.containerSizeUnits(), farmId)) {
+                throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_WATER_CONTAINER",
+                        "Water container size does not belong to the active farm.");
+            }
+        }
     }
 
     public DailyRecordResponse get(String batchId, LocalDate date) {
@@ -93,33 +109,20 @@ public class DailyOperationsService {
         List<DailyFeedUsageResponse> feed = repository.findFeedUsage(batchId, date);
         List<WaterUsageResponse> water = List.of();
         String dailyId = repository.dailyRecordId(batchId, date);
-        if (dailyId != null) {
-            water = repository.findWater(dailyId);
-        }
+        if (dailyId != null) water = repository.findWater(dailyId);
         long totalWater = water.stream().mapToLong(WaterUsageResponse::totalUnits).sum();
         int mortality = population.mortality() - populationService.get(batchId, date.minusDays(1)).mortality();
         int culling = population.culling() - populationService.get(batchId, date.minusDays(1)).culling();
 
-        return new DailyRecordResponse(
-                dailyId,
-                batchId,
-                date,
-                population.currentBirds(),
-                mortality,
-                culling,
-                feed,
-                water,
-                totalWater,
-                repository.findPopulationEvents(batchId, date),
-                repository.notes(batchId, date)
-        );
+        return new DailyRecordResponse(dailyId, batchId, date, population.currentBirds(), mortality, culling,
+                feed, water, totalWater, repository.findPopulationEvents(batchId, date), repository.notes(batchId, date));
     }
 
     private String requireActiveBatch(String batchId) {
         requireBatch(batchId);
         if (!"ACTIVE".equals(repository.batchStatus(batchId))) {
             throw new ApiException(HttpStatus.CONFLICT, "BATCH_NOT_ACTIVE",
-                    "Daily records cannot be added to a non-ACTIVE batch.");
+                    "Daily records cannot be saved for a non-ACTIVE batch.");
         }
         return repository.farmIdForBatch(batchId);
     }

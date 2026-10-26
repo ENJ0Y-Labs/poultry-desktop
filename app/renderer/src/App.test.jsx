@@ -19,6 +19,7 @@ const settings = {
   defaultCrateSize: 30,
   defaultWaterContainerSize: 25,
   waterContainerSizes: [25, 75],
+  waterUnitLabel: "litres",
 };
 
 const batches = [
@@ -236,17 +237,23 @@ describe("App", () => {
 
     await screen.findByRole("heading", { name: "Create owner account" });
     fireEvent.change(screen.getByLabelText("Full name"), { target: { value: "Farm Owner" } });
-    fireEvent.change(screen.getByLabelText("Email"), { target: { value: "owner@example.com" } });
+    fireEvent.change(screen.getByLabelText(/Username/), { target: { value: "farm-owner" } });
+    fireEvent.change(screen.getByLabelText("Email (optional)"), { target: { value: "owner@example.com" } });
     fireEvent.change(screen.getByLabelText(/Password/), { target: { value: "correct-horse-battery" } });
     fireEvent.click(screen.getByRole("button", { name: "Create account and sign in" }));
 
     await waitFor(() => expect(screen.getByRole("heading", { name: "Farm dashboard" })).toBeInTheDocument());
     expect(setup).toHaveBeenCalledWith({
-      fullName: "Farm Owner",
+      username: "farm-owner",
       email: "owner@example.com",
+      fullName: "Farm Owner",
       password: "correct-horse-battery",
     });
-    expect(login).toHaveBeenCalledWith({ email: "owner@example.com", password: "correct-horse-battery" });
+    expect(login).toHaveBeenCalledWith({
+      loginIdentifier: "farm-owner",
+      password: "correct-horse-battery",
+      rememberMe: false,
+    });
   });
 
   it("blocks an invalid setup form before calling the API", async () => {
@@ -660,6 +667,41 @@ describe("App", () => {
     expect(screen.getByRole("option", { name: /B-2026-001 · BROILER/ })).toBeInTheDocument();
     expect(localStorage.getItem("grantino:lastBatchId")).toBe("broiler-1");
   });
+  it("routes dashboard quick actions to validated forms with the last-used batch context", async () => {
+    mockFarmApis({ currentBatches: batches });
+    vi.mocked(feedApi.listTypes).mockResolvedValue([
+      { id: "feed-layer", name: "Layer mash", unit: "bag", applicableType: "LAYER", status: "ACTIVE" },
+      { id: "feed-broiler", name: "Broiler starter", unit: "bag", applicableType: "BROILER", status: "ACTIVE" },
+    ]);
+    render(<App />);
+    await screen.findByRole("heading", { name: "Farm dashboard" });
+    const dashboardNav = () => fireEvent.click(within(screen.getByRole("navigation", { name: "Main navigation" })).getByRole("button", { name: "Dashboard" }));
+
+    fireEvent.click(await screen.findByRole("button", { name: "Record mortality" }));
+    expect(window.location.hash).toContain("daily-work/mortality");
+    expect(await screen.findByRole("combobox", { name: "Batch" })).toHaveValue("layer-1");
+
+    dashboardNav();
+    fireEvent.click(await screen.findByRole("button", { name: "Collect eggs" }));
+    expect(window.location.hash).toContain("production/eggs");
+    expect(await screen.findByRole("combobox", { name: "Layer batch" })).toHaveValue("layer-1");
+
+    dashboardNav();
+    fireEvent.click(await screen.findByRole("button", { name: "Record feed usage" }));
+    expect(window.location.hash).toContain("feed-stock/feed");
+    expect(await screen.findByRole("combobox", { name: "Feed type" })).toHaveValue("feed-layer");
+
+    dashboardNav();
+    fireEvent.click(await screen.findByRole("button", { name: "Record a sale" }));
+    expect(window.location.hash).toContain("production/eggs");
+    expect(await screen.findByRole("combobox", { name: "Layer batch" })).toHaveValue("layer-1");
+
+    dashboardNav();
+    fireEvent.click(await screen.findByRole("button", { name: "Record an expense" }));
+    expect(window.location.hash).toContain("sales-money/expenses");
+    expect(await screen.findByLabelText("Batch association")).toHaveValue("layer-1");
+  });
+
   it("preserves unsaved farm form input while retrying after a backend outage", async () => {
     mockFarmApis();
     render(<App />);
@@ -677,5 +719,6 @@ describe("App", () => {
     await waitFor(() => expect(screen.queryByRole("button", { name: "Retry connection" })).not.toBeInTheDocument());
     expect(screen.getByLabelText("Farm name")).toHaveValue("Unsaved recovery test");
   });
+
 
 });
