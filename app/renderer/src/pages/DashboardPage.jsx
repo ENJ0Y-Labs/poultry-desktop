@@ -4,6 +4,7 @@ import { FarmManagerContext } from "../components/FarmManagerContext.jsx";
 import PageSection from "../components/PageSection.jsx";
 import { formatAuditAction, formatAuditEntity, formatAuditTimestamp } from "../utils/auditFormatting.js";
 import { attentionTarget } from "../utils/attentionNavigation.js";
+import GettingStartedChecklist from "../components/GettingStartedChecklist.jsx";
 
 function todayLocalDate() {
   const now = new Date();
@@ -92,6 +93,7 @@ export default function DashboardPage() {
           </section>
         ) : (
           <>
+            <GettingStartedChecklist houses={houses} batches={batches} feedTypes={feedTypes} dashboard={dashboard} />
             <section className="subsection quick-actions" aria-labelledby="quick-actions-title">
               <div className="section-head"><div><p className="eyebrow">DAILY WORK</p><h3 id="quick-actions-title">Quick actions</h3></div><p className="muted">Jump straight to a validated entry form.</p></div>
               <div className="quick-action-grid">

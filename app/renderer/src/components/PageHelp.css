@@ -1,0 +1,30 @@
+.page-help {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 0 0 1rem;
+  padding: .9rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--panel);
+}
+.page-help-copy { min-width: 0; }
+.page-help-copy .eyebrow { margin: 0 0 .2rem; }
+.page-help-copy > strong { display: block; color: var(--text); }
+.page-help-copy > p:last-child { margin: .25rem 0 0; color: var(--muted); line-height: 1.45; }
+.page-help-action { flex: 0 0 auto; }
+.getting-started-checklist { margin-bottom: 1rem; }
+.getting-started-checklist .section-head { align-items: flex-start; }
+.getting-started-progress { color: var(--muted); white-space: nowrap; }
+.getting-started-tasks { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .7rem; margin: .8rem 0 0; padding: 0; list-style: none; }
+.getting-started-task { display: flex; align-items: flex-start; gap: .7rem; padding: .8rem; border: 1px solid var(--border-soft); border-radius: 10px; }
+.getting-started-task .task-status { color: var(--green); font-weight: 700; }
+.getting-started-task > div { flex: 1; min-width: 0; }
+.getting-started-task p { margin: .25rem 0 .5rem; color: var(--muted); }
+.getting-started-task button { margin-top: .1rem; }
+.getting-started-dismiss { background: transparent; color: var(--muted); padding: .25rem .4rem; }
+@media (max-width: 1200px) {
+  .page-help { align-items: flex-start; flex-direction: column; }
+  .getting-started-tasks { grid-template-columns: 1fr; }
+}

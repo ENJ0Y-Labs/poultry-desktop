@@ -92,3 +92,12 @@ The nine page components live under `app/renderer/src/pages/`. Shared form state
 - The activity bar, sidebar, workspace, cards, hover states, focus ring, tabs, and scrollbar use dedicated semantic IDE tokens.
 - Every shell token used by navigation and page tabs has an explicit light-theme value. Keep these values readable against the light surfaces and preserve a visible keyboard focus indicator.
 - CSS tests verify token presence and selector usage without depending on formatting or whitespace.
+
+
+## Getting-started checklist and contextual help
+
+- The dashboard uses a persistent, dismissible getting-started checklist after the farm has moved beyond the completely empty first-run state. Checklist completion is derived from current houses, batches, active feed-type setup, and positive feed stock reported by the backend dashboard; it is not inferred from house creation alone.
+- The checklist disappears automatically when every setup task is complete. Dismissal is stored as a renderer preference only and never changes farm records. No demo records are created.
+- The application shell shows concise purpose, primary workflow, and a relevant next action for each of the nine top-level pages. Actions use existing local hash routes and remain usable offline.
+- Keep help copy short and actionable. Empty states should tell the operator what to do next rather than presenting unexplained blank tables.
+- Vitest covers checklist completion/dismissal and page-help route actions. Runtime review should inspect the dashboard with a clean disposable farm, a partially configured farm, and a fully configured farm, plus help on every top-level page.
