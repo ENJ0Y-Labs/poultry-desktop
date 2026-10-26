@@ -26,17 +26,17 @@ function inspectDirectory(directory) {
     const content = readFileSync(file, "utf8");
     const label = relative(directory, file).split(sep).join("/");
 
-    if (/@font-face\\b/i.test(content)) {
+    if (/@font-face\b/i.test(content)) {
       violations.push(`${label}: contains an @font-face declaration; document and review the font before shipping it`);
     }
-    if (/@import\\s+(?:url\\()?\\s*["']?https?:/i.test(content)
-      || /@import\\s+/i.test(content)) {
+    if (/@import\s+(?:url\()?\s*["']?https?:/i.test(content)
+      || /@import\s+/i.test(content)) {
       violations.push(`${label}: contains a stylesheet import; review it for hidden font/network dependencies`);
     }
-    if (/fonts\\.googleapis\\.com|fonts\\.gstatic\\.com|use\\.typekit\\.net/i.test(content)) {
+    if (/fonts\.googleapis\.com|fonts\.gstatic\.com|use\.typekit\.net/i.test(content)) {
       violations.push(`${label}: references a remote web-font provider`);
     }
-    if (/url\\(\\s*["']?[^)'"]+\\.(?:woff2?|ttf|otf|eot)(?:[?#][^)'"]*)?["']?\\s*\\)/i.test(content)) {
+    if (/url\(\s*["']?[^)'"]+\.(?:woff2?|ttf|otf|eot)(?:[?#][^)'"]*)?["']?\s*\)/i.test(content)) {
       violations.push(`${label}: references a font file through CSS url()`);
     }
   }
@@ -51,14 +51,14 @@ const allViolations = [
   ...output.violations.map((item) => `built renderer: ${item}`),
 ];
 
-assert.deepEqual(allViolations, [], allViolations.join("\\n"));
+assert.deepEqual(allViolations, [], allViolations.join("\n"));
 assert.equal(source.fontFiles.length, 0, "Renderer source must not contain unreviewed font files.");
 assert.equal(output.fontFiles.length, 0, "Built renderer must not contain unreviewed font files.");
 
 const css = readFileSync(resolve(sourceDir, "src", "styles.css"), "utf8");
 assert.match(
   css,
-  /font-family:\\s*["']?Segoe UI["']?,\\s*system-ui,\\s*-apple-system,\\s*BlinkMacSystemFont,\\s*sans-serif/i,
+  /font-family:\s*["']?Segoe UI["']?,\s*system-ui,\s*-apple-system,\s*BlinkMacSystemFont,\s*sans-serif/i,
   "The UI must use the documented system-font fallback stack.",
 );
 
