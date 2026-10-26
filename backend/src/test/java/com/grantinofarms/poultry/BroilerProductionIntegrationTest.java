@@ -51,6 +51,47 @@ class BroilerProductionIntegrationTest {
     }
 
     @Test
+    void bagFeedIsConvertedToKilogramsForFcr() {
+        var batch = setupBroiler();
+        broilerService.addWeight(batch.id(), new WeightRecordRequest(
+                LocalDate.of(2026, 1, 8), 10, new BigDecimal("10.000"), "Baseline"));
+        broilerService.addWeight(batch.id(), new WeightRecordRequest(
+                LocalDate.of(2026, 1, 15), 10, new BigDecimal("30.000"), "Weekly"));
+
+        var feedType = feedService.createType(new FeedTypeCreateRequest(
+                "Bag Feed", "bag", "BROILER", new BigDecimal("25")));
+        feedService.purchase(new FeedPurchaseRequest(
+                feedType.id(), null, LocalDate.of(2026, 1, 2),
+                new BigDecimal("8"), "bag", 200_000L));
+        feedService.use(batch.id(), new FeedUsageRequest(
+                feedType.id(), LocalDate.of(2026, 1, 15), new BigDecimal("8"), "bag"));
+
+        var growth = broilerService.growth(batch.id(), LocalDate.of(2026, 1, 15));
+        assertThat(growth.feedConsumedKg()).isEqualByComparingTo("200");
+        assertThat(growth.fcr()).isEqualByComparingTo("1.0");
+    }
+
+    @Test
+    void unknownFeedConversionMakesFeedKilogramsAndFcrUndefined() {
+        var batch = setupBroiler();
+        broilerService.addWeight(batch.id(), new WeightRecordRequest(
+                LocalDate.of(2026, 1, 8), 10, new BigDecimal("10.000"), "Baseline"));
+        broilerService.addWeight(batch.id(), new WeightRecordRequest(
+                LocalDate.of(2026, 1, 15), 10, new BigDecimal("30.000"), "Weekly"));
+
+        var feedType = feedService.createType(new FeedTypeCreateRequest("Unknown Bag Feed", "bag", "BROILER"));
+        feedService.purchase(new FeedPurchaseRequest(
+                feedType.id(), null, LocalDate.of(2026, 1, 2),
+                new BigDecimal("1"), "bag", 25_000L));
+        feedService.use(batch.id(), new FeedUsageRequest(
+                feedType.id(), LocalDate.of(2026, 1, 15), new BigDecimal("1"), "bag"));
+
+        var growth = broilerService.growth(batch.id(), LocalDate.of(2026, 1, 15));
+        assertThat(growth.feedConsumedKg()).isNull();
+        assertThat(growth.fcr()).isNull();
+    }
+
+    @Test
     void birdSalesReducePopulationAndAutomaticallyLockWhenAllBirdsAreSold() {
         var batch = setupBroiler();
 

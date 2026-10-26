@@ -12,6 +12,7 @@ public class FeedController {
  public FeedController(FeedService service){this.service=service;}
  @GetMapping("/types") public Map<String,Object> types(){return ok(service.types());}
  @PostMapping("/types") public Map<String,Object> createType(@Valid @RequestBody FeedTypeCreateRequest r){return ok(service.createType(r));}
+ @PutMapping("/types/{id}/conversion") public Map<String,Object> updateConversion(@PathVariable String id,@RequestBody FeedTypeConversionRequest r){return ok(service.updateConversion(id,r));}
  @PostMapping("/types/{id}/archive") public Map<String,Object> archiveType(@PathVariable String id){return ok(service.archiveType(id));}
  @PostMapping("/purchases") public Map<String,Object> purchase(@Valid @RequestBody FeedPurchaseRequest r){return ok(service.purchase(r));}
  @GetMapping("/inventory") public Map<String,Object> inventory(@RequestParam(required=false) LocalDate asOf){return ok(service.inventory(asOf));}
