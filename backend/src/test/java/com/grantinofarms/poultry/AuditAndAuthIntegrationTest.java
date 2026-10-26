@@ -58,5 +58,27 @@ class AuditAndAuthIntegrationTest {
         auth.logout(session.token());
         assertThat(auth.current(session.token())).isNull();
         CurrentUserContext.clear();
+
+        jdbc.update("DELETE FROM user_sessions");
+        jdbc.update("DELETE FROM users");
+        assertThatThrownBy(() -> auth.setup(
+                new AuthSetupRequest("x", null, "correct-horse-battery", "Invalid Username")))
+                .isInstanceOf(com.grantinofarms.poultry.exception.ApiException.class);
+
+        var usernameOnly = auth.setup(new AuthSetupRequest("Noble_Dev", null,
+                "another-secure-password", "Owner Without Email"));
+        assertThat(usernameOnly.get("username")).isEqualTo("noble_dev");
+        assertThat(usernameOnly.get("email")).isNull();
+        var usernameOnlySession = auth.login(new LoginRequest("NOBLE_DEV", "another-secure-password"));
+        assertThat(usernameOnlySession.user().get("email")).isNull();
+        assertThat(usernameOnlySession.user().get("username")).isEqualTo("noble_dev");
+
+        assertThatThrownBy(() -> jdbc.update("""
+                INSERT INTO users
+                (id, username, email, password_hash, full_name, role, status, created_at, updated_at)
+                VALUES (?, ?, NULL, ?, ?, 'OWNER', 'ACTIVE', ?, ?)
+                """, UUID.randomUUID().toString(), "NOBLE_DEV", "hash", "Duplicate Owner",
+                "2026-10-26T00:00:00Z", "2026-10-26T00:00:00Z"))
+                .isInstanceOf(Exception.class);
     }
 }
