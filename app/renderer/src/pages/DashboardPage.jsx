@@ -27,7 +27,7 @@ export default function DashboardPage() {
     houses,
     batches,
     feedTypes,
-    dailyRecord,
+    inventoryItems,
     dashboard,
     attention,
     auditRows,
@@ -57,7 +57,7 @@ export default function DashboardPage() {
     { id: "house", label: "Create a house or pen", description: "Set up the physical location for a flock.", done: houses.length > 0, target: "flocks/houses", action: "Manage houses" },
     { id: "batch", label: "Open a batch", description: "Record flock type, placement date, and starting bird count.", done: batches.length > 0, target: "flocks/flocks", action: "Manage batches" },
     { id: "feed", label: "Set up feed", description: "Create at least one feed type before recording purchases and usage.", done: feedTypes.length > 0, target: "feed-stock/feed", action: "Set up feed" },
-    { id: "daily", label: "Record a daily observation", description: "Save a daily record for the selected batch and date.", done: Boolean(dailyRecord), target: "daily-work/daily-record", action: "Record daily work" },
+    { id: "stock", label: "Add a farm supply item", description: "Create a stock item so drugs, vaccines, and supplies can be tracked.", done: inventoryItems.length > 0, target: "feed-stock/inventory", action: "Set up stock" },
   ];
   const checklistComplete = checklistItems.every(item => item.done);
   function dismissChecklist() {
