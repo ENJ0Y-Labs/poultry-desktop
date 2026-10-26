@@ -6,6 +6,14 @@ function signalBackendUnavailable() {
   }
 }
 
+function dateRangeQuery(from, to) {
+  const params = new URLSearchParams();
+  if (from) params.set("from", from);
+  if (to) params.set("to", to);
+  const query = params.toString();
+  return query ? "?" + query : "";
+}
+
 async function getApiBase() {
   const desktopBase = window.poultryDesktop?.getApiBaseUrl
     ? await window.poultryDesktop.getApiBaseUrl()
@@ -218,8 +226,8 @@ export const authApi = {
 };
 
 export const productionTrendApi = {
-  layerHdp: (batchId, from, to) => request("/batches/" + encodeURIComponent(batchId) + "/production-trends/layer-hdp" + (from || to ? "?from=" + encodeURIComponent(from || "") + "&to=" + encodeURIComponent(to || "") : "")),
-  broilerAverageWeight: (batchId, from, to) => request("/batches/" + encodeURIComponent(batchId) + "/production-trends/broiler-average-weight" + (from || to ? "?from=" + encodeURIComponent(from || "") + "&to=" + encodeURIComponent(to || "") : "")),
+  layerHdp: (batchId, from, to) => request("/batches/" + encodeURIComponent(batchId) + "/production-trends/layer-hdp" + dateRangeQuery(from, to)),
+  broilerAverageWeight: (batchId, from, to) => request("/batches/" + encodeURIComponent(batchId) + "/production-trends/broiler-average-weight" + dateRangeQuery(from, to)),
 };
 
 export const dashboardApi = {
