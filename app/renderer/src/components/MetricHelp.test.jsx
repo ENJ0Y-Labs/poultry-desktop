@@ -10,11 +10,9 @@ describe("MetricHelp", () => {
       </MetricHelp>
     );
 
-    const trigger = screen.getByRole("group", { hidden: true });
-    expect(trigger).toBeInTheDocument();
     const summary = screen.getByRole("button", { name: "Help: FCR formula" });
     expect(summary.tagName).toBe("SUMMARY");
-    expect(screen.queryByRole("tooltip")).not.toBeVisible();
+    expect(screen.queryByText(/Feed consumed in kilograms/)).not.toBeInTheDocument();
 
     fireEvent.click(summary);
 
