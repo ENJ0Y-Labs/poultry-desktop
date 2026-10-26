@@ -222,7 +222,7 @@ farm
 
 ## Migration history
 
-The repository currently contains V1 through V21.
+The repository currently contains V1 through V23.
 
 Broad progression:
 
@@ -247,7 +247,7 @@ Broad progression:
 - V19: performance indexes
 - V20: settings management and configurable expense categories\n- V21: optional feed kilogram conversion factors
 
-Never edit an applied migration. Add V21 or later for future schema changes.
+Never edit an applied migration. Add a new version greater than V23 for future schema changes.
 
 
 ## Auditable transaction reversals (planned by ADR)
