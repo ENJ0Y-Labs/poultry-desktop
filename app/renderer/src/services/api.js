@@ -211,6 +211,11 @@ export const authApi = {
   me: () => request("/auth/me"),
 };
 
+export const productionTrendApi = {
+  layerHdp: (batchId, from, to) => request("/batches/" + encodeURIComponent(batchId) + "/production-trends/layer-hdp" + (from || to ? "?from=" + encodeURIComponent(from || "") + "&to=" + encodeURIComponent(to || "") : "")),
+  broilerAverageWeight: (batchId, from, to) => request("/batches/" + encodeURIComponent(batchId) + "/production-trends/broiler-average-weight" + (from || to ? "?from=" + encodeURIComponent(from || "") + "&to=" + encodeURIComponent(to || "") : "")),
+};
+
 export const dashboardApi = {
   farm: (asOf) => request("/dashboard" + (asOf ? "?asOf=" + encodeURIComponent(asOf) : "")),
   batch: (id, asOf) => request("/batches/" + id + "/dashboard" + (asOf ? "?asOf=" + encodeURIComponent(asOf) : "")),
