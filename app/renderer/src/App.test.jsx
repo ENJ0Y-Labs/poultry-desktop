@@ -19,6 +19,7 @@ const settings = {
   defaultCrateSize: 30,
   defaultWaterContainerSize: 25,
   waterContainerSizes: [25, 75],
+  waterUnitLabel: "litres",
 };
 
 const batches = [
@@ -579,6 +580,18 @@ describe("App", () => {
 
     await waitFor(() => expect(screen.queryByRole("button", { name: "Retry connection" })).not.toBeInTheDocument());
     expect(screen.getByLabelText("Farm name")).toHaveValue("Unsaved recovery test");
+  });
+
+  it("loads the farm water unit label into farm defaults", async () => {
+    mockFarmApis();
+    render(<App />);
+
+    await waitFor(() => expect(screen.getByRole("heading", { name: "Farm dashboard" })).toBeInTheDocument());
+    fireEvent.click(within(screen.getByRole("navigation", { name: "Main navigation" })).getByRole("button", { name: "Settings" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Farm defaults" }));
+
+    expect(await screen.findByLabelText("Water unit label")).toHaveValue("litres");
+    expect(screen.getByText(/Existing water figures are not converted/i)).toBeInTheDocument();
   });
 
 });
