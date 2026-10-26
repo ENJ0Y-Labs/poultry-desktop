@@ -124,7 +124,7 @@ Broiler bird sales. A corresponding SOLD population event remains the authoritat
 
 ### `farm_settings`
 
-Farm operating defaults, including egg crate size, water defaults and pricing/margin settings.
+Farm operating defaults, including egg crate size, water defaults, water unit display label, and pricing/margin settings. The water unit label defaults to `litres` and is presentation-only; changing it does not convert or rewrite existing water measurements.
 
 ### `pricing_margin_history`
 

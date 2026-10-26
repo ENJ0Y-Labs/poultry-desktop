@@ -1299,3 +1299,13 @@ Validate the renderer with the backend available, during startup, and with the b
 - PDF exports include the report title and as-of date, readable column headings, row separation, and repeated table headers when a report spans pages.
 - Values come from ReportService and its existing dashboard/domain calculation services. Export formatting may format values but must not recalculate farm metrics.
 - Test date scope, empty sections, CSV escaping/headers, money/unit formatting, and generated PDF text/output.
+
+## 40. Production trend charts
+
+- Layer production trend is backend-owned HDP% = total eggs collected on the business date (good + cracked) ÷ live layer birds on that date × 100. Use the historical bird-population calculation for each date; do not calculate the denominator in React.
+- Broiler daily average weight is total sampled weight in kilograms ÷ total sampled birds for all weight records on that date. Aggregate grams and sample counts before dividing; do not average record averages.
+- Layer HDP and broiler average-weight endpoints accept only their matching batch type. They must reject incompatible batch types and dates before placement.
+- Trend ranges are inclusive and limited to 366 days. If no start date is supplied, use the most recent 30 days but never start before batch placement.
+- Return a point for every calendar day in the selected period. A date with no production record has `value: null` and `recorded: false`; never turn a missing record into zero. An explicitly recorded zero-egg collection is a real 0% value.
+- Use kilograms for broiler average weight and percent for HDP. Backend responses include metric/unit and the missing-day policy.
+- Charts must display loading, empty, and error states; accessible names; dates and values in tooltips; and visible gaps for missing days. They must refresh after relevant successful production writes.

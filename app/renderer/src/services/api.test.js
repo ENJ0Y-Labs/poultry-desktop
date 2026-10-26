@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import { authApi, attentionApi, reportApi, settingsApi, expenseCategoryApi, accountApi, populationApi } from "./api.js";
+import { authApi, attentionApi, reportApi, settingsApi, expenseCategoryApi, accountApi, populationApi, eggApi, productionTrendApi } from "./api.js";
 
 describe("API client", () => {
   beforeEach(() => {
@@ -121,6 +121,43 @@ describe("API client", () => {
     });
     expect(fetchMock).toHaveBeenCalledWith(
       expect.stringContaining("/reports/farm.pdf?asOf=2026-10-03"),
+      expect.objectContaining({ credentials: "include" })
+    );
+  });
+
+  it("emits a mutation event after a successful production write", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ ok: true, data: { id: "egg-1" } }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      })
+    );
+    const handler = vi.fn();
+    window.addEventListener("pomas:data-mutated", handler);
+
+    await eggApi.addCollection("batch-1", {
+      recordDate: "2026-10-26", good: 20, cracked: 1, notes: "",
+    });
+
+    expect(handler).toHaveBeenCalledTimes(1);
+    expect(handler.mock.calls[0][0].detail).toEqual({
+      path: "/batches/batch-1/eggs/collections",
+      method: "POST",
+    });
+    window.removeEventListener("pomas:data-mutated", handler);
+  });
+
+  it("calls the backend production-trend endpoints with the selected period", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ ok: true, data: { points: [] } }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      })
+    );
+
+    await productionTrendApi.layerHdp("batch-1", "2026-10-01", "2026-10-26");
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining("/batches/batch-1/production-trends/layer-hdp?from=2026-10-01&to=2026-10-26"),
       expect.objectContaining({ credentials: "include" })
     );
   });

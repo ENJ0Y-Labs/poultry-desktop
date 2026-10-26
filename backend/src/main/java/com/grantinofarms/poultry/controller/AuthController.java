@@ -16,6 +16,7 @@ import java.util.Map;
 @RequestMapping("/api/v1/auth")
 public class AuthController {
     private static final String COOKIE_ATTRIBUTES = "; Path=/; HttpOnly; SameSite=None; Secure";
+    private static final int PERSISTENT_COOKIE_MAX_AGE_SECONDS = 30 * 24 * 60 * 60;
 
     private final AuthService service;
     public AuthController(AuthService service) { this.service = service; }
@@ -33,7 +34,7 @@ public class AuthController {
     @PostMapping("/login")
     ResponseEntity<?> login(@Valid @RequestBody LoginRequest request, HttpServletRequest httpRequest, HttpServletResponse response) {
         AuthService.Session session = service.login(request, httpRequest.getRemoteAddr());
-        response.addHeader("Set-Cookie", sessionCookieHeader(session.token()));
+        response.addHeader("Set-Cookie", sessionCookieHeader(session.token(), request.persistentSession()));
         return ResponseEntity.ok(Map.of("ok", true, "data", session.user()));
     }
 
@@ -45,7 +46,12 @@ public class AuthController {
     }
 
     static String sessionCookieHeader(String token) {
-        return AuthService.COOKIE + "=" + token + COOKIE_ATTRIBUTES;
+        return sessionCookieHeader(token, false);
+    }
+
+    static String sessionCookieHeader(String token, boolean persistent) {
+        return AuthService.COOKIE + "=" + token + COOKIE_ATTRIBUTES
+                + (persistent ? "; Max-Age=" + PERSISTENT_COOKIE_MAX_AGE_SECONDS : "");
     }
 
     static String logoutCookieHeader() {
