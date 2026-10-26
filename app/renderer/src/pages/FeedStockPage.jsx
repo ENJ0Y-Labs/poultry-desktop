@@ -95,7 +95,7 @@ export default function FeedStockPage() {
                 <span>{item.feedTypeName}</span>
                 <span>{feedQuantity(item.remainingQuantityMilli)} {item.unit}</span>
                 <span>{feedQuantity(item.consumedQuantityMilli)} {item.unit}</span>
-                <span>{item.remainingCostMinor}</span>
+                <span>{formatMoney(item.remainingCostMinor, farm.currency)}</span>
               </div>)}
               {feedInventory.length===0 && <p className="muted empty">No feed stock yet.</p>}
             </div>
