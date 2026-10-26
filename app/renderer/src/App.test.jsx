@@ -453,13 +453,13 @@ describe("App", () => {
 
     expect(await screen.findByRole("heading", { name: "Your farm is ready to be set up" })).toBeInTheDocument();
     expect(screen.getByText(/Nothing has been added automatically/)).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Create house / pen" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Create batch" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Open feed & stock" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Record daily work" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Open houses" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Open batches" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Configure feed" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Record purchase" })).toBeInTheDocument();
     expect(screen.queryByText("Total birds")).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: "Create house / pen" }));
+    fireEvent.click(screen.getByRole("button", { name: "Open houses" }));
     expect(window.location.hash).toBe("#flocks/houses");
   });
 
