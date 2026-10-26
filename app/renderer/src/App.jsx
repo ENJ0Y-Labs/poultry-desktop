@@ -263,8 +263,6 @@ export default function App() {
       setInventoryItems(await inventoryApi.listItems());
       setFeedTypes(await feedApi.listTypes());
       setFeedInventory(await feedApi.inventory());
-      setSuccessMessage("Feed usage recorded successfully.");
-      await loadDashboard();
       setPricingSettings(await pricingApi.settings());
       const [categories, currentAccount, appSettings, backupConfig] = await Promise.all([
         expenseCategoryApi.list(), accountApi.get(), settingsApi.application(), settingsApi.backup()
@@ -648,6 +646,8 @@ export default function App() {
       });
       setFeedUsageForm(form => ({ ...emptyFeedUsage, batchId: form.batchId, feedTypeId: form.feedTypeId }));
       setFeedInventory(await feedApi.inventory());
+      setSuccessMessage("Feed usage recorded successfully.");
+      await loadDashboard();
     } catch (err) { setError(displayApiError(err)); } finally { setSaving(false); }
   }
 
