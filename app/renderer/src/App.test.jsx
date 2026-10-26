@@ -557,6 +557,17 @@ describe("App", () => {
     expect(screen.getByLabelText("Date")).toHaveValue("2026-10-25");
   });
 
+  it("preserves a contextual batch when opening an alert route directly", async () => {
+    mockFarmApis({ currentBatches: batches });
+    window.location.hash = "#flocks/batch-dashboard/batchId=broiler-1";
+
+    render(<App />);
+
+    await waitFor(() => {
+      expect(screen.getByLabelText("Batch")).toHaveValue("broiler-1");
+    });
+  });
+
   it("keeps alerts with missing required identifiers non-clickable", async () => {
     mockFarmApis();
     vi.mocked(attentionApi.list).mockResolvedValue([{
