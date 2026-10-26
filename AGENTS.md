@@ -1297,3 +1297,12 @@ Validate the renderer with the backend available, during startup, and with the b
 - PDF exports include the report title and as-of date, readable column headings, row separation, and repeated table headers when a report spans pages.
 - Values come from ReportService and its existing dashboard/domain calculation services. Export formatting may format values but must not recalculate farm metrics.
 - Test date scope, empty sections, CSV escaping/headers, money/unit formatting, and generated PDF text/output.
+
+
+## Dashboard quick actions
+
+- The populated farm dashboard provides shortcuts to mortality, layer egg collection, feed usage, a type-appropriate sale, and expenses.
+- Quick actions navigate to existing hash routes and existing validated forms; they do not bypass renderer validation, API validation, or backend domain services.
+- Batch context prefers the selected/last-used active batch. Egg collection and egg sales select an active layer batch; bird sales select an active broiler batch. Feed type defaults only to an active type applicable to the chosen batch.
+- After a successful shortcut workflow submission, refresh farm metrics, attention alerts, audit activity, and the associated batch dashboard, and announce a success status to assistive technology.
+- Keep the shortcut layout keyboard accessible and responsive at narrow window widths. Do not add a new route dependency or demo records.
