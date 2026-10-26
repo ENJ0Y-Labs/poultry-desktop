@@ -226,3 +226,52 @@ button:focus-visible {
   outline: 3px solid var(--a11y-accent-text);
   outline-offset: 3px;
 }
+
+
+/* Issue #93: brand tokens and accessible semantic contrast in both themes. */
+:root:not([data-theme="light"]) {
+  --brand-teal: #1A4D5C;
+  --brand-gold: #F4B41A;
+  --a11y-surface: #0f2024;
+  --a11y-surface-raised: #17343b;
+  --a11y-text: #f1f7f8;
+  --a11y-secondary: #b9cbd0;
+  --a11y-tertiary: #b9cbd0;
+  --a11y-accent-text: #F4B41A;
+  --a11y-nav-active-bg: #1A4D5C;
+  --a11y-shortcut-bg: #12282e;
+}
+:root[data-theme="light"] {
+  --brand-teal: #1A4D5C;
+  --brand-gold: #F4B41A;
+  --a11y-surface: #f4f8f8;
+  --a11y-surface-raised: #ffffff;
+  --a11y-text: #172b31;
+  --a11y-secondary: #425b61;
+  --a11y-tertiary: #425b61;
+  --a11y-accent-text: #1A4D5C;
+  --a11y-nav-active-bg: #dcebed;
+  --a11y-shortcut-bg: #e7f0f1;
+}
+
+/* Primary actions use teal with white text; gold remains an accent, not body text. */
+button:not(.secondary):not(.danger):not(.nav-item):not(.page-tab):not(.activity-button) {
+  background: var(--brand-teal);
+  color: #ffffff;
+}
+button:not(.secondary):not(.danger):not(.nav-item):not(.page-tab):not(.activity-button):hover:not(:disabled) {
+  background: #246779;
+  color: #ffffff;
+}
+.nav-item.active,
+:root[data-theme="light"] .nav-item.active {
+  background: var(--a11y-nav-active-bg);
+  color: var(--a11y-accent-text);
+  border-color: var(--brand-teal);
+}
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+button:focus-visible {
+  outline-color: var(--a11y-accent-text);
+}
