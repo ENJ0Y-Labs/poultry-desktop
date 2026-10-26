@@ -135,7 +135,20 @@ export default function AppShell({ farm, error, onRetry, children, startPage = "
   const [activeTab, setActiveTab] = useState(() => resolveTab(window.location.hash, resolvePage(window.location.hash, startPage)));
   const [theme, setTheme] = useState(getThemePreference);
   const [backendConnected, setBackendConnected] = useState(null);
+  const [recoveryNeeded, setRecoveryNeeded] = useState(false);
+  const [retrying, setRetrying] = useState(false);
   const [hasUserNavigated, setHasUserNavigated] = useState(Boolean(window.location.hash));
+
+  async function retryBackend() {
+    if (!onRetry || retrying) return;
+    setRetrying(true);
+    try {
+      const recovered = await onRetry();
+      if (recovered !== false) setRecoveryNeeded(false);
+    } finally {
+      setRetrying(false);
+    }
+  }
 
   function changeTheme(event) {
     const nextTheme = setThemePreference(event.target.value);
@@ -178,7 +191,10 @@ export default function AppShell({ farm, error, onRetry, children, startPage = "
     let mounted = true;
     const checkBackend = async () => {
       const connected = await connectionApi.check();
-      if (mounted) setBackendConnected(connected);
+      if (mounted) {
+        setBackendConnected(connected);
+        if (!connected) setRecoveryNeeded(true);
+      }
     };
     checkBackend();
     const interval = window.setInterval(checkBackend, 5000);
@@ -317,10 +333,14 @@ export default function AppShell({ farm, error, onRetry, children, startPage = "
             </div>
           </header>
           {error && <div className="error" role="alert">{error}</div>}
-          {backendConnected === false && (
+          {recoveryNeeded && (
             <div className="error connection-recovery" role="alert">
-              The local backend is unavailable. Farm records remain in the local database. Restart the backend if needed, then retry loading farm data.
-              <button type="button" onClick={onRetry}>Retry connection</button>
+              {backendConnected === true
+                ? "The local backend is responding again, but farm data has not been refreshed. Your unsaved form entries are still on this screen."
+                : "The local backend is unavailable. Farm records remain in the local database. Your unsaved form entries are still on this screen."}
+              <button type="button" disabled={retrying} onClick={retryBackend}>
+                {retrying ? "Retrying..." : "Retry connection"}
+              </button>
             </div>
           )}
           {(pageTabs[active] || []).length > 0 && (
