@@ -59,11 +59,31 @@ export class BackendManager {
 
   get backendArguments() {
     return [
-      "--server.address=127.0.0.1",
-      `--server.port=${this.port}`,
-      `--poultry.database-path=${this.databasePath}`,
-      `--spring.profiles.active=${this.isPackaged ? "prod" : "dev"}`,
-      `--logging.file.name=${this.logFilePath}`
+      "127.0.0.1",
+      this.port,
+      this.databasePath,
+      this.isPackaged ? "prod" : "dev",
+      this.logFilePath
+    ];
+  }
+
+  get backendArgumentsForMaven() {
+    const [, , databasePath, profile, logName] = this.backendArguments;
+    return [
+      `-Dpoultry.database-path=${databasePath}`,
+      `-Dspring.profiles.active=${profile}`,
+      `-Dlogging.file.name=${logName}`
+    ];
+  }
+
+  get backendArgumentsForJava() {
+    const [address, port, databasePath, profile, logName] = this.backendArguments;
+    return [
+      `--server.address=${address}`,
+      `--server.port=${port}`,
+      `--poultry.database-path=${databasePath}`,
+      `--spring.profiles.active=${profile}`,
+      `--logging.file.name=${logName}`
     ];
   }
 
@@ -89,12 +109,23 @@ export class BackendManager {
         const wrapper = join(this.appPath, isWin ? "mvnw.cmd" : "mvnw");
         this.process = this.spawnProcess(
           wrapper,
-          ["-f", join(this.appPath, "backend", "pom.xml"), "spring-boot:run", ...this.backendArguments],
-          { cwd: this.appPath, windowsHide: true, stdio: ["ignore", "pipe", "pipe"], shell: isWin }
+          ["-f", join(this.appPath, "backend", "pom.xml"), "spring-boot:run"],
+          {
+            cwd: this.appPath,
+            windowsHide: true,
+            stdio: ["ignore", "pipe", "pipe"],
+            shell: isWin,
+            env: {
+              ...process.env,
+              SERVER_PORT: String(this.port),
+              DATABASE_PATH: this.databasePath,
+              LOG_FILE: this.logFilePath
+            }
+          }
         );
       } else {
         if (!existsSync(this.jarPath)) throw new Error(`Packaged backend JAR not found: ${this.jarPath}`);
-        this.process = this.spawnProcess(this.javaPath, ["-jar", this.jarPath, ...this.backendArguments], {
+        this.process = this.spawnProcess(this.javaPath, ["-jar", this.jarPath, ...this.backendArgumentsForJava], {
           windowsHide: true,
           stdio: ["ignore", "pipe", "pipe"]
         });
