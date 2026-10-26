@@ -43,6 +43,28 @@ class CustomerAndSalesIntegrationTest {
     }
 
     @Test
+    void walkInSalesReuseCustomerRecordRegardlessOfNameCase() {
+        setupFarm();
+
+        var first = customerService.requireForSale(null, "  Walk-in Buyer  ");
+        var second = customerService.requireForSale(null, "walk-in buyer");
+
+        assertThat(first.id()).isEqualTo(second.id());
+        assertThat(second.name()).isEqualTo("Walk-in Buyer");
+        assertThat(customerService.list()).hasSize(1);
+    }
+
+    @Test
+    void walkInSaleRejectsBlankCustomerName() {
+        setupFarm();
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(
+                () -> customerService.requireForSale(null, "  "))
+                .isInstanceOf(com.grantinofarms.poultry.exception.ApiException.class)
+                .hasMessageContaining("Customer name is required.");
+    }
+
+    @Test
     void eggSaleCreatesCommonSaleUsingCrateUnit() {
         var batch = setupLayer();
         var customer = customerService.create(new CustomerCreateRequest(

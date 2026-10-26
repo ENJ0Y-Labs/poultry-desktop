@@ -335,6 +335,32 @@ describe("App", () => {
     expect(screen.getByText("No batches yet.")).toBeInTheDocument();
   });
 
+  it("allows egg sales to use a walk-in buyer without selecting a saved customer", async () => {
+    mockFarmApis({ currentBatches: batches });
+    vi.mocked(customerApi.list).mockResolvedValue([
+      { id: "customer-1", name: "Saved Buyer", phone: null, notes: null },
+    ]);
+    render(<App />);
+
+    await waitFor(() => expect(screen.getByRole("heading", { name: "Farm dashboard" })).toBeInTheDocument());
+    fireEvent.click(within(screen.getByRole("navigation", { name: "Main navigation" })).getByRole("button", { name: "Production" }));
+    fireEvent.change(await screen.findByLabelText("Layer batch"), { target: { value: "layer-1" } });
+
+    const savedCustomer = await screen.findByLabelText("Saved customer");
+    expect(savedCustomer).not.toBeRequired();
+    expect(await screen.findByLabelText("Walk-in customer name")).toBeRequired();
+
+    fireEvent.change(savedCustomer, { target: { value: "customer-1" } });
+    expect(savedCustomer).toHaveValue("customer-1");
+    expect(screen.queryByLabelText("Walk-in customer name")).not.toBeInTheDocument();
+
+    fireEvent.change(savedCustomer, { target: { value: "" } });
+    const walkInName = await screen.findByLabelText("Walk-in customer name");
+    expect(walkInName).toBeRequired();
+    fireEvent.change(walkInName, { target: { value: "Walk-in Buyer" } });
+    expect(walkInName).toHaveValue("Walk-in Buyer");
+  });
+
   it("shows actionable setup guidance only when the farm is genuinely empty", async () => {
     mockFarmApis({
       currentBatches: [],
