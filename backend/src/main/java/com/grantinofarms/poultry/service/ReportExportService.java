@@ -144,7 +144,7 @@ public class ReportExportService {
     }
 
     private String humanize(String key) {
-        String words = key.replaceAll("([a-z0-9])([A-Z])", "$1 $2").replace('_', ' ').replace('.', ' ');
+        String words = key.replaceAll("([a-z0-9])([A-Z])", "$1 $2").replace('_', ' ').replace('.', ' ').toLowerCase(Locale.ROOT);
         return words.isEmpty() ? words : words.substring(0, 1).toUpperCase(Locale.ROOT) + words.substring(1);
     }
 
