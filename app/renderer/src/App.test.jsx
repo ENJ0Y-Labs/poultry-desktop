@@ -247,7 +247,11 @@ describe("App", () => {
       email: "owner@example.com",
       password: "correct-horse-battery",
     });
-    expect(login).toHaveBeenCalledWith({ email: "owner@example.com", password: "correct-horse-battery" });
+    expect(login).toHaveBeenCalledWith({
+      email: "owner@example.com",
+      password: "correct-horse-battery",
+      rememberMe: false,
+    });
   });
 
   it("blocks an invalid setup form before calling the API", async () => {

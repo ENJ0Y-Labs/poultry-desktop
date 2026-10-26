@@ -209,7 +209,7 @@ export default function App() {
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [authStatus, setAuthStatus] = useState(null);
-  const [authForm, setAuthForm] = useState({ email: "", fullName: "", password: "" });
+  const [authForm, setAuthForm] = useState({ email: "", fullName: "", password: "", rememberMe: false });
   const [dashboard, setDashboard] = useState(null);
   const [attention, setAttention] = useState([]);
   const [auditRows, setAuditRows] = useState([]);
@@ -311,10 +311,10 @@ export default function App() {
     event.preventDefault(); setSaving(true); setError("");
     try {
       if (authStatus?.setupRequired) {
-        await authApi.setup(authForm);
+        await authApi.setup({ fullName: authForm.fullName, email: authForm.email, password: authForm.password });
         setAuthStatus({ authenticated: false, setupRequired: false });
       }
-      await authApi.login({ email: authForm.email, password: authForm.password });
+      await authApi.login({ email: authForm.email, password: authForm.password, rememberMe: authStatus?.setupRequired ? false : authForm.rememberMe });
       setAuthStatus({ authenticated: true, setupRequired: false });
       await load();
     } catch (err) {
@@ -986,6 +986,7 @@ export default function App() {
           {authStatus.setupRequired && <label>Full name<input required maxLength="120" autoComplete="name" value={authForm.fullName} onChange={e=>setAuthForm({...authForm,fullName:e.target.value})}/></label>}
           <label>Email<input required type="email" autoComplete="username" value={authForm.email} onChange={e=>setAuthForm({...authForm,email:e.target.value})}/></label>
           <label>Password<input required type="password" minLength={authStatus.setupRequired ? 10 : undefined} autoComplete={authStatus.setupRequired ? "new-password" : "current-password"} value={authForm.password} onChange={e=>setAuthForm({...authForm,password:e.target.value})}/>{authStatus.setupRequired && <small>Use at least 10 characters.</small>}</label>
+          {!authStatus.setupRequired && <label className="checkbox-label"><input type="checkbox" checked={authForm.rememberMe} onChange={e=>setAuthForm({...authForm,rememberMe:e.target.checked})}/> Keep me signed in on this computer <small>Stay signed in for up to 30 days. Only use this on a computer you trust.</small></label>}
           <button disabled={saving} type="submit">{saving ? "Please wait..." : authStatus.setupRequired ? "Create account and sign in" : "Sign in"}</button>
         </form>
       ) : (

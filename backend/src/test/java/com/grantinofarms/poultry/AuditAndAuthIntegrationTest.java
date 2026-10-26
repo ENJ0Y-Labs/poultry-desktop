@@ -44,10 +44,10 @@ class AuditAndAuthIntegrationTest {
         assertThatThrownBy(() -> auth.setup(
                 new AuthSetupRequest("another@example.com", "another-secure-password", "Another Owner")))
                 .isInstanceOf(com.grantinofarms.poultry.exception.ApiException.class);
-        assertThatThrownBy(() -> auth.login(new LoginRequest("owner@example.com", "wrong-password")))
+        assertThatThrownBy(() -> auth.login(new LoginRequest("owner@example.com", "wrong-password", false)))
                 .isInstanceOf(com.grantinofarms.poultry.exception.ApiException.class);
 
-        var session=auth.login(new LoginRequest("OWNER@example.com","correct-horse-battery"));
+        var session=auth.login(new LoginRequest("OWNER@example.com","correct-horse-battery", false));
         assertThat(session.token()).isNotBlank();
         assertThat(session.user().get("role")).isEqualTo("OWNER");
         assertThat(auth.current(session.token()).get("email")).isEqualTo("owner@example.com");
