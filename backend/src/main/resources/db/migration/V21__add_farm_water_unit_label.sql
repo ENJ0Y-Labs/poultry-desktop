@@ -4,4 +4,4 @@ ALTER TABLE farm_settings
 
 UPDATE water_container_sizes
 SET name = CAST(capacity_units AS TEXT) || ' litres'
-WHERE status = 'ACTIVE';
+;
