@@ -37,10 +37,10 @@ describe("navigation theme tokens", () => {
   });
 
   it("uses semantic theme tokens for activity selection, tabs, hover, and focus", () => {
-    expect(stylesheet).toContain(".activity-button.active { background: var(--ide-activity-active-bg);");
-    expect(stylesheet).toContain(".activity-button:focus-visible { outline-color: var(--ide-focus-ring); }");
-    expect(stylesheet).toContain(".page-tabs { border-color: var(--border); background: var(--ide-tab-bg); }");
-    expect(stylesheet).toContain(".page-tab:hover { color: var(--text); background: var(--ide-tab-hover-bg); }");
-    expect(stylesheet).toContain(".page-tab.active { color: var(--text); border-color: var(--ide-tab-active-border); background: var(--ide-tab-active-bg); }");
+    expect(stylesheet).toMatch(/\.activity-button\.active\s*\{[^}]*background:\s*var\(--ide-activity-active-bg\)/);
+    expect(stylesheet).toMatch(/\.activity-button:focus-visible\s*\{[^}]*outline:\s*2px solid var\(--ide-focus-ring\)/);
+    expect(stylesheet).toMatch(/\.page-tabs\s*\{[^}]*border:\s*1px solid var\(--border\);[^}]*background:\s*var\(--ide-tab-bg\)/);
+    expect(stylesheet).toMatch(/\.page-tab:hover\s*\{[^}]*color:\s*var\(--text\);[^}]*background:\s*var\(--ide-tab-hover-bg\)/);
+    expect(stylesheet).toMatch(/\.page-tab\.active\s*\{[^}]*border-color:\s*var\(--ide-tab-active-border\);[^}]*background:\s*var\(--ide-tab-active-bg\)/);
   });
 });
