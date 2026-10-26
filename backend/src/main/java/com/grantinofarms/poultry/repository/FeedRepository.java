@@ -36,7 +36,7 @@ public class FeedRepository {
                 """,
                 (rs, n) -> new FeedTypeResponse(
                         rs.getString("id"), rs.getString("name"), rs.getString("unit"),
-                        rs.getString("applicable_type"), rs.getString("status")
+                        rs.getString("applicable_type"), rs.getString("status"), rs.getBigDecimal("kg_per_unit")
                 ), id);
         return rows.isEmpty() ? null : rows.get(0);
     }
