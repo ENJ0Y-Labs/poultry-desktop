@@ -74,7 +74,7 @@ export default function ReportsPage() {
                   <div className="dashboard-list">
                     <div><span>Average weight</span><strong>{formatKg(batchReport.production.growth?.currentAverageWeightKg)}</strong></div>
                     <div><span>Growth</span><strong>{formatKg(batchReport.production.growth?.liveWeightGainKg)}</strong></div>
-                    <div><span>FCR <MetricHelp id="report-fcr-help" label="FCR formula">Feed conversion ratio (FCR) = feed consumed in kilograms ÷ live-weight gain in kilograms for this batch as of the report date. Both quantities must cover the same period. Only feed recorded in kg contributes. Lower FCR means less feed per kilogram of live-weight gain. If live-weight gain is zero or negative, FCR is undefined.</MetricHelp></span><strong>{formatMetric(batchReport.production.growth?.fcr)}</strong></div>
+                    <div><span>FCR <MetricHelp id="report-fcr-help" label="FCR formula">Feed conversion ratio (FCR) = converted feed consumed (kg) ÷ live-weight gain (kg) for this broiler batch as of the report date. The backend converts configured feed units to kilograms; non-kg feed is included when its kg-per-unit factor is configured. These are batch-to-date values, not a daily ratio. Lower FCR means less feed per kilogram of live-weight gain. If any consumed feed conversion is unknown, or live-weight gain is zero or negative, FCR is undefined and shown as —.</MetricHelp></span><strong>{formatMetric(batchReport.production.growth?.fcr)}</strong></div>
                   </div>
                 </>}
               </div>
@@ -92,6 +92,7 @@ export default function ReportsPage() {
             <ProductionTrendChart
               batchId={selectedBatchId}
               title="Layer HDP%"
+              titleHelp={<MetricHelp id="report-hdp-chart-help" label="HDP chart formula">HDP% for each date = total eggs collected that date (good + cracked, in eggs) ÷ live layer birds on that date × 100. The backend calculates the historical live-bird count. Missing egg records are gaps, not zero.</MetricHelp>}
               description="Daily eggs collected (good + cracked) as a percentage of the historical live-bird population."
               unit="percent"
               loadTrend={productionTrendApi.layerHdp}
