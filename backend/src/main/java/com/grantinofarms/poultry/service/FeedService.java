@@ -43,6 +43,18 @@ public class FeedService {
         String scope = normalizeScope(request.applicableType());
         String unit = clean(request.unit());
         String name = clean(request.name());
+        BigDecimal kgPerUnit = request.kgPerUnit();
+        if (kgPerUnit != null && kgPerUnit.signum() <= 0) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_FEED_CONVERSION",
+                    "Kilograms per unit must be greater than zero.");
+        }
+        if ("kg".equalsIgnoreCase(unit)) {
+            if (kgPerUnit != null && kgPerUnit.compareTo(BigDecimal.ONE) != 0) {
+                throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_FEED_CONVERSION",
+                        "A kilogram unit must use a conversion factor of exactly 1.");
+            }
+            kgPerUnit = BigDecimal.ONE;
+        }
         String farmId = repository.farmId();
         if (!List.of("LAYER", "BROILER", "BOTH").contains(scope)) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_FEED_SCOPE",
@@ -51,7 +63,7 @@ public class FeedService {
         String id = UUID.randomUUID().toString();
         String now = Instant.now().toString();
         try {
-            repository.insertType(id, farmId, name, unit, scope, now);
+            repository.insertType(id, farmId, name, unit, scope, kgPerUnit, now);
         } catch (org.springframework.dao.DataIntegrityViolationException e) {
             throw new ApiException(HttpStatus.CONFLICT, "DUPLICATE_FEED_TYPE",
                     "A feed type with this name already exists.");
@@ -59,6 +71,30 @@ public class FeedService {
         auditRepository.append(farmId, "CREATE", "FEED_TYPE", id, null, null,
                 String.format("{\"name\":\"%s\",\"unit\":\"%s\",\"applicableType\":\"%s\"}",
                         name, unit, scope), now);
+        return repository.findType(id);
+    }
+
+    @Transactional
+    public FeedTypeResponse updateConversion(String id, FeedTypeConversionRequest request) {
+        FeedTypeResponse type = requireType(id);
+        BigDecimal kgPerUnit = request.kgPerUnit();
+        if (kgPerUnit != null && kgPerUnit.signum() <= 0) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_FEED_CONVERSION",
+                    "Kilograms per unit must be greater than zero, or left blank when unknown.");
+        }
+        if ("kg".equalsIgnoreCase(type.unit())) {
+            if (kgPerUnit == null || kgPerUnit.compareTo(BigDecimal.ONE) != 0) {
+                throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_FEED_CONVERSION",
+                        "A kilogram unit must use a conversion factor of exactly 1.");
+            }
+            kgPerUnit = BigDecimal.ONE;
+        }
+        String now = Instant.now().toString();
+        repository.updateKgPerUnit(id, kgPerUnit, now);
+        auditRepository.append(repository.farmId(), "UPDATE", "FEED_TYPE", id,
+                "Update feed kilogram conversion",
+                "{\"kgPerUnit\":" + (type.kgPerUnit() == null ? "null" : type.kgPerUnit().toPlainString()) + "}",
+                "{\"kgPerUnit\":" + (kgPerUnit == null ? "null" : kgPerUnit.toPlainString()) + "}", now);
         return repository.findType(id);
     }
 
@@ -71,7 +107,7 @@ public class FeedService {
                 "Feed type archived",
                 String.format("{\"name\":\"%s\",\"unit\":\"%s\",\"applicableType\":\"%s\",\"status\":\"ACTIVE\"}", type.name(), type.unit(), type.applicableType()),
                 String.format("{\"name\":\"%s\",\"unit\":\"%s\",\"applicableType\":\"%s\",\"status\":\"ARCHIVED\"}", type.name(), type.unit(), type.applicableType()), now);
-        return new FeedTypeResponse(type.id(), type.name(), type.unit(), type.applicableType(), "ARCHIVED");
+        return new FeedTypeResponse(type.id(), type.name(), type.unit(), type.applicableType(), "ARCHIVED", type.kgPerUnit());
     }
     @Transactional
     public FeedPurchaseResponse purchase(FeedPurchaseRequest request) {
