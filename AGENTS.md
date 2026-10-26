@@ -761,6 +761,13 @@ For local-only operation:
 
 Multi-user roles and permissions are future work.
 
+Authentication performance rules:
+- Never reduce password-hashing work or cache password-verification results to improve timings.
+- Keep setup/login stage timings free of passwords, session tokens, and other secrets.
+- Public setup/login endpoints must not perform unrelated session lookups or bootstrap user-count queries in the auth filter; keep required session validation on protected routes and `/auth/me`.
+- Use `scripts/benchmark-auth.ps1` and a fresh disposable SQLite database for repeatable timing runs. Keep cold-start and warm-request results separate; never claim a measured improvement without multiple before/after runs.
+
+
 ## 24. Audit trail
 
 Audit every material create/update/void/restore/status/cost/stock/bird-count/money action.
