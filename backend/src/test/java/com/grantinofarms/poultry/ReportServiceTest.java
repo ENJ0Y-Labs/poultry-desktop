@@ -3,7 +3,6 @@ package com.grantinofarms.poultry;
 import com.grantinofarms.poultry.dto.BatchResponse;
 import com.grantinofarms.poultry.dto.BirdPopulationResponse;
 import com.grantinofarms.poultry.dto.ExpenseResponse;
-import com.grantinofarms.poultry.dto.FarmSettingsResponse;
 import com.grantinofarms.poultry.service.*;
 import org.junit.jupiter.api.Test;
 
@@ -101,7 +100,7 @@ class ReportServiceTest {
         InventoryService inventory = mock(InventoryService.class);
         HealthManagementService health = mock(HealthManagementService.class);
         FarmService farmService = mock(FarmService.class);
-        when(farmService.getSettings()).thenReturn(new FarmSettingsResponse(30, 25, List.of(25, 75), "litres"));
+        when(farmService.getWaterUnitLabel()).thenReturn("litres");
 
         BatchResponse batch = mock(BatchResponse.class);
         when(batch.id()).thenReturn("batch-1");
