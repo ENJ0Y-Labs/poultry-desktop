@@ -200,3 +200,29 @@ button:focus-visible {
     letter-spacing: 0;
   }
 }
+
+/* Keep skip navigation out of the visual layout until keyboard focus reaches it. */
+.skip-link {
+  position: fixed;
+  top: 10px;
+  left: 60px;
+  z-index: 1000;
+  transform: translateY(calc(-100% - 16px));
+  padding: 10px 14px;
+  border: 2px solid var(--a11y-accent-text);
+  border-radius: 6px;
+  background: var(--a11y-surface-raised);
+  color: var(--a11y-text);
+  box-shadow: 0 6px 24px rgb(0 0 0 / 28%);
+  font-size: 14px;
+  font-weight: 750;
+  line-height: 1.3;
+  text-decoration: none;
+}
+
+.skip-link:focus,
+.skip-link:focus-visible {
+  transform: translateY(0);
+  outline: 3px solid var(--a11y-accent-text);
+  outline-offset: 3px;
+}
