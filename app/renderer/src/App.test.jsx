@@ -702,7 +702,7 @@ describe("App", () => {
     expect(await screen.findByRole("heading", { name: "Finish setting up your farm" })).toBeInTheDocument();
     expect(screen.getByText("Create a house or pen")).toBeInTheDocument();
     expect(screen.getByText("Open a batch")).toBeInTheDocument();
-    expect(screen.getByText("Set up feed")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Set up feed" })).toBeInTheDocument();
     expect(screen.getByText("Add a farm supply item")).toBeInTheDocument();
   });
 
