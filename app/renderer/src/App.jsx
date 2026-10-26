@@ -660,15 +660,18 @@ export default function App() {
     });
   }
 
-  async function saveDailyRecord(event) {
+  async function saveDailyRecord(event, mode = "all") {
     event.preventDefault(); setSaving(true); setError("");
     try {
-      const created = await dailyApi.create(dailyForm.batchId, {
+      const payload = {
         recordDate: dailyForm.date,
-        notes: dailyForm.notes.trim() || null,
-        waterContainers: parseWaterEntries(dailyForm.water),
-      });
-      setDailyRecord(created);
+        // Omitted fields are preserved by the backend. Each form only writes fields it owns.
+        notes: mode === "water" ? null : (dailyForm.notes.trim() || null),
+        waterContainers: mode === "notes" ? null : parseWaterEntries(dailyForm.water),
+      };
+      const saved = await dailyApi.create(dailyForm.batchId, payload);
+      setDailyRecord(saved);
+      setDailyForm(form => ({ ...form, notes: saved.notes || "", water: saved.water.map(entry => `${entry.capacityUnits}:${entry.containerCount}`).join(", ") }));
     } catch (err) { setError(displayApiError(err)); } finally { setSaving(false); }
   }
 
