@@ -1297,3 +1297,14 @@ Validate the renderer with the backend available, during startup, and with the b
 - PDF exports include the report title and as-of date, readable column headings, row separation, and repeated table headers when a report spans pages.
 - Values come from ReportService and its existing dashboard/domain calculation services. Export formatting may format values but must not recalculate farm metrics.
 - Test date scope, empty sections, CSV escaping/headers, money/unit formatting, and generated PDF text/output.
+
+
+## Authentication session persistence
+
+- Login supports an explicit `rememberMe` choice. Default is session-only; do not silently enable persistent login.
+- Session-only server sessions expire after 12 hours. Persistent sessions expire after 30 days, with matching cookie Max-Age. Both expiry values are enforced server-side, not only by the cookie.
+- Logout must revoke the server-side session and clear the cookie using matching Path and security attributes.
+- Keep the session token in an HttpOnly cookie only. Never store auth tokens in localStorage, sessionStorage, IndexedDB, or renderer state.
+- Keep the cookie attributes `HttpOnly; Path=/; SameSite=None; Secure` for credentialed requests from the packaged Electron renderer to the loopback API. Do not broaden the API to LAN/remote origins to make cookie behavior work.
+- The login UI must explain the 30-day persistence and warn users to use it only on a trusted computer.
+- Test session-only and persistent cookie attributes, server-side expiry selection, logout revocation, and restart persistence against a disposable database. Separate automated checks from manual packaged-Electron restart testing.
