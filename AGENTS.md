@@ -1212,8 +1212,11 @@ And never sacrifice poultry math for dashboard cosmetics.
 
 - Support Auto, Light, and Dark appearance preferences without changing farm records or adding a database migration.
 - Persist the renderer preference in localStorage and apply it before React mounts; keep all component colors in CSS tokens with explicit light-theme values.
+- Brand palette: deep teal `#1A4D5C` for primary actions and brand elements; golden yellow `#F4B41A` for accents, active states, focus indicators, and highlights.
+- Use white text on teal primary buttons. Never use golden yellow as small text on a white/light surface; use deep teal for light-mode accent text.
+- Define readable, mode-specific backgrounds, surfaces, text, borders, muted labels, alerts, disabled states, hover states, and focus states in the shared stylesheets. Do not introduce screen-specific hardcoded brand colors.
 - Keep native theme changes behind a validated preload IPC method. Set the Electron window background before showing the window to minimize theme flashes.
-- Verify status/severity/error contrast in both themes. If charts are introduced or modified, verify their series, grid, axis, tooltip, and legend colors in both themes.
+- Verify status/severity/error contrast in both themes. If charts are introduced or modified, verify their series, grid, axis, tooltip, and legend colors in both themes. Run `npm run build` (including `scripts/verify-a11y.mjs`) and manually inspect both themes at supported window sizes.
 
 
 
