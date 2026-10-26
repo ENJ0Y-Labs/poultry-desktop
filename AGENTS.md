@@ -1284,6 +1284,11 @@ Validate the renderer with the backend available, during startup, and with the b
 - Cover the empty and populated states with renderer tests. Validate with a clean disposable database and a populated test farm; never reset or alter a user's real database.
 
 
+- Keep setup guidance data-driven after the first house is created. The dashboard checklist must derive completion from saved house, batch, feed-type, and inventory-item records, and remain visible until complete or dismissed.
+- Keep the checklist dismissal local to the current computer. Do not treat page visits as completed setup tasks.
+- Every top-level page must provide concise contextual help and a next-action link. Keep those links aligned with the documented hash routes in docs/frontend-navigation.md.
+- Cover empty, partially configured, completed, and dismissed checklist states in renderer tests; test page-help navigation as well.
+
 ## Stock alert rules
 
 - An active feed type with no purchase history and no usage history is configured but not yet stocked; do not emit a low-feed-stock alert for it.
