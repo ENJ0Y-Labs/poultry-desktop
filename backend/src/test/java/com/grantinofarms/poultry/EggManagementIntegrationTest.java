@@ -88,6 +88,48 @@ class EggManagementIntegrationTest {
     }
 
     @Test
+    void fractionalCrateQuantityMustRepresentWholeEggs() {
+        var batch = setupLayer();
+
+        assertThatThrownBy(() -> eggService.addSale(batch.id(), new EggSaleRequest(
+                LocalDate.of(2026, 2, 1), "Customer A", new BigDecimal("0.333"), 300_000L)))
+                .hasMessage("Crate quantity must convert to a whole number of eggs for the configured crate size.");
+    }
+
+    @Test
+    void zeroAndNegativeCrateQuantitiesHaveDistinctPositiveQuantityValidation() {
+        var batch = setupLayer();
+
+        assertThatThrownBy(() -> eggService.addSale(batch.id(), new EggSaleRequest(
+                LocalDate.of(2026, 2, 1), "Customer A", BigDecimal.ZERO, 300_000L)))
+                .hasMessage("Egg sale quantity must be greater than zero.");
+
+        assertThatThrownBy(() -> eggService.addSale(batch.id(), new EggSaleRequest(
+                LocalDate.of(2026, 2, 1), "Customer A", new BigDecimal("-0.5"), 300_000L)))
+                .hasMessage("Egg sale quantity must be greater than zero.");
+    }
+
+    @Test
+    void maximumSupportedWholeEggQuantityPassesQuantityValidation() {
+        var batch = setupLayer();
+
+        // 71,582,788.2 crates × 30 eggs = 2,147,483,646 eggs, the
+        // largest whole-egg quantity representable by the current int domain.
+        assertThatThrownBy(() -> eggService.addSale(batch.id(), new EggSaleRequest(
+                LocalDate.of(2026, 2, 1), "Customer A", new BigDecimal("71582788.2"), 300_000L)))
+                .hasMessage("The sale exceeds good eggs available on that date.");
+    }
+
+    @Test
+    void quantityAboveMaximumHasASeparateValidationMessage() {
+        var batch = setupLayer();
+
+        assertThatThrownBy(() -> eggService.addSale(batch.id(), new EggSaleRequest(
+                LocalDate.of(2026, 2, 1), "Customer A", new BigDecimal("71582788.3"), 300_000L)))
+                .hasMessage("Crate quantity exceeds the maximum supported quantity.");
+    }
+
+    @Test
     void broilerCannotUseEggFeatures() {
         setupFarm();
         var house = houseService.create(new HouseCreateRequest("Broiler House", "BH1", null));
