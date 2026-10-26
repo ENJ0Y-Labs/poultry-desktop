@@ -108,6 +108,13 @@ public class FarmService {
                 waterRepository.findActiveSizes(farm.id()), base.waterUnitLabel());
     }
 
+    public String getWaterUnitLabel() {
+        FarmResponse farm = get();
+        FarmSettingsResponse settings = settingsRepository.find(farm.id());
+        return settings == null || settings.waterUnitLabel() == null || settings.waterUnitLabel().isBlank()
+                ? "litres" : settings.waterUnitLabel();
+    }
+
     @Transactional
     public FarmSettingsResponse updateSettings(FarmSettingsRequest request) {
         FarmResponse farm = get();
