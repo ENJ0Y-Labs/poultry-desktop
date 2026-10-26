@@ -6,6 +6,8 @@ import { reportApi, productionTrendApi } from "../services/api.js";
 // eslint-disable-next-line no-unused-vars
 import ProductionTrendChart from "../components/ProductionTrendChart.jsx";
 import { rememberLastBatchId } from "../utils/farmUx.js";
+// eslint-disable-next-line no-unused-vars
+import MetricHelp from "../components/MetricHelp.jsx";
 
 export default function ReportsPage() {
   const { formatMoney, formatQuantity, formatPercent, formatKg, formatMetric, formatCount, farm, batches, selectedBatchId, setSelectedBatchId, farmReport, batchReport, reportAsOf, setReportAsOf, loadReport, loadBatchReport, exportCsv, exportPdf } = useContext(FarmManagerContext);
