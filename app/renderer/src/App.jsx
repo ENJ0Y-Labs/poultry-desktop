@@ -242,7 +242,15 @@ export default function App() {
       const currentBatches = await batchApi.list();
       setBatches(currentBatches);
       const lastBatchId = getLastBatchId();
-      const preferredBatchId = currentBatches.some(batch => batch.id === lastBatchId) ? lastBatchId : currentBatches[0]?.id || "";
+      // A dashboard alert may open the app directly on a contextual hash route.
+      // Prefer that valid batch over the remembered/default batch so initial
+      // loading cannot silently discard the alert's target.
+      const contextBatchId = parseAttentionContext(window.location.hash).batchId;
+      const preferredBatchId = currentBatches.some(batch => batch.id === contextBatchId)
+        ? contextBatchId
+        : currentBatches.some(batch => batch.id === lastBatchId)
+          ? lastBatchId
+          : currentBatches[0]?.id || "";
       if (preferredBatchId) {
         rememberLastBatchId(preferredBatchId);
         setSelectedBatchId(preferredBatchId);
