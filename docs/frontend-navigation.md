@@ -102,3 +102,11 @@ The nine page components live under `app/renderer/src/pages/`. Shared form state
 - The application shell shows concise purpose, primary workflow, and a relevant next action for each of the nine top-level pages. Actions use existing local hash routes and remain usable offline.
 - Keep help copy short and actionable. Empty states should tell the operator what to do next rather than presenting unexplained blank tables.
 - Vitest covers checklist completion/dismissal and page-help route actions. Runtime review should inspect the dashboard with a clean disposable farm, a partially configured farm, and a fully configured farm, plus help on every top-level page.
+
+
+## Guided product tour
+
+- The persistent page guide includes a Start guided tour action that launches an interactive spotlight walkthrough.
+- The walkthrough covers the nine top-level destinations and their operational tabs using the existing hash router.
+- Users can navigate backward or forward, skip or close the tour, press Escape to exit, and use the arrow keys.
+- The tour works offline and adds no dependency or demo records.
