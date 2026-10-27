@@ -28,3 +28,50 @@
   .page-help { align-items: flex-start; flex-direction: column; }
   .getting-started-tasks { grid-template-columns: 1fr; }
 }
+
+
+.page-help-actions { display: flex; align-items: center; justify-content: flex-end; flex: 0 0 auto; gap: .55rem; }
+.page-help-tour { white-space: nowrap; }
+.product-tour-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(8, 18, 24, .62);
+  backdrop-filter: blur(2px);
+}
+.sidebar .nav-item.tour-spotlight {
+  position: relative;
+  z-index: 1002;
+  outline: 3px solid var(--accent, #F4B41A);
+  outline-offset: 2px;
+  background: var(--panel);
+  box-shadow: 0 0 0 6px rgba(244, 180, 26, .18);
+}
+.product-tour-card {
+  position: fixed;
+  z-index: 1003;
+  right: clamp(1rem, 4vw, 3.5rem);
+  bottom: clamp(1rem, 5vh, 3rem);
+  width: min(440px, calc(100vw - 2rem));
+  padding: 1.35rem;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--panel);
+  color: var(--text);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, .3);
+}
+.product-tour-topline { display: flex; align-items: center; justify-content: space-between; gap: .75rem; }
+.product-tour-topline .eyebrow { margin: 0; }
+.product-tour-close { padding: .2rem .55rem; background: transparent; color: var(--muted); font-size: 1.5rem; line-height: 1; }
+.product-tour-progress { margin: .8rem 0 .25rem; color: var(--muted); font-size: .8rem; font-weight: 650; }
+.product-tour-card h2 { margin: .2rem 0 .5rem; font-size: 1.4rem; }
+.product-tour-card > p:not(.eyebrow):not(.product-tour-progress):not(.product-tour-hint) { margin: 0; color: var(--muted); line-height: 1.6; min-height: 5.1rem; }
+.product-tour-progress-track { height: 4px; margin: 1rem 0 1.1rem; overflow: hidden; border-radius: 999px; background: var(--border-soft); }
+.product-tour-progress-track span { display: block; height: 100%; border-radius: inherit; background: var(--accent, #F4B41A); transition: width .18s ease; }
+.product-tour-actions { display: flex; justify-content: flex-end; gap: .5rem; flex-wrap: wrap; }
+.product-tour-hint { margin: .9rem 0 0; color: var(--muted); font-size: .76rem; }
+@media (max-width: 700px) {
+  .page-help-actions { align-items: stretch; width: 100%; flex-direction: column; }
+  .product-tour-card { right: .75rem; bottom: .75rem; width: calc(100vw - 1.5rem); padding: 1rem; }
+  .product-tour-card > p:not(.eyebrow):not(.product-tour-progress):not(.product-tour-hint) { min-height: 0; }
+}
