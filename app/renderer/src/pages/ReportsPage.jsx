@@ -41,7 +41,7 @@ export default function ReportsPage() {
           <div className="section-head"><div><p className="eyebrow">REPORTING</p><h2>Batch reports</h2></div>
             <div className="inline-form">
               <select aria-label="Batch report" value={selectedBatchId} onChange={e => { setSelectedBatchId(e.target.value); rememberLastBatchId(e.target.value); }}>
-                <option value="">Select a batch</option>{batches.map(batch => <option key={batch.id} value={batch.id}>{batch.code} · {batch.type}</option>)}
+                <option value="">Select a batch</option>{batches.map(batch => <option key={batch.id} value={batch.id}>{batch.code} · {batch.type === "LAYER" ? "Layer" : batch.type === "BROILER" ? "Broiler" : "Unknown type"}</option>)}
               </select>
               <button type="button" onClick={() => loadBatchReport(selectedBatchId, reportAsOf)}>Refresh</button>
               <button type="button" disabled={!selectedBatchId} onClick={() => exportCsv(() => reportApi.batchCsv(selectedBatchId, reportAsOf), "batch-report.csv")}>Export CSV</button>
