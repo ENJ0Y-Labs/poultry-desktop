@@ -88,10 +88,26 @@ describe("AppShell", () => {
       </AppShell>
     );
 
-    expect(screen.getByRole("region", { name: "Page help" })).toHaveTextContent(/Understand the farm at a glance/);
-    fireEvent.click(screen.getByRole("button", { name: "Review flock setup" }));
+    expect(screen.getByRole("region", { name: "Help for Farm overview" })).toHaveTextContent(/Farm overview/);
+    fireEvent.click(screen.getByRole("button", { name: "Review flocks" }));
     expect(window.location.hash).toBe("#flocks/houses");
-    await waitFor(() => expect(screen.getByRole("region", { name: "Page help" })).toHaveTextContent(/Manage houses and flock lifecycles/));
+    await waitFor(() => expect(screen.getByRole("region", { name: "Help for Flocks and housing" })).toHaveTextContent(/Flocks and housing/));
+  });
+
+  it("opens the guided spotlight tour from contextual page help", async () => {
+    render(
+      <AppShell farm={{ name: "Grantino", location: "", currency: "NGN", timezone: "Africa/Lagos" }}>
+        <section id="dashboard">Dashboard</section>
+      </AppShell>
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Start guided tour" }));
+    expect(screen.getByRole("dialog", { name: "Welcome to Pomas" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Next" }));
+    await waitFor(() => expect(window.location.hash).toBe("#dashboard/overview"));
+    expect(screen.getByRole("heading", { name: "Dashboard" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Skip tour" }));
+    expect(screen.queryByRole("dialog", { name: "Welcome to Pomas" })).not.toBeInTheDocument();
   });
 
   it("shows a retry action when the local backend is unavailable", async () => {
