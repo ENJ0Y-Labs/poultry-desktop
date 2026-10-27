@@ -5,7 +5,7 @@ import PageSection from "../components/PageSection.jsx";
 import { rememberLastBatchId } from "../utils/farmUx.js";
 
 const batchTypeLabel = type => type === "LAYER" ? "Layer" : type === "BROILER" ? "Broiler" : "Unknown type";
-const batchStatusLabel = status => status === "ACTIVE" ? "Active" : status === "SOLD" ? "Sold" : String(status || "Unknown").toLowerCase().replace(/\\b\\w/g, letter => letter.toUpperCase());
+const batchStatusLabel = status => status === "ACTIVE" ? "Active" : status === "SOLD" ? "Sold" : String(status || "Unknown").toLowerCase().replace(/\b\w/g, letter => letter.toUpperCase());
 
 export default function FlocksPage() {
   const { formatMoney, formatQuantity, formatPercent, formatKg, formatMetric, farm, houses, batches, suppliers, batchForm, setBatchForm, costForm, setCostForm, houseForm, setHouseForm, saving, selectedBatchId, setSelectedBatchId, batchDashboard, createBatch, addBirdCost, markBatchSold, reopenBatch, addHouse } = useContext(FarmManagerContext);
