@@ -230,7 +230,7 @@ describe("App", () => {
     render(<App />);
 
     expect(await screen.findByRole("heading", { name: "Sign in to Pomas" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Sign in to Pomas" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Sign in to your farm/ })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /create account/i })).not.toBeInTheDocument();
     expect(screen.queryByLabelText("Full name")).not.toBeInTheDocument();
     expect(screen.queryByLabelText("Email (optional)")).not.toBeInTheDocument();
@@ -305,7 +305,7 @@ describe("App", () => {
     await screen.findByRole("heading", { name: "Create your owner account" });
     expect(screen.getByRole("button", { name: "Create account and continue" })).toBeInTheDocument();
     expect(screen.queryByLabelText("Username or email")).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Sign in to Pomas" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Sign in to your farm/ })).not.toBeInTheDocument();
     fireEvent.change(screen.getByLabelText("Full name"), { target: { value: "Farm Owner" } });
     fireEvent.change(screen.getByLabelText(/Username/), { target: { value: "farm-owner" } });
     fireEvent.change(screen.getByLabelText("Email (optional)"), { target: { value: "owner@example.com" } });
