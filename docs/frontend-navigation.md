@@ -102,3 +102,12 @@ The nine page components live under `app/renderer/src/pages/`. Shared form state
 - The application shell shows concise purpose, primary workflow, and a relevant next action for each of the nine top-level pages. Actions use existing local hash routes and remain usable offline.
 - Keep help copy short and actionable. Empty states should tell the operator what to do next rather than presenting unexplained blank tables.
 - Vitest covers checklist completion/dismissal and page-help route actions. Runtime review should inspect the dashboard with a clean disposable farm, a partially configured farm, and a fully configured farm, plus help on every top-level page.
+
+
+## Contextual page guide and product tour
+
+- Render exactly one contextual page guide in the shell. It explains the current page and offers a relevant next action; do not duplicate the guide inside the shell.
+- The guide's **Take a tour** action opens an optional nine-step product tour covering Dashboard, Flocks, Daily Work, Feed & Stock, Health, Production, Sales & Money, Reports, and Settings.
+- The tour navigates to the matching existing hash route for each step, highlights the corresponding sidebar destination, and provides Back, Next, Skip tour, and Finish tour controls. Escape closes the tour; the left and right arrow keys navigate steps.
+- The tour is presentation-only and must not write farm records, seed demo data, or add a network dependency. It must remain usable offline.
+- Keep the tour descriptions aligned with the current domain rules and existing page routes. Test that the page guide appears once and that tour navigation, skipping, and completion work.
