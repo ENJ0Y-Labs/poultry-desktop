@@ -230,7 +230,44 @@ describe("App", () => {
     render(<App />);
 
     expect(await screen.findByRole("heading", { name: "Sign in" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Sign in" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /create account/i })).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Full name")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Email (optional)")).not.toBeInTheDocument();
     expect(accountRequest).not.toHaveBeenCalled();
+  });
+
+  it.each(["farm-owner", "owner@example.com"])("submits the shared loginIdentifier contract for %s", async identifierValue => {
+    mockFarmApis();
+    vi.mocked(authApi.status).mockResolvedValue({ authenticated: false, setupRequired: false });
+    const login = vi.spyOn(authApi, "login").mockResolvedValue({});
+
+    render(<App />);
+
+    await screen.findByRole("heading", { name: "Sign in" });
+    fireEvent.change(screen.getByLabelText("Username or email"), { target: { value: identifierValue } });
+    fireEvent.change(screen.getByLabelText("Password"), { target: { value: "correct-horse-battery" } });
+    fireEvent.submit(screen.getByLabelText("Password").closest("form"));
+
+    await waitFor(() => expect(login).toHaveBeenCalledWith({
+      loginIdentifier: identifierValue,
+      password: "correct-horse-battery",
+      rememberMe: false,
+    }));
+  });
+
+  it("blocks blank credentials before making a login request", async () => {
+    mockFarmApis();
+    vi.mocked(authApi.status).mockResolvedValue({ authenticated: false, setupRequired: false });
+    const login = vi.spyOn(authApi, "login").mockResolvedValue({});
+
+    render(<App />);
+
+    await screen.findByRole("heading", { name: "Sign in" });
+    fireEvent.submit(screen.getByLabelText("Password").closest("form"));
+
+    expect(login).not.toHaveBeenCalled();
+    expect(await screen.findByRole("alert")).toHaveTextContent("Enter your username/email and password to sign in.");
   });
 
   it("submits credentials read from the form when browser autofill skips React change events", async () => {
@@ -266,6 +303,9 @@ describe("App", () => {
     render(<App />);
 
     await screen.findByRole("heading", { name: "Create owner account" });
+    expect(screen.getByRole("button", { name: "Create account and sign in" })).toBeInTheDocument();
+    expect(screen.queryByLabelText("Username or email")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Sign in" })).not.toBeInTheDocument();
     fireEvent.change(screen.getByLabelText("Full name"), { target: { value: "Farm Owner" } });
     fireEvent.change(screen.getByLabelText(/Username/), { target: { value: "farm-owner" } });
     fireEvent.change(screen.getByLabelText("Email (optional)"), { target: { value: "owner@example.com" } });
