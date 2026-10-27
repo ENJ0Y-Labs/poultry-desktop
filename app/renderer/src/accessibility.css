@@ -443,3 +443,6 @@ input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-
 .data-table tr:last-child td { border-bottom: 0; }
 .data-table td { overflow-wrap: anywhere; }
 .data-table .empty { color: var(--a11y-secondary); text-align: center; padding: 18px; }
+
+/* Keep navigation labels readable at compact desktop sizes. */
+.nav-item { font-size: 13px; }
