@@ -30,6 +30,7 @@ The nine page components live under `app/renderer/src/pages/`. Shared form state
 
 
 ## Farm dashboard presentation
+- The dashboard “Record feed usage” quick action opens Daily Work / Daily record and preselects the active batch, compatible feed type, and current farm-local date. Keep this aligned with the feed-usage form location.
 
 - The farm dashboard labels its business date as “Dashboard as of” so it is not mistaken for the computer's current date or a date-range selector.
 - The dashboard formats that date using the saved application date-format preference. Business dates are parsed as calendar components, not as UTC instants.
