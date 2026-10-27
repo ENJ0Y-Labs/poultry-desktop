@@ -229,8 +229,8 @@ describe("App", () => {
 
     render(<App />);
 
-    expect(await screen.findByRole("heading", { name: "Sign in" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Sign in" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Sign in to Pomas" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Sign in to Pomas" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /create account/i })).not.toBeInTheDocument();
     expect(screen.queryByLabelText("Full name")).not.toBeInTheDocument();
     expect(screen.queryByLabelText("Email (optional)")).not.toBeInTheDocument();
@@ -244,10 +244,10 @@ describe("App", () => {
 
     render(<App />);
 
-    await screen.findByRole("heading", { name: "Sign in" });
+    await screen.findByRole("heading", { name: "Sign in to Pomas" });
     fireEvent.change(screen.getByLabelText("Username or email"), { target: { value: identifierValue } });
-    fireEvent.change(screen.getByLabelText("Password"), { target: { value: "correct-horse-battery" } });
-    fireEvent.submit(screen.getByLabelText("Password").closest("form"));
+    fireEvent.change(screen.getByLabelText(/^Password/), { target: { value: "correct-horse-battery" } });
+    fireEvent.submit(screen.getByLabelText(/^Password/).closest("form"));
 
     await waitFor(() => expect(login).toHaveBeenCalledWith({
       loginIdentifier: identifierValue,
@@ -263,8 +263,8 @@ describe("App", () => {
 
     render(<App />);
 
-    await screen.findByRole("heading", { name: "Sign in" });
-    fireEvent.submit(screen.getByLabelText("Password").closest("form"));
+    await screen.findByRole("heading", { name: "Sign in to Pomas" });
+    fireEvent.submit(screen.getByLabelText(/^Password/).closest("form"));
 
     expect(login).not.toHaveBeenCalled();
     expect(await screen.findByRole("alert")).toHaveTextContent("Enter your username/email and password to sign in.");
@@ -277,9 +277,9 @@ describe("App", () => {
 
     render(<App />);
 
-    await screen.findByRole("heading", { name: "Sign in" });
+    await screen.findByRole("heading", { name: "Sign in to Pomas" });
     const identifier = screen.getByLabelText("Username or email");
-    const password = screen.getByLabelText("Password");
+    const password = screen.getByLabelText(/^Password/);
     // Simulate browser autofill updating native controls without React onChange.
     identifier.value = "farm-owner";
     password.value = "correct-horse-battery";
@@ -302,15 +302,15 @@ describe("App", () => {
 
     render(<App />);
 
-    await screen.findByRole("heading", { name: "Create owner account" });
-    expect(screen.getByRole("button", { name: "Create account and sign in" })).toBeInTheDocument();
+    await screen.findByRole("heading", { name: "Create your owner account" });
+    expect(screen.getByRole("button", { name: "Create account and continue" })).toBeInTheDocument();
     expect(screen.queryByLabelText("Username or email")).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Sign in" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Sign in to Pomas" })).not.toBeInTheDocument();
     fireEvent.change(screen.getByLabelText("Full name"), { target: { value: "Farm Owner" } });
     fireEvent.change(screen.getByLabelText(/Username/), { target: { value: "farm-owner" } });
     fireEvent.change(screen.getByLabelText("Email (optional)"), { target: { value: "owner@example.com" } });
     fireEvent.change(screen.getByLabelText(/Password/), { target: { value: "correct-horse-battery" } });
-    fireEvent.click(screen.getByRole("button", { name: "Create account and sign in" }));
+    fireEvent.click(screen.getByRole("button", { name: "Create account and continue" }));
 
     await waitFor(() => expect(screen.getByRole("heading", { name: "Farm dashboard" })).toBeInTheDocument());
     expect(setup).toHaveBeenCalledWith({
