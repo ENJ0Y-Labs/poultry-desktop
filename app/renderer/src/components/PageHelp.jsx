@@ -102,7 +102,7 @@ const tabHelp = {
   },
 };
 
-export default function PageHelp({ page, tab }) {
+export default function PageHelp({ page, tab, onStartTour }) {
   const help = helpByPage[page];
   if (!help) return null;
   const description = tabHelp[page]?.[tab] || help.description;
@@ -114,9 +114,12 @@ export default function PageHelp({ page, tab }) {
         <strong>{help.title}</strong>
         <p>{description}</p>
       </div>
-      <button type="button" className="page-help-action" onClick={() => { window.location.hash = help.nextRoute; }}>
-        {help.nextLabel}
-      </button>
+      <div className="page-help-actions">
+        <button type="button" className="secondary-button page-help-tour" onClick={onStartTour}>Take a tour</button>
+        <button type="button" className="page-help-action" onClick={() => { window.location.hash = help.nextRoute; }}>
+          {help.nextLabel}
+        </button>
+      </div>
     </section>
   );
 }
