@@ -2,6 +2,7 @@ import { useContext } from "react";
 import { FarmManagerContext } from "../components/FarmManagerContext.jsx";
 // eslint-disable-next-line no-unused-vars
 import PageSection from "../components/PageSection.jsx";
+import EmptyState from "../components/EmptyState.jsx";
 
 const saleTypeLabel = type => type === "EGG" ? "Eggs" : type === "BROILER" ? "Broiler birds" : String(type || "Unknown").toLowerCase().replace(/\b\w/g, letter => letter.toUpperCase());
 
@@ -24,7 +25,7 @@ export default function SalesMoneyPage() {
           <div role="table" aria-label="Sales and expense records" className="table">
             <div role="row" className="row header"><span role="columnheader">Name</span><span role="columnheader">Phone</span><span role="columnheader">Notes</span></div>
             {customers.map(row=><div role="row" className="row" key={row.id}><span role="cell">{row.name}</span><span role="cell">{row.phone || "—"}</span><span role="cell">{row.notes || "—"}</span></div>)}
-            {customers.length===0 && <p className="muted empty">No customers yet.</p>}
+            {customers.length===0 && <EmptyState>No customers yet.</EmptyState>}
           </div>
         </section></PageSection>
 
@@ -46,7 +47,7 @@ export default function SalesMoneyPage() {
                 <span role="cell">{formatMoney(row.unitPriceMinor, farm.currency)}</span>
                 <span role="cell">{formatMoney(row.totalAmountMinor, farm.currency)}</span>
               </div>)}
-              {sales.length===0 && <p className="muted empty">No sales recorded yet. Record an egg or bird sale in Production to see it here.</p>}
+              {sales.length===0 && <EmptyState>No sales recorded yet. Record an egg or bird sale in Production to see it here.</EmptyState>}
             </div>
           </div>
         </section></PageSection>
@@ -87,7 +88,7 @@ export default function SalesMoneyPage() {
                 <span role="cell">{row.category}</span>
                 <span role="cell">{row.batchId ? (batches.find(b=>b.id===row.batchId)?.code || row.batchId) : "Farm"}</span>
               </div>)}
-              {expenses.length===0 && <p className="muted empty">No expenses recorded.</p>}
+              {expenses.length===0 && <EmptyState>No expenses recorded.</EmptyState>}
             </div>
           </div>
         </section></PageSection>
