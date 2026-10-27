@@ -107,7 +107,7 @@ describe("AppShell", () => {
     await waitFor(() => expect(window.location.hash).toBe("#dashboard/overview"));
     expect(screen.getByRole("heading", { name: "Dashboard" })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Skip tour" }));
-    expect(screen.queryByRole("dialog", { name: "Welcome to Pomas" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
   it("shows a retry action when the local backend is unavailable", async () => {
