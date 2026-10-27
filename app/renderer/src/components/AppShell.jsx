@@ -150,7 +150,10 @@ export default function AppShell({ farm, error, onRetry, children, startPage = "
   const [theme, setTheme] = useState(getThemePreference);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => localStorage.getItem("pomas:sidebar-collapsed") === "true");
   const [backendConnected, setBackendConnected] = useState(null);
-  const [recoveryNeeded, setRecoveryNeeded] = useState(false);\n  const [tourActive, setTourActive] = useState(false);\n  const [tourStepIndex, setTourStepIndex] = useState(0);\n  const currentTourStep = tourSteps[tourStepIndex];
+  const [recoveryNeeded, setRecoveryNeeded] = useState(false);
+  const [tourActive, setTourActive] = useState(false);
+  const [tourStepIndex, setTourStepIndex] = useState(0);
+  const currentTourStep = tourSteps[tourStepIndex];
   const [retrying, setRetrying] = useState(false);
   const [hasUserNavigated, setHasUserNavigated] = useState(Boolean(window.location.hash));
   const mainContentRef = useRef(null);
