@@ -526,7 +526,7 @@ describe("App", () => {
     expect(screen.getByRole("button", { name: "Open houses" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Open batches" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Configure feed" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Record purchase" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Open daily record" })).toBeInTheDocument();
     expect(screen.queryByText("Total birds")).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Open houses" }));
