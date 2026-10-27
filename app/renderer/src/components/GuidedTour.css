@@ -1,4 +1,4 @@
-.guided-tour-layer { position: fixed; z-index: 1400; inset: 0; pointer-events: none; }
+.guided-tour-layer { position: fixed; z-index: 1400; inset: 0; pointer-events: auto; }
 .guided-tour-spotlight { position: fixed; z-index: 1401; border: 2px solid #ff7a00; border-radius: 10px; box-shadow: 0 0 0 9999px rgb(7 10 15 / 66%), 0 0 0 5px rgb(255 122 0 / 20%); pointer-events: none; transition: top 160ms ease, left 160ms ease, width 160ms ease, height 160ms ease; }
 .guided-tour-card { position: fixed; z-index: 1402; right: 1.5rem; bottom: 1.5rem; width: min(430px, calc(100vw - 2rem)); padding: 1.25rem; border: 1px solid var(--border); border-radius: 16px; background: var(--panel); color: var(--text); box-shadow: 0 22px 70px rgb(0 0 0 / 32%); pointer-events: auto; }
 .guided-tour-topline, .guided-tour-actions { display: flex; align-items: center; justify-content: space-between; gap: .75rem; }
