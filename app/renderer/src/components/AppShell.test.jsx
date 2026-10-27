@@ -90,7 +90,7 @@ describe("AppShell", () => {
 
     expect(screen.getByRole("region", { name: "Help for Farm overview" })).toHaveTextContent(/Farm overview/);
     fireEvent.click(screen.getByRole("button", { name: "Review flocks" }));
-    expect(window.location.hash).toBe("#flocks/houses");
+    expect(window.location.hash).toBe("#flocks/batch-dashboard");
     await waitFor(() => expect(screen.getByRole("region", { name: "Help for Flocks and housing" })).toHaveTextContent(/Flocks and housing/));
   });
 
