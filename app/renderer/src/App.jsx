@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import pomasLogo from "./assets/pomas-logo.png";
 import { todayLocalDate, getLastBatchId, rememberLastBatchId } from "./utils/farmUx.js";
 import { parseNairaToKobo } from "./utils/moneyInput.js";
 import { formatMoney } from "./utils/money.js";
@@ -1015,7 +1016,7 @@ export default function App() {
     <main className="auth-screen">
       <section className="auth-story" aria-labelledby="auth-story-title">
         <header className="auth-brand">
-          <span className="auth-brand-mark" aria-hidden="true">P</span>
+          <img className="auth-brand-mark" src={pomasLogo} alt="Pomas logo" />
           <span><strong>Pomas</strong><small>GRANTINO FARMS</small></span>
         </header>
 
@@ -1059,7 +1060,7 @@ export default function App() {
       <section className="auth-panel" aria-labelledby="auth-form-title">
         <div className="auth-panel-topline"><span className="auth-lock" aria-hidden="true">▣</span><span>LOCAL WORKSPACE ACCESS</span></div>
         <div className="auth-card">
-          <div className="auth-mobile-brand"><span className="auth-brand-mark" aria-hidden="true">P</span><strong>Pomas</strong></div>
+          <div className="auth-mobile-brand"><img className="auth-brand-mark" src={pomasLogo} alt="Pomas logo" /><strong>Pomas</strong></div>
           <div className="auth-form-heading">
             <p className="auth-form-eyebrow">{authStatus?.setupRequired ? "LET'S GET YOUR FARM STARTED" : "WELCOME BACK"}</p>
             <h2 id="auth-form-title">{authStatus?.setupRequired ? "Create your owner account" : "Sign in to Pomas"}</h2>
