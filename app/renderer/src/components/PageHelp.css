@@ -35,13 +35,13 @@
 .product-tour-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 1000;
+  z-index: 15;
   background: rgba(8, 18, 24, .62);
   backdrop-filter: blur(2px);
 }
 .sidebar .nav-item.tour-spotlight {
   position: relative;
-  z-index: 1002;
+  z-index: 22;
   outline: 3px solid var(--accent, #F4B41A);
   outline-offset: 2px;
   background: var(--panel);
@@ -49,7 +49,7 @@
 }
 .product-tour-card {
   position: fixed;
-  z-index: 1003;
+  z-index: 30;
   right: clamp(1rem, 4vw, 3.5rem);
   bottom: clamp(1rem, 5vh, 3rem);
   width: min(440px, calc(100vw - 2rem));
