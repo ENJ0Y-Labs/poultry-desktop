@@ -3,6 +3,8 @@ import { FarmManagerContext } from "../components/FarmManagerContext.jsx";
 // eslint-disable-next-line no-unused-vars
 import PageSection from "../components/PageSection.jsx";
 
+const saleTypeLabel = type => type === "EGG" ? "Eggs" : type === "BROILER" ? "Broiler birds" : String(type || "Unknown").toLowerCase().replace(/\b\w/g, letter => letter.toUpperCase());
+
 export default function SalesMoneyPage() {
   const { formatMoney, farm, batches, expenseForm, setExpenseForm, expenses, expenseBatchFilter, setExpenseBatchFilter, customers, customerForm, setCustomerForm, sales, saving, expenseCategories, loadExpenses, saveCustomer, saveExpense } = useContext(FarmManagerContext);
 
@@ -19,9 +21,9 @@ export default function SalesMoneyPage() {
             <label className="field"><span>Notes</span><input value={customerForm.notes} onChange={e=>setCustomerForm({...customerForm,notes:e.target.value})}/></label>
             <button disabled={saving}>Add customer</button>
           </form>
-          <div className="table">
-            <div className="row header"><span>Name</span><span>Phone</span><span>Notes</span></div>
-            {customers.map(row=><div className="row" key={row.id}><span>{row.name}</span><span>{row.phone || "—"}</span><span>{row.notes || "—"}</span></div>)}
+          <div role="table" aria-label="Sales and expense records" className="table">
+            <div role="row" className="row header"><span role="columnheader">Name</span><span role="columnheader">Phone</span><span role="columnheader">Notes</span></div>
+            {customers.map(row=><div role="row" className="row" key={row.id}><span role="cell">{row.name}</span><span role="cell">{row.phone || "—"}</span><span role="cell">{row.notes || "—"}</span></div>)}
             {customers.length===0 && <p className="muted empty">No customers yet.</p>}
           </div>
         </section></PageSection>
@@ -32,19 +34,19 @@ export default function SalesMoneyPage() {
             <p className="muted">Common commercial ledger for Layer egg and Broiler bird sales. Type-specific rules remain in their production modules.</p>
           </div>
           <div className="subsection">
-            <div className="table">
-              <div className="row header"><span>Date</span><span>Type</span><span>Customer</span><span>Batch</span><span>Quantity</span><span>Unit</span><span>Unit price</span><span>Total</span></div>
-              {sales.map(row=><div className="row" key={row.id}>
-                <span>{row.saleDate}</span>
-                <span>{row.saleType}</span>
-                <span>{row.customerName}</span>
-                <span>{batches.find(b=>b.id===row.batchId)?.code || row.batchId}</span>
-                <span>{row.quantity?.toString()}</span>
-                <span>{row.unit}</span>
-                <span>{formatMoney(row.unitPriceMinor, farm.currency)}</span>
-                <span>{formatMoney(row.totalAmountMinor, farm.currency)}</span>
+            <div role="table" aria-label="Sales and expense records" className="table">
+              <div role="row" className="row header"><span role="columnheader">Date</span><span role="columnheader">Type</span><span role="columnheader">Customer</span><span role="columnheader">Batch</span><span role="columnheader">Quantity</span><span role="columnheader">Unit</span><span role="columnheader">Unit price</span><span role="columnheader">Total</span></div>
+              {sales.map(row=><div role="row" className="row" key={row.id}>
+                <span role="cell">{row.saleDate}</span>
+                <span role="cell">{saleTypeLabel(row.saleType)}</span>
+                <span role="cell">{row.customerName}</span>
+                <span role="cell">{batches.find(b=>b.id===row.batchId)?.code || row.batchId}</span>
+                <span role="cell">{row.quantity?.toString()}</span>
+                <span role="cell">{row.unit}</span>
+                <span role="cell">{formatMoney(row.unitPriceMinor, farm.currency)}</span>
+                <span role="cell">{formatMoney(row.totalAmountMinor, farm.currency)}</span>
               </div>)}
-              {sales.length===0 && <p className="muted empty">No sales recorded.</p>}
+              {sales.length===0 && <p className="muted empty">No sales recorded yet. Record an egg or bird sale in Production to see it here.</p>}
             </div>
           </div>
         </section></PageSection>
@@ -76,14 +78,14 @@ export default function SalesMoneyPage() {
                 {batches.map(b=><option key={b.id} value={b.id}>{b.code}</option>)}
               </select></label>
             </div>
-            <div className="table">
-              <div className="row header"><span>Date</span><span>Description</span><span>Amount</span><span>Category</span><span>Association</span></div>
-              {expenses.map(row=><div className="row" key={row.id}>
-                <span>{row.occurredDate}</span>
-                <span>{row.description}</span>
-                <span>{formatMoney(row.amountMinor, farm.currency)}</span>
-                <span>{row.category}</span>
-                <span>{row.batchId ? (batches.find(b=>b.id===row.batchId)?.code || row.batchId) : "Farm"}</span>
+            <div role="table" aria-label="Sales and expense records" className="table">
+              <div role="row" className="row header"><span role="columnheader">Date</span><span role="columnheader">Description</span><span role="columnheader">Amount</span><span role="columnheader">Category</span><span role="columnheader">Association</span></div>
+              {expenses.map(row=><div role="row" className="row" key={row.id}>
+                <span role="cell">{row.occurredDate}</span>
+                <span role="cell">{row.description}</span>
+                <span role="cell">{formatMoney(row.amountMinor, farm.currency)}</span>
+                <span role="cell">{row.category}</span>
+                <span role="cell">{row.batchId ? (batches.find(b=>b.id===row.batchId)?.code || row.batchId) : "Farm"}</span>
               </div>)}
               {expenses.length===0 && <p className="muted empty">No expenses recorded.</p>}
             </div>
