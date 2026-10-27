@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import "./GuidedTour.css";
 
 const sections = [
@@ -56,11 +56,14 @@ function findTarget(name) {
 export default function GuidedTour({ open, onClose, onNavigate }) {
   const [index, setIndex] = useState(0);
   const [rect, setRect] = useState(null);
+  const onNavigateRef = useRef(onNavigate);
   const step = steps[index];
+
+  useEffect(() => { onNavigateRef.current = onNavigate; }, [onNavigate]);
 
   useEffect(() => {
     if (!open) return undefined;
-    if (step?.route) onNavigate(step.route);
+    if (step?.route) onNavigateRef.current(step.route);
     let frame = 0;
     let timer = 0;
     const update = () => {
@@ -79,7 +82,7 @@ export default function GuidedTour({ open, onClose, onNavigate }) {
       window.removeEventListener("resize", update);
       window.removeEventListener("scroll", update, true);
     };
-  }, [open, index, step, onNavigate]);
+  }, [open, index, step]);
 
   useEffect(() => {
     if (!open) return undefined;
