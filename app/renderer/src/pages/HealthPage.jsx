@@ -2,6 +2,7 @@ import { useContext } from "react";
 import { FarmManagerContext } from "../components/FarmManagerContext.jsx";
 // eslint-disable-next-line no-unused-vars
 import PageSection from "../components/PageSection.jsx";
+import EmptyState from "../components/EmptyState.jsx";
 
 export default function HealthPage() {
   const { formatMoney, farm, batches, healthForm, setHealthForm, drugForm, setDrugForm, vaccinationForm, setVaccinationForm, healthRecords, drugRecords, vaccinationRecords, saving, saveHealth, saveDrug, saveVaccination, loadHealthForBatch } = useContext(FarmManagerContext);
@@ -9,7 +10,7 @@ export default function HealthPage() {
 
   return (
     <div className="grid">
-      {batches.length === 0 && <p className="empty-state" role="status">No batches yet. Create a batch in <a href="#flocks/flocks">Flocks → Batches</a> before recording health, treatment, or vaccination details.</p>}
+      {batches.length === 0 && <EmptyState className="empty-state" role="status">No batches yet. Create a batch in <a href="#flocks/flocks">Flocks → Batches</a> before recording health, treatment, or vaccination details.</EmptyState>}
       <PageSection page="health" tab="health-record">
         <section id="health" className="card full"><div className="section-head"><h2>Health records</h2><p className="muted">Record symptoms, conditions, and action taken. Treatments and vaccinations are tracked separately.</p></div>
           <form className="form-grid" onSubmit={saveHealth}>
@@ -22,7 +23,7 @@ export default function HealthPage() {
           </form>
           <div role="table" aria-label="Health records" className="table"><div role="row" className="row header"><span role="columnheader">Date</span><span role="columnheader">Condition</span><span role="columnheader">Description</span><span role="columnheader">Action</span></div>
             {healthRecords.map(row => <div role="row" className="row" key={row.id}><span role="cell">{row.recordDate}</span><span role="cell">{row.conditionProblem}</span><span role="cell">{row.description}</span><span role="cell">{row.action}</span></div>)}
-            {healthRecords.length===0 && <p className="muted empty">Select a batch to view health records.</p>}
+            {healthRecords.length===0 && <EmptyState>Select a batch to view health records.</EmptyState>}
           </div>
         </section>
       </PageSection>
@@ -40,7 +41,7 @@ export default function HealthPage() {
           </form>
           <div role="table" aria-label="Health records" className="table"><div role="row" className="row header"><span role="columnheader">Date</span><span role="columnheader">Drug</span><span role="columnheader">Quantity</span><span role="columnheader">Cost</span><span role="columnheader">Reason</span></div>
             {drugRecords.map(row => <div role="row" className="row" key={row.id}><span role="cell">{row.recordDate}</span><span role="cell">{row.drug}</span><span role="cell">{row.quantity}</span><span role="cell">{formatMoney(row.costMinor, farm.currency)}</span><span role="cell">{row.reason}</span></div>)}
-            {drugRecords.length===0 && <p className="muted empty">No drug records for the selected batch.</p>}
+            {drugRecords.length===0 && <EmptyState>No drug records for the selected batch.</EmptyState>}
           </div>
         </section>
       </PageSection>
@@ -58,7 +59,7 @@ export default function HealthPage() {
           </form>
           <div role="table" aria-label="Health records" className="table"><div role="row" className="row header"><span role="columnheader">Date</span><span role="columnheader">Vaccine</span><span role="columnheader">Dose</span><span role="columnheader">Quantity</span><span role="columnheader">Notes</span></div>
             {vaccinationRecords.map(row => <div role="row" className="row" key={row.id}><span role="cell">{row.recordDate}</span><span role="cell">{row.vaccine}</span><span role="cell">{row.dose}</span><span role="cell">{row.quantity}</span><span role="cell">{row.notes||"—"}</span></div>)}
-            {vaccinationRecords.length===0 && <p className="muted empty">No vaccination records for the selected batch.</p>}
+            {vaccinationRecords.length===0 && <EmptyState>No vaccination records for the selected batch.</EmptyState>}
           </div>
         </section>
       </PageSection>
