@@ -4,7 +4,9 @@ import { NavigationContext } from "./NavigationContext.jsx";
 import { getThemePreference, setThemePreference } from "../utils/theme.js";
 import { connectionApi } from "../services/api.js";
 import pomasLogo from "../assets/pomas-logo.png";
+// eslint-disable-next-line no-unused-vars
 import PageHelp from "./PageHelp.jsx";
+// eslint-disable-next-line no-unused-vars
 import GuidedTour from "./GuidedTour.jsx";
 
 const groups = [
