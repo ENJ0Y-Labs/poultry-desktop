@@ -2,6 +2,7 @@ import { useContext } from "react";
 import { FarmManagerContext } from "../components/FarmManagerContext.jsx";
 // eslint-disable-next-line no-unused-vars
 import PageSection from "../components/PageSection.jsx";
+import EmptyState from "../components/EmptyState.jsx";
 
 export default function DailyWorkPage() {
   const { batches, dailyForm, setDailyForm, dailyRecord, waterUnitLabel, mortalityForm, setMortalityForm, cullingForm, setCullingForm, saving, saveDailyRecord, recordPopulationEvent } = useContext(FarmManagerContext);
@@ -10,7 +11,7 @@ export default function DailyWorkPage() {
 
   return (
     <div className="grid">
-      {activeBatches.length === 0 && <p className="empty-state" role="status">No active batches are available. Create a batch in <a href="#flocks/flocks">Flocks → Batches</a> before recording daily work.</p>}
+      {activeBatches.length === 0 && <EmptyState className="empty-state" role="status">No active batches are available. Create a batch in <a href="#flocks/flocks">Flocks → Batches</a> before recording daily work.</EmptyState>}
       <PageSection page="daily-work" tab="daily-record">
         <section id="operations" className="card full">
           <div className="section-head"><h2>Daily record</h2><p className="muted">Record routine observations for one active batch. Population totals come from the backend ledger.</p></div>
