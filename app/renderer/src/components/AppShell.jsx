@@ -362,6 +362,7 @@ export default function AppShell({ farm, error, onRetry, children, startPage = "
                   key={tab.id}
                   type="button"
                   className={activeTab === tab.id ? "page-tab active" : "page-tab"}
+                  data-tour={`tab-${tab.id}`}
                   aria-current={activeTab === tab.id ? "page" : undefined}
                   onClick={() => navigateTab(tab.id)}
                 >
