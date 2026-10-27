@@ -413,3 +413,33 @@ input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-
   box-shadow: 0 0 0 2px var(--brand-teal);
 }
 .table-container, .table-scroll, .activity-table-container { max-width: 100%; overflow-x: auto; }
+
+/* Shared semantic table component; wide tables scroll inside this region. */
+.table-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  color: var(--a11y-text);
+  font-size: 13px;
+}
+.data-table th, .data-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  vertical-align: top;
+}
+.data-table th {
+  color: var(--a11y-secondary);
+  background: var(--pomas-panel-bg);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.data-table tr:last-child td { border-bottom: 0; }
+.data-table td { overflow-wrap: anywhere; }
+.data-table .empty { color: var(--a11y-secondary); text-align: center; padding: 18px; }
