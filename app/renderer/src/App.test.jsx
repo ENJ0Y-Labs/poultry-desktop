@@ -233,6 +233,30 @@ describe("App", () => {
     expect(accountRequest).not.toHaveBeenCalled();
   });
 
+  it("submits credentials read from the form when browser autofill skips React change events", async () => {
+    mockFarmApis();
+    vi.mocked(authApi.status).mockResolvedValue({ authenticated: false, setupRequired: false });
+    const login = vi.spyOn(authApi, "login").mockResolvedValue({});
+
+    render(<App />);
+
+    await screen.findByRole("heading", { name: "Sign in" });
+    const identifier = screen.getByLabelText("Username or email");
+    const password = screen.getByLabelText("Password");
+    // Simulate browser autofill updating native controls without React onChange.
+    identifier.value = "farm-owner";
+    password.value = "correct-horse-battery";
+    fireEvent.submit(identifier.closest("form"));
+
+    await waitFor(() => {
+      expect(login).toHaveBeenCalledWith({
+        loginIdentifier: "farm-owner",
+        password: "correct-horse-battery",
+        rememberMe: false,
+      });
+    });
+  });
+
   it("creates the initial owner account, signs in, then loads the farm", async () => {
     mockFarmApis();
     vi.mocked(authApi.status).mockResolvedValue({ authenticated: false, setupRequired: true });
