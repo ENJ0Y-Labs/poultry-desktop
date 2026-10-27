@@ -99,6 +99,54 @@ class BackendIntegrationTest {
         }
 
         @Test
+        void loginAcceptsUsernameAndEmailUsingTheSameRequestContract() throws Exception {
+                auth.setup(new com.grantinofarms.poultry.dto.AuthSetupRequest(
+                                "farm-owner", "owner@example.com", "correct-horse-battery", "Farm Owner"));
+
+                mockMvc.perform(post("/api/v1/auth/login")
+                                .header("X-Requested-With", "XMLHttpRequest")
+                                .contentType("application/json")
+                                .content("""
+                                                {
+                                                  "loginIdentifier": "farm-owner",
+                                                  "password": "correct-horse-battery",
+                                                  "rememberMe": false
+                                                }
+                                                """))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.ok").value(true))
+                                .andExpect(jsonPath("$.data.username").value("farm-owner"));
+
+                mockMvc.perform(post("/api/v1/auth/login")
+                                .header("X-Requested-With", "XMLHttpRequest")
+                                .contentType("application/json")
+                                .content("""
+                                                {
+                                                  "loginIdentifier": "owner@example.com",
+                                                  "password": "correct-horse-battery",
+                                                  "rememberMe": false
+                                                }
+                                                """))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.ok").value(true))
+                                .andExpect(jsonPath("$.data.username").value("farm-owner"));
+        }
+
+        @Test
+        void loginRejectsBlankCredentialsAtTheApiBoundary() throws Exception {
+                mockMvc.perform(post("/api/v1/auth/login")
+                                .header("X-Requested-With", "XMLHttpRequest")
+                                .contentType("application/json")
+                                .content("""
+                                                {
+                                                  "loginIdentifier": " ",
+                                                  "password": ""
+                                                }
+                                                """))
+                                .andExpect(status().isBadRequest());
+        }
+
+        @Test
         void failedBatchCreationRollsBackSequenceBatchPurchaseAndAudit() {
                 farmService.create(new FarmCreateRequest(
                                 "Grantino Farms", "Port Harcourt", "Africa/Lagos", "NGN"));
