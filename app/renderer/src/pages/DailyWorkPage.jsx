@@ -10,7 +10,7 @@ export default function DailyWorkPage() {
 
   return (
     <div className="grid">
-      <PageSection page="daily-work" tab="daily-record">
+      {activeBatches.length === 0 && <p className="empty-state" role="status">No active batches are available. Create a batch in <a href="#flocks/flocks">Flocks → Batches</a> before recording daily work.</p>}\n      <PageSection page="daily-work" tab="daily-record">
         <section id="operations" className="card full">
           <div className="section-head"><h2>Daily record</h2><p className="muted">Record routine observations for one active batch. Population totals come from the backend ledger.</p></div>
           <form className="form-grid" onSubmit={event => saveDailyRecord(event, "notes")}>
@@ -19,9 +19,9 @@ export default function DailyWorkPage() {
             <label className="full">Daily notes<input value={dailyForm.notes} onChange={event => setDailyForm({...dailyForm,notes:event.target.value})}/></label>
             <button disabled={saving}>Save daily record</button>
           </form>
-          {dailyRecord && <div className="subsection"><h3>Saved daily summary · {dailyRecord.date}</h3><div className="table">
-            <div className="row header"><span>Birds</span><span>Mortality</span><span>Culling</span><span>Feed entries</span><span>Water</span><span>Notes</span></div>
-            <div className="row"><span>{dailyRecord.birds}</span><span>{dailyRecord.mortality}</span><span>{dailyRecord.culling}</span><span>{dailyRecord.feed.length}</span><span>{dailyRecord.totalWaterUnits} {waterUnitLabel || "litres"}</span><span>{dailyRecord.notes || "—"}</span></div>
+          {dailyRecord && <div className="subsection"><h3>Saved daily summary · {dailyRecord.date}</h3><div role="table" aria-label="Daily record summary" className="table">
+            <div role="row" className="row header"><span role="columnheader">Birds</span><span role="columnheader">Mortality</span><span role="columnheader">Culling</span><span role="columnheader">Feed entries</span><span role="columnheader">Water</span><span role="columnheader">Notes</span></div>
+            <div role="row" className="row"><span role="cell">{dailyRecord.birds}</span><span role="cell">{dailyRecord.mortality}</span><span role="cell">{dailyRecord.culling}</span><span role="cell">{dailyRecord.feed.length}</span><span role="cell">{dailyRecord.totalWaterUnits} {waterUnitLabel || "litres"}</span><span role="cell">{dailyRecord.notes || "—"}</span></div>
           </div><p className="muted">Feed usage is recorded in Feed & Stock and appears here automatically.</p></div>}
         </section>
       </PageSection>
