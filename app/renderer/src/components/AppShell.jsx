@@ -264,6 +264,21 @@ export default function AppShell({ farm, error, onRetry, children, startPage = "
       >
         Skip to main content
       </a>
+      <div className="reference-window-chrome" aria-label="Pomas desktop status">
+        <div className="reference-chrome-menubar">
+          <div className="reference-chrome-brand">
+            <span className="reference-window-controls" aria-hidden="true"><i /><i /><i /></span>
+            <strong>POMAS</strong><span className="reference-version">DESKTOP</span>
+            <nav aria-label="Application menu"><span>File</span><span>Edit</span><span>View</span><span>Window</span><span>Help</span></nav>
+          </div>
+          <span className="reference-region">NGN · {farm.timezone || "AFRICA/LAGOS"}</span>
+        </div>
+        <div className="reference-chrome-profile">
+          <div className="reference-farm-chip"><span aria-hidden="true">▣</span><strong>{farm.name || "Local farm"}</strong><small>LOCAL PROFILE</small></div>
+          <div className={backendConnected === true && !recoveryNeeded ? "reference-connection connected" : "reference-connection"}><i />{connectionLabel}</div>
+          <span className="reference-sync-label">SYNC STATUS: LOCAL-FIRST</span>
+        </div>
+      </div>
       <aside className={sidebarCollapsed ? "sidebar collapsed" : "sidebar"}>
         <div className="brand" data-tour="brand">
           <div className="brand-mark" aria-hidden="true"><img src={pomasLogo} alt="" draggable="false" /></div>
