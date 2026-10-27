@@ -12,6 +12,7 @@ export default function DailyWorkPage() {
   } = useContext(FarmManagerContext);
   const activeBatches = batches.filter(batch => batch.status === "ACTIVE");
   const batchOptions = <><option value="">Batch</option>{activeBatches.map(batch => <option key={batch.id} value={batch.id}>{batch.code}</option>)}</>;
+  const hasSavedActivity = Boolean(dailyRecord && (dailyRecord.id || dailyRecord.feed?.length || dailyRecord.water?.length || dailyRecord.populationEvents?.length || dailyRecord.notes || dailyRecord.mortality || dailyRecord.culling));
 
   function updateDailyBatch(batchId) {
     setDailyForm(form => ({ ...form, batchId }));
@@ -54,7 +55,7 @@ export default function DailyWorkPage() {
 
           <div className="subsection">
             <h3>Saved activity · {dailyForm.date}</h3>
-            {dailyRecordLoading ? <p className="muted" role="status">Loading saved activity…</p> : dailyRecord ? <>
+            {dailyRecordLoading ? <p className="muted" role="status">Loading saved activity…</p> : hasSavedActivity ? <>
               <div className="table">
                 <div className="row header"><span>Birds</span><span>Mortality</span><span>Culling</span><span>Water</span><span>Notes</span></div>
                 <div className="row"><span>{dailyRecord.birds}</span><span>{dailyRecord.mortality}</span><span>{dailyRecord.culling}</span><span>{dailyRecord.totalWaterUnits} {waterUnitLabel || "litres"}</span><span>{dailyRecord.notes || "—"}</span></div>
