@@ -490,6 +490,7 @@ export default function App() {
   useEffect(() => {
     let current = true;
     const { batchId, date } = dailyForm;
+    setFeedUsageForm(form => ({ ...form, batchId, usageDate: date }));
     setDailyRecord(null);
     if (!batchId || !date) {
       setDailyRecordLoading(false);
@@ -767,7 +768,12 @@ export default function App() {
       setFeedUsageForm(form => ({ ...emptyFeedUsage, batchId: form.batchId, feedTypeId: form.feedTypeId, usageDate: form.usageDate }));
       setFeedInventory(await feedApi.inventory());
       if (dailyForm.batchId === feedUsageForm.batchId && dailyForm.date === feedUsageForm.usageDate) {
-        setDailyRecord(await dailyApi.get(feedUsageForm.batchId, feedUsageForm.usageDate));
+        try {
+          setDailyRecord(await dailyApi.get(feedUsageForm.batchId, feedUsageForm.usageDate));
+        } catch (err) {
+          if (err.status === 404) setDailyRecord(null);
+          else throw err;
+        }
       }
       setSuccessMessage("Feed usage recorded successfully.");
       await Promise.all([loadDashboard(), loadBatchDashboard(feedUsageForm.batchId)]);
