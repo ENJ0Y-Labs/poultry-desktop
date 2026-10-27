@@ -760,6 +760,10 @@ For local-only operation:
 - use a strong password hashing algorithm supported by the selected Java security library
 - audit important authentication/account actions
 - the renderer must check session/setup status before calling protected APIs and provide first-run owner setup and sign-in flows
+- first-run owner setup is shown only when `setupRequired` is true; normal sign-in is a separate state and must not show a sign-up link or unsupported account-switch action
+- login JSON contract is `loginIdentifier` (username or email), `password`, and optional `rememberMe`; keep the React API client aligned with Spring Boot `LoginRequest`
+- read submitted named form controls on auth submit so browser autofill works even when React change events are skipped; reject blank credentials in the renderer and retain backend request validation
+- keep the request contract and state-driven UX documented in `docs/authentication-flow.md`
 
 Multi-user roles and permissions are future work.
 
