@@ -4,8 +4,8 @@ import { NavigationContext } from "./NavigationContext.jsx";
 import { getThemePreference, setThemePreference } from "../utils/theme.js";
 import { connectionApi } from "../services/api.js";
 import pomasLogo from "../assets/pomas-logo.png";
-// eslint-disable-next-line no-unused-vars
 import PageHelp from "./PageHelp.jsx";
+import GuidedTour from "./GuidedTour.jsx";
 
 const groups = [
   { label: "WORKSPACE", items: [
@@ -82,18 +82,6 @@ const pageTabs = {
     { id: "pricing", label: "Pricing" },
   ],
 };
-const pageHelp = {
-  dashboard: { title: "Understand the farm at a glance", body: "Review bird counts, production, money, stock, alerts, and recent audited changes. Investigate attention items before relying on summary figures.", action: "Review flock setup", target: "flocks/houses" },
-  flocks: { title: "Manage houses and flock lifecycles", body: "Create houses or pens first, then open layer or broiler batches. Use the batch dashboard to inspect a single flock and its records.", action: "Manage houses and pens", target: "flocks/houses" },
-  "daily-work": { title: "Record routine farm operations", body: "Enter daily observations, water use, mortality, and culling against the correct batch and business date. Correct records at source so reports stay consistent.", action: "Open daily record", target: "daily-work/daily-record" },
-  "feed-stock": { title: "Track feed and farm supplies", body: "Create feed types, record purchases from suppliers, and assign feed usage to batches. Feed purchases and consumption are different events; avoid counting consumption as a second purchase.", action: "Open feed and usage", target: "feed-stock/feed" },
-  health: { title: "Keep treatment history traceable", body: "Record health problems, drugs, treatments, and vaccinations with the correct batch and date. Use the history to support follow-up and reporting.", action: "Open health records", target: "health/health-record" },
-  production: { title: "Record production by flock type", body: "Use egg collection and quality workflows for layers, and weight and growth workflows for broilers. The available workflow depends on the selected batch type.", action: "Open production", target: "production/eggs" },
-  "sales-money": { title: "Track sales and farm costs", body: "Record customers, sales, and expenses with accurate dates and amounts. Use the common ledger and batch links to understand the farm's financial position.", action: "Open sales", target: "sales-money/sales" },
-  reports: { title: "Review farm-wide and batch results", body: "Farm reports combine relevant records; batch reports focus on one flock. Export only after checking the selected date range and batch context.", action: "Open farm report", target: "reports/farm-report" },
-  settings: { title: "Configure and protect local farm data", body: "Review farm profile, units and defaults, application settings, account details, pricing, and backup options. Keep backups current before major changes.", action: "Open backup settings", target: "settings/backup" },
-};
-
 const defaultTabs = {
   dashboard: "overview", flocks: "batch-dashboard", "daily-work": "daily-record",
   health: "health-record", "feed-stock": "feed", production: "eggs",
@@ -151,6 +139,7 @@ export default function AppShell({ farm, error, onRetry, children, startPage = "
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => localStorage.getItem("pomas:sidebar-collapsed") === "true");
   const [backendConnected, setBackendConnected] = useState(null);
   const [recoveryNeeded, setRecoveryNeeded] = useState(false);
+  const [tourOpen, setTourOpen] = useState(false);
   const [retrying, setRetrying] = useState(false);
   const [hasUserNavigated, setHasUserNavigated] = useState(Boolean(window.location.hash));
   const mainContentRef = useRef(null);
@@ -184,6 +173,14 @@ export default function AppShell({ farm, error, onRetry, children, startPage = "
   function navigate(target) {
     const page = resolvePage(`#${target}`, startPage);
     const tab = defaultTabs[page] || "overview";
+    setHasUserNavigated(true);
+    if (window.location.hash !== `#${page}/${tab}`) window.location.hash = `${page}/${tab}`;
+    setActive(page);
+    setActiveTab(tab);
+  }
+
+  function navigateTourTarget(target) {
+    const [page, tab] = target.split("/");
     setHasUserNavigated(true);
     if (window.location.hash !== `#${page}/${tab}`) window.location.hash = `${page}/${tab}`;
     setActive(page);
@@ -266,7 +263,7 @@ export default function AppShell({ farm, error, onRetry, children, startPage = "
         Skip to main content
       </a>
       <aside className={sidebarCollapsed ? "sidebar collapsed" : "sidebar"}>
-        <div className="brand">
+        <div className="brand" data-tour="brand">
           <div className="brand-mark" aria-hidden="true"><img src={pomasLogo} alt="" draggable="false" /></div>
           <div className="brand-copy">
             <strong>Pomas</strong>
@@ -284,7 +281,7 @@ export default function AppShell({ farm, error, onRetry, children, startPage = "
           </button>
         </div>
 
-        <div className="workspace-summary" aria-label="Active farm">
+        <div className="workspace-summary" aria-label="Active farm" data-tour="farm-summary">
           <span className="workspace-kicker">ACTIVE FARM</span>
           <span className="workspace-name">{farm.name || "Local farm"}</span>
           <span className="workspace-status">Local data · single farm</span>
@@ -302,6 +299,7 @@ export default function AppShell({ farm, error, onRetry, children, startPage = "
                   onClick={() => navigate(item.target)}
                   title={item.shortcut ? `${item.label} · ${item.shortcut}` : item.label}
                   aria-label={item.label}
+                  data-tour={`nav-${item.target}`}
                   aria-current={active === item.target ? "page" : undefined}
                 >
                   <span className="nav-icon-wrap"><Icon name={item.icon} /></span>
@@ -327,7 +325,7 @@ export default function AppShell({ farm, error, onRetry, children, startPage = "
         </div>
       </aside>
 
-      <main className="app-main" id="main-content" tabIndex={-1} ref={mainContentRef}>
+      <main className="app-main" id="main-content" tabIndex={-1} ref={mainContentRef} data-tour="main-content">
         <div className="shell">
           <header className="app-topbar">
             <div className="topbar-title">
@@ -356,9 +354,9 @@ export default function AppShell({ farm, error, onRetry, children, startPage = "
               </button>
             </div>
           )}
-          <PageHelp page={active} tab={activeTab} />
+          <PageHelp page={active} tab={activeTab} onStartTour={() => setTourOpen(true)} />
           {(pageTabs[active] || []).length > 0 && (
-            <nav className="page-tabs" aria-label={`${active} sections`}>
+            <nav className="page-tabs" aria-label={`${active} sections`} data-tour="page-tabs">
               {pageTabs[active].map(tab => (
                 <button
                   key={tab.id}
@@ -372,20 +370,11 @@ export default function AppShell({ farm, error, onRetry, children, startPage = "
               ))}
             </nav>
           )}
-          <section className="page-help" aria-label="Page help">
-            <div className="page-help-copy">
-              <p className="eyebrow">PAGE GUIDE</p>
-              <h2>{pageHelp[active]?.title || "Work with your farm records"}</h2>
-              <p>{pageHelp[active]?.body || "Use this section to manage farm records. Choose the correct batch and business date before saving."}</p>
-            </div>
-            <button type="button" className="secondary-button" onClick={() => { window.location.hash = pageHelp[active]?.target || "dashboard/overview"; }}>
-              {pageHelp[active]?.action || "Open dashboard"}
-            </button>
-          </section>
           <NavigationContext.Provider value={{ activePage: active, activeTab }}>
             {children}
           </NavigationContext.Provider>
         </div>
+        <GuidedTour open={tourOpen} onClose={() => setTourOpen(false)} onNavigate={navigateTourTarget} />
       </main>
 
     </div>
