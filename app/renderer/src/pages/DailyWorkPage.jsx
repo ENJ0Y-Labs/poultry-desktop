@@ -3,6 +3,7 @@ import { FarmManagerContext } from "../components/FarmManagerContext.jsx";
 // eslint-disable-next-line no-unused-vars
 import PageSection from "../components/PageSection.jsx";
 import EmptyState from "../components/EmptyState.jsx";
+import DataTable from "../components/DataTable.jsx";
 
 export default function DailyWorkPage() {
   const { batches, dailyForm, setDailyForm, dailyRecord, waterUnitLabel, mortalityForm, setMortalityForm, cullingForm, setCullingForm, saving, saveDailyRecord, recordPopulationEvent } = useContext(FarmManagerContext);
@@ -21,10 +22,25 @@ export default function DailyWorkPage() {
             <label className="full">Daily notes<input value={dailyForm.notes} onChange={event => setDailyForm({...dailyForm,notes:event.target.value})}/></label>
             <button disabled={saving}>Save daily record</button>
           </form>
-          {dailyRecord && <div className="subsection"><h3>Saved daily summary · {dailyRecord.date}</h3><div role="table" aria-label="Daily record summary" className="table">
-            <div role="row" className="row header"><span role="columnheader">Birds</span><span role="columnheader">Mortality</span><span role="columnheader">Culling</span><span role="columnheader">Feed entries</span><span role="columnheader">Water</span><span role="columnheader">Notes</span></div>
-            <div role="row" className="row"><span role="cell">{dailyRecord.birds}</span><span role="cell">{dailyRecord.mortality}</span><span role="cell">{dailyRecord.culling}</span><span role="cell">{dailyRecord.feed.length}</span><span role="cell">{dailyRecord.totalWaterUnits} {waterUnitLabel || "litres"}</span><span role="cell">{dailyRecord.notes || "—"}</span></div>
-          </div><p className="muted">Feed usage is recorded in Feed & Stock and appears here automatically.</p></div>}
+          {dailyRecord && <div className="subsection"><h3>Saved daily summary · {dailyRecord.date}</h3><DataTable
+            caption="Saved daily summary"
+            columns={[
+              { key: "birds", label: "Birds" },
+              { key: "mortality", label: "Mortality" },
+              { key: "culling", label: "Culling" },
+              { key: "feedEntries", label: "Feed entries" },
+              { key: "water", label: "Water" },
+              { key: "notes", label: "Notes" },
+            ]}
+            rows={[{
+              birds: dailyRecord.birds,
+              mortality: dailyRecord.mortality,
+              culling: dailyRecord.culling,
+              feedEntries: dailyRecord.feed.length,
+              water: `${dailyRecord.totalWaterUnits} ${waterUnitLabel || "litres"}`,
+              notes: dailyRecord.notes || "—",
+            }]}
+          /><p className="muted">Feed usage is recorded in Feed & Stock and appears here automatically.</p></div>}
         </section>
       </PageSection>
 
