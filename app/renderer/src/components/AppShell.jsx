@@ -82,17 +82,17 @@ const pageTabs = {
     { id: "pricing", label: "Pricing" },
   ],
 };
-const pageHelp = {
-  dashboard: { title: "Understand the farm at a glance", body: "Review bird counts, production, money, stock, alerts, and recent audited changes. Investigate attention items before relying on summary figures.", action: "Review flock setup", target: "flocks/houses" },
-  flocks: { title: "Manage houses and flock lifecycles", body: "Create houses or pens first, then open layer or broiler batches. Use the batch dashboard to inspect a single flock and its records.", action: "Manage houses and pens", target: "flocks/houses" },
-  "daily-work": { title: "Record routine farm operations", body: "Enter daily observations, water use, mortality, and culling against the correct batch and business date. Correct records at source so reports stay consistent.", action: "Open daily record", target: "daily-work/daily-record" },
-  "feed-stock": { title: "Track feed and farm supplies", body: "Create feed types, record purchases from suppliers, and assign feed usage to batches. Feed purchases and consumption are different events; avoid counting consumption as a second purchase.", action: "Open feed and usage", target: "feed-stock/feed" },
-  health: { title: "Keep treatment history traceable", body: "Record health problems, drugs, treatments, and vaccinations with the correct batch and date. Use the history to support follow-up and reporting.", action: "Open health records", target: "health/health-record" },
-  production: { title: "Record production by flock type", body: "Use egg collection and quality workflows for layers, and weight and growth workflows for broilers. The available workflow depends on the selected batch type.", action: "Open production", target: "production/eggs" },
-  "sales-money": { title: "Track sales and farm costs", body: "Record customers, sales, and expenses with accurate dates and amounts. Use the common ledger and batch links to understand the farm's financial position.", action: "Open sales", target: "sales-money/sales" },
-  reports: { title: "Review farm-wide and batch results", body: "Farm reports combine relevant records; batch reports focus on one flock. Export only after checking the selected date range and batch context.", action: "Open farm report", target: "reports/farm-report" },
-  settings: { title: "Configure and protect local farm data", body: "Review farm profile, units and defaults, application settings, account details, pricing, and backup options. Keep backups current before major changes.", action: "Open backup settings", target: "settings/backup" },
-};
+const tourSteps = [
+  { page: "dashboard", tab: "overview", title: "Dashboard", description: "Your farm-wide snapshot: bird counts, active batches, feed, production, money, alerts, and recent audited activity.", route: "dashboard/overview" },
+  { page: "flocks", tab: "batch-dashboard", title: "Flocks", description: "Set up houses and pens, open permanent Layer or Broiler batches, and inspect the performance and costs of each flock.", route: "flocks/batch-dashboard" },
+  { page: "daily-work", tab: "daily-record", title: "Daily Work", description: "Record daily observations, mortality, culling, and water against the correct batch and farm date. These records drive population history.", route: "daily-work/daily-record" },
+  { page: "feed-stock", tab: "feed", title: "Feed & Stock", description: "Configure feed, record supplier purchases, track usage, and manage other supplies. A feed purchase is an expense; later feed usage is not a second purchase.", route: "feed-stock/feed" },
+  { page: "health", tab: "health-record", title: "Health", description: "Keep health observations, treatments, drugs, and vaccinations tied to the right batch and date so the flock's care history remains traceable.", route: "health/health-record" },
+  { page: "production", tab: "eggs", title: "Production", description: "Use egg collection and egg quality for Layers. Use weight and growth records for Broilers. The workflow depends on the batch type.", route: "production/eggs" },
+  { page: "sales-money", tab: "customers", title: "Sales & Money", description: "Maintain customers, review the shared sales ledger, and record expenses. Accurate dates and amounts are essential for meaningful profit figures.", route: "sales-money/customers" },
+  { page: "reports", tab: "farm-report", title: "Reports", description: "Review farm-wide results or isolate one batch. Confirm the report's as-of date before exporting historical results.", route: "reports/farm-report" },
+  { page: "settings", tab: "farm", title: "Settings", description: "Manage farm details, operating defaults, appearance, account preferences, backups, and pricing settings.", route: "settings/farm" },
+];
 
 const defaultTabs = {
   dashboard: "overview", flocks: "batch-dashboard", "daily-work": "daily-record",
@@ -150,7 +150,7 @@ export default function AppShell({ farm, error, onRetry, children, startPage = "
   const [theme, setTheme] = useState(getThemePreference);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => localStorage.getItem("pomas:sidebar-collapsed") === "true");
   const [backendConnected, setBackendConnected] = useState(null);
-  const [recoveryNeeded, setRecoveryNeeded] = useState(false);
+  const [recoveryNeeded, setRecoveryNeeded] = useState(false);\n  const [tourActive, setTourActive] = useState(false);\n  const [tourStepIndex, setTourStepIndex] = useState(0);\n  const currentTourStep = tourSteps[tourStepIndex];
   const [retrying, setRetrying] = useState(false);
   const [hasUserNavigated, setHasUserNavigated] = useState(Boolean(window.location.hash));
   const mainContentRef = useRef(null);
@@ -180,6 +180,49 @@ export default function AppShell({ farm, error, onRetry, children, startPage = "
     : recoveryNeeded
       ? (backendConnected ? "RECONNECTED · RETRY DATA" : "BACKEND UNAVAILABLE")
       : backendConnected ? "BACKEND CONNECTED" : "BACKEND UNAVAILABLE";
+
+  function goToTourStep(index) {
+    const step = tourSteps[index];
+    if (!step) return;
+    setTourStepIndex(index);
+    setActive(step.page);
+    setActiveTab(step.tab);
+    setHasUserNavigated(true);
+    const nextHash = `#${step.route}`;
+    if (window.location.hash !== nextHash) window.location.hash = nextHash;
+  }
+
+  function startTour() {
+    setTourActive(true);
+    goToTourStep(0);
+  }
+
+  function closeTour() {
+    setTourActive(false);
+  }
+
+  function nextTourStep() {
+    if (tourStepIndex >= tourSteps.length - 1) {
+      closeTour();
+      return;
+    }
+    goToTourStep(tourStepIndex + 1);
+  }
+
+  function previousTourStep() {
+    if (tourStepIndex > 0) goToTourStep(tourStepIndex - 1);
+  }
+
+  useEffect(() => {
+    if (!tourActive) return undefined;
+    const handleKeyDown = event => {
+      if (event.key === "Escape") closeTour();
+      if (event.key === "ArrowRight") nextTourStep();
+      if (event.key === "ArrowLeft") previousTourStep();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [tourActive, tourStepIndex]);
 
   function navigate(target) {
     const page = resolvePage(`#${target}`, startPage);
@@ -297,7 +340,7 @@ export default function AppShell({ farm, error, onRetry, children, startPage = "
               {group.items.map(item => (
                 <button
                   type="button"
-                  className={active === item.target ? "nav-item active" : "nav-item"}
+                  className={["nav-item", active === item.target ? "active" : "", tourActive && currentTourStep?.page === item.target ? "tour-spotlight" : ""].filter(Boolean).join(" ")}
                   key={item.label}
                   onClick={() => navigate(item.target)}
                   title={item.shortcut ? `${item.label} · ${item.shortcut}` : item.label}
@@ -356,7 +399,7 @@ export default function AppShell({ farm, error, onRetry, children, startPage = "
               </button>
             </div>
           )}
-          <PageHelp page={active} tab={activeTab} />
+          <PageHelp page={active} tab={activeTab} onStartTour={startTour} />
           {(pageTabs[active] || []).length > 0 && (
             <nav className="page-tabs" aria-label={`${active} sections`}>
               {pageTabs[active].map(tab => (
@@ -372,22 +415,33 @@ export default function AppShell({ farm, error, onRetry, children, startPage = "
               ))}
             </nav>
           )}
-          <section className="page-help" aria-label="Page help">
-            <div className="page-help-copy">
-              <p className="eyebrow">PAGE GUIDE</p>
-              <h2>{pageHelp[active]?.title || "Work with your farm records"}</h2>
-              <p>{pageHelp[active]?.body || "Use this section to manage farm records. Choose the correct batch and business date before saving."}</p>
-            </div>
-            <button type="button" className="secondary-button" onClick={() => { window.location.hash = pageHelp[active]?.target || "dashboard/overview"; }}>
-              {pageHelp[active]?.action || "Open dashboard"}
-            </button>
-          </section>
           <NavigationContext.Provider value={{ activePage: active, activeTab }}>
             {children}
           </NavigationContext.Provider>
         </div>
       </main>
 
+      {tourActive && currentTourStep && (
+        <>
+          <div className="product-tour-backdrop" aria-hidden="true" />
+          <section className="product-tour-card" role="dialog" aria-modal="true" aria-labelledby="product-tour-title" aria-describedby="product-tour-description">
+            <div className="product-tour-topline">
+              <span className="eyebrow">POMAS PRODUCT TOUR</span>
+              <button type="button" className="product-tour-close" onClick={closeTour} aria-label="Close product tour">×</button>
+            </div>
+            <p className="product-tour-progress">Section {tourStepIndex + 1} of {tourSteps.length}</p>
+            <h2 id="product-tour-title">{currentTourStep.title}</h2>
+            <p id="product-tour-description">{currentTourStep.description}</p>
+            <div className="product-tour-progress-track" aria-hidden="true"><span style={{ width: `${((tourStepIndex + 1) / tourSteps.length) * 100}%` }} /></div>
+            <div className="product-tour-actions">
+              <button type="button" className="secondary-button" onClick={previousTourStep} disabled={tourStepIndex === 0}>Back</button>
+              <button type="button" className="secondary-button" onClick={closeTour}>Skip tour</button>
+              <button type="button" onClick={nextTourStep}>{tourStepIndex === tourSteps.length - 1 ? "Finish tour" : "Next"}</button>
+            </div>
+            <p className="product-tour-hint">Tip: use ← and → to move between sections, or Esc to close.</p>
+          </section>
+        </>
+      )}
     </div>
   );
 }
