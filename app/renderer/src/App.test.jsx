@@ -218,7 +218,7 @@ describe("App", () => {
     render(<App />);
 
     await waitFor(() => expect(screen.getByRole("heading", { name: /set up your farm/i })).toBeInTheDocument());
-    expect(screen.getByText("GRANTINO FARMS")).toBeInTheDocument();
+    expect(screen.getByText("POMAS · FARM MANAGEMENT")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Create farm" })).toBeInTheDocument();
   });
 

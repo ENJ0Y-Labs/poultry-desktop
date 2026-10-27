@@ -6,6 +6,7 @@ import AppShell from "./AppShell.jsx";
 describe("AppShell", () => {
   beforeEach(() => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ status: 200, ok: true, json: async () => ({ schema: "VALID" }) }));
+    localStorage.removeItem("pomas:theme");
     localStorage.removeItem("grantino:theme");
     localStorage.removeItem("pomas:sidebar-collapsed");
     window.location.hash = "";
@@ -49,10 +50,10 @@ describe("AppShell", () => {
     );
     const selector = screen.getByRole("combobox", { name: "Theme" });
     expect(selector).toHaveValue("auto");
-    expect(within(selector).getByRole("option", { name: "Light" })).toBeInTheDocument();
-    expect(within(selector).getByRole("option", { name: "Dark" })).toBeInTheDocument();
+    expect(within(selector).getByRole("option", { name: "Teal Light" })).toBeInTheDocument();
+    expect(within(selector).getByRole("option", { name: "Dark (Gold)" })).toBeInTheDocument();
     fireEvent.change(selector, { target: { value: "light" } });
-    expect(localStorage.getItem("grantino:theme")).toBe("light");
+    expect(localStorage.getItem("pomas:theme")).toBe("light");
     expect(document.documentElement.dataset.theme).toBe("light");
   });
 

@@ -336,7 +336,7 @@ export default function AppShell({ farm, error, onRetry, children, startPage = "
               <p className="muted">{farm.location || "Farm profile"} · {farm.currency} · {farm.timezone}</p>
             </div>
             <div className="topbar-actions">
-              <label className="theme-control">Theme<select value={theme} onChange={changeTheme}><option value="auto">Auto</option><option value="light">Light</option><option value="dark">Dark</option></select></label>
+              <label className="theme-control">Theme<select value={theme} onChange={changeTheme}><option value="auto">System</option><option value="light">Teal Light</option><option value="dark">Dark (Gold)</option></select></label>
               <div className={backendConnected === true && !recoveryNeeded ? "system-pill connected" : backendConnected === false || recoveryNeeded ? "system-pill disconnected" : "system-pill"} role="status" aria-live="polite">
                 <span className={backendConnected === true && !recoveryNeeded ? "status-dot online" : backendConnected === false || recoveryNeeded ? "status-dot offline" : "status-dot"} />
                 {connectionLabel}
