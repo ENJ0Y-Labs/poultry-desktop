@@ -287,3 +287,128 @@ textarea:focus-visible,
 button:focus-visible {
   outline-color: var(--a11y-accent-text);
 }
+
+
+/* Pomas owner-approved palette, decision dated 2026-10-27. */
+:root:not([data-theme="light"]) {
+  --brand-teal: #1A4D5C;
+  --brand-gold: #F4B41A;
+  --a11y-surface: #000000;
+  --a11y-surface-raised: #0A0A0A;
+  --a11y-text: #F5F5F5;
+  --a11y-secondary: #C8C8C8;
+  --a11y-tertiary: #C8C8C8;
+  --a11y-accent-text: #F4B41A;
+  --a11y-nav-active-bg: #1A4D5C;
+  --a11y-shortcut-bg: #0A0A0A;
+  --a11y-warning-bg: #3B2B08;
+  --a11y-warning-text: #FFD77A;
+  --a11y-critical-bg: #481D22;
+  --a11y-critical-text: #FFB8BD;
+  --a11y-error-bg: #32171B;
+  --a11y-error-text: #FFC2C7;
+  --pomas-page-bg: #000000;
+  --pomas-panel-bg: #0A0A0A;
+  --pomas-panel-raised: #111111;
+  --pomas-border: #303030;
+  --pomas-primary-action-bg: #F4B41A;
+  --pomas-primary-action-text: #000000;
+  --pomas-primary-action-hover: #FFD15C;
+  --pomas-focus-ring: #F4B41A;
+}
+:root[data-theme="light"] {
+  --brand-teal: #1A4D5C;
+  --brand-gold: #F4B41A;
+  --a11y-surface: #FFFFFF;
+  --a11y-surface-raised: #FFFFFF;
+  --a11y-text: #1A4D5C;
+  --a11y-secondary: #425B61;
+  --a11y-tertiary: #425B61;
+  --a11y-accent-text: #1A4D5C;
+  --a11y-nav-active-bg: #FFF2C9;
+  --a11y-shortcut-bg: #F4F7F7;
+  --a11y-warning-bg: #FFF1CF;
+  --a11y-warning-text: #704400;
+  --a11y-critical-bg: #FFE4E6;
+  --a11y-critical-text: #9F1239;
+  --a11y-error-bg: #FFF0F0;
+  --a11y-error-text: #9F2525;
+  --pomas-page-bg: #FFFFFF;
+  --pomas-panel-bg: #FFFFFF;
+  --pomas-panel-raised: #F7FAFA;
+  --pomas-border: #D5E0E2;
+  --pomas-primary-action-bg: #1A4D5C;
+  --pomas-primary-action-text: #FFFFFF;
+  --pomas-primary-action-hover: #246779;
+  --pomas-focus-ring: #F4B41A;
+}
+
+/* Theme surface and brand roles. Semantic status colours remain independent. */
+:root {
+  --bg: var(--pomas-page-bg);
+  --sidebar: var(--pomas-panel-bg);
+  --panel: var(--pomas-panel-bg);
+  --panel-raised: var(--pomas-panel-raised);
+  --panel-soft: var(--pomas-panel-bg);
+  --border: var(--pomas-border);
+  --border-soft: var(--pomas-border);
+  --text: var(--a11y-text);
+  --muted: var(--a11y-secondary);
+  --muted-2: var(--a11y-secondary);
+  --cyan: var(--brand-gold);
+  --green: #2E9B70;
+  --amber: var(--a11y-warning-text);
+  --red: var(--a11y-error-text);
+  color: var(--a11y-text);
+  background: var(--pomas-page-bg);
+  color-scheme: dark;
+}
+:root[data-theme="light"] { color-scheme: light; }
+
+.app-shell, .app-main, .app-topbar, .sidebar, .card, .metric-card,
+.subsection, .workspace-summary, .sidebar-footer, .table,
+.table-container, .activity-table-container {
+  color: var(--a11y-text);
+}
+.app-shell, .app-main { background: var(--pomas-page-bg); }
+.sidebar, .card, .metric-card, .subsection, .workspace-summary,
+.sidebar-footer, .app-topbar {
+  background-color: var(--pomas-panel-bg);
+  border-color: var(--pomas-border);
+}
+.metric-card, .card { background-color: var(--pomas-panel-raised); }
+.nav-item { color: var(--a11y-text); }
+.nav-item.active {
+  background: var(--a11y-nav-active-bg);
+  color: var(--a11y-accent-text);
+  border-color: var(--brand-teal);
+  box-shadow: inset 3px 0 0 var(--brand-gold);
+}
+:root[data-theme="light"] .nav-item.active {
+  color: var(--brand-teal);
+  background: var(--a11y-nav-active-bg);
+}
+button:not(.secondary):not(.danger):not(.nav-item):not(.page-tab):not(.activity-button) {
+  background: var(--pomas-primary-action-bg);
+  color: var(--pomas-primary-action-text);
+}
+button:not(.secondary):not(.danger):not(.nav-item):not(.page-tab):not(.activity-button):hover:not(:disabled) {
+  background: var(--pomas-primary-action-hover);
+  color: var(--pomas-primary-action-text);
+}
+:root[data-theme="light"] button:not(.secondary):not(.danger):not(.nav-item):not(.page-tab):not(.activity-button) {
+  background: var(--pomas-primary-action-bg);
+  color: var(--pomas-primary-action-text);
+}
+input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-visible,
+.skip-link:focus, .skip-link:focus-visible {
+  outline: 3px solid var(--pomas-focus-ring);
+  outline-offset: 3px;
+}
+:root[data-theme="light"] input:focus-visible,
+:root[data-theme="light"] select:focus-visible,
+:root[data-theme="light"] textarea:focus-visible,
+:root[data-theme="light"] button:focus-visible {
+  box-shadow: 0 0 0 2px var(--brand-teal);
+}
+.table-container, .table-scroll, .activity-table-container { max-width: 100%; overflow-x: auto; }
