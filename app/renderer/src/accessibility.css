@@ -315,6 +315,7 @@ button:focus-visible {
   --pomas-primary-action-text: #000000;
   --pomas-primary-action-hover: #FFD15C;
   --pomas-focus-ring: #F4B41A;
+  --pomas-success: #4FC99A;
 }
 :root[data-theme="light"] {
   --brand-teal: #1A4D5C;
@@ -341,6 +342,7 @@ button:focus-visible {
   --pomas-primary-action-text: #FFFFFF;
   --pomas-primary-action-hover: #246779;
   --pomas-focus-ring: #F4B41A;
+  --pomas-success: #18794E;
 }
 
 /* Theme surface and brand roles. Semantic status colours remain independent. */
@@ -356,14 +358,13 @@ button:focus-visible {
   --muted: var(--a11y-secondary);
   --muted-2: var(--a11y-secondary);
   --cyan: var(--brand-gold);
-  --green: #2E9B70;
+  --green: var(--pomas-success);
   --amber: var(--a11y-warning-text);
   --red: var(--a11y-error-text);
   color: var(--a11y-text);
   background: var(--pomas-page-bg);
   color-scheme: dark;
 }
-:root[data-theme="light"] { color-scheme: light; }
 
 .app-shell, .app-main, .app-topbar, .sidebar, .card, .metric-card,
 .subsection, .workspace-summary, .sidebar-footer, .table,
