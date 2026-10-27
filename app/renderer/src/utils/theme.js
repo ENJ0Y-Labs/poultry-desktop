@@ -1,10 +1,11 @@
-const THEME_KEY = "grantino:theme";
+const THEME_KEY = "pomas:theme";
+const LEGACY_THEME_KEY = "grantino:theme";
 const THEMES = new Set(["auto", "light", "dark"]);
 let mediaQuery;
 
 export function getThemePreference() {
   try {
-    const saved = localStorage.getItem(THEME_KEY);
+    const saved = localStorage.getItem(THEME_KEY) || localStorage.getItem(LEGACY_THEME_KEY);
     return THEMES.has(saved) ? saved : "auto";
   } catch {
     return "auto";
