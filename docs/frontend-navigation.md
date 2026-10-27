@@ -110,3 +110,13 @@ The nine page components live under `app/renderer/src/pages/`. Shared form state
 - The walkthrough covers the nine top-level destinations and their operational tabs using the existing hash router.
 - Users can navigate backward or forward, skip or close the tour, press Escape to exit, and use the arrow keys.
 - The tour works offline and adds no dependency or demo records.
+
+
+## Pomas brand and theme system
+
+- Pomas is the product brand. Farm names such as “Grantino” are data from the saved farm profile, not fixed product branding.
+- Product-level sign-in and navigation branding must say Pomas / poultry farm management; farm-specific names are shown only in active farm context.
+- Both light and dark themes use the Pomas teal-and-gold identity. Light mode uses `#F4F7F9` backgrounds, white surfaces, deep teal `#1A4D5C`, and amber/gold accents. Dark mode uses near-black and charcoal surfaces with gold `#F4B41A` highlights.
+- Status colours remain semantically distinct: green for healthy, red for critical/error, and amber for warnings. Gold is not used as small text on white.
+- Theme preferences are stored under `pomas:theme`; existing `grantino:theme` preferences are read as a migration fallback.
+- Keep theme changes CSS-only; do not introduce CDN fonts, external assets, or network dependencies into the offline desktop renderer.
