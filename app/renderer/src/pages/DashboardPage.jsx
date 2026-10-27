@@ -47,6 +47,7 @@ export default function DashboardPage() {
     setEggBatchId,
     setEggCollectionForm,
     setFeedUsageForm,
+    setDailyForm,
     setBroilerBatchId,
     setBirdSaleForm,
     setEggSaleForm,
@@ -102,7 +103,7 @@ export default function DashboardPage() {
               <li><span className="first-run-step-number">1</span><div><strong>Create a house or pen</strong><p>Add the place where your birds will be kept. A house is required before you can create a batch.</p><button type="button" onClick={() => navigateTo("flocks/houses")}>Open houses</button></div></li>
               <li><span className="first-run-step-number">2</span><div><strong>Open your first batch</strong><p>Record whether the flock is for layers or broilers, its placement date, and starting bird count.</p><button type="button" onClick={() => navigateTo("flocks/flocks")}>Open batches</button></div></li>
               <li><span className="first-run-step-number">3</span><div><strong>Set up and record feed</strong><p>Add a feed type, record a purchase, then record feed used by an active batch.</p><button type="button" onClick={() => navigateTo("feed-stock/feed")}>Configure feed</button></div></li>
-              <li><span className="first-run-step-number">4</span><div><strong>Start daily records</strong><p>Record routine observations for your active batch. Mortality, water, health, and production can be entered in their own sections.</p><button type="button" onClick={() => navigateTo("feed-stock/purchases")}>Record purchase</button></div></li>
+              <li><span className="first-run-step-number">4</span><div><strong>Start daily records</strong><p>Record routine observations for your active batch. Mortality, water, health, and production can be entered in their own sections.</p><button type="button" onClick={() => navigateTo("daily-work/daily-record")}>Open daily record</button></div></li>
             </ol>
           </section>
         ) : (
@@ -128,8 +129,10 @@ export default function DashboardPage() {
                 <button type="button" onClick={() => {
                   const batch = batches.find(item => item.id === selectedBatchId && item.status === "ACTIVE") || batches.find(item => item.status === "ACTIVE");
                   const type = feedTypes.find(item => item.status === "ACTIVE" && (!batch || item.applicableType === "BOTH" || item.applicableType === batch.type));
-                  setFeedUsageForm(form => ({ ...form, batchId: batch?.id || form.batchId, feedTypeId: type?.id || form.feedTypeId, unit: type?.unit || form.unit, usageDate: todayLocalDate() }));
-                  navigateTo("feed-stock/feed");
+                  const batchId = batch?.id || "";
+                  setDailyForm(form => ({ ...form, batchId, date: todayLocalDate() }));
+                  setFeedUsageForm(form => ({ ...form, batchId, feedTypeId: type?.id || form.feedTypeId, unit: type?.unit || form.unit, usageDate: todayLocalDate() }));
+                  navigateTo("daily-work/daily-record");
                 }}>Record feed usage</button>
                 <button type="button" onClick={() => {
                   const batch = batches.find(item => item.id === selectedBatchId && item.status === "ACTIVE") || batches.find(item => item.status === "ACTIVE");
