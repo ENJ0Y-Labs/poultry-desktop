@@ -120,3 +120,12 @@ The nine page components live under `app/renderer/src/pages/`. Shared form state
 - Status colours remain semantically distinct: green for healthy, red for critical/error, and amber for warnings. Gold is not used as small text on white.
 - Theme preferences are stored under `pomas:theme`; existing `grantino:theme` preferences are read as a migration fallback.
 - Keep theme changes CSS-only; do not introduce CDN fonts, external assets, or network dependencies into the offline desktop renderer.
+
+
+## Dark (Gold) command-console reference
+
+- Dark mode follows the supplied console direction: near-black workspace (`#111417`), charcoal panels (`#191C1F`, `#1D2023`, `#272A2E`), subtle borders (`#323538`, `#41484B`), pale text (`#E1E2E7`), muted secondary text (`#C0C8CB` / `#8A9295`), deep-teal action surfaces (`#1A4D5C`), and gold highlights (`#F4B41A`).
+- Gold marks selected navigation, primary dashboard telemetry, and warning/highlight details. Teal remains a distinct action/primary colour; healthy and error states remain green and red.
+- Keep existing React navigation, backend connection health, farm-profile data, real dashboard metrics, local REST backend, and keyboard interactions. Do not replace working controls with decorative HTML or hardcoded sample values.
+- The reference uses hosted fonts and a Tailwind CDN, but the offline desktop product must not load those resources. Use existing CSS and system fonts with no network dependency.
+- Prefer compact uppercase metadata, clear dividers, square/low-radius console surfaces, visible keyboard focus, and responsive dashboard grids. Verify at 1366×768 and a narrow viewport in both themes.
