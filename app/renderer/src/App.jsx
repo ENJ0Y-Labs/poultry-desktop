@@ -209,6 +209,7 @@ export default function App() {
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [authStatus, setAuthStatus] = useState(null);
+  const [showAuthPassword, setShowAuthPassword] = useState(false);
   const [authForm, setAuthForm] = useState({ username: "", identifier: "", email: "", fullName: "", password: "", rememberMe: false });
   const [dashboard, setDashboard] = useState(null);
   const [attention, setAttention] = useState([]);
@@ -1011,29 +1012,115 @@ export default function App() {
   if (loading) return <main className="shell"><p className="muted">Loading farm...</p></main>;
 
   if (!authStatus?.authenticated) return (
-    <main className="shell narrow">
-      <header className="hero">
-        <p className="eyebrow">GRANTINO FARMS</p>
-        <h1>{authStatus?.setupRequired ? "Create owner account" : "Sign in"}</h1>
-        <p className="muted">{authStatus?.setupRequired
-          ? "Create the local owner account to secure and access your farm."
-          : "Sign in to access your local farm data."}</p>
-      </header>
-      {error && <div className="error" role="alert">{error}</div>}
-      {authStatus ? (
-        <form className="card form-grid" onSubmit={submitAuth}>
-          {authStatus.setupRequired && <label>Full name<input name="fullName" required maxLength="120" autoComplete="name" value={authForm.fullName} onChange={e=>setAuthForm({...authForm,fullName:e.target.value})}/></label>}
-          {authStatus.setupRequired ? <><label>Username<input name="username" required minLength="3" maxLength="32" autoComplete="username" pattern="[A-Za-z0-9][A-Za-z0-9._-]{2,31}" value={authForm.username} onChange={e=>setAuthForm({...authForm,username:e.target.value})}/><small>3–32 characters: letters, numbers, dots, underscores, or hyphens.</small></label><label>Email (optional)<input name="email" type="email" autoComplete="email" value={authForm.email} onChange={e=>setAuthForm({...authForm,email:e.target.value})}/></label></> : <label>Username or email<input name="identifier" required autoComplete="username" value={authForm.identifier} onChange={e=>setAuthForm({...authForm,identifier:e.target.value})}/></label>}
-          <label>Password<input name="password" required type="password" minLength={authStatus.setupRequired ? 10 : undefined} autoComplete={authStatus.setupRequired ? "new-password" : "current-password"} value={authForm.password} onChange={e=>setAuthForm({...authForm,password:e.target.value})}/>{authStatus.setupRequired && <small>Use at least 10 characters.</small>}</label>
-          {!authStatus.setupRequired && <label className="checkbox-label"><input type="checkbox" checked={authForm.rememberMe} onChange={e=>setAuthForm({...authForm,rememberMe:e.target.checked})}/> Keep me signed in on this computer <small>Stay signed in for up to 30 days. Only use this on a computer you trust.</small></label>}
-          <button disabled={saving} type="submit">{saving ? "Please wait..." : authStatus.setupRequired ? "Create account and sign in" : "Sign in"}</button>
-        </form>
-      ) : (
-        <button type="button" onClick={initialize}>Retry connection</button>
-      )}
+    <main className="auth-screen">
+      <section className="auth-story" aria-labelledby="auth-story-title">
+        <header className="auth-brand">
+          <span className="auth-brand-mark" aria-hidden="true">P</span>
+          <span><strong>Pomas</strong><small>GRANTINO FARMS</small></span>
+        </header>
+
+        <div className="auth-story-content">
+          <p className="auth-kicker"><span className="auth-kicker-dot" /> POULTRY FARM MANAGEMENT</p>
+          <h1 id="auth-story-title">Run your farm with <span>clarity.</span></h1>
+          <p className="auth-story-intro">
+            Keep your flock records, feed costs, production, and farm finances in one dependable workspace.
+            Built for the daily reality of running a layer or broiler farm.
+          </p>
+
+          <div className="auth-feature-list">
+            <article className="auth-feature">
+              <span className="auth-feature-icon" aria-hidden="true">01</span>
+              <div><h2>Know your flock</h2><p>Track batches, bird counts, mortality, health, and daily farm activity.</p></div>
+            </article>
+            <article className="auth-feature">
+              <span className="auth-feature-icon" aria-hidden="true">02</span>
+              <div><h2>Follow the cost</h2><p>Record feed purchases, FIFO usage, expenses, and sales without double-counting costs.</p></div>
+            </article>
+            <article className="auth-feature">
+              <span className="auth-feature-icon" aria-hidden="true">03</span>
+              <div><h2>See the full picture</h2><p>Review egg production, broiler growth, stock, and farm or batch reports.</p></div>
+            </article>
+          </div>
+
+          <div className="auth-local-note">
+            <span className="auth-local-symbol" aria-hidden="true">⌂</span>
+            <div><strong>Your records stay local.</strong><p>Pomas runs on this computer and is designed to work without an internet connection.</p></div>
+          </div>
+        </div>
+
+        <footer className="auth-story-footer">
+          <span>BUILT FOR THE WORK THAT HAPPENS ON THE FARM</span>
+          <span>LOCAL-FIRST · OFFLINE-READY</span>
+        </footer>
+        <div className="auth-orbit auth-orbit-one" aria-hidden="true" />
+        <div className="auth-orbit auth-orbit-two" aria-hidden="true" />
+      </section>
+
+      <section className="auth-panel" aria-labelledby="auth-form-title">
+        <div className="auth-panel-topline"><span className="auth-lock" aria-hidden="true">▣</span><span>LOCAL WORKSPACE ACCESS</span></div>
+        <div className="auth-card">
+          <div className="auth-mobile-brand"><span className="auth-brand-mark" aria-hidden="true">P</span><strong>Pomas</strong></div>
+          <div className="auth-form-heading">
+            <p className="auth-form-eyebrow">{authStatus?.setupRequired ? "LET'S GET YOUR FARM STARTED" : "WELCOME BACK"}</p>
+            <h2 id="auth-form-title">{authStatus?.setupRequired ? "Create your owner account" : "Sign in to Pomas"}</h2>
+            <p>{authStatus?.setupRequired
+              ? "Set up the primary account that protects access to your farm records."
+              : "Pick up where you left off. Your farm workspace is right here."}</p>
+          </div>
+
+          {error && <div className="error auth-error" role="alert">{error}</div>}
+          {authStatus ? (
+            <form className="auth-form" onSubmit={submitAuth}>
+              {authStatus.setupRequired ? (
+                <>
+                  <label className="auth-field" htmlFor="auth-full-name">Full name
+                    <input id="auth-full-name" name="fullName" required maxLength="120" autoComplete="name" placeholder="e.g. Noble Ekwere" value={authForm.fullName} onChange={e => setAuthForm({...authForm, fullName:e.target.value})}/>
+                  </label>
+                  <label className="auth-field" htmlFor="auth-username">Username
+                    <input id="auth-username" name="username" required minLength="3" maxLength="32" autoComplete="username" pattern="[A-Za-z0-9][A-Za-z0-9._-]{2,31}" placeholder="Choose a username" value={authForm.username} onChange={e => setAuthForm({...authForm, username:e.target.value})}/>
+                    <small>3–32 characters. Letters, numbers, dots, underscores, and hyphens.</small>
+                  </label>
+                  <label className="auth-field" htmlFor="auth-email">Email <span className="auth-optional">(optional)</span>
+                    <input id="auth-email" name="email" type="email" autoComplete="email" placeholder="you@example.com" value={authForm.email} onChange={e => setAuthForm({...authForm, email:e.target.value})}/>
+                  </label>
+                </>
+              ) : (
+                <label className="auth-field" htmlFor="auth-identifier">Username or email
+                  <input id="auth-identifier" name="identifier" required autoComplete="username" placeholder="Enter your username or email" value={authForm.identifier} onChange={e => setAuthForm({...authForm, identifier:e.target.value})}/>
+                </label>
+              )}
+              <label className="auth-field" htmlFor="auth-password">Password
+                <span className="auth-password-wrap">
+                  <input id="auth-password" name="password" required type={showAuthPassword ? "text" : "password"} minLength={authStatus.setupRequired ? 10 : undefined} autoComplete={authStatus.setupRequired ? "new-password" : "current-password"} placeholder={authStatus.setupRequired ? "Create a strong password" : "Enter your password"} value={authForm.password} onChange={e => setAuthForm({...authForm, password:e.target.value})}/>
+                  <button className="auth-password-toggle" type="button" onClick={() => setShowAuthPassword(value => !value)} aria-label={showAuthPassword ? "Hide password" : "Show password"}>{showAuthPassword ? "Hide" : "Show"}</button>
+                </span>
+                {authStatus.setupRequired && <small>Use at least 10 characters.</small>}
+              </label>
+              {!authStatus.setupRequired && (
+                <label className="auth-remember">
+                  <input type="checkbox" checked={authForm.rememberMe} onChange={e => setAuthForm({...authForm, rememberMe:e.target.checked})}/>
+                  <span><strong>Keep me signed in</strong><small>Only enable this on a computer you trust.</small></span>
+                </label>
+              )}
+              <button className="auth-submit" disabled={saving} type="submit">
+                <span>{saving ? (authStatus.setupRequired ? "Creating account..." : "Signing in...") : (authStatus.setupRequired ? "Create account and continue" : "Sign in to your farm")}</span>
+                <span aria-hidden="true">↗</span>
+              </button>
+              <p className="auth-form-footnote">{authStatus.setupRequired
+                ? "This creates the primary local owner account. Multi-user access is not required to get started."
+                : "Access is managed locally by your Pomas installation."}</p>
+            </form>
+          ) : (
+            <div className="auth-connect-state">
+              <p>Could not confirm the local account status.</p>
+              <button className="auth-submit" type="button" onClick={initialize}>Retry connection <span aria-hidden="true">↻</span></button>
+            </div>
+          )}
+        </div>
+        <footer className="auth-panel-footer"><span>GRANTINO FARMS · POMAS</span><span>YOUR FARM. YOUR RECORDS.</span></footer>
+      </section>
     </main>
   );
-
   if (!farm) return (
     <main className="shell narrow">
       <header className="hero"><p className="eyebrow">GRANTINO FARMS</p><h1>Set up your farm</h1><p className="muted">Create the local farm profile first. Everything else hangs from it.</p></header>
