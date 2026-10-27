@@ -978,3 +978,103 @@ body { min-width: 0; }
   .topbar-actions { justify-content: flex-start; }
   .shell { padding: 14px 10px 32px; }
 }
+
+/* Dark (Gold) command-console reference. Local CSS only; the app must remain offline-capable. */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --brand-teal: #1A4D5C; --brand-gold: #F4B41A;
+  --bg: #111417; --sidebar: #191C1F; --panel: #191C1F;
+  --panel-raised: #1D2023; --panel-soft: #15181B;
+  --border: #323538; --border-soft: #272A2E;
+  --text: #E1E2E7; --muted: #C0C8CB; --muted-2: #8A9295;
+  --cyan: #9ECEE0; --amber: #F4B41A; --green: #56C596; --red: #FFB4AB;
+  --ide-titlebar: #0B0E11; --ide-activity: #191C1F; --ide-sidebar: #191C1F;
+  --ide-workspace: #111417; --ide-card: #1D2023; --ide-hover: #272A2E;
+  --ide-border: #41484B; --ide-accent: #F4B41A; --ide-accent-hover: #FFD166;
+  --ide-success: #56C596; --ide-warning: #F4B41A; --ide-danger: #FFB4AB;
+  --ide-text: #E1E2E7; --ide-muted: #C0C8CB; --ide-focus-ring: #9ECEE0;
+  --ide-tab-bg: #191C1F; --ide-tab-hover-bg: #272A2E; --ide-tab-active-bg: #1A4D5C;
+  --ide-tab-active-border: #9ECEE0; --ide-activity-icon: #C0C8CB;
+  --ide-activity-active-bg: #1A4D5C; --ide-scrollbar: #41484B; --ide-scrollbar-hover: #8A9295;
+  --palette-e5e9f0: #E1E2E7; --palette-0b0f14: #111417;
+  --palette-181c23: #191C1F; --palette-1c2027: #1D2023; --palette-151920: #0B0E11;
+  --palette-2a3039: #41484B; --palette-222832: #323538; --palette-8d98a6: #C0C8CB;
+  --palette-687381: #8A9295; --palette-41d9f5: #9ECEE0; --palette-26303a: #1A4D5C;
+  --palette-313c48: #323538;
+  --alpha-65217245p35: rgba(244,180,26,.24);
+  --alpha-65217245p4: rgba(244,180,26,.25);
+  --alpha-65217245p55: rgba(244,180,26,.35);
+}
+:root[data-theme="dark"] body {
+  background: var(--bg); color: var(--text);
+  font-family: Inter, "Segoe UI", sans-serif; font-size: 13px; -webkit-font-smoothing: antialiased;
+}
+:root[data-theme="dark"] .app-shell,
+:root[data-theme="dark"] .app-main,
+:root[data-theme="dark"] .shell { background: #111417; }
+:root[data-theme="dark"] .sidebar {
+  background: #191C1F; border-right: 1px solid #272A2E; box-shadow: 1px 0 0 rgba(0,0,0,.12);
+}
+:root[data-theme="dark"] .brand { min-height: 64px; border-bottom: 1px solid #272A2E; }
+:root[data-theme="dark"] .brand-copy strong { color: #E1E2E7; letter-spacing: .045em; text-transform: uppercase; }
+:root[data-theme="dark"] .brand-copy small,
+:root[data-theme="dark"] .workspace-kicker,
+:root[data-theme="dark"] .nav-group > p { color: #8A9295; letter-spacing: .12em; }
+:root[data-theme="dark"] .workspace-summary {
+  margin: 12px; padding: 12px; border: 1px solid #323538; border-radius: 2px; background: #1D2023;
+}
+:root[data-theme="dark"] .workspace-name { color: #E1E2E7; font-weight: 700; }
+:root[data-theme="dark"] .workspace-status { color: #C0C8CB; }
+:root[data-theme="dark"] .nav-item { border-radius: 2px; color: #C0C8CB; transition: background-color .14s ease, color .14s ease; }
+:root[data-theme="dark"] .nav-item:hover { background: #1D2023; color: #E1E2E7; }
+:root[data-theme="dark"] .nav-item.active {
+  color: #F4B41A; background: #272A2E; box-shadow: inset 3px 0 0 #F4B41A;
+}
+:root[data-theme="dark"] .nav-item kbd {
+  border: 1px solid #41484B; border-radius: 2px; background: #323538; color: #C0C8CB;
+}
+:root[data-theme="dark"] .app-topbar { padding: 12px 0 18px; border-bottom: 1px solid #323538; }
+:root[data-theme="dark"] .topbar-title .eyebrow { color: #8A9295; letter-spacing: .14em; text-transform: uppercase; }
+:root[data-theme="dark"] .topbar-title h1 { color: #E1E2E7; letter-spacing: -.035em; }
+:root[data-theme="dark"] .theme-control { color: #C0C8CB; }
+:root[data-theme="dark"] .theme-control select,
+:root[data-theme="dark"] .date-chip,
+:root[data-theme="dark"] .system-pill {
+  border: 1px solid #323538; border-radius: 2px; background: #1D2023; color: #C0C8CB;
+}
+:root[data-theme="dark"] .system-pill.connected { border-color: rgba(86,197,150,.35); color: #8BE0B7; }
+:root[data-theme="dark"] .page-tabs { border-bottom: 1px solid #323538; }
+:root[data-theme="dark"] .page-tab { border-radius: 2px 2px 0 0; color: #C0C8CB; }
+:root[data-theme="dark"] .page-tab:hover { background: #1D2023; color: #E1E2E7; }
+:root[data-theme="dark"] .page-tab.active { border-color: #F4B41A; background: #272A2E; color: #F4B41A; }
+:root[data-theme="dark"] .dashboard-page > .section-head {
+  border-radius: 2px; border-left-color: #F4B41A;
+  background: radial-gradient(ellipse at 0 0, rgba(244,180,26,.08), transparent 55%), #191C1F;
+}
+:root[data-theme="dark"] .dashboard-page .quick-actions,
+:root[data-theme="dark"] .dashboard-columns > .subsection,
+:root[data-theme="dark"] .dashboard-page > .subsection {
+  border-radius: 2px; border-color: #323538; background: #191C1F;
+}
+:root[data-theme="dark"] .metric-card { border-radius: 2px; border-color: #323538; background: #1D2023; }
+:root[data-theme="dark"] .metric-card-primary {
+  border-color: rgba(244,180,26,.45);
+  background: radial-gradient(ellipse at 100% 0, rgba(244,180,26,.08), transparent 60%), #1D2023;
+}
+:root[data-theme="dark"] .quick-action-grid button {
+  border-radius: 2px; border-color: rgba(158,206,224,.28); background: #1A4D5C; color: #E1E2E7;
+}
+:root[data-theme="dark"] .quick-action-grid button:hover,
+:root[data-theme="dark"] .quick-action-grid button:focus-visible { border-color: #F4B41A; background: #205E70; }
+:root[data-theme="dark"] .dashboard-page .table { border-radius: 2px; border-color: #323538; }
+:root[data-theme="dark"] .dashboard-page .table .row:not(.header):hover { background: rgba(158,206,224,.06); }
+:root[data-theme="dark"] button:focus-visible,
+:root[data-theme="dark"] a:focus-visible,
+:root[data-theme="dark"] select:focus-visible,
+:root[data-theme="dark"] input:focus-visible,
+:root[data-theme="dark"] textarea:focus-visible { outline: 2px solid #9ECEE0; outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) {
+  :root[data-theme="dark"] *, :root[data-theme="dark"] *::before, :root[data-theme="dark"] *::after {
+    scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important;
+  }
+}
