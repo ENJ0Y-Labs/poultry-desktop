@@ -1017,7 +1017,7 @@ export default function App() {
       <section className="auth-story" aria-labelledby="auth-story-title">
         <header className="auth-brand">
           <img className="auth-brand-mark" src={pomasLogo} alt="Pomas logo" />
-          <span><strong>Pomas</strong><small>GRANTINO FARMS</small></span>
+          <span><strong>Pomas</strong><small>POULTRY FARM MANAGEMENT</small></span>
         </header>
 
         <div className="auth-story-content">
@@ -1118,13 +1118,13 @@ export default function App() {
             </div>
           )}
         </div>
-        <footer className="auth-panel-footer"><span>GRANTINO FARMS · POMAS</span><span>YOUR FARM. YOUR RECORDS.</span></footer>
+        <footer className="auth-panel-footer"><span>POMAS · LOCAL-FIRST FARM MANAGEMENT</span><span>YOUR FARM. YOUR RECORDS.</span></footer>
       </section>
     </main>
   );
   if (!farm) return (
     <main className="shell narrow">
-      <header className="hero"><p className="eyebrow">GRANTINO FARMS</p><h1>Set up your farm</h1><p className="muted">Create the local farm profile first. Everything else hangs from it.</p></header>
+      <header className="hero"><p className="eyebrow">POMAS · FARM MANAGEMENT</p><h1>Set up your farm</h1><p className="muted">Create the local farm profile first. Everything else hangs from it.</p></header>
       {error && <div className="error">{error}</div>}
       <form className="card form-grid" onSubmit={submitFarm}>
         <label>Farm name<input required value={farmForm.name} onChange={e=>setFarmForm({...farmForm,name:e.target.value})}/></label>
