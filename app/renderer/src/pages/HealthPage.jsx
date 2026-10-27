@@ -9,7 +9,7 @@ export default function HealthPage() {
 
   return (
     <div className="grid">
-      <PageSection page="health" tab="health-record">
+      {batches.length === 0 && <p className="empty-state" role="status">No batches yet. Create a batch in <a href="#flocks/flocks">Flocks → Batches</a> before recording health, treatment, or vaccination details.</p>}\n      <PageSection page="health" tab="health-record">
         <section id="health" className="card full"><div className="section-head"><h2>Health records</h2><p className="muted">Record symptoms, conditions, and action taken. Treatments and vaccinations are tracked separately.</p></div>
           <form className="form-grid" onSubmit={saveHealth}>
             <label>Batch<select required value={healthForm.batchId} onChange={event => {setHealthForm({...healthForm,batchId:event.target.value});loadHealthForBatch(event.target.value);}}>{batchOptions}</select></label>
@@ -19,8 +19,8 @@ export default function HealthPage() {
             <label className="full">Action taken<input required value={healthForm.action} onChange={event => setHealthForm({...healthForm,action:event.target.value})}/></label>
             <button disabled={saving}>Record health issue</button>
           </form>
-          <div className="table"><div className="row header"><span>Date</span><span>Condition</span><span>Description</span><span>Action</span></div>
-            {healthRecords.map(row => <div className="row" key={row.id}><span>{row.recordDate}</span><span>{row.conditionProblem}</span><span>{row.description}</span><span>{row.action}</span></div>)}
+          <div role="table" aria-label="Health records" className="table"><div role="row" className="row header"><span role="columnheader">Date</span><span role="columnheader">Condition</span><span role="columnheader">Description</span><span role="columnheader">Action</span></div>
+            {healthRecords.map(row => <div role="row" className="row" key={row.id}><span role="cell">{row.recordDate}</span><span role="cell">{row.conditionProblem}</span><span role="cell">{row.description}</span><span role="cell">{row.action}</span></div>)}
             {healthRecords.length===0 && <p className="muted empty">Select a batch to view health records.</p>}
           </div>
         </section>
@@ -37,8 +37,8 @@ export default function HealthPage() {
             <label>Reason<input required value={drugForm.reason} onChange={event => setDrugForm({...drugForm,reason:event.target.value})}/></label>
             <button disabled={saving}>Record drug</button>
           </form>
-          <div className="table"><div className="row header"><span>Date</span><span>Drug</span><span>Quantity</span><span>Cost</span><span>Reason</span></div>
-            {drugRecords.map(row => <div className="row" key={row.id}><span>{row.recordDate}</span><span>{row.drug}</span><span>{row.quantity}</span><span>{formatMoney(row.costMinor, farm.currency)}</span><span>{row.reason}</span></div>)}
+          <div role="table" aria-label="Health records" className="table"><div role="row" className="row header"><span role="columnheader">Date</span><span role="columnheader">Drug</span><span role="columnheader">Quantity</span><span role="columnheader">Cost</span><span role="columnheader">Reason</span></div>
+            {drugRecords.map(row => <div role="row" className="row" key={row.id}><span role="cell">{row.recordDate}</span><span role="cell">{row.drug}</span><span role="cell">{row.quantity}</span><span role="cell">{formatMoney(row.costMinor, farm.currency)}</span><span role="cell">{row.reason}</span></div>)}
             {drugRecords.length===0 && <p className="muted empty">No drug records for the selected batch.</p>}
           </div>
         </section>
@@ -55,8 +55,8 @@ export default function HealthPage() {
             <label>Notes<input value={vaccinationForm.notes} onChange={event => setVaccinationForm({...vaccinationForm,notes:event.target.value})}/></label>
             <button disabled={saving}>Record vaccination</button>
           </form>
-          <div className="table"><div className="row header"><span>Date</span><span>Vaccine</span><span>Dose</span><span>Quantity</span><span>Notes</span></div>
-            {vaccinationRecords.map(row => <div className="row" key={row.id}><span>{row.recordDate}</span><span>{row.vaccine}</span><span>{row.dose}</span><span>{row.quantity}</span><span>{row.notes||"—"}</span></div>)}
+          <div role="table" aria-label="Health records" className="table"><div role="row" className="row header"><span role="columnheader">Date</span><span role="columnheader">Vaccine</span><span role="columnheader">Dose</span><span role="columnheader">Quantity</span><span role="columnheader">Notes</span></div>
+            {vaccinationRecords.map(row => <div role="row" className="row" key={row.id}><span role="cell">{row.recordDate}</span><span role="cell">{row.vaccine}</span><span role="cell">{row.dose}</span><span role="cell">{row.quantity}</span><span role="cell">{row.notes||"—"}</span></div>)}
             {vaccinationRecords.length===0 && <p className="muted empty">No vaccination records for the selected batch.</p>}
           </div>
         </section>
