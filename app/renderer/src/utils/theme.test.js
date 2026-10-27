@@ -18,15 +18,15 @@ describe("theme preference", () => {
 
   it("persists and applies Light and Dark choices", () => {
     setThemePreference("light");
-    expect(localStorage.getItem("grantino:theme")).toBe("light");
+    expect(localStorage.getItem("pomas:theme")).toBe("light");
     expect(document.documentElement.dataset.theme).toBe("light");
     setThemePreference("dark");
-    expect(localStorage.getItem("grantino:theme")).toBe("dark");
+    expect(localStorage.getItem("pomas:theme")).toBe("dark");
     expect(document.documentElement.dataset.theme).toBe("dark");
   });
 
   it("rejects invalid preferences and ignores invalid stored values", () => {
-    localStorage.setItem("grantino:theme", "sepia");
+    localStorage.setItem("pomas:theme", "sepia");
     expect(getThemePreference()).toBe("auto");
     expect(() => setThemePreference("sepia")).toThrow("Theme must be auto, light, or dark.");
     applyTheme("invalid");
