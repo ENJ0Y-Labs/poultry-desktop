@@ -2,6 +2,8 @@ import { render, screen, fireEvent, within, waitFor } from "@testing-library/rea
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 // eslint-disable-next-line no-unused-vars
 import AppShell from "./AppShell.jsx";
+// eslint-disable-next-line no-unused-vars
+import PageSection from "./PageSection.jsx";
 
 describe("AppShell", () => {
   beforeEach(() => {
@@ -15,7 +17,7 @@ describe("AppShell", () => {
     vi.unstubAllGlobals();
   });
 
-  it("renders the nine primary pages", () => {
+  it("renders all ten primary destinations", () => {
     render(
       <AppShell farm={{ name: "Grantino", location: "Port Harcourt", currency: "NGN", timezone: "Africa/Lagos" }}>
         <section id="dashboard">Dashboard</section>
@@ -25,7 +27,7 @@ describe("AppShell", () => {
     const navigation = screen.getByRole("navigation", { name: "Main navigation" });
     for (const label of [
       "Dashboard", "Flocks", "Daily Work", "Feed & Stock", "Health",
-      "Production", "Sales & Money", "Reports", "Settings",
+      "Production", "Sales & Money", "Reports", "Import / Export", "Settings",
     ]) {
       expect(within(navigation).getByRole("button", { name: label })).toBeInTheDocument();
     }
@@ -82,6 +84,34 @@ describe("AppShell", () => {
     fireEvent.click(screen.getByRole("button", { name: "Suppliers" }));
     expect(window.location.hash).toBe("#feed-stock/suppliers");
   });
+  it("does not accept Import / Export as a saved start page", () => {
+    render(
+      <AppShell farm={{ name: "Grantino", location: "", currency: "NGN", timezone: "Africa/Lagos" }} startPage="import-export">
+        <section id="dashboard">Dashboard</section>
+      </AppShell>
+    );
+    expect(window.location.hash).toBe("#dashboard/overview");
+  });
+
+  it("routes to Import / Export and keeps the selected navigation state on deep links", async () => {
+    window.location.hash = "#import-export/overview";
+    render(
+      <AppShell farm={{ name: "Grantino", location: "", currency: "NGN", timezone: "Africa/Lagos" }}>
+        <PageSection page="import-export"><section id="import-export-content">Import / Export content</section></PageSection>
+        <PageSection page="settings"><section id="settings-content">Settings content</section></PageSection>
+      </AppShell>
+    );
+    const navigation = screen.getByRole("navigation", { name: "Main navigation" });
+    expect(within(navigation).getByRole("button", { name: "Import / Export" })).toHaveAttribute("aria-current", "page");
+    expect(screen.getByText("Import / Export content")).toBeInTheDocument();
+    expect(screen.queryByText("Settings content")).not.toBeInTheDocument();
+    fireEvent.click(within(navigation).getByRole("button", { name: "Settings" }));
+    expect(window.location.hash).toBe("#settings/farm");
+    expect(within(navigation).getByRole("button", { name: "Settings" })).toHaveAttribute("aria-current", "page");
+    expect(screen.getByText("Settings content")).toBeInTheDocument();
+    expect(screen.queryByText("Import / Export content")).not.toBeInTheDocument();
+  });
+
   it("shows contextual page help with a useful next action", async () => {
     render(
       <AppShell farm={{ name: "Grantino", location: "", currency: "NGN", timezone: "Africa/Lagos" }}>

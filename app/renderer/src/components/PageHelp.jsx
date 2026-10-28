@@ -10,6 +10,7 @@ const helpByPage = {
   "sales-money": { title: "Sales and money", description: "Maintain reusable customer records, review the common sales ledger, and record farm or batch expenses. Enter amounts and dates from the original transaction.", nextLabel: "Review sales", nextRoute: "sales-money/sales" },
   reports: { title: "Farm reports", description: "Review farm-wide or single-batch results for a selected as-of date, then export the same report data. Check the date before exporting historical results.", nextLabel: "Open farm report", nextRoute: "reports/farm-report" },
   settings: { title: "Farm settings", description: "Configure the farm profile, operating defaults, account, backups, and pricing preferences. Changes here affect how new records are entered or displayed.", nextLabel: "Review farm profile", nextRoute: "settings/farm" },
+  "import-export": { title: "Import and export", description: "Move only supported records into Pomas. Historical batch imports are planned, not enabled; use the actual placement date when opening a batch manually. Export farm or batch reports from Reports.", nextLabel: "Open batch management", nextRoute: "flocks/flocks" },
 };
 const tabHelp = {
   flocks: { houses: "Houses and pens define where birds are kept. Add a house before creating its first batch.", flocks: "Open a new permanent batch record for each flock. Do not reuse an old batch for a new placement.", "batch-dashboard": "Select a batch to review its population, costs, production, and current status." },

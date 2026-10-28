@@ -1,6 +1,4 @@
-import { useContext, useState } from "react";
-import { CSV_TEMPLATES, downloadCsvTemplate, inspectCsvFile, csvErrorReport } from "../utils/csvImport.js";
-import { csvImportApi } from "../services/api.js";
+import { useContext } from "react";
 import { FarmManagerContext } from "../components/FarmManagerContext.jsx";
 // eslint-disable-next-line no-unused-vars
 import DataTable from "../components/DataTable.jsx";
@@ -12,38 +10,6 @@ import PageSection from "../components/PageSection.jsx";
 import PageTemplate from "../components/PageTemplate.jsx";
 
 export default function SettingsPage() {
-  const [importModule, setImportModule] = useState("customers");
-  const [importPreview, setImportPreview] = useState(null);
-  const [importFile, setImportFile] = useState(null);
-  const [importBusy, setImportBusy] = useState(false);
-  const [importMessage, setImportMessage] = useState("");
-  const [importError, setImportError] = useState("");
-  async function inspectImport(event) {
-    const file = event.target.files?.[0];
-    setImportFile(file || null); setImportPreview(null); setImportError(""); setImportMessage("");
-    if (!file) return;
-    try { setImportPreview(await inspectCsvFile(file, importModule)); }
-    catch (error) { setImportError(error.message || "Could not inspect this CSV file."); }
-  }
-  function downloadErrorReport() {
-    if (!importPreview) return;
-    const blob = new Blob(["\\uFEFF", csvErrorReport(importPreview)], { type: "text/csv;charset=utf-8" });
-    const url = URL.createObjectURL(blob); const anchor = document.createElement("a");
-    anchor.href = url; anchor.download = `pomas-${importModule}-import-errors.csv`; anchor.click(); URL.revokeObjectURL(url);
-  }
-  async function confirmImport() {
-    if (!importPreview || importPreview.invalidRows || !importPreview.totalRows || importBusy) return;
-    const confirmed = window.confirm(`Import ${importPreview.totalRows} ${CSV_TEMPLATES[importModule].label.toLowerCase()}? This will write records to this farm.`);
-    if (!confirmed) return;
-    setImportBusy(true); setImportError(""); setImportMessage("");
-    try {
-      const result = await csvImportApi.importRecords(importModule, importPreview.rows.map(row => row.record));
-      setImportMessage(`Imported ${result.imported} ${CSV_TEMPLATES[importModule].label.toLowerCase()} successfully.`);
-      setImportPreview(null); setImportFile(null);
-      const input = document.getElementById("pomas-csv-file"); if (input) input.value = "";
-    } catch (error) { setImportError(error.message || "Import failed. No success was reported."); }
-    finally { setImportBusy(false); }
-  }
   const { signOut, saving, farmForm, setFarmForm, feedTypes, pricingSettings, setPricingSettings, crateSize, setCrateSize, defaultWater, setDefaultWater, waterSizes, setWaterSizes, waterUnitLabel, setWaterUnitLabel, expenseCategories, expenseCategoryForm, setExpenseCategoryForm, account, accountForm, setAccountForm, applicationSettings, setApplicationSettings, backupSettings, setBackupSettings, saveFarm, createExpenseCategory, archiveExpenseCategory, saveAccount, saveApplicationSettings, chooseBackupSettingsDirectory, saveBackupSettings, createBackup, restoreBackup, saveSettings, savePricingSettings } = useContext(FarmManagerContext);
 
   return (
@@ -65,29 +31,6 @@ export default function SettingsPage() {
         </form></section></PageSection>
 
       <PageSection page="settings" tab="backup"><section className="card full"><h2>Backup & restore</h2><div className="form-grid"><p className="muted">Backups are created by the backend using SQLite-safe snapshotting. Restore is handled by Electron so the renderer never replaces the database.</p><div className="inline-form"><button type="button" disabled={saving} onClick={createBackup}>Create backup</button><button type="button" disabled={saving || !window.poultryDesktop} onClick={restoreBackup}>Restore backup</button></div><small>Default retention: 30 backup files. A safety copy is created before restore.</small></div></section></PageSection>
-
-      <PageSection page="settings" tab="application"><section className="card full"><h2>CSV data import</h2>
-        <p className="muted">Import customer and supplier reference records from a spreadsheet. Download the matching template, keep its headers unchanged, then upload your completed CSV. Preview does not write data.</p>
-        <div className="form-grid">
-          <label>Import module<select value={importModule} disabled={importBusy} onChange={event => { setImportModule(event.target.value); setImportPreview(null); setImportFile(null); setImportError(""); setImportMessage(""); const input = document.getElementById("pomas-csv-file"); if (input) input.value = ""; }}>
-            {Object.entries(CSV_TEMPLATES).map(([key, value]) => <option key={key} value={key}>{value.label}</option>)}
-          </select></label>
-          <div className="inline-form"><button type="button" onClick={() => downloadCsvTemplate(importModule)}>Download {CSV_TEMPLATES[importModule].label.toLowerCase()} template</button></div>
-          <label>Choose completed CSV<input id="pomas-csv-file" type="file" accept=".csv,text/csv" disabled={importBusy} onChange={inspectImport}/><small>UTF-8 CSV, maximum 2 MB and 5,000 data rows.</small></label>
-        </div>
-        {importError && <p role="alert" className="error-message">{importError}</p>}
-        {importMessage && <p role="status" className="success-message">{importMessage}</p>}
-        {importPreview && <div className="subsection">
-          <h3>Import preview</h3><p>{importFile?.name} · Template v{importPreview.templateVersion}</p>
-          <p>Total rows: <strong>{importPreview.totalRows}</strong> · Valid: <strong>{importPreview.validRows}</strong> · Invalid: <strong>{importPreview.invalidRows}</strong></p>
-          {importPreview.invalidRows > 0 && <button type="button" onClick={downloadErrorReport}>Download row error report</button>}
-          <div className="table-scroll"><table><thead><tr><th>CSV row</th>{CSV_TEMPLATES[importModule].headers.map(header => <th key={header}>{header}</th>)}<th>Validation</th></tr></thead>
-            <tbody>{importPreview.rows.slice(0, 100).map(item => <tr key={item.rowNumber}><td>{item.rowNumber}</td>{CSV_TEMPLATES[importModule].headers.map(header => <td key={header}>{item.record[header]}</td>)}<td>{item.valid ? "Valid" : item.errors.join(" ")}</td></tr>)}</tbody>
-          </table></div>
-          {importPreview.rows.length > 100 && <p className="muted">Showing first 100 rows. The import validates all {importPreview.totalRows} rows.</p>}
-          <button type="button" disabled={importBusy || !importPreview.totalRows || importPreview.invalidRows > 0} onClick={confirmImport}>{importBusy ? "Importing…" : `Confirm import (${importPreview.validRows})`}</button>
-        </div>}
-      </section></PageSection>
 
       <PageSection page="settings" tab="application"><section className="card full"><div className="section-head"><h2>Configuration</h2><p className="muted">Settings that control farm behavior are stored locally and audited when changed.</p></div>
           <div className="dashboard-columns">
