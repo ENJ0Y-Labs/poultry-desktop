@@ -115,7 +115,7 @@ public class ProductionHistoryCsvImportService {
                     if (raw == null) throw new NumberFormatException();
                     row.totalWeightKg = new BigDecimal(raw).setScale(3, RoundingMode.UNNECESSARY);
                     if (row.totalWeightKg.signum() <= 0) throw new NumberFormatException();
-                } catch (NumberFormatException ex) {
+                } catch (NumberFormatException | ArithmeticException ex) {
                     row.errors.add("total_weight_kg must be positive and have at most 3 decimal places.");
                 }
             }
