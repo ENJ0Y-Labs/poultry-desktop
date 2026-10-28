@@ -24,7 +24,7 @@ export function encodeCsv(rows) {
     // Keep generated reports safe to open in spreadsheet software. Imported
     // values are data, never formulas.
     let text = String(value ?? "");
-    if (/^[ ]*[=+@-]/.test(text)) text = "'" + text;
+    if (/^[=+@-]/.test(text.trimStart())) text = "'" + text;
     return /[",\r\n]/.test(text) ? '"' + text.replace(/"/g, '""') + '"' : text;
   }).join(",")).join("\r\n") + "\r\n";
 }
