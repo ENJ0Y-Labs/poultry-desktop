@@ -70,3 +70,67 @@ Headers: `batch_code,record_date,vaccine,dose,quantity,notes`.
 `batch_code`, `record_date`, `vaccine`, `dose`, and `quantity` are required; `notes` is optional. `quantity` is a positive whole number in the current model's quantity units. The dose remains text because the existing model has no structured dose-unit field or vaccine-type enum. Vaccine names and dose values are not linked to inventory item IDs in the current model.
 
 For all three modules, exact retries of the same batch/date and complete record details are skipped. Different health records on the same date are allowed. No existing record is silently updated. If any row fails validation or any confirmed write fails, the complete import transaction rolls back, including the existing service's expense and audit writes. Feed remains in its separate subsystem.
+
+
+## Historical feed purchase and usage templates
+
+Feed history imports are separate modules and must be previewed before confirmation.
+
+| Module | Template version | Fields | Notes |
+|---|---|---|---|
+| Historical feed purchases | 1.0 | `feed_type_name, supplier_name, purchase_date, quantity, unit, total_cost_naira` | `supplier_name` is optional. Purchase cost is entered in naira with at most two decimal places and converted by the backend to integer kobo. |
+| Historical feed usage | 1.0 | `feed_type_name, batch_code, usage_date, quantity, unit, reason` | `reason` is optional; batch code must resolve to an existing active batch. |
+
+Use the exact configured feed type name and, when supplied, the exact active supplier name. The current feed-type and supplier models do not expose dedicated stable codes, so the template must not pretend that they do. Batch usage uses the existing human-readable batch code. Internal database IDs are not accepted in the CSV.
+
+Dates use `YYYY-MM-DD`. Quantity must be positive and have at most three decimal places, matching the existing feed service. The unit must exactly match the configured feed type unit. The importer never assumes that a bag has a particular weight. If `kg_per_unit` is unknown, it remains unknown; stock quantities and FIFO costing continue in the configured purchase unit, and kilogram-based calculations remain unavailable until the operator configures a conversion.
+
+The backend converts naira using decimal arithmetic and rejects amounts with more than two decimal places or values outside the integer-kobo range. It does not use floating-point money.
+
+Preview checks the full file without writing, resolves references, checks the batch placement date and feed-type applicability, detects exact repeated/existing transactions, respects the existing service's backdating restrictions, and simulates FIFO availability at each usage date. A later purchase cannot make an earlier usage valid. On a shared date, purchases are processed before usage so same-day stock can be consumed without changing the existing date-only feed model.
+
+Confirmed imports are sorted by date, with purchases before usage on the same date, and call the existing `FeedService` methods inside one transaction. This preserves purchase expenses, FIFO allocation, batch additional-cost events, and audit records. Feed usage does not create a second feed expense. Any write failure must roll back the entire import.
+
+Exact purchase duplicates are identified by feed type, supplier, date, quantity, and total cost. Exact usage duplicates are identified by batch, feed type, date, quantity, and reason. These semantics prevent a retry from duplicating identical imported rows; they also mean two genuinely separate transactions with identical fields are indistinguishable in the current schema. Review the preview carefully when that situation occurs.
+
+## Feed import verification
+
+Backend tests cover exact naira-to-kobo conversion, purchase retry behavior, FIFO costing across multiple purchase lots, unknown kilogram conversions, insufficient dated stock, and transaction rollback of purchase, expense, and audit writes. Before release, also verify in a disposable farm database that feed inventory, batch feed costs, and reports agree with manually entered equivalent records.
+
+
+## Historical production imports (v1.0)
+
+Production imports are available only for existing ACTIVE batches. Ensure the required house/pen exists and the batch has been created with its true historical placement date before importing. The batch-opening CSV workflow is not exposed in the Import / Export UI yet. Each production row uses the exact human-readable `batch_code`; internal database IDs are not accepted.
+
+### Layer egg collections
+
+Template: `pomas-egg-collections-template-v1.0.csv`
+
+Headers in exact order: `batch_code,record_date,good_eggs,cracked_eggs,notes`.
+
+- `batch_code`, `record_date`, `good_eggs`, and `cracked_eggs` are required; `notes` is optional.
+- Dates use `YYYY-MM-DD` and cannot precede batch placement.
+- Batch must be `LAYER` and ACTIVE.
+- Good and cracked egg quantities are non-negative whole eggs. A row with zero good and zero cracked eggs is an explicit recorded zero; a missing date remains missing history.
+- Good and cracked eggs remain separate through the existing egg-management service. Cracked eggs never become sellable inventory.
+- Imported collections do not create egg sales or change egg-sale balances except through the existing production ledger.
+
+### Broiler weight records
+
+Template: `pomas-broiler-weights-template-v1.0.csv`
+
+Headers in exact order: `batch_code,record_date,sample_quantity,total_weight_kg,notes`.
+
+- `batch_code`, `record_date`, `sample_quantity`, and `total_weight_kg` are required; `notes` is optional.
+- Dates use `YYYY-MM-DD` and cannot precede batch placement.
+- Batch must be `BROILER` and ACTIVE.
+- `sample_quantity` is a positive whole number of sampled birds.
+- `total_weight_kg` is the combined sample weight in kilograms, positive, with no more than three meaningful decimal places. It is not the average weight per bird.
+- The existing broiler-production service calculates average weight and growth. The importer does not supply or persist derived averages.
+- Dates with no weight record remain gaps, not zero-weight records.
+
+### Production preview, retry, and transaction guarantees
+
+The backend validates every row before confirmation, including batch type/status, batch code, date boundary, supported headers, numeric bounds, and exact-record duplicates. Preview is read-only. Confirmation revalidates and calls `EggManagementService` or `BroilerProductionService` inside one transaction, preserving their audit and domain behavior. Exact matching records are skipped on retry; a different record is not silently overwritten. If any confirmed write fails, all production and audit writes in that import transaction roll back.
+
+Tests cover layer/broiler type restrictions, placement-date boundaries, explicit zero egg production versus missing history, weight record insertion and retry behavior, audit records, and transaction rollback. Automated CI and packaged-app runtime validation must pass before this import is considered ready to merge.

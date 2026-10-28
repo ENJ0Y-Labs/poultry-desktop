@@ -43,8 +43,38 @@ export default function ImportExportPage() {
         preview.validRows = preview.rows.filter(row => row.valid).length;
         preview.invalidRows = preview.rows.filter(row => !row.valid).length;
       }
+      if (["egg-collections", "broiler-weights"].includes(importModule)) {
+        const serverPreview = await csvImportApi.previewProductionRecords(importModule, preview.rows.map(row => row.record));
+        for (let index = 0; index < preview.rows.length; index += 1) {
+          const row = preview.rows[index];
+          const checked = serverPreview.rows?.[index];
+          if (!checked) { row.errors.push("The backend could not validate this row."); row.valid = false; continue; }
+          row.errors = [...row.errors, ...(checked.errors || [])];
+          row.duplicate = Boolean(checked.duplicate);
+          row.existingDuplicate = Boolean(checked.duplicate);
+          row.valid = Boolean(checked.valid) && row.errors.length === 0;
+        }
+        preview.duplicates = serverPreview.duplicates || 0;
+        preview.validRows = preview.rows.filter(row => row.valid).length;
+        preview.invalidRows = preview.rows.filter(row => !row.valid).length;
+      }
       if (["health", "drugs", "vaccinations"].includes(importModule)) {
         const serverPreview = await csvImportApi.previewHealthRecords(importModule, preview.rows.map(row => row.record));
+        for (let index = 0; index < preview.rows.length; index += 1) {
+          const row = preview.rows[index];
+          const checked = serverPreview.rows?.[index];
+          if (!checked) { row.errors.push("The backend could not validate this row."); row.valid = false; continue; }
+          row.errors = [...row.errors, ...(checked.errors || [])];
+          row.duplicate = Boolean(checked.duplicate);
+          row.existingDuplicate = Boolean(checked.duplicate);
+          row.valid = Boolean(checked.valid) && row.errors.length === 0;
+        }
+        preview.duplicates = serverPreview.duplicates || 0;
+        preview.validRows = preview.rows.filter(row => row.valid).length;
+        preview.invalidRows = preview.rows.filter(row => !row.valid).length;
+      }
+      if (["feed-purchases", "feed-usage"].includes(importModule)) {
+        const serverPreview = await csvImportApi.previewFeedRecords(importModule, preview.rows.map(row => row.record));
         for (let index = 0; index < preview.rows.length; index += 1) {
           const row = preview.rows[index];
           const checked = serverPreview.rows?.[index];
@@ -85,11 +115,26 @@ export default function ImportExportPage() {
     try {
       const records = importPreview.rows.map(row => row.record);
       const healthHistory = ["health", "drugs", "vaccinations"].includes(importModule);
-      const result = healthHistory
-        ? await csvImportApi.importHealthRecords(importModule, records)
-        : await csvImportApi.importRecords(importModule, records);
-      const duplicateText = result.duplicates ? ` ${result.duplicates} exact duplicate(s) skipped.` : "";
-      setImportMessage(`Imported ${result.imported} ${CSV_TEMPLATES[importModule].label.toLowerCase()} successfully.${duplicateText}`);
+      const feedHistory = ["feed-purchases", "feed-usage"].includes(importModule);
+      const operationalHistory = ["daily-records", "mortality", "culling"].includes(importModule);
+      const productionHistory = ["egg-collections", "broiler-weights"].includes(importModule);
+      const result = productionHistory
+        ? await csvImportApi.importProductionRecords(importModule, records)
+        : feedHistory
+          ? await csvImportApi.importFeedRecords(importModule, records)
+          : healthHistory
+          ? await csvImportApi.importHealthRecords(importModule, records)
+          : operationalHistory
+            ? await csvImportApi.importOperationalRecords(importModule, records)
+            : await csvImportApi.importRecords(importModule, records);
+      if (feedHistory) {
+        const count = importModule === "feed-purchases" ? result.importedPurchases : result.importedUsage;
+        const duplicateText = result.skippedDuplicates ? ` ${result.skippedDuplicates} exact duplicate(s) skipped.` : "";
+        setImportMessage(`Imported ${count} ${CSV_TEMPLATES[importModule].label.toLowerCase()} successfully.${duplicateText}`);
+      } else {
+        const duplicateText = result.duplicates ? ` ${result.duplicates} exact duplicate(s) skipped.` : "";
+        setImportMessage(`Imported ${result.imported} ${CSV_TEMPLATES[importModule].label.toLowerCase()} successfully.${duplicateText}`);
+      }
       setImportPreview(null);
       setImportFile(null);
       const input = document.getElementById("pomas-csv-file");
@@ -110,7 +155,7 @@ export default function ImportExportPage() {
             <h2>Farm and batch records</h2>
           </div>
         </div>
-        <p>Houses and pens can be imported first as the prerequisite for historical batch imports. Batch import itself is not yet available. Health/treatment, drug, and vaccination history can be imported for existing active batches.</p>
+        <p>Houses and pens can be imported first as the prerequisite for historical batch imports. Batch import itself is not yet available. Health/treatment, drug, vaccination, layer egg collections, and broiler weight history can be imported for existing active batches.</p>
         <div className="dashboard-columns">
           <div className="subsection">
             <h3>Houses and pens</h3>
@@ -139,7 +184,7 @@ export default function ImportExportPage() {
             <h2>CSV import</h2>
           </div>
         </div>
-        <p className="muted">Download the versioned template, keep its headers unchanged, and preview the entire file before confirming. Health, drug, and vaccination previews validate batch references, placement dates, required fields, and numeric constraints without writing records. Confirmed imports use the existing audited health-management services in one database transaction. Drug records create the same DRUGS expense as manual entry. The current health model does not link drug or vaccine names to inventory items or consume stock, so no stock linkage is invented.</p>
+        <p className="muted">Download the versioned template, keep its headers unchanged, and preview the entire file before confirming. Feed imports are checked against configured feed types, supplier and batch references, existing transaction dates, unit rules, and dated FIFO stock. Purchase prices are entered in naira and converted by the backend to integer kobo. Confirmed feed records use the existing feed services in one database transaction. Unknown kilogram conversions remain unknown; do not infer bag weights. Health, drug, and vaccination previews validate batch references, placement dates, required fields, and numeric constraints without writing records. Drug records create the same DRUGS expense as manual entry.</p>
         <div className="form-grid">
           <label>Import module
             <select value={importModule} disabled={importBusy} onChange={event => {
@@ -152,6 +197,10 @@ export default function ImportExportPage() {
               if (input) input.value = "";
             }}>
               <option value="houses">{CSV_TEMPLATES.houses.label}</option>
+              <option value="feed-purchases">{CSV_TEMPLATES["feed-purchases"].label}</option>
+              <option value="feed-usage">{CSV_TEMPLATES["feed-usage"].label}</option>
+              <option value="egg-collections">{CSV_TEMPLATES["egg-collections"].label}</option>
+              <option value="broiler-weights">{CSV_TEMPLATES["broiler-weights"].label}</option>
               <option value="health">{CSV_TEMPLATES.health.label}</option>
               <option value="drugs">{CSV_TEMPLATES.drugs.label}</option>
               <option value="vaccinations">{CSV_TEMPLATES.vaccinations.label}</option>
@@ -172,7 +221,7 @@ export default function ImportExportPage() {
         {importPreview && <div className="subsection">
           <h3>Import preview</h3>
           <p>{importFile?.name} · Template v{importPreview.templateVersion}</p>
-          <p>Total rows: <strong>{importPreview.totalRows}</strong> · Valid: <strong>{importPreview.validRows}</strong> · Invalid: <strong>{importPreview.invalidRows}</strong>{["houses", "health", "drugs", "vaccinations"].includes(importModule) && <> · Exact duplicates: <strong>{importPreview.duplicates || 0}</strong></>}</p>
+          <p>Total rows: <strong>{importPreview.totalRows}</strong> · Valid: <strong>{importPreview.validRows}</strong> · Invalid: <strong>{importPreview.invalidRows}</strong>{["houses", "health", "drugs", "vaccinations", "feed-purchases", "feed-usage"].includes(importModule) && <> · Exact duplicates: <strong>{importPreview.duplicates || 0}</strong></>}</p>
           {importPreview.invalidRows > 0 && <button type="button" onClick={downloadErrorReport}>Download row error report</button>}
           <div className="table-scroll">
             <table>

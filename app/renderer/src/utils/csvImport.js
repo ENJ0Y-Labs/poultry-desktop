@@ -28,6 +28,30 @@ export const CSV_TEMPLATES = {
     required: ["batch_code", "record_date", "vaccine", "dose", "quantity"],
     example: ["B-2026-001", "2026-01-17", "Example vaccine name", "1 ml per bird", "100", "Replace or remove this example row"],
   },
+  "feed-purchases": {
+    label: "Historical Feed Purchases", version: "1.0",
+    headers: ["feed_type_name", "supplier_name", "purchase_date", "quantity", "unit", "total_cost_naira"],
+    required: ["feed_type_name", "purchase_date", "quantity", "unit", "total_cost_naira"],
+    example: ["Broiler Starter", "Example Feed Supplier", "2026-01-02", "10", "bag", "125000.00"],
+  },
+  "feed-usage": {
+    label: "Historical Feed Usage", version: "1.0",
+    headers: ["feed_type_name", "batch_code", "usage_date", "quantity", "unit", "reason"],
+    required: ["feed_type_name", "batch_code", "usage_date", "quantity", "unit"],
+    example: ["Broiler Starter", "B-2026-001", "2026-01-03", "2.5", "bag", "Daily feeding"],
+  },
+  "egg-collections": {
+    label: "Layer Egg Collections", version: "1.0",
+    headers: ["batch_code", "record_date", "good_eggs", "cracked_eggs", "notes"],
+    required: ["batch_code", "record_date", "good_eggs", "cracked_eggs"],
+    example: ["L-2026-001", "2026-01-15", "850", "12", "Replace or remove this example row"],
+  },
+  "broiler-weights": {
+    label: "Broiler Weight Records", version: "1.0",
+    headers: ["batch_code", "record_date", "sample_quantity", "total_weight_kg", "notes"],
+    required: ["batch_code", "record_date", "sample_quantity", "total_weight_kg"],
+    example: ["B-2026-001", "2026-01-15", "10", "18.500", "Replace or remove this example row"],
+  },
   customers: {
     label: "Customers",
     version: "1.0",

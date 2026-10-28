@@ -293,4 +293,8 @@ export const csvImportApi = {
   importRecords: (module, records) => request("/imports/csv", { method: "POST", body: JSON.stringify({ module, records }) }),
   previewOperationalRecords: (module, records) => request("/imports/csv/operational/preview", { method: "POST", body: JSON.stringify({ module, records }) }),
   importOperationalRecords: (module, records) => request("/imports/csv/operational", { method: "POST", body: JSON.stringify({ module, records }) }),
+  previewFeedRecords: (module, records) => request("/imports/csv/feed/preview", { method: "POST", body: JSON.stringify({ module, records }) }),
+  importFeedRecords: (module, records) => request("/imports/csv/feed", { method: "POST", body: JSON.stringify({ module, records }) }),
+  previewProductionRecords: (module, records) => request("/imports/csv/production/preview", { method: "POST", body: JSON.stringify({ module, records }) }),
+  importProductionRecords: (module, records) => request("/imports/csv/production", { method: "POST", body: JSON.stringify({ module, records }) }),
 };
