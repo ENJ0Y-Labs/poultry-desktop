@@ -70,7 +70,8 @@ describe("historical feed templates", () => {
     expect(result.rows[0].record.total_cost_naira).toBe("1600.25");
   });
 });
-\ndescribe("inspectCsvFile", () => {
+
+describe("inspectCsvFile", () => {
   it("reports required-field and duplicate-name errors with source row numbers", async () => {
     const file = csvFile("name,phone,notes\nAda,1,\nada,2,\n,3,\n");
     const result = await inspectCsvFile(file, "customers");
