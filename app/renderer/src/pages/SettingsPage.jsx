@@ -10,7 +10,7 @@ import PageSection from "../components/PageSection.jsx";
 import PageTemplate from "../components/PageTemplate.jsx";
 
 export default function SettingsPage() {
-  const { farmForm, setFarmForm, feedTypes, pricingSettings, setPricingSettings, crateSize, setCrateSize, defaultWater, setDefaultWater, waterSizes, setWaterSizes, waterUnitLabel, setWaterUnitLabel, saving, expenseCategories, expenseCategoryForm, setExpenseCategoryForm, account, accountForm, setAccountForm, applicationSettings, setApplicationSettings, backupSettings, setBackupSettings, saveFarm, createExpenseCategory, archiveExpenseCategory, saveAccount, saveApplicationSettings, chooseBackupSettingsDirectory, saveBackupSettings, createBackup, restoreBackup, saveSettings, savePricingSettings } = useContext(FarmManagerContext);
+  const { signOut, saving, farmForm, setFarmForm, feedTypes, pricingSettings, setPricingSettings, crateSize, setCrateSize, defaultWater, setDefaultWater, waterSizes, setWaterSizes, waterUnitLabel, setWaterUnitLabel, expenseCategories, expenseCategoryForm, setExpenseCategoryForm, account, accountForm, setAccountForm, applicationSettings, setApplicationSettings, backupSettings, setBackupSettings, saveFarm, createExpenseCategory, archiveExpenseCategory, saveAccount, saveApplicationSettings, chooseBackupSettingsDirectory, saveBackupSettings, createBackup, restoreBackup, saveSettings, savePricingSettings } = useContext(FarmManagerContext);
 
   return (
     <PageTemplate className="grid">
