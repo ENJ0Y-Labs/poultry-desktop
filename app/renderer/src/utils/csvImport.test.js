@@ -59,13 +59,13 @@ describe("historical health templates", () => {
     expect(CSV_TEMPLATES.health.headers).toEqual(["batch_code", "record_date", "condition_problem", "description", "action"]);
     expect(CSV_TEMPLATES.drugs.headers).toEqual(["batch_code", "record_date", "drug", "quantity", "cost_minor", "reason"]);
     expect(CSV_TEMPLATES.vaccinations.headers).toEqual(["batch_code", "record_date", "vaccine", "dose", "quantity", "notes"]);
-    const result = await inspectCsvFile(csvFile("batch_code,record_date,condition_problem,description,action\\nB-2026-001,2026-01-15,Coughing,Several birds coughed,Isolated affected birds\\n"), "health");
+    const result = await inspectCsvFile(csvFile("batch_code,record_date,condition_problem,description,action\nB-2026-001,2026-01-15,Coughing,Several birds coughed,Isolated affected birds\n"), "health");
     expect(result.validRows).toBe(1);
     expect(result.rows[0].record.batch_code).toBe("B-2026-001");
   });
 
   it("does not try to derive name-based duplicate keys for health records", async () => {
-    const result = await inspectCsvFile(csvFile("batch_code,record_date,vaccine,dose,quantity,notes\\nB-2026-001,2026-01-15,Newcastle,1 ml per bird,100,Round 1\\n"), "vaccinations");
+    const result = await inspectCsvFile(csvFile("batch_code,record_date,vaccine,dose,quantity,notes\nB-2026-001,2026-01-15,Newcastle,1 ml per bird,100,Round 1\n"), "vaccinations");
     expect(result.validRows).toBe(1);
     expect(result.rows[0].record.vaccine).toBe("Newcastle");
   });
