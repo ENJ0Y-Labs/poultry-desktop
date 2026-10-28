@@ -65,12 +65,12 @@ describe("historical production templates", () => {
       "batch_code", "record_date", "sample_quantity", "total_weight_kg", "notes",
     ]);
     const eggs = await inspectCsvFile(csvFile(
-      "batch_code,record_date,good_eggs,cracked_eggs,notes\\nL-2026-001,2026-01-15,850,12,Historical collection\\n",
+      "batch_code,record_date,good_eggs,cracked_eggs,notes\nL-2026-001,2026-01-15,850,12,Historical collection\n",
     ), "egg-collections");
     expect(eggs.validRows).toBe(1);
     expect(eggs.rows[0].record.good_eggs).toBe("850");
     const weights = await inspectCsvFile(csvFile(
-      "batch_code,record_date,sample_quantity,total_weight_kg,notes\\nB-2026-001,2026-01-15,10,18.500,Historical sample\\n",
+      "batch_code,record_date,sample_quantity,total_weight_kg,notes\nB-2026-001,2026-01-15,10,18.500,Historical sample\n",
     ), "broiler-weights");
     expect(weights.validRows).toBe(1);
     expect(weights.rows[0].record.total_weight_kg).toBe("18.500");
