@@ -173,6 +173,25 @@ public class FeedRepository {
         return count != null && count == 1;
     }
 
+
+    public boolean purchaseExists(String feedTypeId, String supplierId, LocalDate date, long quantityMilli, long costMinor) {
+        Integer count = jdbc.queryForObject("""
+                SELECT COUNT(*) FROM feed_purchases
+                WHERE feed_type_id = ? AND supplier_id IS ? AND purchase_date = ?
+                  AND quantity_milli = ? AND total_cost_minor = ?
+                """, Integer.class, feedTypeId, supplierId, date.toString(), quantityMilli, costMinor);
+        return count != null && count > 0;
+    }
+
+    public boolean usageExists(String batchId, String feedTypeId, LocalDate date, long quantityMilli, String reason) {
+        Integer count = jdbc.queryForObject("""
+                SELECT COUNT(*) FROM feed_usage
+                WHERE batch_id = ? AND feed_type_id = ? AND usage_date = ?
+                  AND quantity_milli = ? AND reason = ?
+                """, Integer.class, batchId, feedTypeId, date.toString(), quantityMilli, reason);
+        return count != null && count > 0;
+    }
+
     public LocalDate latestUsageDate(String feedTypeId) {
         List<String> dates = jdbc.query(
                 "SELECT usage_date FROM feed_usage WHERE feed_type_id = ? ORDER BY usage_date DESC, created_at DESC LIMIT 1",

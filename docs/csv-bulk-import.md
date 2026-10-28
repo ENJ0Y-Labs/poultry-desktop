@@ -70,3 +70,29 @@ Headers: `batch_code,record_date,vaccine,dose,quantity,notes`.
 `batch_code`, `record_date`, `vaccine`, `dose`, and `quantity` are required; `notes` is optional. `quantity` is a positive whole number in the current model's quantity units. The dose remains text because the existing model has no structured dose-unit field or vaccine-type enum. Vaccine names and dose values are not linked to inventory item IDs in the current model.
 
 For all three modules, exact retries of the same batch/date and complete record details are skipped. Different health records on the same date are allowed. No existing record is silently updated. If any row fails validation or any confirmed write fails, the complete import transaction rolls back, including the existing service's expense and audit writes. Feed remains in its separate subsystem.
+
+
+## Historical feed purchase and usage templates
+
+Feed history imports are separate modules and must be previewed before confirmation.
+
+| Module | Template version | Fields | Notes |
+|---|---|---|---|
+| Historical feed purchases | 1.0 | `feed_type_name, supplier_name, purchase_date, quantity, unit, total_cost_naira` | `supplier_name` is optional. Purchase cost is entered in naira with at most two decimal places and converted by the backend to integer kobo. |
+| Historical feed usage | 1.0 | `feed_type_name, batch_code, usage_date, quantity, unit, reason` | `reason` is optional; batch code must resolve to an existing active batch. |
+
+Use the exact configured feed type name and, when supplied, the exact active supplier name. The current feed-type and supplier models do not expose dedicated stable codes, so the template must not pretend that they do. Batch usage uses the existing human-readable batch code. Internal database IDs are not accepted in the CSV.
+
+Dates use `YYYY-MM-DD`. Quantity must be positive and have at most three decimal places, matching the existing feed service. The unit must exactly match the configured feed type unit. The importer never assumes that a bag has a particular weight. If `kg_per_unit` is unknown, it remains unknown; stock quantities and FIFO costing continue in the configured purchase unit, and kilogram-based calculations remain unavailable until the operator configures a conversion.
+
+The backend converts naira using decimal arithmetic and rejects amounts with more than two decimal places or values outside the integer-kobo range. It does not use floating-point money.
+
+Preview checks the full file without writing, resolves references, checks the batch placement date and feed-type applicability, detects exact repeated/existing transactions, respects the existing service's backdating restrictions, and simulates FIFO availability at each usage date. A later purchase cannot make an earlier usage valid. On a shared date, purchases are processed before usage so same-day stock can be consumed without changing the existing date-only feed model.
+
+Confirmed imports are sorted by date, with purchases before usage on the same date, and call the existing `FeedService` methods inside one transaction. This preserves purchase expenses, FIFO allocation, batch additional-cost events, and audit records. Feed usage does not create a second feed expense. Any write failure must roll back the entire import.
+
+Exact purchase duplicates are identified by feed type, supplier, date, quantity, and total cost. Exact usage duplicates are identified by batch, feed type, date, quantity, and reason. These semantics prevent a retry from duplicating identical imported rows; they also mean two genuinely separate transactions with identical fields are indistinguishable in the current schema. Review the preview carefully when that situation occurs.
+
+## Feed import verification
+
+Backend tests cover exact naira-to-kobo conversion, purchase retry behavior, FIFO costing across multiple purchase lots, unknown kilogram conversions, insufficient dated stock, and transaction rollback of purchase, expense, and audit writes. Before release, also verify in a disposable farm database that feed inventory, batch feed costs, and reports agree with manually entered equivalent records.

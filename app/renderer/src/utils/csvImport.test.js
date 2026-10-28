@@ -53,6 +53,24 @@ describe("historical operational templates", () => {
     expect(result.rows[0].record.batch_code).toBe("B-2026-001");
   });
 });
+
+describe("historical feed templates", () => {
+  it("defines versioned purchase and usage templates with naira and stable references", async () => {
+    expect(CSV_TEMPLATES["feed-purchases"].version).toBe("1.0");
+    expect(CSV_TEMPLATES["feed-purchases"].headers).toEqual([
+      "feed_type_name", "supplier_name", "purchase_date", "quantity", "unit", "total_cost_naira",
+    ]);
+    expect(CSV_TEMPLATES["feed-usage"].headers).toEqual([
+      "feed_type_name", "batch_code", "usage_date", "quantity", "unit", "reason",
+    ]);
+    const result = await inspectCsvFile(csvFile(
+      "feed_type_name,supplier_name,purchase_date,quantity,unit,total_cost_naira\nStarter,,2026-01-01,2.5,bag,1600.25\n",
+    ), "feed-purchases");
+    expect(result.validRows).toBe(1);
+    expect(result.rows[0].record.total_cost_naira).toBe("1600.25");
+  });
+});
+
 describe("inspectCsvFile", () => {
   it("reports required-field and duplicate-name errors with source row numbers", async () => {
     const file = csvFile("name,phone,notes\nAda,1,\nada,2,\n,3,\n");
