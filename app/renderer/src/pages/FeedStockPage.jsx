@@ -5,6 +5,8 @@ import { FarmManagerContext } from "../components/FarmManagerContext.jsx";
 import DataTable from "../components/DataTable.jsx";
 // eslint-disable-next-line no-unused-vars
 import PageSection from "../components/PageSection.jsx";
+// eslint-disable-next-line no-unused-vars
+import PageTemplate from "../components/PageTemplate.jsx";
 
 export default function FeedStockPage() {
   const { formatMoney, farm, batches, feedTypes, setFeedTypes, feedInventory, feedTypeForm, setFeedTypeForm, setError, setSaving, feedPurchaseForm, setFeedPurchaseForm, inventoryItems, inventoryItemForm, setInventoryItemForm, inventoryMovementForm, setInventoryMovementForm, inventoryMovements, suppliers, supplierForm, setSupplierForm, saveSupplier, archiveSupplier, saving, saveInventoryItem, loadInventoryMovements, saveInventoryMovement, createFeedType, purchaseFeed, feedQuantity } = useContext(FarmManagerContext);
@@ -30,7 +32,7 @@ export default function FeedStockPage() {
   }
 
   return (
-    <div className="grid">
+    <PageTemplate className="grid">
       <PageSection page="feed-stock" tab="feed"><section id="feed" className="card full">
           <div className="section-head"><h2>Feed management</h2><p className="muted">Purchases create inventory and one expense. Usage consumes FIFO stock and adds its cost to the batch once. FCR converts feed usage to kilograms using each feed type’s configured kg-per-unit factor. Leave unknown units unset until the farm confirms the package weight.</p></div>
           <div className="subsection">
@@ -169,6 +171,6 @@ export default function FeedStockPage() {
         ]} rows={suppliers} emptyMessage="No suppliers recorded yet." />
       </section></PageSection>
 
-    </div>
+    </PageTemplate>
   );
 }

@@ -2,6 +2,8 @@ import { useContext } from "react";
 import { FarmManagerContext } from "../components/FarmManagerContext.jsx";
 // eslint-disable-next-line no-unused-vars
 import PageSection from "../components/PageSection.jsx";
+// eslint-disable-next-line no-unused-vars
+import PageTemplate from "../components/PageTemplate.jsx";
 import { rememberLastBatchId } from "../utils/farmUx.js";
 // eslint-disable-next-line no-unused-vars
 import DataTable from "../components/DataTable.jsx";
@@ -13,7 +15,7 @@ export default function FlocksPage() {
   const { formatMoney, formatQuantity, formatPercent, formatKg, formatMetric, farm, houses, batches, suppliers, batchForm, setBatchForm, costForm, setCostForm, houseForm, setHouseForm, saving, selectedBatchId, setSelectedBatchId, batchDashboard, createBatch, addBirdCost, markBatchSold, reopenBatch, addHouse } = useContext(FarmManagerContext);
 
   return (
-    <div className="grid">
+    <PageTemplate className="grid">
       <PageSection page="flocks" tab="batch-dashboard"><section id="batch-dashboard" className="card full dashboard-page">
         <div className="section-head"><div><p className="eyebrow">BATCH</p><h2>Batch dashboard</h2></div>
           <select aria-label="Batch dashboard" value={selectedBatchId} onChange={e => { setSelectedBatchId(e.target.value); rememberLastBatchId(e.target.value); }}>
@@ -89,6 +91,6 @@ export default function FlocksPage() {
               { key: "notes", label: "Notes", render: house => house.notes || "—" },
             ]} rows={houses} emptyMessage="No houses or pens yet." />
         </section></PageSection>
-    </div>
+    </PageTemplate>
   );
 }

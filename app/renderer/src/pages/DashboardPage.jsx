@@ -4,6 +4,8 @@ import { FarmManagerContext } from "../components/FarmManagerContext.jsx";
 import DataTable from "../components/DataTable.jsx";
 // eslint-disable-next-line no-unused-vars
 import PageSection from "../components/PageSection.jsx";
+// eslint-disable-next-line no-unused-vars
+import PageTemplate from "../components/PageTemplate.jsx";
 import { formatAuditAction, formatAuditEntity, formatAuditTimestamp } from "../utils/auditFormatting.js";
 import { attentionTarget } from "../utils/attentionNavigation.js";
 // eslint-disable-next-line no-unused-vars
@@ -85,7 +87,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="grid">
+    <PageTemplate className="grid">
       <PageSection page="dashboard" tab="overview"><section id="dashboard" className="card full dashboard-page">
         <div className="section-head">
           <div><p className="eyebrow">OVERVIEW</p><h2>Farm dashboard</h2></div>
@@ -211,6 +213,6 @@ export default function DashboardPage() {
           </>
         ) : <p className="muted">Dashboard is loading…</p>}
       </section></PageSection>
-    </div>
+    </PageTemplate>
   );
 }

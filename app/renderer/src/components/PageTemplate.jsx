@@ -1,20 +1,17 @@
-/**
- * Shared page-level layout boundary. Domain content and route visibility stay
- * with the owning page and PageSection.
- */
+/** Shared page layout boundary; domain content stays in its owning page. */
 export default function PageTemplate({ title, description, actions, children, className = "" }) {
   return (
-    <main className={`page-template ${className}`.trim()} aria-labelledby={title ? "page-template-title" : undefined}>
+    <div className={`page-template ${className}`.trim()} aria-labelledby={title ? "page-template-title" : undefined}>
       {(title || description || actions) && (
         <header className="page-template-header">
           <div className="page-template-heading">
-            {title && <h1 id="page-template-title">{title}</h1>}
+            {title && <h2 id="page-template-title">{title}</h2>}
             {description && <p className="muted">{description}</p>}
           </div>
           {actions && <div className="page-template-actions">{actions}</div>}
         </header>
       )}
-      <div className="page-template-content">{children}</div>
-    </main>
+      {children}
+    </div>
   );
 }

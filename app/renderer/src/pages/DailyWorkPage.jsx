@@ -5,6 +5,8 @@ import DataTable from "../components/DataTable.jsx";
 // eslint-disable-next-line no-unused-vars
 import PageSection from "../components/PageSection.jsx";
 // eslint-disable-next-line no-unused-vars
+import PageTemplate from "../components/PageTemplate.jsx";
+// eslint-disable-next-line no-unused-vars
 import EmptyState from "../components/EmptyState.jsx";
 // eslint-disable-next-line no-unused-vars
 
@@ -30,7 +32,7 @@ export default function DailyWorkPage() {
   }
 
   return (
-    <div className="grid">
+    <PageTemplate className="grid">
       {activeBatches.length === 0 && <EmptyState className="empty-state" role="status">No active batches are available. Create a batch in <a href="#flocks/flocks">Flocks → Batches</a> before recording daily work.</EmptyState>}
       <PageSection page="daily-work" tab="daily-record">
         <section id="operations" className="card full">
@@ -110,6 +112,6 @@ export default function DailyWorkPage() {
           </form>
         </section>
       </PageSection>
-    </div>
+    </PageTemplate>
   );
 }
