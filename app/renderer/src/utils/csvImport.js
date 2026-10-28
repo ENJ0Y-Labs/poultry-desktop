@@ -42,6 +42,27 @@ export const CSV_TEMPLATES = {
     required: ["name"],
     example: ["Example Feed Supplier", "08000000000", "supplier@example.test", "Example address", "Replace or remove this example row"],
   },
+  "daily-records": {
+    label: "Daily Records",
+    version: "1.0",
+    headers: ["batch_code", "record_date", "notes", "water_entries"],
+    required: ["batch_code", "record_date"],
+    example: ["B-2026-001", "2026-01-16", "Replace or remove this example row", "25:4;75:2"],
+  },
+  mortality: {
+    label: "Mortality",
+    version: "1.0",
+    headers: ["batch_code", "event_date", "quantity", "reason", "notes"],
+    required: ["batch_code", "event_date", "quantity"],
+    example: ["B-2026-001", "2026-01-16", "2", "Disease", "Replace or remove this example row"],
+  },
+  culling: {
+    label: "Culling",
+    version: "1.0",
+    headers: ["batch_code", "event_date", "quantity", "reason", "notes"],
+    required: ["batch_code", "event_date", "quantity"],
+    example: ["B-2026-001", "2026-01-16", "1", "Poor growth", "Replace or remove this example row"],
+  },
 };
 
 export function encodeCsv(rows) {
@@ -148,7 +169,7 @@ export async function inspectCsvFile(file, moduleKey) {
     const errors = [];
     if (values.length !== headers.length) errors.push(`Expected ${headers.length} columns, found ${values.length}.`);
     for (const required of template.required) if (!record[required]) errors.push(`${required} is required.`);
-    const key = ["houses", "customers", "suppliers"].includes(moduleKey) ? record.name.toLocaleLowerCase("en") : "";
+    const key = typeof record.name === "string" ? record.name.toLocaleLowerCase("en") : "";
     const duplicate = Boolean(key && seen.has(key));
     if (duplicate) errors.push("Duplicate name within this file.");
     if (key) seen.add(key);
@@ -173,7 +194,7 @@ export async function inspectCsvFile(file, moduleKey) {
 export function csvErrorReport(preview) {
   const rows = [["row", "status", "errors", ...CSV_TEMPLATES[preview.moduleKey].headers]];
   for (const item of preview.rows) {
-    rows.push([item.rowNumber, item.valid ? "valid" : "invalid", item.errors.join("; "), ...CSV_TEMPLATES[preview.moduleKey].headers.map(header => item.record[header])]);
+    rows.push([item.rowNumber, item.duplicate || item.existingDuplicate ? "duplicate (skipped)" : item.valid ? "valid" : "invalid", item.errors.join("; ") || (item.duplicate || item.existingDuplicate ? "Exact duplicate will be skipped." : ""), ...CSV_TEMPLATES[preview.moduleKey].headers.map(header => item.record[header])]);
   }
   return encodeCsv(rows);
 }

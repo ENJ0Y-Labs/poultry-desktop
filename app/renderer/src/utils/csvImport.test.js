@@ -42,21 +42,15 @@ describe("parseCsv", () => {
   });
 });
 
-describe("historical health templates", () => {
-  it("uses stable batch codes and only fields represented by the current health domain", async () => {
-    expect(CSV_TEMPLATES.health.version).toBe("1.0");
-    expect(CSV_TEMPLATES.health.headers).toEqual(["batch_code", "record_date", "condition_problem", "description", "action"]);
-    expect(CSV_TEMPLATES.drugs.headers).toEqual(["batch_code", "record_date", "drug", "quantity", "cost_minor", "reason"]);
-    expect(CSV_TEMPLATES.vaccinations.headers).toEqual(["batch_code", "record_date", "vaccine", "dose", "quantity", "notes"]);
-    const result = await inspectCsvFile(csvFile("batch_code,record_date,condition_problem,description,action\nB-2026-001,2026-01-15,Coughing,Several birds coughed,Isolated affected birds\n"), "health");
+describe("historical operational templates", () => {
+  it("defines versioned daily-record, mortality, and culling templates using stable batch codes", async () => {
+    expect(CSV_TEMPLATES["daily-records"].version).toBe("1.0");
+    expect(CSV_TEMPLATES["daily-records"].headers).toEqual(["batch_code", "record_date", "notes", "water_entries"]);
+    expect(CSV_TEMPLATES.mortality.headers).toEqual(["batch_code", "event_date", "quantity", "reason", "notes"]);
+    expect(CSV_TEMPLATES.culling.headers).toEqual(CSV_TEMPLATES.mortality.headers);
+    const result = await inspectCsvFile(csvFile("batch_code,event_date,quantity,reason,notes\nB-2026-001,2026-01-16,2,Disease,\n"), "mortality");
     expect(result.validRows).toBe(1);
     expect(result.rows[0].record.batch_code).toBe("B-2026-001");
-  });
-
-  it("does not derive name-based duplicate keys for health records", async () => {
-    const result = await inspectCsvFile(csvFile("batch_code,record_date,vaccine,dose,quantity,notes\nB-2026-001,2026-01-15,Newcastle,1 ml per bird,100,Round 1\n"), "vaccinations");
-    expect(result.validRows).toBe(1);
-    expect(result.rows[0].record.vaccine).toBe("Newcastle");
   });
 });
 describe("inspectCsvFile", () => {
