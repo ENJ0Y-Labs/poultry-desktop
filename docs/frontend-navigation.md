@@ -10,13 +10,13 @@
 6. Production: layer egg workflows and broiler weight/growth and sales workflows.
 7. Sales & Money: customers, the common sales ledger, and expenses.
 8. Reports: farm and batch reports and exports.
-9. Settings: farm profile, farm defaults, configuration, account, backup, and pricing settings.
+9. Import / Export: supported customer/supplier CSV imports, planned historical batch import, and entry points to supported farm/batch report exports.\n10. Settings: farm profile, farm defaults, configuration, account, backup, and pricing settings.
 
 ## Routing behavior
 
 - The current page and subpage are stored in the URL hash, for example `#daily-work/mortality` or `#feed-stock/suppliers`.
 - Back/forward and direct hash navigation are supported.
-- The saved start page is applied after application settings load, unless the app is opened with an explicit route hash.
+- The saved start page is applied after application settings load, unless the app is opened with an explicit route hash. Import / Export is a routable destination but is intentionally not an available saved start page; the saved start-page allow-list remains aligned across Settings, backend validation, and the database constraint.
 - Daily Work has separate Daily record, Mortality, Culling, and Water tabs. The Daily record tab uses one selected batch/date for notes and feed usage; feed usage remains a separate transaction in the authoritative FIFO feed ledger.
 - Health has separate Health records, Drugs & treatments, and Vaccination tabs.
 - Feed & Stock has separate Feed & usage, Purchases, Other stock, and Suppliers tabs. The Feed & usage tab manages feed types and stock visibility; daily consumption is recorded from Daily Work.
@@ -26,7 +26,7 @@
 - Navigation is fully local and adds no package dependency.
 - Only the active page/tab sections are mounted. The backend remains the source of truth for farm calculations and records.
 
-The nine page components live under `app/renderer/src/pages/`. Shared form state and API handlers remain in `App.jsx` and are exposed through `FarmManagerContext`; future cleanup can move domain-specific state/handlers into focused hooks.
+The top-level page components live under `app/renderer/src/pages/`. Shared form state and API handlers remain in `App.jsx` and are exposed through `FarmManagerContext`; future cleanup can move domain-specific state/handlers into focused hooks.
 
 
 ## Farm dashboard presentation
@@ -108,7 +108,7 @@ The nine page components live under `app/renderer/src/pages/`. Shared form state
 ## Guided product tour
 
 - The persistent page guide includes a Start guided tour action that launches an interactive spotlight walkthrough.
-- The walkthrough covers the nine top-level destinations and their operational tabs using the existing hash router.
+- The walkthrough covers all ten top-level destinations and their operational tabs using the existing hash router.
 - Users can navigate backward or forward, skip or close the tour, press Escape to exit, and use the arrow keys.
 - The tour works offline and adds no dependency or demo records.
 
