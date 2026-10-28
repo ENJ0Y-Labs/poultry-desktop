@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { encodeCsv, inspectCsvFile, parseCsv } from "./csvImport.js";
+import { CSV_TEMPLATES, encodeCsv, inspectCsvFile, parseCsv } from "./csvImport.js";
 
 function csvFile(content, name = "customers.csv") {
   const bytes = new TextEncoder().encode(content);
@@ -42,7 +42,7 @@ describe("parseCsv", () => {
   });
 });
 
-describe("inspectCsvFile", () => {
+describe("historical operational templates", () => {\n  it("defines versioned daily-record, mortality, and culling templates using stable batch codes", async () => {\n    expect(CSV_TEMPLATES["daily-records"].version).toBe("1.0");\n    expect(CSV_TEMPLATES["daily-records"].headers).toEqual(["batch_code", "record_date", "notes", "water_entries"]);\n    expect(CSV_TEMPLATES.mortality.headers).toEqual(["batch_code", "event_date", "quantity", "reason", "notes"]);\n    expect(CSV_TEMPLATES.culling.headers).toEqual(CSV_TEMPLATES.mortality.headers);\n    const result = await inspectCsvFile(csvFile("batch_code,event_date,quantity,reason,notes\\nB-2026-001,2026-01-16,2,Disease,\\n"), "mortality");\n    expect(result.validRows).toBe(1);\n    expect(result.rows[0].record.batch_code).toBe("B-2026-001");\n  });\n});\ndescribe("inspectCsvFile", () => {
   it("reports required-field and duplicate-name errors with source row numbers", async () => {
     const file = csvFile("name,phone,notes\nAda,1,\nada,2,\n,3,\n");
     const result = await inspectCsvFile(file, "customers");
