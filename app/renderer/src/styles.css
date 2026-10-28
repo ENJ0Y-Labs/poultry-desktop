@@ -971,10 +971,11 @@ body { min-width: 0; }
   .sidebar .brand-copy, .sidebar .workspace-summary, .sidebar .nav-group > p,
   .sidebar .nav-label, .sidebar .nav-item kbd, .sidebar .sidebar-footer .nav-label { display: none; }
   .sidebar .brand { justify-content: center; padding: 12px 6px; }
-  .sidebar .sidebar-toggle { display: none; }
+  .sidebar .sidebar-toggle { display: inline-flex; }
   .sidebar .nav-item { justify-content: center; padding: 10px 4px; }
   .app-main { margin-left: 68px; }
   .app-shell:not(.sidebar-collapsed) .app-main { margin-left: 68px; }
   .topbar-actions { justify-content: flex-start; }
   .shell { padding: 14px 10px 32px; }
 }
+\n\n/* Account session controls */\n.account-session-actions { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--border); }\n.danger-button { background: var(--red); color: #fff; border-color: var(--red); }\n.danger-button:hover:not(:disabled) { filter: brightness(.94); }\n
