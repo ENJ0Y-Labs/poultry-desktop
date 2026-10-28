@@ -5,7 +5,6 @@ import com.grantinofarms.poultry.domain.BirdPopulationEvent;
 import com.grantinofarms.poultry.dto.*;
 import com.grantinofarms.poultry.exception.ApiException;
 import com.grantinofarms.poultry.repository.BirdPopulationRepository;
-import com.grantinofarms.poultry.repository.DailyOperationsRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,8 +23,7 @@ public class OperationalCsvImportService {
     private final BirdPopulationRepository populationRepository;
 
     public OperationalCsvImportService(BatchService batches, DailyOperationsService dailyOperations,
-                                       BirdPopulationService population, BirdPopulationRepository populationRepository,
-                                       DailyOperationsRepository dailyRepository) {
+                                       BirdPopulationService population, BirdPopulationRepository populationRepository) {
         this.batches = batches;
         this.dailyOperations = dailyOperations;
         this.population = population;
@@ -141,8 +139,10 @@ public class OperationalCsvImportService {
             if (rowErrors.isEmpty() && module.equals("daily-records")) {
                 String key = batch.id() + "|" + date;
                 Row previous = seenKeys.putIfAbsent(key, row);
-                if (previous != null) rowErrors.add("Duplicate batch_code/record_date within this file.");
-                else {
+                if (previous != null) {
+                    if (sameDailyInput(previous, row)) row.duplicate = true;
+                    else rowErrors.add("Duplicate batch_code/record_date within this file has conflicting details.");
+                } else {
                     DailyRecordResponse existing = dailyOperations.get(batch.id(), date);
                     if (existing.id() != null) {
                         if (sameDaily(existing, row)) row.duplicate = true;
@@ -204,6 +204,13 @@ public class OperationalCsvImportService {
         }
 
         return new Validation(module, parsed, rowResults, errors, duplicates);
+    }
+
+    private boolean sameDailyInput(Row left, Row right) {
+        if (!Objects.equals(norm(left.notes), norm(right.notes))) return false;
+        List<String> leftWater = left.waterEntries.stream().map(w -> w.capacity + ":" + w.count).sorted().toList();
+        List<String> rightWater = right.waterEntries.stream().map(w -> w.capacity + ":" + w.count).sorted().toList();
+        return leftWater.equals(rightWater);
     }
 
     private boolean sameDaily(DailyRecordResponse existing, Row row) {
