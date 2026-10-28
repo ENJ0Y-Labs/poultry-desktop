@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.*;
@@ -112,9 +113,8 @@ public class ProductionHistoryCsvImportService {
                 try {
                     String raw = clean(values.get("total_weight_kg"));
                     if (raw == null) throw new NumberFormatException();
-                    row.totalWeightKg = new BigDecimal(raw);
-                    if (row.totalWeightKg.signum() <= 0 || row.totalWeightKg.scale() > 3)
-                        throw new NumberFormatException();
+                    row.totalWeightKg = new BigDecimal(raw).setScale(3, RoundingMode.UNNECESSARY);
+                    if (row.totalWeightKg.signum() <= 0) throw new NumberFormatException();
                 } catch (NumberFormatException ex) {
                     row.errors.add("total_weight_kg must be positive and have at most 3 decimal places.");
                 }
