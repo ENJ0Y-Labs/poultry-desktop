@@ -46,3 +46,33 @@ The current house/pen model supports name, code, and notes; capacity fields are 
 ## Testing requirements
 
 Frontend tests cover CSV quoting, BOM/line endings, required fields, duplicate names/codes, unsupported headers, and template fields. Backend tests must cover valid house imports, missing fields, duplicate codes within the file, existing-record conflicts, exact duplicate retries, audit behavior, and transaction rollback. Run frontend tests/build/lint and backend Maven tests before merge; runtime validation must be reported separately from automated tests.
+
+
+## Historical operational templates (v1.0)
+
+Operational imports require the target batch to exist first. Resolve it by its exact human-readable `batch_code`; never supply internal database IDs. Use the actual farm business date in `YYYY-MM-DD` format. Dates before the batch placement date are rejected.
+
+### Daily records
+
+Headers, in order: `batch_code,record_date,notes,water_entries`.
+
+- `batch_code` and `record_date` are required.
+- `notes` is optional and remains a note, not a replacement for a missing daily record.
+- `water_entries` is optional. Enter configured container capacity and count pairs as `capacity_units:container_count`, separated by semicolons; for example `10:2;20:1`. Capacities must already exist in the farm's water-container settings. Each capacity may appear once per row.
+- The import creates one daily-record header for each accepted batch/date. It does not create fake rows for missing historical days.
+- Feed usage is deliberately excluded. Feed remains recorded only in the feed subsystem.
+
+An existing batch/date with identical notes and water entries is skipped as a duplicate. Different details for the same batch/date are a conflict, not an update.
+
+### Mortality and culling
+
+Headers, in order: `batch_code,event_date,quantity,reason,notes`.
+
+- `batch_code`, `event_date`, and `quantity` are required.
+- `quantity` must be a positive whole number.
+- `reason` and `notes` are optional text fields, matching the current domain model.
+- Mortality and culling use separate templates and remain separate population event types.
+- The backend validates the ordered population history, including later existing events affected by a back-dated import. A negative population on any date blocks the complete file before confirmation.
+- An exact repeated event (same batch, date, event type, quantity, reason, and notes) is treated as a duplicate and skipped. The importer does not update or delete an existing event.
+
+The server performs a read-only validation preview. Confirmation validates again and writes through the existing daily-record and bird-population services inside one transaction, preserving their audit behavior. If any confirmed write fails, the transaction must roll back in full.
