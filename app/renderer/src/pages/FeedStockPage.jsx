@@ -2,6 +2,8 @@ import { useContext } from "react";
 import { feedApi } from "../services/api.js";
 import { FarmManagerContext } from "../components/FarmManagerContext.jsx";
 // eslint-disable-next-line no-unused-vars
+import DataTable from "../components/DataTable.jsx";
+// eslint-disable-next-line no-unused-vars
 import PageSection from "../components/PageSection.jsx";
 
 export default function FeedStockPage() {
@@ -42,24 +44,25 @@ export default function FeedStockPage() {
               </select></label>
               <button disabled={saving}>Add feed type</button>
             </form>
-            <div className="table">
-              <div className="row header"><span>Name</span><span>Unit</span><span>For</span><span>Kg per unit</span><span>Conversion setup</span><span>Status</span></div>
-              {feedTypes.map(type=><div className="row" key={type.id}><span>{type.name}</span><span>{type.unit}</span><span>{type.applicableType}</span><span>{type.kgPerUnit == null ? "Unknown" : `${type.kgPerUnit} kg`}</span><span>{type.status === "ACTIVE" ? <form className="inline-form" onSubmit={event=>saveConversion(event,type)}><label className="field"><span>Kg per {type.unit}</span><input name="kgPerUnit" aria-label={`Kilograms per ${type.unit} for ${type.name}`} type="number" min="0.001" step="0.001" defaultValue={type.kgPerUnit ?? ""} placeholder="Unknown" disabled={type.unit.trim().toLowerCase()==="kg"} /></label><button disabled={saving || type.unit.trim().toLowerCase()==="kg"}>Save conversion</button></form> : "Archived"}</span><span>{type.status}</span></div>)}
-              {feedTypes.length===0 && <p className="muted empty">No feed types yet.</p>}
-            </div>
+            <DataTable caption="Feed types and unit conversions" columns={[
+              { key: "name", label: "Name" }, { key: "unit", label: "Unit" }, { key: "applicableType", label: "For" },
+              { key: "kgPerUnit", label: "Kg per unit", render: type => type.kgPerUnit == null ? "Unknown" : `${type.kgPerUnit} kg` },
+              { key: "conversion", label: "Conversion setup", render: type => type.status === "ACTIVE" ? <form className="inline-form" onSubmit={event => saveConversion(event, type)}><label className="field"><span>Kg per {type.unit}</span><input name="kgPerUnit" aria-label={`Kilograms per ${type.unit} for ${type.name}`} type="number" min="0.001" step="0.001" defaultValue={type.kgPerUnit ?? ""} placeholder="Unknown" disabled={type.unit.trim().toLowerCase() === "kg"} /></label><button disabled={saving || type.unit.trim().toLowerCase() === "kg"}>Save conversion</button></form> : "Archived" },
+              { key: "status", label: "Status" },
+            ]} rows={feedTypes} emptyMessage="No feed types yet." />
           </div>
 
           <p className="muted">Record daily feed consumption in Daily Work. Feed usage still updates this inventory through the existing FIFO ledger.</p>
 
           <div className="subsection">
             <h3>Feed inventory</h3>
-            <div className="table">
-              <div className="row header"><span>Feed</span><span>Purchased</span><span>Used</span><span>Remaining</span><span>Remaining cost</span></div>
-              {feedInventory.map(item=><div className="row" key={item.feedTypeId}>
-                <span>{item.feedTypeName}</span><span>{feedQuantity(item.purchasedQuantityMilli)} {item.unit}</span><span>{feedQuantity(item.consumedQuantityMilli)} {item.unit}</span><span>{feedQuantity(item.remainingQuantityMilli)} {item.unit}</span><span>{formatMoney(item.remainingCostMinor, farm.currency)}</span>
-              </div>)}
-              {feedInventory.length===0 && <p className="muted empty">No feed inventory yet.</p>}
-            </div>
+            <DataTable caption="Feed inventory" columns={[
+              { key: "feedTypeName", label: "Feed" },
+              { key: "purchasedQuantityMilli", label: "Purchased", render: item => `${feedQuantity(item.purchasedQuantityMilli)} ${item.unit}` },
+              { key: "consumedQuantityMilli", label: "Used", render: item => `${feedQuantity(item.consumedQuantityMilli)} ${item.unit}` },
+              { key: "remainingQuantityMilli", label: "Remaining", render: item => `${feedQuantity(item.remainingQuantityMilli)} ${item.unit}` },
+              { key: "remainingCostMinor", label: "Remaining cost", render: item => formatMoney(item.remainingCostMinor, farm.currency) },
+            ]} rows={feedInventory} emptyMessage="No feed inventory yet." />
           </div>
         </section></PageSection>
 
@@ -82,28 +85,21 @@ export default function FeedStockPage() {
               <label className="field"><span>Reorder level</span><input min="0" step="0.001" type="number" value={inventoryItemForm.reorderLevel} onChange={e=>setInventoryItemForm({...inventoryItemForm,reorderLevel:e.target.value})}/></label>
               <button disabled={saving}>Add item</button>
             </form>
-            <div className="table">
-              <div className="row header"><span>Item</span><span>Category</span><span>Stock</span><span>Reorder</span><span>Unit</span><span>Status</span></div>
-              {inventoryItems.map(row=><div className="row" key={row.id}>
-                <span>{row.name}</span><span>{row.category}</span><span>{row.quantityOnHand}</span><span>{row.reorderLevel}</span><span>{row.unit}</span><span>{row.status}</span>
-              </div>)}
-              {inventoryItems.length===0 && <p className="muted empty">No non-feed inventory items yet.</p>}
-            </div>
+            <DataTable caption="Inventory items" columns={[
+              { key: "name", label: "Item" }, { key: "category", label: "Category" }, { key: "quantityOnHand", label: "Stock" },
+              { key: "reorderLevel", label: "Reorder" }, { key: "unit", label: "Unit" }, { key: "status", label: "Status" },
+            ]} rows={inventoryItems} emptyMessage="No non-feed inventory items yet." />
           </div>
 
           <div className="subsection">
             <h3>Feed stock</h3>
             <p className="muted">Feed is shown here from the dedicated FIFO feed ledger. Do not create a second generic item for feed.</p>
-            <div className="table">
-              <div className="row header"><span>Feed</span><span>Remaining</span><span>Used</span><span>Remaining cost</span></div>
-              {feedInventory.map(item=><div className="row" key={item.feedTypeId}>
-                <span>{item.feedTypeName}</span>
-                <span>{feedQuantity(item.remainingQuantityMilli)} {item.unit}</span>
-                <span>{feedQuantity(item.consumedQuantityMilli)} {item.unit}</span>
-                <span>{formatMoney(item.remainingCostMinor, farm.currency)}</span>
-              </div>)}
-              {feedInventory.length===0 && <p className="muted empty">No feed stock yet.</p>}
-            </div>
+            <DataTable caption="Feed stock summary" columns={[
+              { key: "feedTypeName", label: "Feed" },
+              { key: "remainingQuantityMilli", label: "Remaining", render: item => `${feedQuantity(item.remainingQuantityMilli)} ${item.unit}` },
+              { key: "consumedQuantityMilli", label: "Used", render: item => `${feedQuantity(item.consumedQuantityMilli)} ${item.unit}` },
+              { key: "remainingCostMinor", label: "Remaining cost", render: item => formatMoney(item.remainingCostMinor, farm.currency) },
+            ]} rows={feedInventory} emptyMessage="No feed stock yet." />
           </div>
 
           <div className="subsection">
@@ -130,13 +126,11 @@ export default function FeedStockPage() {
               </select></label>
               <button disabled={saving || !inventoryMovementForm.itemId}>Record movement</button>
             </form>
-            {inventoryMovementForm.itemId && <div className="table">
-              <div className="row header"><span>Date</span><span>Movement</span><span>Quantity</span><span>Reason</span><span>Source</span><span>Batch</span></div>
-              {inventoryMovements.map(row=><div className="row" key={row.id}>
-                <span>{row.movementDate}</span><span>{row.movementType}</span><span>{row.quantity} {row.category==="SUPPLY" ? "" : ""}</span><span>{row.reason}</span><span>{row.source}</span><span>{row.batchId ? (batches.find(b=>b.id===row.batchId)?.code || row.batchId) : "Farm"}</span>
-              </div>)}
-              {inventoryMovements.length===0 && <p className="muted empty">No movements for this item.</p>}
-            </div>}
+            {inventoryMovementForm.itemId && <DataTable caption="Inventory movement history" columns={[
+              { key: "movementDate", label: "Date" }, { key: "movementType", label: "Movement" },
+              { key: "quantity", label: "Quantity" }, { key: "reason", label: "Reason" }, { key: "source", label: "Source" },
+              { key: "batchId", label: "Batch", render: row => row.batchId ? (batches.find(batch => batch.id === row.batchId)?.code || row.batchId) : "Farm" },
+            ]} rows={inventoryMovements} emptyMessage="No movements for this item." />}}
           </div>
         </section></PageSection>
       <PageSection page="feed-stock" tab="purchases"><section id="purchases" className="card full"><div className="section-head"><h2>Feed purchases</h2><p className="muted">Choose a registered supplier or leave it blank if the source is unknown.</p></div>
@@ -167,10 +161,12 @@ export default function FeedStockPage() {
           <label className="full">Notes<input value={supplierForm.notes} onChange={event=>setSupplierForm({...supplierForm,notes:event.target.value})}/></label>
           <button disabled={saving}>Add supplier</button>
         </form>
-        <div className="table"><div className="row header"><span>Supplier</span><span>Phone</span><span>Notes</span><span>Status</span><span>Action</span></div>
-          {suppliers.map(supplier=><div className="row" key={supplier.id}><span>{supplier.name}</span><span>{supplier.phone||"—"}</span><span>{supplier.notes||"—"}</span><span>{supplier.status||"ACTIVE"}</span><span>{supplier.status==="ARCHIVED" ? "Archived" : <button type="button" disabled={saving} onClick={()=>archiveSupplier(supplier.id)}>Archive</button>}</span></div>)}
-          {suppliers.length===0 && <p className="muted empty">No suppliers recorded yet.</p>}
-        </div>
+        <DataTable caption="Suppliers" columns={[
+          { key: "name", label: "Supplier" }, { key: "phone", label: "Phone", render: supplier => supplier.phone || "—" },
+          { key: "notes", label: "Notes", render: supplier => supplier.notes || "—" },
+          { key: "status", label: "Status", render: supplier => supplier.status || "ACTIVE" },
+          { key: "action", label: "Action", render: supplier => supplier.status === "ARCHIVED" ? "Archived" : <button type="button" disabled={saving} onClick={() => archiveSupplier(supplier.id)}>Archive</button> },
+        ]} rows={suppliers} emptyMessage="No suppliers recorded yet." />
       </section></PageSection>
 
     </div>
