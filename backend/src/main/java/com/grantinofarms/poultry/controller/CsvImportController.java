@@ -15,9 +15,11 @@ public class CsvImportController {
     private final FeedHistoryCsvImportService feedHistoryService;
     private final OperationalCsvImportService operationalService;
 
-    public CsvImportController(CsvImportService service, OperationalCsvImportService operationalService) {
+    public CsvImportController(CsvImportService service, OperationalCsvImportService operationalService,
+                               FeedHistoryCsvImportService feedHistoryService) {
         this.service = service;
         this.operationalService = operationalService;
+        this.feedHistoryService = feedHistoryService;
     }
 
     @PostMapping("/csv/operational/preview")
