@@ -37,12 +37,12 @@ class OperationalCsvImportServiceTest {
     void setUp() {
         service = new OperationalCsvImportService(batches, dailyOperations, population, populationRepository, dailyRepository);
         when(batches.list()).thenReturn(List.of(batch));
-        when(dailyOperations.get(eq("batch-id"), any(LocalDate.class))).thenAnswer(call -> {
+        lenient().when(dailyOperations.get(eq("batch-id"), any(LocalDate.class))).thenAnswer(call -> {
             LocalDate date = call.getArgument(1);
             return new DailyRecordResponse(null, "batch-id", date, 5, 0, 0,
                     List.of(), List.of(), 0L, List.of(), null);
         });
-        when(populationRepository.findEvents("batch-id")).thenReturn(new java.util.ArrayList<>());
+        lenient().when(populationRepository.findEvents("batch-id")).thenReturn(new java.util.ArrayList<>());
     }
 
     @Test
