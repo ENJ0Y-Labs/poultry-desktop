@@ -291,4 +291,6 @@ export const backupApi = {
 
 export const csvImportApi = {
   importRecords: (module, records) => request("/imports/csv", { method: "POST", body: JSON.stringify({ module, records }) }),
+  previewHealthRecords: (module, records) => request("/imports/csv/health/preview", { method: "POST", body: JSON.stringify({ module, records }) }),
+  importHealthRecords: (module, records) => request("/imports/csv/health", { method: "POST", body: JSON.stringify({ module, records }) }),
 };
