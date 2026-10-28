@@ -25,6 +25,7 @@ const groups = [
 ];
 
 const validPages = ["dashboard", "flocks", "daily-work", "feed-stock", "health", "production", "sales-money", "reports", "import-export", "settings"];
+const validStartPages = ["dashboard", "flocks", "daily-work", "feed-stock", "health", "production", "sales-money", "reports", "settings"];
 const legacyRoutes = {
   houses: "flocks", batches: "flocks", "batch-dashboard": "flocks",
   operations: "daily-work", feed: "feed-stock", inventory: "feed-stock",
@@ -36,7 +37,7 @@ function resolvePage(hash, startPage = "dashboard") {
   const candidate = String(hash || "").replace(/^#\/?/, "").split("/")[0];
   if (validPages.includes(candidate)) return candidate;
   if (legacyRoutes[candidate]) return legacyRoutes[candidate];
-  if (validPages.includes(startPage)) return startPage;
+  if (validStartPages.includes(startPage)) return startPage;
   if (legacyRoutes[startPage]) return legacyRoutes[startPage];
   return "dashboard";
 }
