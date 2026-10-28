@@ -15,7 +15,7 @@ describe("ImportExportPage", () => {
     render(<ImportExportPage />);
     const selector = screen.getByRole("combobox", { name: "Import module" });
     expect(selector).toHaveValue("customers");
-    expect(Array.from(selector.options).map(option => option.value)).toEqual(["houses", "customers", "suppliers"]);
+    expect(Array.from(selector.options).map(option => option.value)).toEqual(["houses", "daily-records", "mortality", "culling", "customers", "suppliers"]);
   });
   it("links to the existing supported report export workflow", () => {
     render(<ImportExportPage />);
