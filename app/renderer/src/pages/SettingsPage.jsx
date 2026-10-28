@@ -1,5 +1,5 @@
 import { useContext, useState } from "react";
-import { CSV_TEMPLATES, downloadCsvTemplate, inspectCsvFile, csvErrorReport, encodeCsv } from "../utils/csvImport.js";
+import { CSV_TEMPLATES, downloadCsvTemplate, inspectCsvFile, csvErrorReport } from "../utils/csvImport.js";
 import { csvImportApi } from "../services/api.js";
 import { FarmManagerContext } from "../components/FarmManagerContext.jsx";
 // eslint-disable-next-line no-unused-vars
@@ -72,8 +72,7 @@ export default function SettingsPage() {
           <label>Import module<select value={importModule} disabled={importBusy} onChange={event => { setImportModule(event.target.value); setImportPreview(null); setImportFile(null); setImportError(""); setImportMessage(""); const input = document.getElementById("pomas-csv-file"); if (input) input.value = ""; }}>
             {Object.entries(CSV_TEMPLATES).map(([key, value]) => <option key={key} value={key}>{value.label}</option>)}
           </select></label>
-          <div className="inline-form"><button type="button" onClick={() => downloadCsvTemplate(importModule)}>Download {CSV_TEMPLATES[importModule].label.toLowerCase()} template</button>
-          <a className="button-link" href="#settings/application" onClick={event => { event.preventDefault(); downloadCsvTemplate(importModule); }}>Download again</a></div>
+          <div className="inline-form"><button type="button" onClick={() => downloadCsvTemplate(importModule)}>Download {CSV_TEMPLATES[importModule].label.toLowerCase()} template</button></div>
           <label>Choose completed CSV<input id="pomas-csv-file" type="file" accept=".csv,text/csv" disabled={importBusy} onChange={inspectImport}/><small>UTF-8 CSV, maximum 2 MB and 5,000 data rows.</small></label>
         </div>
         {importError && <p role="alert" className="error-message">{importError}</p>}
