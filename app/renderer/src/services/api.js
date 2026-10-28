@@ -287,3 +287,8 @@ export const backupApi = {
   create: (directory) => request("/backup", { method: "POST", body: JSON.stringify({ directory }) }),
   validate: (file) => request("/backup/validate", { method: "POST", body: JSON.stringify({ file }) }),
 };
+
+
+export const csvImportApi = {
+  importRecords: (module, records) => request("/imports/csv", { method: "POST", body: JSON.stringify({ module, records }) }),
+};
