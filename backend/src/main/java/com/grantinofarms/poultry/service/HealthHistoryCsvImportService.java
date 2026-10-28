@@ -105,6 +105,7 @@ public class HealthHistoryCsvImportService {
             if (date != null && batch != null && date.isBefore(batch.placementDate()))
                 rowErrors.add("record_date cannot be before batch placement date " + batch.placementDate() + ".");
 
+            LocalDate rowDate = date;
             Row row = new Row(rowNumber, module, batch, date, values);
             if (module.equals("health")) {
                 row.condition = required(values, "condition_problem", rowErrors);
@@ -128,7 +129,7 @@ public class HealthHistoryCsvImportService {
                     List<HealthRecordResponse> list = existingHealth.computeIfAbsent(batch.id(), health::health);
                     existingKey = healthKey(batch.id(), date, row.condition, row.description, row.action);
                     row.duplicate = !seen.add(existingKey) || list.stream().anyMatch(r ->
-                            r.recordDate().equals(date) && eq(r.conditionProblem(), row.condition)
+                            r.recordDate().equals(rowDate) && eq(r.conditionProblem(), row.condition)
                                     && eq(r.description(), row.description) && eq(r.action(), row.action));
                 } else if (module.equals("drugs")) {
                     List<DrugRecordResponse> list = existingDrugs.computeIfAbsent(batch.id(), health::drugs);
