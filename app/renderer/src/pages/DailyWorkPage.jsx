@@ -1,8 +1,12 @@
 import { useContext } from "react";
 import { FarmManagerContext } from "../components/FarmManagerContext.jsx";
+// eslint-disable-next-line no-unused-vars -- JSX component usage is not detected by the core rule
 import DataTable from "../components/DataTable.jsx";
+// eslint-disable-next-line no-unused-vars -- JSX component usage is not detected by the core rule
 import PageSection from "../components/PageSection.jsx";
+// eslint-disable-next-line no-unused-vars -- JSX component usage is not detected by the core rule
 import PageTemplate from "../components/PageTemplate.jsx";
+// eslint-disable-next-line no-unused-vars -- JSX component usage is not detected by the core rule
 import EmptyState from "../components/EmptyState.jsx";
 
 export default function DailyWorkPage() {
