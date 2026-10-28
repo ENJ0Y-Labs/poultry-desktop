@@ -5,6 +5,7 @@ import com.grantinofarms.poultry.domain.BirdPopulationEvent;
 import com.grantinofarms.poultry.dto.*;
 import com.grantinofarms.poultry.exception.ApiException;
 import com.grantinofarms.poultry.repository.BirdPopulationRepository;
+import com.grantinofarms.poultry.repository.DailyOperationsRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,13 +22,16 @@ public class OperationalCsvImportService {
     private final DailyOperationsService dailyOperations;
     private final BirdPopulationService population;
     private final BirdPopulationRepository populationRepository;
+    private final DailyOperationsRepository dailyRepository;
 
     public OperationalCsvImportService(BatchService batches, DailyOperationsService dailyOperations,
-                                       BirdPopulationService population, BirdPopulationRepository populationRepository) {
+                                       BirdPopulationService population, BirdPopulationRepository populationRepository,
+                                       DailyOperationsRepository dailyRepository) {
         this.batches = batches;
         this.dailyOperations = dailyOperations;
         this.population = population;
         this.populationRepository = populationRepository;
+        this.dailyRepository = dailyRepository;
     }
 
     public Map<String, Object> preview(CsvImportRequest request) {
@@ -99,6 +103,13 @@ public class OperationalCsvImportService {
             BatchResponse batch = code == null ? null : batchByCode.get(code.toUpperCase(Locale.ROOT));
             if (code == null) rowErrors.add("batch_code is required.");
             else if (batch == null) rowErrors.add("No batch matches batch_code '" + code + "' on this farm.");
+            else if (!"ACTIVE".equals(batch.status())) rowErrors.add("The referenced batch is not active and cannot accept operational records.");
+            if (code != null && code.length() > 100) rowErrors.add("batch_code exceeds the 100 character limit.");
+            for (Map.Entry<String, String> entry : values.entrySet()) {
+                if (entry.getValue() != null && entry.getValue().length() > 10000) {
+                    rowErrors.add("Column '" + entry.getKey() + "' exceeds the 10000 character limit.");
+                }
+            }
 
             LocalDate date = null;
             String dateField = module.equals("daily-records") ? "record_date" : "event_date";
@@ -132,6 +143,15 @@ public class OperationalCsvImportService {
                     rowErrors.add("quantity must be a positive whole number.");
                 } catch (IllegalArgumentException ex) {
                     rowErrors.add(ex.getMessage());
+                }
+            }
+
+            if (module.equals("daily-records") && batch != null && rowErrors.isEmpty()) {
+                String farmId = dailyRepository.farmIdForBatch(batch.id());
+                for (WaterEntry entry : waterEntries) {
+                    if (!dailyRepository.waterSizeBelongsToFarm(entry.capacity, farmId)) {
+                        rowErrors.add("water_entries: capacity_units " + entry.capacity + " is not configured for this farm.");
+                    }
                 }
             }
 
