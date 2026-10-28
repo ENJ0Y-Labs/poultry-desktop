@@ -82,6 +82,15 @@ describe("AppShell", () => {
     fireEvent.click(screen.getByRole("button", { name: "Suppliers" }));
     expect(window.location.hash).toBe("#feed-stock/suppliers");
   });
+  it("does not accept Import / Export as a saved start page", () => {
+    render(
+      <AppShell farm={{ name: "Grantino", location: "", currency: "NGN", timezone: "Africa/Lagos" }} startPage="import-export">
+        <section id="dashboard">Dashboard</section>
+      </AppShell>
+    );
+    expect(window.location.hash).toBe("#dashboard/overview");
+  });
+
   it("routes to Import / Export and keeps the selected navigation state on deep links", async () => {
     window.location.hash = "#import-export/overview";
     render(
