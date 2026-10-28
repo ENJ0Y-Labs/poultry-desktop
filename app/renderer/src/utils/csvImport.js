@@ -39,6 +39,12 @@ export const CSV_TEMPLATES = {
     required: ["batch_code", "record_date", "vaccine", "dose", "quantity"],
     example: ["B-2026-001", "2026-01-17", "Example vaccine name", "1 ml per bird", "100", "Replace or remove this example row"],
   },
+  houses: {
+    label: "Houses / Pens", version: "1.0",
+    headers: ["name", "code", "notes"],
+    required: ["name", "code"],
+    example: ["Brooder House", "H-001", "Replace or remove this example row"],
+  },
   customers: {
     label: "Customers",
     version: "1.0",
@@ -163,12 +169,16 @@ export async function inspectCsvFile(file, moduleKey) {
       key = record.batch_code.toLocaleUpperCase("en") + "|" + record.record_date;
     } else if (moduleKey === "mortality" || moduleKey === "culling") {
       key = [record.batch_code.toLocaleUpperCase("en"), record.event_date, record.quantity, record.reason.toLocaleLowerCase("en"), record.notes.toLocaleLowerCase("en")].join("|");
-    } else {
+    } else if (moduleKey === "houses") {
+      key = record.code.toLocaleUpperCase("en");
+    } else if (moduleKey === "customers" || moduleKey === "suppliers") {
       key = record.name.toLocaleLowerCase("en");
     }
     const duplicate = Boolean(key && seen.has(key));
     if (key) seen.add(key);
-    if (duplicate && !["daily-records", "mortality", "culling"].includes(moduleKey)) errors.push("Duplicate name within this file.");
+    if (duplicate && !["daily-records", "mortality", "culling", "health", "drugs", "vaccinations"].includes(moduleKey)) {
+      errors.push(moduleKey === "houses" ? "Duplicate house/pen code within this file." : "Duplicate name within this file.");
+    }
     return { rowNumber: index + 2, record, errors, duplicate, existingDuplicate: false, valid: errors.length === 0 };
   });
   return {
