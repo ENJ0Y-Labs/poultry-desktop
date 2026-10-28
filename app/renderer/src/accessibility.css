@@ -471,6 +471,12 @@ input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-
   --a11y-accent-text: #F4B41A;
   --a11y-nav-active-bg: #0A0A0A;
   --a11y-shortcut-bg: #0A0A0A;
+  --a11y-warning-bg: #3B2B08;
+  --a11y-warning-text: #FFD77A;
+  --a11y-critical-bg: #481D22;
+  --a11y-critical-text: #FFB8BD;
+  --a11y-error-bg: #32171B;
+  --a11y-error-text: #FFC2C7;
   --pomas-page-bg: #000000;
   --pomas-panel-bg: #000000;
   --pomas-panel-raised: #0A0A0A;
@@ -492,6 +498,12 @@ input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-
   --a11y-accent-text: #1A4D5C;
   --a11y-nav-active-bg: #FFF2C9;
   --a11y-shortcut-bg: #F4F7F7;
+  --a11y-warning-bg: #FFF1CF;
+  --a11y-warning-text: #704400;
+  --a11y-critical-bg: #FFE4E6;
+  --a11y-critical-text: #9F1239;
+  --a11y-error-bg: #FFF0F0;
+  --a11y-error-text: #9F2525;
   --pomas-page-bg: #FFFFFF;
   --pomas-panel-bg: #FFFFFF;
   --pomas-panel-raised: #FFFFFF;
