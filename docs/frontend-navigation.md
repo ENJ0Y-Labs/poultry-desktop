@@ -10,7 +10,8 @@
 6. Production: layer egg workflows and broiler weight/growth and sales workflows.
 7. Sales & Money: customers, the common sales ledger, and expenses.
 8. Reports: farm and batch reports and exports.
-9. Import / Export: supported customer/supplier CSV imports, planned historical batch import, and entry points to supported farm/batch report exports.\n10. Settings: farm profile, farm defaults, configuration, account, backup, and pricing settings.
+9. Import / Export: supported customer/supplier CSV imports, planned historical batch import, and entry points to supported farm/batch report exports.
+10. Settings: farm profile, farm defaults, configuration, account, backup, and pricing settings.
 
 ## Routing behavior
 
