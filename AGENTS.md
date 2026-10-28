@@ -1256,11 +1256,11 @@ And never sacrifice poultry math for dashboard cosmetics.
 
 ## 36. Responsive layout and supported window size
 
-- Pomas is a desktop-only Windows app. Keep the renderer minimum canvas width aligned with Electron's `minWidth: 1100` and `minHeight: 650`.
-- Do not imply phone/tablet support through narrow-screen navigation transformations. Browser emulation below 1100px is diagnostic only; document it as unsupported, not as a passed responsive layout.
+- Pomas is a desktop-only Windows app. Keep the renderer usable down to Electron's `minWidth: 680` and `minHeight: 600` to support half-screen snapping on common laptop displays.
+- Do not imply phone/tablet support. At narrow supported desktop widths, preserve desktop navigation while collapsing sidebar labels and stacking dense grids; browser emulation below 680px is diagnostic only and is not a mobile-support claim.
 - At supported dimensions, keep primary navigation reachable, prevent page-level horizontal overflow, and contain wide data tables in their own scroll region. Forms and action buttons must remain operable.
 - Before introducing a hamburger menu or other navigation redesign, reproduce and record the failure at a supported window size. Follow `docs/responsive-layout-audit.md` and distinguish static source inspection from actual browser/Electron runtime verification.
-- Resize and test the packaged Electron app at its 1100×650 minimum and at the 1366×768 default. Do not claim runtime validation unless those checks were actually performed.
+- Resize and test the packaged Electron app at its 680×600 minimum and at the 1366×768 default. Do not claim runtime validation unless those checks were actually performed.
 
 
 ## Connection status presentation
