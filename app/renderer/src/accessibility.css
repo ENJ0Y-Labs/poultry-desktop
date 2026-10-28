@@ -519,28 +519,28 @@ input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-
 :root:not([data-theme="light"]) input,
 :root:not([data-theme="light"]) select,
 :root:not([data-theme="light"]) textarea {
-  background-color: #000000;
-  color: #F5F5F5;
-  border-color: #303030;
+  background-color: var(--pomas-page-bg);
+  color: var(--a11y-text);
+  border-color: var(--pomas-border);
 }
 :root:not([data-theme="light"]) .card,
 :root:not([data-theme="light"]) .metric-card,
 :root:not([data-theme="light"]) .subsection,
 :root:not([data-theme="light"]) .workspace-summary,
 :root:not([data-theme="light"]) .data-table th {
-  background-color: #0A0A0A;
+  background-color: var(--pomas-panel-raised);
 }
 :root:not([data-theme="light"]) .nav-item.active {
-  background: #0A0A0A;
-  color: #F4B41A;
-  border-color: #F4B41A;
-  box-shadow: inset 3px 0 0 #F4B41A;
+  background: var(--a11y-nav-active-bg);
+  color: var(--a11y-accent-text);
+  border-color: var(--brand-gold);
+  box-shadow: inset 3px 0 0 var(--brand-gold);
 }
 :root[data-theme="light"] .nav-item.active {
-  background: #FFF2C9;
-  color: #1A4D5C;
-  border-color: #1A4D5C;
-  box-shadow: inset 3px 0 0 #1A4D5C;
+  background: var(--a11y-nav-active-bg);
+  color: var(--a11y-accent-text);
+  border-color: var(--brand-teal);
+  box-shadow: inset 3px 0 0 var(--brand-teal);
 }
 :root[data-theme="light"] .app-shell,
 :root[data-theme="light"] .app-main,
@@ -555,5 +555,5 @@ input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-
 :root[data-theme="light"] .table-scroll,
 :root[data-theme="light"] .activity-table-container,
 :root[data-theme="light"] .data-table th {
-  color: #1A4D5C;
+  color: var(--a11y-text);
 }
