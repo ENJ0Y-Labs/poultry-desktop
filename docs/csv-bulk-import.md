@@ -100,7 +100,7 @@ Backend tests cover exact naira-to-kobo conversion, purchase retry behavior, FIF
 
 ## Historical production imports (v1.0)
 
-Production imports are available only for existing ACTIVE batches. Import houses/pens and the historical batch opening first. Each production row uses the exact human-readable `batch_code`; internal database IDs are not accepted.
+Production imports are available only for existing ACTIVE batches. Ensure the required house/pen exists and the batch has been created with its true historical placement date before importing. The batch-opening CSV workflow is not exposed in the Import / Export UI yet. Each production row uses the exact human-readable `batch_code`; internal database IDs are not accepted.
 
 ### Layer egg collections
 
