@@ -103,7 +103,7 @@ public class OperationalCsvImportService {
             BatchResponse batch = code == null ? null : batchByCode.get(code.toUpperCase(Locale.ROOT));
             if (code == null) rowErrors.add("batch_code is required.");
             else if (batch == null) rowErrors.add("No batch matches batch_code '" + code + "' on this farm.");
-            else if (!"ACTIVE".equals(batch.status())) rowErrors.add("The referenced batch is not active and cannot accept operational records.");
+            else if (!"ACTIVE".equals(batch.status())) rowErrors.add("batch_code: the referenced batch is not active and cannot accept operational records.");
             if (code != null && code.length() > 100) rowErrors.add("batch_code exceeds the 100 character limit.");
             for (Map.Entry<String, String> entry : values.entrySet()) {
                 if (entry.getValue() != null && entry.getValue().length() > 10000) {
@@ -161,12 +161,12 @@ public class OperationalCsvImportService {
                 Row previous = seenKeys.putIfAbsent(key, row);
                 if (previous != null) {
                     if (sameDailyInput(previous, row)) row.duplicate = true;
-                    else rowErrors.add("Duplicate batch_code/record_date within this file has conflicting details.");
+                    else rowErrors.add("record_date: duplicate batch_code/date within this file has conflicting details.");
                 } else {
                     DailyRecordResponse existing = dailyOperations.get(batch.id(), date);
                     if (existing.id() != null) {
                         if (sameDaily(existing, row)) row.duplicate = true;
-                        else rowErrors.add("A daily record already exists for this batch/date with different details.");
+                        else rowErrors.add("record_date: a daily record already exists for this batch/date with different details.");
                     }
                 }
             } else if (rowErrors.isEmpty()) {
