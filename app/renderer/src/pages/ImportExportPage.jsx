@@ -100,11 +100,23 @@ export default function ImportExportPage() {
     try {
       const records = importPreview.rows.map(row => row.record);
       const healthHistory = ["health", "drugs", "vaccinations"].includes(importModule);
-      const result = healthHistory
-        ? await csvImportApi.importHealthRecords(importModule, records)
-        : await csvImportApi.importRecords(importModule, records);
-      const duplicateText = result.duplicates ? ` ${result.duplicates} exact duplicate(s) skipped.` : "";
-      setImportMessage(`Imported ${result.imported} ${CSV_TEMPLATES[importModule].label.toLowerCase()} successfully.${duplicateText}`);
+      const feedHistory = ["feed-purchases", "feed-usage"].includes(importModule);
+      const operationalHistory = ["daily-records", "mortality", "culling"].includes(importModule);
+      const result = feedHistory
+        ? await csvImportApi.importFeedRecords(importModule, records)
+        : healthHistory
+          ? await csvImportApi.importHealthRecords(importModule, records)
+          : operationalHistory
+            ? await csvImportApi.importOperationalRecords(importModule, records)
+            : await csvImportApi.importRecords(importModule, records);
+      if (feedHistory) {
+        const count = importModule === "feed-purchases" ? result.importedPurchases : result.importedUsage;
+        const duplicateText = result.skippedDuplicates ? ` ${result.skippedDuplicates} exact duplicate(s) skipped.` : "";
+        setImportMessage(`Imported ${count} ${CSV_TEMPLATES[importModule].label.toLowerCase()} successfully.${duplicateText}`);
+      } else {
+        const duplicateText = result.duplicates ? ` ${result.duplicates} exact duplicate(s) skipped.` : "";
+        setImportMessage(`Imported ${result.imported} ${CSV_TEMPLATES[importModule].label.toLowerCase()} successfully.${duplicateText}`);
+      }
       setImportPreview(null);
       setImportFile(null);
       const input = document.getElementById("pomas-csv-file");
