@@ -150,7 +150,7 @@ export async function inspectCsvFile(file, moduleKey) {
     }
     const duplicate = Boolean(key && seen.has(key));
     if (key) seen.add(key);
-    if (duplicate && moduleKey !== "mortality" && moduleKey !== "culling") errors.push(moduleKey === "daily-records" ? "Duplicate batch/date within this file." : "Duplicate name within this file.");
+    if (duplicate && !["daily-records", "mortality", "culling"].includes(moduleKey)) errors.push("Duplicate name within this file.");
     return { rowNumber: index + 2, record, errors, duplicate, existingDuplicate: false, valid: errors.length === 0 };
   });
   return {
