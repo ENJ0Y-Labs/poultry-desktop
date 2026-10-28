@@ -95,8 +95,12 @@ public class FeedHistoryCsvImportService {
         for (ParsedRow row : parsed) {
             LocalDate latestPurchase = feedRepository.latestPurchaseDate(row.feedType.id());
             LocalDate latestUsage = feedRepository.latestUsageDate(row.feedType.id());
-            if (row.date.isBefore(latestPurchase == null ? row.date : latestPurchase)
-                    || row.module.equals("feed-purchases") && latestUsage != null && row.date.isBefore(latestUsage)) {
+            boolean purchaseBackdated = row.module.equals("feed-purchases")
+                    && ((latestPurchase != null && row.date.isBefore(latestPurchase))
+                    || (latestUsage != null && row.date.isBefore(latestUsage)));
+            boolean usageBackdated = row.module.equals("feed-usage")
+                    && latestUsage != null && row.date.isBefore(latestUsage);
+            if (purchaseBackdated || usageBackdated) {
                 row.errors.add("Date conflicts with existing feed history; existing feed services reject this backdated transaction.");
             }
             if (row.module.equals("feed-usage")) {
@@ -112,7 +116,6 @@ public class FeedHistoryCsvImportService {
         // Simulate each historical usage date independently. The calculator receives only
         // purchases and usage dated on or before that date, so a future purchase cannot fund
         // an earlier consumption event.
-        Set<String> invalidStockRows = new HashSet<>();
         Map<String, List<ParsedRow>> byType = new HashMap<>();
         for (ParsedRow row : parsed) {
             if (row.module.equals("feed-usage")) byType.computeIfAbsent(row.feedType.id(), ignored -> new ArrayList<>()).add(row);
@@ -140,18 +143,16 @@ public class FeedHistoryCsvImportService {
                     FeedCostCalculator.calculate(purchaseLots, usageEvents, usage.date);
                 } catch (IllegalArgumentException | ArithmeticException e) {
                     usage.errors.add("Insufficient dated FIFO stock or invalid feed balance at this usage date.");
-                    invalidStockRows.add(usage.fingerprint());
                 }
             }
         }
 
-        // Rebuild row results with simulation/date validation attached.
-        rowResults.clear();
-        rejected = 0;
+        // Replace each successfully parsed row with its final date/FIFO validation result,
+        // while retaining invalid and duplicate rows from the initial parse pass.
         for (ParsedRow row : parsed) {
-            if (!row.errors.isEmpty()) rejected++;
-            rowResults.add(row.toResult(row.rowNumber, row.errors));
+            rowResults.set(row.rowNumber - 1, row.toResult(row.rowNumber, row.errors));
         }
+        rejected = (int) rowResults.stream().filter(r -> !Boolean.TRUE.equals(r.get("valid"))).count();
         boolean valid = rejected == 0 && rowResults.size() == request.records().size();
         Map<String, Object> response = new LinkedHashMap<>();
         response.put("module", module);
