@@ -17,7 +17,7 @@ describe("AppShell", () => {
     vi.unstubAllGlobals();
   });
 
-  it("renders the nine primary pages", () => {
+  it("renders all ten primary destinations", () => {
     render(
       <AppShell farm={{ name: "Grantino", location: "Port Harcourt", currency: "NGN", timezone: "Africa/Lagos" }}>
         <section id="dashboard">Dashboard</section>
