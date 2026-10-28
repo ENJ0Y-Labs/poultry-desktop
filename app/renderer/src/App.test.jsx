@@ -591,7 +591,7 @@ describe("App", () => {
     expect(screen.getByText("Unknown time")).toBeInTheDocument();
     expect(screen.getByText("Unrecognized Action")).toBeInTheDocument();
     expect(screen.getByText("New Entity Kind")).toBeInTheDocument();
-    const unknownAuditRow = screen.getByText("Unrecognized Action").closest(".row");
+    const unknownAuditRow = screen.getByText("Unrecognized Action").closest("tr");
     expect(unknownAuditRow).not.toBeNull();
     expect(within(unknownAuditRow).getByText("—")).toBeInTheDocument();
   });
