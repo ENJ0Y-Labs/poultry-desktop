@@ -157,14 +157,14 @@ export async function inspectCsvFile(file, moduleKey) {
       key = record.name.toLocaleLowerCase("en");
     }
     const duplicate = Boolean(key && seen.has(key));
-    if (duplicate) errors.push(moduleKey === "daily-records" ? "Duplicate batch/date within this file." : moduleKey === "mortality" || moduleKey === "culling" ? "Duplicate event within this file." : "Duplicate name within this file.");
+    if (duplicate && moduleKey !== "mortality" && moduleKey !== "culling") errors.push(moduleKey === "daily-records" ? "Duplicate batch/date within this file." : "Duplicate name within this file.");
     if (key) seen.add(key);
     if (moduleKey === "houses") {
       const code = record.code.toLocaleUpperCase();
       if (code && seenCodes.has(code)) errors.push("Duplicate house/pen code within this file.");
       if (code) seenCodes.add(code);
     }
-    return { rowNumber: index + 2, record, errors, duplicate, valid: errors.length === 0 };
+    return { rowNumber: index + 2, record, errors, duplicate, existingDuplicate: false, valid: errors.length === 0 };
   });
   return {
     moduleKey,
