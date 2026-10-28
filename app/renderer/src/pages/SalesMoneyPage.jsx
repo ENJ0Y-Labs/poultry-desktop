@@ -3,6 +3,8 @@ import { FarmManagerContext } from "../components/FarmManagerContext.jsx";
 // eslint-disable-next-line no-unused-vars
 import PageSection from "../components/PageSection.jsx";
 // eslint-disable-next-line no-unused-vars
+import PageTemplate from "../components/PageTemplate.jsx";
+// eslint-disable-next-line no-unused-vars
 import EmptyState from "../components/EmptyState.jsx";
 // eslint-disable-next-line no-unused-vars
 import DataTable from "../components/DataTable.jsx";
@@ -13,7 +15,7 @@ export default function SalesMoneyPage() {
   const { formatMoney, farm, batches, expenseForm, setExpenseForm, expenses, expenseBatchFilter, setExpenseBatchFilter, customers, customerForm, setCustomerForm, sales, saving, expenseCategories, loadExpenses, saveCustomer, saveExpense } = useContext(FarmManagerContext);
 
   return (
-    <div className="grid">
+    <PageTemplate className="grid">
       <PageSection page="sales-money" tab="customers"><section id="customers" className="card full">
           <div className="section-head">
             <h2>Customers</h2>
@@ -82,6 +84,6 @@ export default function SalesMoneyPage() {
               ]} rows={expenses} emptyMessage="No expenses recorded." />
           </div>
         </section></PageSection>
-    </div>
+    </PageTemplate>
   );
 }

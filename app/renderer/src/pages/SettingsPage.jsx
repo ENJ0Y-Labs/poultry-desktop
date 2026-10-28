@@ -3,13 +3,17 @@ import { FarmManagerContext } from "../components/FarmManagerContext.jsx";
 // eslint-disable-next-line no-unused-vars
 import DataTable from "../components/DataTable.jsx";
 // eslint-disable-next-line no-unused-vars
+import FormField from "../components/FormField.jsx";
+// eslint-disable-next-line no-unused-vars
 import PageSection from "../components/PageSection.jsx";
+// eslint-disable-next-line no-unused-vars
+import PageTemplate from "../components/PageTemplate.jsx";
 
 export default function SettingsPage() {
   const { farmForm, setFarmForm, feedTypes, pricingSettings, setPricingSettings, crateSize, setCrateSize, defaultWater, setDefaultWater, waterSizes, setWaterSizes, waterUnitLabel, setWaterUnitLabel, saving, expenseCategories, expenseCategoryForm, setExpenseCategoryForm, account, accountForm, setAccountForm, applicationSettings, setApplicationSettings, backupSettings, setBackupSettings, saveFarm, createExpenseCategory, archiveExpenseCategory, saveAccount, saveApplicationSettings, chooseBackupSettingsDirectory, saveBackupSettings, createBackup, restoreBackup, saveSettings, savePricingSettings } = useContext(FarmManagerContext);
 
   return (
-    <div className="grid">
+    <PageTemplate className="grid">
       <PageSection page="settings" tab="farm"><section id="settings" className="card full"><h2>Farm profile</h2><form className="form-grid" onSubmit={saveFarm}>
           <label>Farm name<input required value={farmForm.name} onChange={e=>setFarmForm({...farmForm,name:e.target.value})}/></label>
           <label>Location<input value={farmForm.location} onChange={e=>setFarmForm({...farmForm,location:e.target.value})}/></label>
@@ -33,7 +37,7 @@ export default function SettingsPage() {
             <div className="subsection"><h3>Feed types</h3><DataTable caption="Feed types" columns={[
           { key: "name", label: "Name" }, { key: "unit", label: "Unit" }, { key: "applicableType", label: "Applies to" }, { key: "status", label: "Status" },
         ]} rows={feedTypes} emptyMessage="No feed types configured." /></div>
-            <div className="subsection"><h3>Expense categories</h3><form className="inline-form" onSubmit={createExpenseCategory}><label className="field"><span>New category</span><input required maxLength="80" value={expenseCategoryForm} onChange={e=>setExpenseCategoryForm(e.target.value)}/></label><button disabled={saving}>Add</button></form><DataTable caption="Expense categories" columns={[
+            <div className="subsection"><h3>Expense categories</h3><form className="inline-form" onSubmit={createExpenseCategory}><FormField label="New category" required><input required maxLength="80" value={expenseCategoryForm} onChange={e=>setExpenseCategoryForm(e.target.value)}/></FormField><button disabled={saving}>Add</button></form><DataTable caption="Expense categories" columns={[
           { key: "name", label: "Category" }, { key: "status", label: "Status" },
           { key: "action", label: "Action", render: cat => <button type="button" disabled={saving} onClick={() => archiveExpenseCategory(cat.id)}>Archive</button> },
         ]} rows={expenseCategories} emptyMessage="No expense categories configured." /></div>
@@ -50,6 +54,6 @@ export default function SettingsPage() {
           <label>Working/latest margin %<input readOnly value={pricingSettings.workingMarginPercent ?? ""}/><small>Updated from actual sale results.</small></label>
           <button disabled={saving}>Save pricing target</button>
         </form></section></PageSection>
-    </div>
+    </PageTemplate>
   );
 }

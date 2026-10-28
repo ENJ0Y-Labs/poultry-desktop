@@ -8,13 +8,15 @@ import DataTable from "../components/DataTable.jsx";
 // eslint-disable-next-line no-unused-vars
 import PageSection from "../components/PageSection.jsx";
 // eslint-disable-next-line no-unused-vars
+import PageTemplate from "../components/PageTemplate.jsx";
+// eslint-disable-next-line no-unused-vars
 import MetricHelp from "../components/MetricHelp.jsx";
 
 export default function ProductionPage() {
   const { formatMoney, farm, batches, customers, eggBatchId, setEggBatchId, broilerBatchId, setBroilerBatchId, broilerGrowth, broilerWeights, broilerSales, weightForm, setWeightForm, birdSaleForm, setBirdSaleForm, pricing, pricingForm, setPricingForm, eggInventory, eggCollections, eggSales, eggCollectionForm, setEggCollectionForm, eggSaleForm, setEggSaleForm, crateSize, saving, loadPricingForBatch, loadBroilerForBatch, saveWeight, saveBirdSale, loadEggsForBatch, saveEggCollection, saveEggSale } = useContext(FarmManagerContext);
 
   return (
-    <div className="grid">
+    <PageTemplate className="grid">
       <PageSection page="production" tab="eggs"><section id="eggs" className="card full">
           <div className="section-head">
             <h2>Layer egg production <MetricHelp id="hdp-formula-help" label="HDP formula">Hen-day production (HDP) is calculated for each date: total eggs collected that day (good + cracked) ÷ live layer birds on that date × 100. The numerator is in eggs and the denominator is birds, so the result is a percentage for that day. For example, 850 eggs from 1,000 live hens = 85%. The backend calculates the historical live-bird count; missing egg records are shown as gaps, not zero.</MetricHelp></h2>
@@ -192,6 +194,6 @@ export default function ProductionPage() {
             </>
           )}
         </section></PageSection>
-    </div>
+    </PageTemplate>
   );
 }

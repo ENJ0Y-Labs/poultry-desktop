@@ -446,3 +446,15 @@ input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-
 
 /* Keep navigation labels readable at compact desktop sizes. */
 .nav-item { font-size: 13px; }
+
+
+/* Shared page and form primitives */
+.page-template { min-width: 0; }
+.page-template-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; }
+.page-template-heading { min-width: 0; }
+.page-template-heading h2 { margin: 0; }
+.page-template-actions { display: flex; flex-wrap: wrap; gap: .5rem; }
+.form-field { min-width: 0; }
+.form-field-label { display: flex; flex-direction: column; gap: .35rem; }
+.form-field-hint { margin: .25rem 0 0; font-size: .875rem; }
+.form-field-error { margin: .25rem 0 0; color: var(--color-danger, #b42318); font-size: .875rem; }

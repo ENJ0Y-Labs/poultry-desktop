@@ -3,6 +3,8 @@ import { FarmManagerContext } from "../components/FarmManagerContext.jsx";
 // eslint-disable-next-line no-unused-vars
 import PageSection from "../components/PageSection.jsx";
 // eslint-disable-next-line no-unused-vars
+import PageTemplate from "../components/PageTemplate.jsx";
+// eslint-disable-next-line no-unused-vars
 import EmptyState from "../components/EmptyState.jsx";
 // eslint-disable-next-line no-unused-vars
 import DataTable from "../components/DataTable.jsx";
@@ -12,7 +14,7 @@ export default function HealthPage() {
   const batchOptions = <><option value="">Batch</option>{batches.map(batch => <option key={batch.id} value={batch.id}>{batch.code}</option>)}</>;
 
   return (
-    <div className="grid">
+    <PageTemplate className="grid">
       {batches.length === 0 && <EmptyState className="empty-state" role="status">No batches yet. Create a batch in <a href="#flocks/flocks">Flocks → Batches</a> before recording health, treatment, or vaccination details.</EmptyState>}
       <PageSection page="health" tab="health-record">
         <section id="health" className="card full"><div className="section-head"><h2>Health records</h2><p className="muted">Record symptoms, conditions, and action taken. Treatments and vaccinations are tracked separately.</p></div>
@@ -66,6 +68,6 @@ export default function HealthPage() {
             ]} rows={vaccinationRecords} emptyMessage="No vaccination records for the selected batch." />
         </section>
       </PageSection>
-    </div>
+    </PageTemplate>
   );
 }

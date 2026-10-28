@@ -2,6 +2,8 @@ import { useContext } from "react";
 import { FarmManagerContext } from "../components/FarmManagerContext.jsx";
 // eslint-disable-next-line no-unused-vars
 import PageSection from "../components/PageSection.jsx";
+// eslint-disable-next-line no-unused-vars
+import PageTemplate from "../components/PageTemplate.jsx";
 import { reportApi, productionTrendApi } from "../services/api.js";
 // eslint-disable-next-line no-unused-vars
 import ProductionTrendChart from "../components/ProductionTrendChart.jsx";
@@ -13,7 +15,7 @@ export default function ReportsPage() {
   const { formatMoney, formatQuantity, formatPercent, formatKg, formatMetric, formatCount, farm, batches, selectedBatchId, setSelectedBatchId, farmReport, batchReport, reportAsOf, setReportAsOf, loadReport, loadBatchReport, exportCsv, exportPdf } = useContext(FarmManagerContext);
 
   return (
-    <div className="grid">
+    <PageTemplate className="grid">
       <PageSection page="reports" tab="farm-report"><section id="reports" className="card full">
           <div className="section-head"><div><p className="eyebrow">REPORTING</p><h2>Farm reports</h2></div>
             <div className="inline-form"><label>As of <input aria-label="Report as-of date" type="date" value={reportAsOf} onChange={e => setReportAsOf(e.target.value)} /></label><button type="button" onClick={() => loadReport(reportAsOf)}>Refresh</button><button type="button" onClick={() => exportCsv(() => reportApi.farmCsv(reportAsOf), "farm-report.csv")}>Export CSV</button><button type="button" onClick={() => exportPdf(() => reportApi.farmPdf(reportAsOf), "farm-report.pdf")}>Export PDF</button></div>
@@ -108,6 +110,6 @@ export default function ReportsPage() {
             />
           )}
         </section></PageSection>
-    </div>
+    </PageTemplate>
   );
 }
