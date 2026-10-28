@@ -17,6 +17,7 @@ import java.math.RoundingMode;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.UUID;
 
 @Service
@@ -60,6 +61,21 @@ public class EggManagementService {
                         batchId, request.recordDate(), good, cracked), now);
         return new EggCollectionResponse(id, batchId, request.recordDate(), good, cracked,
                 good + cracked, notes);
+    }
+
+    public void validateHistoricalCollections(String batchId, List<EggCollectionRequest> proposed) {
+        requireLayer(batchId);
+        List<com.grantinofarms.poultry.domain.EggLedgerEvent> events = new ArrayList<>(repository.ledgerEvents(batchId));
+        for (EggCollectionRequest request : proposed) {
+            events.add(new com.grantinofarms.poultry.domain.EggLedgerEvent(
+                    request.recordDate(), request.good(), 0));
+        }
+        try {
+            EggInventoryCalculator.validateHistoricalLedger(events);
+        } catch (IllegalArgumentException ex) {
+            throw new ApiException(HttpStatus.CONFLICT, "INVALID_HISTORICAL_EGG_BALANCE",
+                    "The imported good-egg collections would make a historical egg sale exceed the available good eggs.");
+        }
     }
 
     public List<EggCollectionResponse> collections(String batchId, LocalDate asOf) {
