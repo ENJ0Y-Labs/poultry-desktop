@@ -140,11 +140,18 @@ export async function inspectCsvFile(file, moduleKey) {
     const errors = [];
     if (values.length !== headers.length) errors.push(`Expected ${headers.length} columns, found ${values.length}.`);
     for (const required of template.required) if (!record[required]) errors.push(`${required} is required.`);
-    const key = record.name.toLocaleLowerCase("en");
-    const duplicate = key && seen.has(key);
+    let key = "";
+    if (moduleKey === "daily-records") {
+      key = record.batch_code.toLocaleUpperCase("en") + "|" + record.record_date;
+    } else if (moduleKey === "mortality" || moduleKey === "culling") {
+      key = [record.batch_code.toLocaleUpperCase("en"), record.event_date, record.quantity, record.reason.toLocaleLowerCase("en"), record.notes.toLocaleLowerCase("en")].join("|");
+    } else {
+      key = record.name.toLocaleLowerCase("en");
+    }
+    const duplicate = Boolean(key && seen.has(key));
     if (key) seen.add(key);
-    if (duplicate) errors.push("Duplicate name within this file.");
-    return { rowNumber: index + 2, record, errors, duplicate: Boolean(duplicate), valid: errors.length === 0 };
+    if (duplicate && moduleKey !== "mortality" && moduleKey !== "culling") errors.push(moduleKey === "daily-records" ? "Duplicate batch/date within this file." : "Duplicate name within this file.");
+    return { rowNumber: index + 2, record, errors, duplicate, existingDuplicate: false, valid: errors.length === 0 };
   });
   return {
     moduleKey,
