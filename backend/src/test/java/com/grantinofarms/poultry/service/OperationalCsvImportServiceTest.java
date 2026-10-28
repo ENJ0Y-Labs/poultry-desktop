@@ -84,4 +84,15 @@ class OperationalCsvImportServiceTest {
         assertEquals(false, result.get("valid"));
         verify(population, never()).addCulling(anyString(), any());
     }
+    @Test
+    void rejectsBackdatedEventThatInvalidatesALaterPopulationEvent() {
+        when(populationRepository.findEvents("batch-id")).thenReturn(new java.util.ArrayList<>(List.of(
+                new BirdPopulationEvent(LocalDate.parse("2026-01-03"), "CULLING", 3))));
+        Map<String, Object> result = service.preview(new CsvImportRequest("mortality", List.of(
+                Map.of("batch_code", "B-2026-001", "event_date", "2026-01-02",
+                        "quantity", "3", "reason", "Historical mortality", "notes", ""))));
+        assertEquals(false, result.get("valid"));
+        assertEquals(1, result.get("rejected"));
+        verify(population, never()).addMortality(anyString(), any());
+    }
 }
