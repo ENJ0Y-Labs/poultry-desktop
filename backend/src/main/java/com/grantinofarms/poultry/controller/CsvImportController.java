@@ -4,6 +4,7 @@ import com.grantinofarms.poultry.dto.CsvImportRequest;
 import com.grantinofarms.poultry.service.CsvImportService;
 import com.grantinofarms.poultry.service.FeedHistoryCsvImportService;
 import com.grantinofarms.poultry.service.OperationalCsvImportService;
+import com.grantinofarms.poultry.service.ProductionHistoryCsvImportService;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 import java.util.Map;
@@ -14,6 +15,7 @@ public class CsvImportController {
     private final CsvImportService service;
     private final FeedHistoryCsvImportService feedHistoryService;
     private final OperationalCsvImportService operationalService;
+    private final ProductionHistoryCsvImportService productionHistoryService;
 
     public CsvImportController(CsvImportService service, OperationalCsvImportService operationalService,
                                FeedHistoryCsvImportService feedHistoryService) {
@@ -40,6 +42,16 @@ public class CsvImportController {
     @PostMapping("/csv/feed")
     public Map<String, Object> importFeedCsv(@Valid @RequestBody CsvImportRequest request) {
         return Map.of("ok", true, "data", feedHistoryService.importRecords(request));
+    }
+
+    @PostMapping("/csv/production/preview")
+    public Map<String, Object> previewProductionCsv(@Valid @RequestBody CsvImportRequest request) {
+        return Map.of("ok", true, "data", productionHistoryService.preview(request));
+    }
+
+    @PostMapping("/csv/production")
+    public Map<String, Object> importProductionCsv(@Valid @RequestBody CsvImportRequest request) {
+        return Map.of("ok", true, "data", productionHistoryService.importRecords(request));
     }
 
     @PostMapping("/csv")
