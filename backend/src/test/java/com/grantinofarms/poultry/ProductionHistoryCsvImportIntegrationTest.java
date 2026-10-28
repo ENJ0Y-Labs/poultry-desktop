@@ -24,6 +24,7 @@ class ProductionHistoryCsvImportIntegrationTest {
     @Autowired HouseService houseService;
     @Autowired BatchService batchService;
     @Autowired ProductionHistoryCsvImportService importer;
+    @Autowired BroilerProductionService broilerProductionService;
     @Autowired JdbcTemplate jdbc;
 
     @Test
@@ -68,6 +69,9 @@ class ProductionHistoryCsvImportIntegrationTest {
         assertThat(importer.importRecords(request).get("imported")).isEqualTo(1);
         assertThat(importer.importRecords(request).get("duplicates")).isEqualTo(1);
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM weight_records", Integer.class)).isEqualTo(1);
+        assertThat(broilerProductionService.weights(batch.id(), LocalDate.parse("2026-01-02")))
+                .extracting(WeightRecordResponse::averageWeightKg)
+                .containsExactly(new java.math.BigDecimal("1.850000"));
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM audit_logs WHERE entity_type = 'WEIGHT_RECORD'", Integer.class)).isEqualTo(1);
     }
 
@@ -99,6 +103,22 @@ class ProductionHistoryCsvImportIntegrationTest {
                 Map.of("batch_code", batch.code(), "record_date", "2025-12-31",
                         "sample_quantity", "10", "total_weight_kg", "18.500", "notes", ""))));
         assertThat(preview.get("valid")).isEqualTo(false);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM weight_records", Integer.class)).isZero();
+    }
+
+    @Test
+    void rejectsNegativeEggQuantitiesAndInvalidBroilerWeights() {
+        var layer = setupBatch("LAYER", "L-2026-001");
+        var broiler = setupBatch("BROILER", "B-2026-001");
+        Map<String, Object> eggPreview = importer.preview(new CsvImportRequest("egg-collections", List.of(
+                Map.of("batch_code", layer.code(), "record_date", "2026-01-02",
+                        "good_eggs", "-1", "cracked_eggs", "0", "notes", ""))));
+        Map<String, Object> weightPreview = importer.preview(new CsvImportRequest("broiler-weights", List.of(
+                Map.of("batch_code", broiler.code(), "record_date", "2026-01-02",
+                        "sample_quantity", "0", "total_weight_kg", "0.0001", "notes", ""))));
+        assertThat(eggPreview.get("valid")).isEqualTo(false);
+        assertThat(weightPreview.get("valid")).isEqualTo(false);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM egg_collections", Integer.class)).isZero();
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM weight_records", Integer.class)).isZero();
     }
 
