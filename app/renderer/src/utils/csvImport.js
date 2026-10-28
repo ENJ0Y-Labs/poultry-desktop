@@ -180,7 +180,7 @@ export async function inspectCsvFile(file, moduleKey) {
 export function csvErrorReport(preview) {
   const rows = [["row", "status", "errors", ...CSV_TEMPLATES[preview.moduleKey].headers]];
   for (const item of preview.rows) {
-    rows.push([item.rowNumber, item.valid ? "valid" : "invalid", item.errors.join("; "), ...CSV_TEMPLATES[preview.moduleKey].headers.map(header => item.record[header])]);
+    rows.push([item.rowNumber, item.duplicate || item.existingDuplicate ? "duplicate (skipped)" : item.valid ? "valid" : "invalid", item.errors.join("; ") || (item.duplicate || item.existingDuplicate ? "Exact duplicate will be skipped." : ""), ...CSV_TEMPLATES[preview.moduleKey].headers.map(header => item.record[header])]);
   }
   return encodeCsv(rows);
 }
