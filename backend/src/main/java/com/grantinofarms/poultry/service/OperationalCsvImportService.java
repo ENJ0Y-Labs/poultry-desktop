@@ -264,7 +264,7 @@ public class OperationalCsvImportService {
     }
 
     private String clean(String value) { return value == null || value.isBlank() ? null : value.trim(); }
-    private String norm(String value) { return clean(value) == null ? "" : clean(value).toLowerCase(Locale.ROOT); }
+    private String norm(String value) { return clean(value) == null ? "" : clean(value); }
 
     private static final class Row {
         final int rowNumber; final BatchResponse batch; final LocalDate date; final Integer quantity;
