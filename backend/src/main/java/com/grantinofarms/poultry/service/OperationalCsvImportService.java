@@ -22,7 +22,6 @@ public class OperationalCsvImportService {
     private final DailyOperationsService dailyOperations;
     private final BirdPopulationService population;
     private final BirdPopulationRepository populationRepository;
-    private final DailyOperationsRepository dailyRepository;
 
     public OperationalCsvImportService(BatchService batches, DailyOperationsService dailyOperations,
                                        BirdPopulationService population, BirdPopulationRepository populationRepository,
@@ -31,7 +30,6 @@ public class OperationalCsvImportService {
         this.dailyOperations = dailyOperations;
         this.population = population;
         this.populationRepository = populationRepository;
-        this.dailyRepository = dailyRepository;
     }
 
     public Map<String, Object> preview(CsvImportRequest request) {
@@ -158,8 +156,9 @@ public class OperationalCsvImportService {
                 if (previous != null) row.duplicate = true;
                 else {
                     DailyRecordResponse existing = dailyOperations.get(batch.id(), date);
+                    int eventQuantity = quantity;
                     boolean exact = existing.populationEvents().stream().anyMatch(event ->
-                            type.equals(event.eventType()) && event.quantity() == quantity
+                            type.equals(event.eventType()) && event.quantity() == eventQuantity
                                     && Objects.equals(norm(event.reason()), norm(reason))
                                     && Objects.equals(norm(event.notes()), norm(notes)));
                     if (exact) row.duplicate = true;
@@ -167,8 +166,12 @@ public class OperationalCsvImportService {
             }
             if (row.duplicate) duplicates++;
             if (!rowErrors.isEmpty()) errors++;
-            rowResults.add(Map.of("rowNumber", rowNumber, "valid", rowErrors.isEmpty(),
-                    "duplicate", row.duplicate, "errors", List.copyOf(rowErrors)));
+            Map<String, Object> rowResult = new HashMap<>();
+            rowResult.put("rowNumber", rowNumber);
+            rowResult.put("valid", rowErrors.isEmpty());
+            rowResult.put("duplicate", row.duplicate);
+            rowResult.put("errors", List.copyOf(rowErrors));
+            rowResults.add(rowResult);
             row.errors = rowErrors;
             parsed.add(row);
         }
