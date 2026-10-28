@@ -10,6 +10,24 @@ export const CSV_TEMPLATES = {
     required: ["name", "code"],
     example: ["Brooder House", "H-001", "Replace or remove this example row"],
   },
+  health: {
+    label: "Health / Treatment Records", version: "1.0",
+    headers: ["batch_code", "record_date", "condition_problem", "description", "action"],
+    required: ["batch_code", "record_date", "condition_problem", "description", "action"],
+    example: ["B-2026-001", "2026-01-15", "Respiratory signs", "Several birds showed coughing", "Isolated affected birds and contacted the farm adviser"],
+  },
+  drugs: {
+    label: "Drug Records", version: "1.0",
+    headers: ["batch_code", "record_date", "drug", "quantity", "cost_minor", "reason"],
+    required: ["batch_code", "record_date", "drug", "quantity", "cost_minor", "reason"],
+    example: ["B-2026-001", "2026-01-16", "Example drug name", "1", "250000", "Treatment for respiratory signs"],
+  },
+  vaccinations: {
+    label: "Vaccination Records", version: "1.0",
+    headers: ["batch_code", "record_date", "vaccine", "dose", "quantity", "notes"],
+    required: ["batch_code", "record_date", "vaccine", "dose", "quantity"],
+    example: ["B-2026-001", "2026-01-17", "Example vaccine name", "1 ml per bird", "100", "Replace or remove this example row"],
+  },
   customers: {
     label: "Customers",
     version: "1.0",
@@ -130,7 +148,7 @@ export async function inspectCsvFile(file, moduleKey) {
     const errors = [];
     if (values.length !== headers.length) errors.push(`Expected ${headers.length} columns, found ${values.length}.`);
     for (const required of template.required) if (!record[required]) errors.push(`${required} is required.`);
-    const key = record.name.toLocaleLowerCase("en");
+    const key = ["houses", "customers", "suppliers"].includes(moduleKey) ? record.name.toLocaleLowerCase("en") : "";
     const duplicate = Boolean(key && seen.has(key));
     if (duplicate) errors.push("Duplicate name within this file.");
     if (key) seen.add(key);
