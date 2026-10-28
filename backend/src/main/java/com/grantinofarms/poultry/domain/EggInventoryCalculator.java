@@ -34,8 +34,13 @@ public final class EggInventoryCalculator {
 
         List<EggLedgerEvent> events = new ArrayList<>(existingEvents);
         events.add(new EggLedgerEvent(proposedDate, 0, proposedSoldEggs));
-        events.sort(Comparator.comparing(EggLedgerEvent::date));
+        validateHistoricalLedger(events);
+    }
 
+    public static void validateHistoricalLedger(List<EggLedgerEvent> proposedEvents) {
+        List<EggLedgerEvent> events = new ArrayList<>(proposedEvents);
+        events.sort(Comparator.comparing(EggLedgerEvent::date)
+                .thenComparingInt(event -> event.goodSold() > 0 ? 1 : 0));
         int balance = 0;
         for (EggLedgerEvent event : events) {
             balance += event.goodCollected();

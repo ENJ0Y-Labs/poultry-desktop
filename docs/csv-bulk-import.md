@@ -96,3 +96,41 @@ Exact purchase duplicates are identified by feed type, supplier, date, quantity,
 ## Feed import verification
 
 Backend tests cover exact naira-to-kobo conversion, purchase retry behavior, FIFO costing across multiple purchase lots, unknown kilogram conversions, insufficient dated stock, and transaction rollback of purchase, expense, and audit writes. Before release, also verify in a disposable farm database that feed inventory, batch feed costs, and reports agree with manually entered equivalent records.
+
+
+## Historical production imports (v1.0)
+
+Production imports are available only for existing ACTIVE batches. Ensure the required house/pen exists and the batch has been created with its true historical placement date before importing. The batch-opening CSV workflow is not exposed in the Import / Export UI yet. Each production row uses the exact human-readable `batch_code`; internal database IDs are not accepted.
+
+### Layer egg collections
+
+Template: `pomas-egg-collections-template-v1.0.csv`
+
+Headers in exact order: `batch_code,record_date,good_eggs,cracked_eggs,notes`.
+
+- `batch_code`, `record_date`, `good_eggs`, and `cracked_eggs` are required; `notes` is optional.
+- Dates use `YYYY-MM-DD` and cannot precede batch placement.
+- Batch must be `LAYER` and ACTIVE.
+- Good and cracked egg quantities are non-negative whole eggs. A row with zero good and zero cracked eggs is an explicit recorded zero; a missing date remains missing history.
+- Good and cracked eggs remain separate through the existing egg-management service. Cracked eggs never become sellable inventory.
+- Imported collections do not create egg sales or change egg-sale balances except through the existing production ledger.
+
+### Broiler weight records
+
+Template: `pomas-broiler-weights-template-v1.0.csv`
+
+Headers in exact order: `batch_code,record_date,sample_quantity,total_weight_kg,notes`.
+
+- `batch_code`, `record_date`, `sample_quantity`, and `total_weight_kg` are required; `notes` is optional.
+- Dates use `YYYY-MM-DD` and cannot precede batch placement.
+- Batch must be `BROILER` and ACTIVE.
+- `sample_quantity` is a positive whole number of sampled birds.
+- `total_weight_kg` is the combined sample weight in kilograms, positive, with no more than three meaningful decimal places. It is not the average weight per bird.
+- The existing broiler-production service calculates average weight and growth. The importer does not supply or persist derived averages.
+- Dates with no weight record remain gaps, not zero-weight records.
+
+### Production preview, retry, and transaction guarantees
+
+The backend validates every row before confirmation, including batch type/status, batch code, date boundary, supported headers, numeric bounds, and exact-record duplicates. Preview is read-only. Confirmation revalidates and calls `EggManagementService` or `BroilerProductionService` inside one transaction, preserving their audit and domain behavior. Exact matching records are skipped on retry; a different record is not silently overwritten. If any confirmed write fails, all production and audit writes in that import transaction roll back.
+
+Tests cover layer/broiler type restrictions, placement-date boundaries, explicit zero egg production versus missing history, weight record insertion and retry behavior, audit records, and transaction rollback. Automated CI and packaged-app runtime validation must pass before this import is considered ready to merge.

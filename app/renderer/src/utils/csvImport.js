@@ -40,6 +40,18 @@ export const CSV_TEMPLATES = {
     required: ["feed_type_name", "batch_code", "usage_date", "quantity", "unit"],
     example: ["Broiler Starter", "B-2026-001", "2026-01-03", "2.5", "bag", "Daily feeding"],
   },
+  "egg-collections": {
+    label: "Layer Egg Collections", version: "1.0",
+    headers: ["batch_code", "record_date", "good_eggs", "cracked_eggs", "notes"],
+    required: ["batch_code", "record_date", "good_eggs", "cracked_eggs"],
+    example: ["L-2026-001", "2026-01-15", "850", "12", "Replace or remove this example row"],
+  },
+  "broiler-weights": {
+    label: "Broiler Weight Records", version: "1.0",
+    headers: ["batch_code", "record_date", "sample_quantity", "total_weight_kg", "notes"],
+    required: ["batch_code", "record_date", "sample_quantity", "total_weight_kg"],
+    example: ["B-2026-001", "2026-01-15", "10", "18.500", "Replace or remove this example row"],
+  },
   customers: {
     label: "Customers",
     version: "1.0",
