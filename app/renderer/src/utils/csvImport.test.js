@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { CSV_TEMPLATES, encodeCsv, inspectCsvFile, parseCsv } from "./csvImport.js";
+import { encodeCsv, inspectCsvFile, parseCsv } from "./csvImport.js";
 
 function csvFile(content, name = "customers.csv") {
   const bytes = new TextEncoder().encode(content);
