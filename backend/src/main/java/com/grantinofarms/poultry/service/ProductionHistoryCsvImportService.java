@@ -142,8 +142,12 @@ public class ProductionHistoryCsvImportService {
             }
             if (row.duplicate) duplicates++;
             if (!row.errors.isEmpty()) errors++;
-            results.add(Map.of("rowNumber", rowNumber, "valid", row.errors.isEmpty(),
-                    "duplicate", row.duplicate, "errors", List.copyOf(row.errors)));
+            Map<String, Object> rowResult = new LinkedHashMap<>();
+            rowResult.put("rowNumber", rowNumber);
+            rowResult.put("valid", row.errors.isEmpty());
+            rowResult.put("duplicate", row.duplicate);
+            rowResult.put("errors", List.copyOf(row.errors));
+            results.add(rowResult);
             parsed.add(row);
         }
         if ("egg-collections".equals(module)) {
