@@ -146,6 +146,32 @@ public class ProductionHistoryCsvImportService {
                     "duplicate", row.duplicate, "errors", List.copyOf(row.errors)));
             parsed.add(row);
         }
+        if ("egg-collections".equals(module)) {
+            Map<String, List<Row>> byBatch = new HashMap<>();
+            parsed.stream().filter(row -> row.errors.isEmpty() && !row.duplicate)
+                    .sorted(Comparator.comparing((Row row) -> row.date).thenComparingInt(row -> row.rowNumber))
+                    .forEach(row -> byBatch.computeIfAbsent(row.batch.id(), ignored -> new ArrayList<>()).add(row));
+            for (Map.Entry<String, List<Row>> entry : byBatch.entrySet()) {
+                List<Row> accepted = new ArrayList<>();
+                for (Row row : entry.getValue()) {
+                    List<EggCollectionRequest> proposed = new ArrayList<>();
+                    for (Row prior : accepted) {
+                        proposed.add(new EggCollectionRequest(prior.date, prior.good, prior.cracked, prior.notes));
+                    }
+                    proposed.add(new EggCollectionRequest(row.date, row.good, row.cracked, row.notes));
+                    try {
+                        eggs.validateHistoricalCollections(entry.getKey(), proposed);
+                        accepted.add(row);
+                    } catch (ApiException ex) {
+                        row.errors.add("good_eggs: " + ex.getMessage());
+                        errors++;
+                        Map<String, Object> result = results.get(row.rowNumber - 2);
+                        result.put("valid", false);
+                        result.put("errors", List.copyOf(row.errors));
+                    }
+                }
+            }
+        }
         return new Validation(module, parsed, results, errors, duplicates);
     }
 
