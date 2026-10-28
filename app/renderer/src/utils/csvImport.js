@@ -24,16 +24,16 @@ export function encodeCsv(rows) {
     // Keep generated reports safe to open in spreadsheet software. Imported
     // values are data, never formulas.
     let text = String(value ?? "");
-    if (/^[=+@\\t\\r]/.test(text) || /^-/.test(text)) text = "'" + text;
-    return /[",\\r\\n]/.test(text) ? '"' + text.replace(/"/g, '""') + '"' : text;
-  }).join(",")).join("\\r\\n") + "\\r\\n";
+    if (/^[=+@\t\r]/.test(text) || /^-/.test(text)) text = "'" + text;
+    return /[",\r\n]/.test(text) ? '"' + text.replace(/"/g, '""') + '"' : text;
+  }).join(",")).join("\r\n") + "\r\n";
 }
 
 export function downloadCsvTemplate(moduleKey) {
   const template = CSV_TEMPLATES[moduleKey];
   if (!template) throw new Error("Choose a supported import module.");
   const csv = encodeCsv([template.headers, template.example]);
-  const blob = new Blob(["\\uFEFF", csv], { type: "text/csv;charset=utf-8" });
+  const blob = new Blob(["\uFEFF", csv], { type: "text/csv;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement("a");
   anchor.href = url;
@@ -45,7 +45,7 @@ export function downloadCsvTemplate(moduleKey) {
 }
 
 export function parseCsv(text) {
-  const source = String(text ?? "").replace(/^\\uFEFF/, "");
+  const source = String(text ?? "").replace(/^\uFEFF/, "");
   const rows = [];
   let row = [], cell = "", quoted = false, closedQuote = false;
   for (let i = 0; i < source.length; i += 1) {
@@ -58,15 +58,15 @@ export function parseCsv(text) {
       if (cell.length > MAX_CELL_CHARS) throw new Error(`CSV cell exceeds the ${MAX_CELL_CHARS.toLocaleString()} character limit.`);
       continue;
     }
-    if (closedQuote && char !== "," && char !== "\\r" && char !== "\\n" && char !== " " && char !== "\\t") {
+    if (closedQuote && char !== "," && char !== "\r" && char !== "\n" && char !== " " && char !== "\t") {
       throw new Error(`Malformed CSV quoting near character ${i + 1}.`);
     }
     if (char === '"') {
       if (cell.length !== 0 || closedQuote) throw new Error(`Malformed CSV quoting near character ${i + 1}.`);
       quoted = true;
     } else if (char === ",") { row.push(cell); cell = ""; closedQuote = false; }
-    else if (char === "\\r" || char === "\\n") {
-      if (char === "\\r" && source[i + 1] === "\\n") i += 1;
+    else if (char === "\r" || char === "\n") {
+      if (char === "\r" && source[i + 1] === "\n") i += 1;
       row.push(cell); cell = ""; closedQuote = false;
       if (row.some(value => value.trim() !== "")) rows.push(row);
       row = [];
