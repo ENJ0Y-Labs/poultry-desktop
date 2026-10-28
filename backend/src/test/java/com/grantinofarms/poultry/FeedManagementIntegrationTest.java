@@ -171,7 +171,7 @@ class FeedManagementIntegrationTest {
         assertThat(feedService.types().stream().filter(t -> t.id().equals(type.id())).findFirst().orElseThrow().kgPerUnit()).isNull();
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM feed_usage WHERE batch_id = ?", Integer.class, batch.id())).isEqualTo(1);
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM expenses WHERE category = 'FEED'", Integer.class)).isEqualTo(2);
-        assertThat(jdbc.queryForObject("SELECT SUM(amount_minor) FROM bird_additional_costs WHERE batch_id = ?", Long.class, batch.id())).isEqualTo(210_000L);
+        assertThat(jdbc.queryForObject("SELECT SUM(amount_minor) FROM bird_cost_events WHERE batch_id = ? AND event_type = 'ADDITIONAL_COST'", Long.class, batch.id())).isEqualTo(210_000L);
     }
 
     @Test
