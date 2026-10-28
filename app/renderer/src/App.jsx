@@ -28,6 +28,8 @@ import SalesMoneyPage from "./pages/SalesMoneyPage.jsx";
 import ReportsPage from "./pages/ReportsPage.jsx";
 // eslint-disable-next-line no-unused-vars
 import SettingsPage from "./pages/SettingsPage.jsx";
+// eslint-disable-next-line no-unused-vars
+import ImportExportPage from "./pages/ImportExportPage.jsx";
 function formatQuantity(milli) { return milli == null ? "—" : (Number(milli) / 1000).toLocaleString() + " units"; }
 function formatPercent(value) { return value == null ? "—" : Number(value).toFixed(2) + "%"; }
 function formatKg(value) { return value == null ? "—" : Number(value).toFixed(2) + " kg"; }
@@ -1197,6 +1199,7 @@ export default function App() {
         <PageSection page="sales-money"><SalesMoneyPage /></PageSection>
         <PageSection page="reports"><ReportsPage /></PageSection>
         <PageSection page="settings"><SettingsPage /></PageSection>
+        <PageSection page="import-export"><ImportExportPage /></PageSection>
       </FarmManagerContext.Provider>
     </AppShell>
   );

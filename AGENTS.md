@@ -47,7 +47,7 @@ The installer ID (`appId`), repository name, Java packages, and database file na
 10. The application must remain fully usable without internet access.
 11. No telemetry, cloud dependency, CDN assets, or third-party network service in normal operation.
 12. Never edit a shipped migration. Add a new migration.
-13. Keep the canonical start-page list aligned across Settings UI, backend request validation, SQLite CHECK constraints, and navigation routing: `dashboard`, `flocks`, `daily-work`, `feed-stock`, `health`, `production`, `sales-money`, `reports`, `settings`.
+13. Keep the saved start-page allow-list aligned across Settings UI, backend request validation, SQLite CHECK constraints, and start-page fallback routing: `dashboard`, `flocks`, `daily-work`, `feed-stock`, `health`, `production`, `sales-money`, `reports`, `settings`. Import / Export is a routable top-level destination but is intentionally not selectable as the saved start page.
 14. Never weaken/delete a test to make it pass.
 15. Do not introduce TypeScript into the frontend. The frontend is React + JavaScript.
 16. Never commit `*.db`, `*.db-wal`, `*.db-shm`, backups, or real farm data.
@@ -1237,7 +1237,7 @@ And never sacrifice poultry math for dashboard cosmetics.
 
 ## Frontend page architecture
 
-- Keep the renderer organized around nine top-level pages: Dashboard, Flocks, Daily Work, Feed & Stock, Health, Production, Sales & Money, Reports, and Settings.
+- Keep the renderer organized around ten top-level destinations: Dashboard, Flocks, Daily Work, Feed & Stock, Health, Production, Sales & Money, Reports, Import / Export, and Settings. Import / Export is routable through the local hash router but is intentionally excluded from the saved start-page allow-list.
 - Use the local hash router in `AppShell.jsx`; do not add a routing dependency without explicit owner approval.
 - Navigation must not depend on scroll position, scroll listeners, or `scrollIntoView`.
 - Wrap page content in `PageSection` so inactive pages are not mounted. Keep domain calculations and persistence in the existing backend/API layers.

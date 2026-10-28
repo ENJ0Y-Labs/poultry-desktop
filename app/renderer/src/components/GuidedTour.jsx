@@ -10,6 +10,7 @@ const sections = [
   { page: "production", tab: "eggs", title: "Production", description: "Record egg collection and quality for layers, or weight and growth for broilers. The selected batch type determines the relevant workflow." },
   { page: "sales-money", tab: "customers", title: "Sales & Money", description: "Maintain customers, review the common sales ledger, and record farm or batch expenses." },
   { page: "reports", tab: "farm-report", title: "Reports", description: "Review farm-wide or batch-specific results for the selected date, then export the report after checking its context." },
+  { page: "import-export", tab: "overview", title: "Import / Export", description: "Import only supported customer and supplier reference data. Historical batch import is planned, while farm and batch report exports are available from Reports." },
   { page: "settings", tab: "farm", title: "Settings", description: "Configure the farm profile, operating defaults, account, appearance, backup options, and pricing preferences." },
 ];
 
