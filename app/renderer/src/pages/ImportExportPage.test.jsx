@@ -11,14 +11,12 @@ describe("ImportExportPage", () => {
     fireEvent.click(screen.getByRole("button", { name: "Open batch management" }));
     expect(window.location.hash).toBe("#flocks/flocks");
   });
-
-  it("exposes only the supported customer and supplier CSV import modules", () => {
+  it("exposes house/pen, customer, and supplier CSV import modules", () => {
     render(<ImportExportPage />);
     const selector = screen.getByRole("combobox", { name: "Import module" });
     expect(selector).toHaveValue("customers");
-    expect(Array.from(selector.options).map(option => option.value)).toEqual(["customers", "suppliers"]);
+    expect(Array.from(selector.options).map(option => option.value)).toEqual(["houses", "customers", "suppliers"]);
   });
-
   it("links to the existing supported report export workflow", () => {
     render(<ImportExportPage />);
     fireEvent.click(screen.getByRole("button", { name: "Open report exports" }));

@@ -3,6 +3,13 @@ const MAX_DATA_ROWS = 5000;
 const MAX_CELL_CHARS = 10_000;
 
 export const CSV_TEMPLATES = {
+  houses: {
+    label: "Houses / Pens",
+    version: "1.0",
+    headers: ["name", "code", "notes"],
+    required: ["name", "code"],
+    example: ["Brooder House", "H-001", "Replace or remove this example row"],
+  },
   customers: {
     label: "Customers",
     version: "1.0",
@@ -117,16 +124,22 @@ export async function inspectCsvFile(file, moduleKey) {
   if (headers.length !== template.headers.length) throw new Error("CSV headers do not match this template.");
   const indexes = Object.fromEntries(normalizedHeaders.map((header, index) => [header, index]));
   const seen = new Set();
+  const seenCodes = new Set();
   const records = rows.slice(1).map((values, index) => {
     const record = Object.fromEntries(template.headers.map(header => [header, (values[indexes[header]] ?? "").trim()]));
     const errors = [];
     if (values.length !== headers.length) errors.push(`Expected ${headers.length} columns, found ${values.length}.`);
     for (const required of template.required) if (!record[required]) errors.push(`${required} is required.`);
     const key = record.name.toLocaleLowerCase("en");
-    const duplicate = key && seen.has(key);
-    if (key) seen.add(key);
+    const duplicate = Boolean(key && seen.has(key));
     if (duplicate) errors.push("Duplicate name within this file.");
-    return { rowNumber: index + 2, record, errors, duplicate: Boolean(duplicate), valid: errors.length === 0 };
+    if (key) seen.add(key);
+    if (moduleKey === "houses") {
+      const code = record.code.toLocaleUpperCase();
+      if (code && seenCodes.has(code)) errors.push("Duplicate house/pen code within this file.");
+      if (code) seenCodes.add(code);
+    }
+    return { rowNumber: index + 2, record, errors, duplicate, valid: errors.length === 0 };
   });
   return {
     moduleKey,
