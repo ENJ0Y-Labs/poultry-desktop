@@ -3,6 +3,24 @@ const MAX_DATA_ROWS = 5000;
 const MAX_CELL_CHARS = 10_000;
 
 export const CSV_TEMPLATES = {
+  "daily-records": {
+    label: "Daily Records", version: "1.0",
+    headers: ["batch_code", "record_date", "notes", "water_entries"],
+    required: ["batch_code", "record_date"],
+    example: ["B-2026-001", "2026-01-15", "Replace or remove this example row", "10:2;20:1"],
+  },
+  mortality: {
+    label: "Mortality", version: "1.0",
+    headers: ["batch_code", "event_date", "quantity", "reason", "notes"],
+    required: ["batch_code", "event_date", "quantity"],
+    example: ["B-2026-001", "2026-01-16", "2", "Disease", "Replace or remove this example row"],
+  },
+  culling: {
+    label: "Culling", version: "1.0",
+    headers: ["batch_code", "event_date", "quantity", "reason", "notes"],
+    required: ["batch_code", "event_date", "quantity"],
+    example: ["B-2026-001", "2026-01-17", "1", "Poor growth", "Replace or remove this example row"],
+  },
   houses: {
     label: "Houses / Pens",
     version: "1.0",
@@ -130,9 +148,16 @@ export async function inspectCsvFile(file, moduleKey) {
     const errors = [];
     if (values.length !== headers.length) errors.push(`Expected ${headers.length} columns, found ${values.length}.`);
     for (const required of template.required) if (!record[required]) errors.push(`${required} is required.`);
-    const key = record.name.toLocaleLowerCase("en");
+    let key = "";
+    if (moduleKey === "daily-records") {
+      key = record.batch_code.toLocaleUpperCase("en") + "|" + record.record_date;
+    } else if (moduleKey === "mortality" || moduleKey === "culling") {
+      key = [record.batch_code.toLocaleUpperCase("en"), record.event_date, record.quantity, record.reason.toLocaleLowerCase("en"), record.notes.toLocaleLowerCase("en")].join("|");
+    } else {
+      key = record.name.toLocaleLowerCase("en");
+    }
     const duplicate = Boolean(key && seen.has(key));
-    if (duplicate) errors.push("Duplicate name within this file.");
+    if (duplicate) errors.push(moduleKey === "daily-records" ? "Duplicate batch/date within this file." : moduleKey === "mortality" || moduleKey === "culling" ? "Duplicate event within this file." : "Duplicate name within this file.");
     if (key) seen.add(key);
     if (moduleKey === "houses") {
       const code = record.code.toLocaleUpperCase();
