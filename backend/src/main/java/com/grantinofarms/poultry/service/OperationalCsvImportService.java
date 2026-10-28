@@ -172,7 +172,7 @@ public class OperationalCsvImportService {
             rowResult.put("duplicate", row.duplicate);
             rowResult.put("errors", List.copyOf(rowErrors));
             rowResults.add(rowResult);
-            row.errors = rowErrors;
+            row.errors.addAll(rowErrors);
             parsed.add(row);
         }
 
