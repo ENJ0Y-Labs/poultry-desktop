@@ -141,6 +141,7 @@ export default function ImportExportPage() {
               const input = document.getElementById("pomas-csv-file");
               if (input) input.value = "";
             }}>
+              <option value="houses">{CSV_TEMPLATES.houses.label}</option>
               <option value="daily-records">{CSV_TEMPLATES["daily-records"].label}</option>
               <option value="mortality">{CSV_TEMPLATES.mortality.label}</option>
               <option value="culling">{CSV_TEMPLATES.culling.label}</option>
