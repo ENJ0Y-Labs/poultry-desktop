@@ -2,12 +2,20 @@ import { useContext } from "react";
 import { FarmManagerContext } from "../components/FarmManagerContext.jsx";
 // eslint-disable-next-line no-unused-vars
 import PageSection from "../components/PageSection.jsx";
+// eslint-disable-next-line no-unused-vars
+import PageTemplate from "../components/PageTemplate.jsx";
+// eslint-disable-next-line no-unused-vars
+import EmptyState from "../components/EmptyState.jsx";
+// eslint-disable-next-line no-unused-vars
+import DataTable from "../components/DataTable.jsx";
+
+const saleTypeLabel = type => type === "EGG" ? "Eggs" : type === "BROILER" ? "Broiler birds" : String(type || "Unknown").toLowerCase().replace(/\b\w/g, letter => letter.toUpperCase());
 
 export default function SalesMoneyPage() {
   const { formatMoney, farm, batches, expenseForm, setExpenseForm, expenses, expenseBatchFilter, setExpenseBatchFilter, customers, customerForm, setCustomerForm, sales, saving, expenseCategories, loadExpenses, saveCustomer, saveExpense } = useContext(FarmManagerContext);
 
   return (
-    <div className="grid">
+    <PageTemplate className="grid">
       <PageSection page="sales-money" tab="customers"><section id="customers" className="card full">
           <div className="section-head">
             <h2>Customers</h2>
@@ -19,11 +27,10 @@ export default function SalesMoneyPage() {
             <label className="field"><span>Notes</span><input value={customerForm.notes} onChange={e=>setCustomerForm({...customerForm,notes:e.target.value})}/></label>
             <button disabled={saving}>Add customer</button>
           </form>
-          <div className="table">
-            <div className="row header"><span>Name</span><span>Phone</span><span>Notes</span></div>
-            {customers.map(row=><div className="row" key={row.id}><span>{row.name}</span><span>{row.phone || "—"}</span><span>{row.notes || "—"}</span></div>)}
-            {customers.length===0 && <p className="muted empty">No customers yet.</p>}
-          </div>
+          <DataTable caption="Customers" columns={[
+              { key: "name", label: "Name" }, { key: "phone", label: "Phone", render: row => row.phone || "—" },
+              { key: "notes", label: "Notes", render: row => row.notes || "—" },
+            ]} rows={customers} emptyMessage="No customers yet." />
         </section></PageSection>
 
       <PageSection page="sales-money" tab="sales"><section id="sales" className="card full">
@@ -32,20 +39,13 @@ export default function SalesMoneyPage() {
             <p className="muted">Common commercial ledger for Layer egg and Broiler bird sales. Type-specific rules remain in their production modules.</p>
           </div>
           <div className="subsection">
-            <div className="table">
-              <div className="row header"><span>Date</span><span>Type</span><span>Customer</span><span>Batch</span><span>Quantity</span><span>Unit</span><span>Unit price</span><span>Total</span></div>
-              {sales.map(row=><div className="row" key={row.id}>
-                <span>{row.saleDate}</span>
-                <span>{row.saleType}</span>
-                <span>{row.customerName}</span>
-                <span>{batches.find(b=>b.id===row.batchId)?.code || row.batchId}</span>
-                <span>{row.quantity?.toString()}</span>
-                <span>{row.unit}</span>
-                <span>{formatMoney(row.unitPriceMinor, farm.currency)}</span>
-                <span>{formatMoney(row.totalAmountMinor, farm.currency)}</span>
-              </div>)}
-              {sales.length===0 && <p className="muted empty">No sales recorded.</p>}
-            </div>
+            <DataTable caption="Sales ledger" columns={[
+                { key: "saleDate", label: "Date" }, { key: "saleType", label: "Type", render: row => saleTypeLabel(row.saleType) },
+                { key: "customerName", label: "Customer" }, { key: "batchId", label: "Batch", render: row => batches.find(batch => batch.id === row.batchId)?.code || row.batchId },
+                { key: "quantity", label: "Quantity", render: row => row.quantity?.toString() }, { key: "unit", label: "Unit" },
+                { key: "unitPriceMinor", label: "Unit price", render: row => formatMoney(row.unitPriceMinor, farm.currency) },
+                { key: "totalAmountMinor", label: "Total", render: row => formatMoney(row.totalAmountMinor, farm.currency) },
+              ]} rows={sales} emptyMessage="No sales recorded yet. Record an egg or bird sale in Production to see it here." />
           </div>
         </section></PageSection>
 
@@ -76,19 +76,14 @@ export default function SalesMoneyPage() {
                 {batches.map(b=><option key={b.id} value={b.id}>{b.code}</option>)}
               </select></label>
             </div>
-            <div className="table">
-              <div className="row header"><span>Date</span><span>Description</span><span>Amount</span><span>Category</span><span>Association</span></div>
-              {expenses.map(row=><div className="row" key={row.id}>
-                <span>{row.occurredDate}</span>
-                <span>{row.description}</span>
-                <span>{formatMoney(row.amountMinor, farm.currency)}</span>
-                <span>{row.category}</span>
-                <span>{row.batchId ? (batches.find(b=>b.id===row.batchId)?.code || row.batchId) : "Farm"}</span>
-              </div>)}
-              {expenses.length===0 && <p className="muted empty">No expenses recorded.</p>}
-            </div>
+            <DataTable caption="Expenses ledger" columns={[
+                { key: "occurredDate", label: "Date" }, { key: "description", label: "Description" },
+                { key: "amountMinor", label: "Amount", render: row => formatMoney(row.amountMinor, farm.currency) },
+                { key: "category", label: "Category" },
+                { key: "batchId", label: "Association", render: row => row.batchId ? (batches.find(batch => batch.id === row.batchId)?.code || row.batchId) : "Farm" },
+              ]} rows={expenses} emptyMessage="No expenses recorded." />
           </div>
         </section></PageSection>
-    </div>
+    </PageTemplate>
   );
 }

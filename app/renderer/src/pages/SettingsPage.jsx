@@ -1,13 +1,19 @@
 import { useContext } from "react";
 import { FarmManagerContext } from "../components/FarmManagerContext.jsx";
 // eslint-disable-next-line no-unused-vars
+import DataTable from "../components/DataTable.jsx";
+// eslint-disable-next-line no-unused-vars
+import FormField from "../components/FormField.jsx";
+// eslint-disable-next-line no-unused-vars
 import PageSection from "../components/PageSection.jsx";
+// eslint-disable-next-line no-unused-vars
+import PageTemplate from "../components/PageTemplate.jsx";
 
 export default function SettingsPage() {
   const { farmForm, setFarmForm, feedTypes, pricingSettings, setPricingSettings, crateSize, setCrateSize, defaultWater, setDefaultWater, waterSizes, setWaterSizes, waterUnitLabel, setWaterUnitLabel, saving, expenseCategories, expenseCategoryForm, setExpenseCategoryForm, account, accountForm, setAccountForm, applicationSettings, setApplicationSettings, backupSettings, setBackupSettings, saveFarm, createExpenseCategory, archiveExpenseCategory, saveAccount, saveApplicationSettings, chooseBackupSettingsDirectory, saveBackupSettings, createBackup, restoreBackup, saveSettings, savePricingSettings } = useContext(FarmManagerContext);
 
   return (
-    <div className="grid">
+    <PageTemplate className="grid">
       <PageSection page="settings" tab="farm"><section id="settings" className="card full"><h2>Farm profile</h2><form className="form-grid" onSubmit={saveFarm}>
           <label>Farm name<input required value={farmForm.name} onChange={e=>setFarmForm({...farmForm,name:e.target.value})}/></label>
           <label>Location<input value={farmForm.location} onChange={e=>setFarmForm({...farmForm,location:e.target.value})}/></label>
@@ -28,8 +34,13 @@ export default function SettingsPage() {
 
       <PageSection page="settings" tab="application"><section className="card full"><div className="section-head"><h2>Configuration</h2><p className="muted">Settings that control farm behavior are stored locally and audited when changed.</p></div>
           <div className="dashboard-columns">
-            <div className="subsection"><h3>Feed types</h3><div className="table"><div className="row header"><span>Name</span><span>Unit</span><span>Applies to</span><span>Status</span></div>{feedTypes.map(t=><div className="row" key={t.id}><span>{t.name}</span><span>{t.unit}</span><span>{t.applicableType}</span><span>{t.status}</span></div>)}</div></div>
-            <div className="subsection"><h3>Expense categories</h3><form className="inline-form" onSubmit={createExpenseCategory}><label className="field"><span>New category</span><input required maxLength="80" value={expenseCategoryForm} onChange={e=>setExpenseCategoryForm(e.target.value)}/></label><button disabled={saving}>Add</button></form><div className="table">{expenseCategories.map(cat=><div className="row" key={cat.id}><span>{cat.name}</span><span>{cat.status}</span><button type="button" disabled={saving} onClick={()=>archiveExpenseCategory(cat.id)}>Archive</button></div>)}</div></div>
+            <div className="subsection"><h3>Feed types</h3><DataTable caption="Feed types" columns={[
+          { key: "name", label: "Name" }, { key: "unit", label: "Unit" }, { key: "applicableType", label: "Applies to" }, { key: "status", label: "Status" },
+        ]} rows={feedTypes} emptyMessage="No feed types configured." /></div>
+            <div className="subsection"><h3>Expense categories</h3><form className="inline-form" onSubmit={createExpenseCategory}><FormField label="New category" required><input required maxLength="80" value={expenseCategoryForm} onChange={e=>setExpenseCategoryForm(e.target.value)}/></FormField><button disabled={saving}>Add</button></form><DataTable caption="Expense categories" columns={[
+          { key: "name", label: "Category" }, { key: "status", label: "Status" },
+          { key: "action", label: "Action", render: cat => <button type="button" disabled={saving} onClick={() => archiveExpenseCategory(cat.id)}>Archive</button> },
+        ]} rows={expenseCategories} emptyMessage="No expense categories configured." /></div>
           </div>
           <div className="dashboard-columns">
             <div className="subsection"><h3>Application settings</h3><form className="form-grid" onSubmit={saveApplicationSettings}><label>Start page<select value={applicationSettings.startPage === "operations" ? "daily-work" : applicationSettings.startPage} onChange={e=>setApplicationSettings({...applicationSettings,startPage:e.target.value})}><option value="dashboard">Dashboard</option><option value="flocks">Flocks</option><option value="daily-work">Daily work</option><option value="feed-stock">Feed & stock</option><option value="health">Health</option><option value="production">Production</option><option value="sales-money">Sales & money</option><option value="reports">Reports</option><option value="settings">Settings</option></select></label><label>Date format<select value={applicationSettings.dateFormat} onChange={e=>setApplicationSettings({...applicationSettings,dateFormat:e.target.value})}><option>YYYY-MM-DD</option><option>DD/MM/YYYY</option><option>DD-MM-YYYY</option></select></label><button disabled={saving}>Save application settings</button></form></div>
@@ -43,6 +54,6 @@ export default function SettingsPage() {
           <label>Working/latest margin %<input readOnly value={pricingSettings.workingMarginPercent ?? ""}/><small>Updated from actual sale results.</small></label>
           <button disabled={saving}>Save pricing target</button>
         </form></section></PageSection>
-    </div>
+    </PageTemplate>
   );
 }

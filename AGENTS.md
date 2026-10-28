@@ -1216,15 +1216,15 @@ And never sacrifice poultry math for dashboard cosmetics.
 
 ## 21. Display theme
 
-- Support Auto, Light, and Dark appearance preferences without changing farm records or adding a database migration.
-- Persist the renderer preference in localStorage and apply it before React mounts; keep all component colors in CSS tokens with explicit light-theme values.
-- Brand palette: deep teal `#1A4D5C` for primary actions and brand elements; golden yellow `#F4B41A` for accents, active states, focus indicators, and highlights.
-- Use white text on teal primary buttons. Never use golden yellow as small text on a white/light surface; use deep teal for light-mode accent text.
-- Define readable, mode-specific backgrounds, surfaces, text, borders, muted labels, alerts, disabled states, hover states, and focus states in the shared stylesheets. Do not introduce screen-specific hardcoded brand colors.
-- Keep native theme changes behind a validated preload IPC method. Set the Electron window background before showing the window to minimize theme flashes.
-- Verify status/severity/error contrast in both themes. If charts are introduced or modified, verify their series, grid, axis, tooltip, and legend colors in both themes. Run `npm run build` (including `scripts/verify-a11y.mjs`) and manually inspect both themes at supported window sizes.
-
-
+- The owner-approved Pomas brand palette is deep teal `#1A4D5C` and golden yellow `#F4B41A`. This decision is dated 2026-10-27 and supersedes earlier theme decisions.
+- Light mode uses white surfaces. Deep teal is used for primary actions, headings, and accent text. Gold is reserved for fills, indicators, and focus accents; never use gold text on white.
+- Dark mode uses black `#000000` and near-black `#0A0A0A` surfaces, off-white body text, and gold accents. Teal is limited to fills and borders that do not carry text; never use teal text on black.
+- Primary buttons use white text on teal in light mode and black text on gold in dark mode.
+- Warning, critical, and error colours must remain semantically distinct from brand colours.
+- All colours must be assigned through semantic CSS tokens. Do not add per-screen hardcoded colour values.
+- Preserve Auto, Light, and Dark behavior. Auto follows the operating system colour scheme and updates when the system preference changes.
+- Update `docs/accessibility.md` and `scripts/verify-a11y.mjs` whenever theme tokens or required contrast pairs change. Keep all existing tests; never weaken or delete tests to obtain a pass.
+- The automated checker validates token pairs only. Do not claim full rendered contrast or runtime layout validation without testing the running app at 1366×768 and 1100×650 in Auto, Light, and Dark.
 
 ## Local backend reliability
 

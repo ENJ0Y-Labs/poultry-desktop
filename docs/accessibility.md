@@ -49,3 +49,18 @@ Verify:
 The small status bar and helper text remain 11 px because they are secondary/supporting content. They are not exempt from contrast checks: the semantic secondary text token is checked against both dark and light surfaces. Decorative icons and non-text separators are not text-contrast pairs; their non-text contrast and meaning should be checked during manual review.
 
 The script measures the semantic color tokens and verifies specified CSS rules. It does not launch Electron, inspect computed browser styles, or count every text node at runtime. Do not report the whole UI as WCAG-conformant solely because this check passes. Record the actual manual results before release.
+
+
+## Owner-approved theme decision (2026-10-27)
+
+This section supersedes any earlier palette decision. Pomas uses deep teal `#1A4D5C` and golden yellow `#F4B41A` as its brand colours.
+
+- Light mode uses white surfaces. Deep teal is used for primary actions, headings, and accent text. Gold is reserved for fills, indicators, and focus accents; never use gold text on white.
+- Dark mode uses black `#000000` and near-black `#0A0A0A` surfaces, off-white body text, and gold accents. Teal is limited to fills and borders that do not carry text; never use teal text on black.
+- Primary buttons use white text on teal in light mode and black text on gold in dark mode.
+- Warning, critical, and error colours remain semantically distinct from the brand palette.
+- Use semantic CSS tokens for colour roles. Do not add per-screen hardcoded colour values.
+- Preserve Auto, Light, and Dark preferences. Auto follows the operating system colour scheme.
+- `scripts/verify-a11y.mjs` checks approved theme tokens and WCAG 2.2 AA normal-text contrast pairs. Automated token checks do not replace rendered UI review.
+
+Manual pre-launch review remains required at 1366×768 and 1100×650 in Auto, Light, and Dark. Record each check as not run until it is actually performed.

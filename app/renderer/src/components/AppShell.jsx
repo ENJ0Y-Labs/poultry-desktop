@@ -68,8 +68,8 @@ const pageTabs = {
     { id: "broiler", label: "Weight & growth" },
   ],
   "sales-money": [
-    { id: "customers", label: "Customers" },
     { id: "sales", label: "Sales" },
+    { id: "customers", label: "Customers" },
     { id: "expenses", label: "Expenses" },
   ],
   reports: [
@@ -87,7 +87,7 @@ const pageTabs = {
 const defaultTabs = {
   dashboard: "overview", flocks: "batch-dashboard", "daily-work": "daily-record",
   health: "health-record", "feed-stock": "feed", production: "eggs",
-  "sales-money": "customers", reports: "farm-report", settings: "farm",
+  "sales-money": "sales", reports: "farm-report", settings: "farm",
 };
 
 function resolveTab(hash, page) {

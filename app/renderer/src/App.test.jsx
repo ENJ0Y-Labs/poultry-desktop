@@ -443,6 +443,8 @@ describe("App", () => {
     expect(screen.getByText("Nothing currently requires attention.")).toBeInTheDocument();
     expect(screen.getByText("No audit records yet.")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Sales & Money" }));
+    expect(screen.getByRole("button", { name: "Sales" })).toHaveAttribute("aria-current", "page");
+    fireEvent.click(screen.getByRole("button", { name: "Customers" }));
     expect(screen.getByText("No customers yet.")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Expenses" }));
     expect(screen.getByText("No expenses recorded.")).toBeInTheDocument();
@@ -589,7 +591,7 @@ describe("App", () => {
     expect(screen.getByText("Unknown time")).toBeInTheDocument();
     expect(screen.getByText("Unrecognized Action")).toBeInTheDocument();
     expect(screen.getByText("New Entity Kind")).toBeInTheDocument();
-    const unknownAuditRow = screen.getByText("Unrecognized Action").closest(".row");
+    const unknownAuditRow = screen.getByText("Unrecognized Action").closest("tr");
     expect(unknownAuditRow).not.toBeNull();
     expect(within(unknownAuditRow).getByText("—")).toBeInTheDocument();
   });
@@ -745,7 +747,7 @@ describe("App", () => {
     fireEvent.change(screen.getByRole("combobox", { name: "Batch dashboard" }), { target: { value: "broiler-1" } });
 
     await waitFor(() => expect(dashboardApi.batch).toHaveBeenLastCalledWith("broiler-1"));
-    expect(screen.getByRole("option", { name: /B-2026-001 · BROILER/ })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: /B-2026-001 · Broiler/ })).toBeInTheDocument();
     expect(localStorage.getItem("grantino:lastBatchId")).toBe("broiler-1");
   });
   it("routes dashboard quick actions to validated forms with the last-used batch context", async () => {

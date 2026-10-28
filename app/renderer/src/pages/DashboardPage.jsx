@@ -1,7 +1,11 @@
 import { useContext, useState } from "react";
 import { FarmManagerContext } from "../components/FarmManagerContext.jsx";
 // eslint-disable-next-line no-unused-vars
+import DataTable from "../components/DataTable.jsx";
+// eslint-disable-next-line no-unused-vars
 import PageSection from "../components/PageSection.jsx";
+// eslint-disable-next-line no-unused-vars
+import PageTemplate from "../components/PageTemplate.jsx";
 import { formatAuditAction, formatAuditEntity, formatAuditTimestamp } from "../utils/auditFormatting.js";
 import { attentionTarget } from "../utils/attentionNavigation.js";
 // eslint-disable-next-line no-unused-vars
@@ -83,7 +87,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="grid">
+    <PageTemplate className="grid">
       <PageSection page="dashboard" tab="overview"><section id="dashboard" className="card full dashboard-page">
         <div className="section-head">
           <div><p className="eyebrow">OVERVIEW</p><h2>Farm dashboard</h2></div>
@@ -200,11 +204,15 @@ export default function DashboardPage() {
               </div>
             </div>
             <div className="subsection"><h3>Recent audit activity</h3>{auditRows.length === 0 ? <p className="muted">No audit records yet.</p> :
-              <div className="table"><div className="row header"><span>Time</span><span>Action</span><span>Entity</span><span>Reason</span></div>
-              {auditRows.slice(0, 8).map(row => <div className="row" key={row.id}><span>{formatAuditTimestamp(row.occurredAt, farm?.timezone)}</span><span>{formatAuditAction(row.action)}</span><span>{formatAuditEntity(row.entityType)}</span><span>{typeof row.reason === "string" && row.reason.trim() ? row.reason : "—"}</span></div>)}</div>}</div>
+              <DataTable caption="Recent audit activity" columns={[
+                { key: "occurredAt", label: "Time", render: row => formatAuditTimestamp(row.occurredAt, farm?.timezone) },
+                { key: "action", label: "Action", render: row => formatAuditAction(row.action) },
+                { key: "entityType", label: "Entity", render: row => formatAuditEntity(row.entityType) },
+                { key: "reason", label: "Reason", render: row => typeof row.reason === "string" && row.reason.trim() ? row.reason : "—" },
+              ]} rows={auditRows.slice(0, 8)} emptyMessage="No audit records yet." />}</div>
           </>
         ) : <p className="muted">Dashboard is loading…</p>}
       </section></PageSection>
-    </div>
+    </PageTemplate>
   );
 }

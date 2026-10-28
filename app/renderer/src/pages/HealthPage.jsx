@@ -2,13 +2,20 @@ import { useContext } from "react";
 import { FarmManagerContext } from "../components/FarmManagerContext.jsx";
 // eslint-disable-next-line no-unused-vars
 import PageSection from "../components/PageSection.jsx";
+// eslint-disable-next-line no-unused-vars
+import PageTemplate from "../components/PageTemplate.jsx";
+// eslint-disable-next-line no-unused-vars
+import EmptyState from "../components/EmptyState.jsx";
+// eslint-disable-next-line no-unused-vars
+import DataTable from "../components/DataTable.jsx";
 
 export default function HealthPage() {
   const { formatMoney, farm, batches, healthForm, setHealthForm, drugForm, setDrugForm, vaccinationForm, setVaccinationForm, healthRecords, drugRecords, vaccinationRecords, saving, saveHealth, saveDrug, saveVaccination, loadHealthForBatch } = useContext(FarmManagerContext);
   const batchOptions = <><option value="">Batch</option>{batches.map(batch => <option key={batch.id} value={batch.id}>{batch.code}</option>)}</>;
 
   return (
-    <div className="grid">
+    <PageTemplate className="grid">
+      {batches.length === 0 && <EmptyState className="empty-state" role="status">No batches yet. Create a batch in <a href="#flocks/flocks">Flocks → Batches</a> before recording health, treatment, or vaccination details.</EmptyState>}
       <PageSection page="health" tab="health-record">
         <section id="health" className="card full"><div className="section-head"><h2>Health records</h2><p className="muted">Record symptoms, conditions, and action taken. Treatments and vaccinations are tracked separately.</p></div>
           <form className="form-grid" onSubmit={saveHealth}>
@@ -19,10 +26,10 @@ export default function HealthPage() {
             <label className="full">Action taken<input required value={healthForm.action} onChange={event => setHealthForm({...healthForm,action:event.target.value})}/></label>
             <button disabled={saving}>Record health issue</button>
           </form>
-          <div className="table"><div className="row header"><span>Date</span><span>Condition</span><span>Description</span><span>Action</span></div>
-            {healthRecords.map(row => <div className="row" key={row.id}><span>{row.recordDate}</span><span>{row.conditionProblem}</span><span>{row.description}</span><span>{row.action}</span></div>)}
-            {healthRecords.length===0 && <p className="muted empty">Select a batch to view health records.</p>}
-          </div>
+          <DataTable caption="Health records" columns={[
+              { key: "recordDate", label: "Date" }, { key: "conditionProblem", label: "Condition" },
+              { key: "description", label: "Description" }, { key: "action", label: "Action" },
+            ]} rows={healthRecords} emptyMessage="Select a batch to view health records." />
         </section>
       </PageSection>
 
@@ -37,10 +44,10 @@ export default function HealthPage() {
             <label>Reason<input required value={drugForm.reason} onChange={event => setDrugForm({...drugForm,reason:event.target.value})}/></label>
             <button disabled={saving}>Record drug</button>
           </form>
-          <div className="table"><div className="row header"><span>Date</span><span>Drug</span><span>Quantity</span><span>Cost</span><span>Reason</span></div>
-            {drugRecords.map(row => <div className="row" key={row.id}><span>{row.recordDate}</span><span>{row.drug}</span><span>{row.quantity}</span><span>{formatMoney(row.costMinor, farm.currency)}</span><span>{row.reason}</span></div>)}
-            {drugRecords.length===0 && <p className="muted empty">No drug records for the selected batch.</p>}
-          </div>
+          <DataTable caption="Drug and treatment records" columns={[
+              { key: "recordDate", label: "Date" }, { key: "drug", label: "Drug" }, { key: "quantity", label: "Quantity" },
+              { key: "costMinor", label: "Cost", render: row => formatMoney(row.costMinor, farm.currency) }, { key: "reason", label: "Reason" },
+            ]} rows={drugRecords} emptyMessage="No drug records for the selected batch." />
         </section>
       </PageSection>
 
@@ -55,12 +62,12 @@ export default function HealthPage() {
             <label>Notes<input value={vaccinationForm.notes} onChange={event => setVaccinationForm({...vaccinationForm,notes:event.target.value})}/></label>
             <button disabled={saving}>Record vaccination</button>
           </form>
-          <div className="table"><div className="row header"><span>Date</span><span>Vaccine</span><span>Dose</span><span>Quantity</span><span>Notes</span></div>
-            {vaccinationRecords.map(row => <div className="row" key={row.id}><span>{row.recordDate}</span><span>{row.vaccine}</span><span>{row.dose}</span><span>{row.quantity}</span><span>{row.notes||"—"}</span></div>)}
-            {vaccinationRecords.length===0 && <p className="muted empty">No vaccination records for the selected batch.</p>}
-          </div>
+          <DataTable caption="Vaccination records" columns={[
+              { key: "recordDate", label: "Date" }, { key: "vaccine", label: "Vaccine" }, { key: "dose", label: "Dose" },
+              { key: "quantity", label: "Quantity" }, { key: "notes", label: "Notes", render: row => row.notes || "—" },
+            ]} rows={vaccinationRecords} emptyMessage="No vaccination records for the selected batch." />
         </section>
       </PageSection>
-    </div>
+    </PageTemplate>
   );
 }

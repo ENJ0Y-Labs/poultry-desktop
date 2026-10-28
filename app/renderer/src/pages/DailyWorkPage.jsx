@@ -1,7 +1,14 @@
 import { useContext } from "react";
 import { FarmManagerContext } from "../components/FarmManagerContext.jsx";
 // eslint-disable-next-line no-unused-vars
+import DataTable from "../components/DataTable.jsx";
+// eslint-disable-next-line no-unused-vars
 import PageSection from "../components/PageSection.jsx";
+// eslint-disable-next-line no-unused-vars
+import PageTemplate from "../components/PageTemplate.jsx";
+// eslint-disable-next-line no-unused-vars
+import EmptyState from "../components/EmptyState.jsx";
+// eslint-disable-next-line no-unused-vars
 
 export default function DailyWorkPage() {
   const {
@@ -25,7 +32,8 @@ export default function DailyWorkPage() {
   }
 
   return (
-    <div className="grid">
+    <PageTemplate className="grid">
+      {activeBatches.length === 0 && <EmptyState className="empty-state" role="status">No active batches are available. Create a batch in <a href="#flocks/flocks">Flocks → Batches</a> before recording daily work.</EmptyState>}
       <PageSection page="daily-work" tab="daily-record">
         <section id="operations" className="card full">
           <div className="section-head"><h2>Daily record</h2><p className="muted">Choose the batch and farm date once, then record feed usage and daily notes. Population totals come from the backend ledger.</p></div>
@@ -56,10 +64,10 @@ export default function DailyWorkPage() {
           <div className="subsection">
             <h3>Saved activity · {dailyForm.date}</h3>
             {dailyRecordLoading ? <p className="muted" role="status">Loading saved activity…</p> : hasSavedActivity ? <>
-              <div className="table">
-                <div className="row header"><span>Birds</span><span>Mortality</span><span>Culling</span><span>Water</span><span>Notes</span></div>
-                <div className="row"><span>{dailyRecord.birds}</span><span>{dailyRecord.mortality}</span><span>{dailyRecord.culling}</span><span>{dailyRecord.totalWaterUnits} {waterUnitLabel || "litres"}</span><span>{dailyRecord.notes || "—"}</span></div>
-              </div>
+              <DataTable caption="Saved daily activity" columns={[
+                  { key: "birds", label: "Birds" }, { key: "mortality", label: "Mortality" }, { key: "culling", label: "Culling" },
+                  { key: "water", label: "Water" }, { key: "notes", label: "Notes" },
+                ]} rows={[{ id: "daily-activity", birds: dailyRecord.birds, mortality: dailyRecord.mortality, culling: dailyRecord.culling, water: `${dailyRecord.totalWaterUnits} ${waterUnitLabel || "litres"}`, notes: dailyRecord.notes || "—" }]} />
               <h4>Feed recorded</h4>
               {dailyRecord.feed?.length ? <ul>{dailyRecord.feed.map((entry, index) => <li key={entry.id || entry.usageId || index}>{entry.feedTypeName || entry.feedName || "Feed"}: {feedQuantity(entry.quantityMilli ?? entry.quantityUsedMilli ?? 0)} {entry.unit || ""}</li>)}</ul> : <p className="muted">No feed usage recorded for this date.</p>}
             </> : <p className="muted">No saved daily record for this batch and date yet. Record feed usage or save daily notes to begin.</p>}
@@ -104,6 +112,6 @@ export default function DailyWorkPage() {
           </form>
         </section>
       </PageSection>
-    </div>
+    </PageTemplate>
   );
 }

@@ -54,6 +54,9 @@ const tokenNames = {
   criticalText: "--a11y-critical-text",
   errorBg: "--a11y-error-bg",
   errorText: "--a11y-error-text",
+  actionBg: "--pomas-primary-action-bg",
+  actionText: "--pomas-primary-action-text",
+  focus: "--pomas-focus-ring",
 };
 
 for (const theme of themes) {
@@ -70,7 +73,22 @@ for (const theme of themes) {
     ["warning status text", tokens.warningText, tokens.warningBg, 4.5],
     ["critical status text", tokens.criticalText, tokens.criticalBg, 4.5],
     ["error message text", tokens.errorText, tokens.errorBg, 4.5],
+    ["primary button text", tokens.actionText, tokens.actionBg, 4.5],
   ];
+
+  assert.equal(tokens.focus.toLowerCase(), "#f4b41a", `${theme.name} theme must use the approved gold focus accent`);
+  if (theme.name === "dark") {
+    assert.equal(tokens.surface.toLowerCase(), "#000000", "Dark primary surface must be black");
+    assert.equal(tokens.raised.toLowerCase(), "#0a0a0a", "Dark raised surface must be near-black");
+    assert.equal(tokens.accent.toLowerCase(), "#f4b41a", "Dark accent text must use gold");
+    assert.equal(tokens.actionBg.toLowerCase(), "#f4b41a", "Dark primary action must use gold fill");
+    assert.equal(tokens.actionText.toLowerCase(), "#000000", "Dark primary action text must be black");
+  } else {
+    assert.equal(tokens.surface.toLowerCase(), "#ffffff", "Light primary surface must be white");
+    assert.equal(tokens.accent.toLowerCase(), "#1a4d5c", "Light accent text must use teal");
+    assert.equal(tokens.actionBg.toLowerCase(), "#1a4d5c", "Light primary action must use teal fill");
+    assert.equal(tokens.actionText.toLowerCase(), "#ffffff", "Light primary action text must be white");
+  }
 
   for (const [label, foreground, background, minimum] of checks) {
     const ratio = contrast(foreground, background);

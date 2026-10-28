@@ -4,7 +4,11 @@ import { productionTrendApi } from "../services/api.js";
 import ProductionTrendChart from "../components/ProductionTrendChart.jsx";
 import { FarmManagerContext } from "../components/FarmManagerContext.jsx";
 // eslint-disable-next-line no-unused-vars
+import DataTable from "../components/DataTable.jsx";
+// eslint-disable-next-line no-unused-vars
 import PageSection from "../components/PageSection.jsx";
+// eslint-disable-next-line no-unused-vars
+import PageTemplate from "../components/PageTemplate.jsx";
 // eslint-disable-next-line no-unused-vars
 import MetricHelp from "../components/MetricHelp.jsx";
 
@@ -12,7 +16,7 @@ export default function ProductionPage() {
   const { formatMoney, farm, batches, customers, eggBatchId, setEggBatchId, broilerBatchId, setBroilerBatchId, broilerGrowth, broilerWeights, broilerSales, weightForm, setWeightForm, birdSaleForm, setBirdSaleForm, pricing, pricingForm, setPricingForm, eggInventory, eggCollections, eggSales, eggCollectionForm, setEggCollectionForm, eggSaleForm, setEggSaleForm, crateSize, saving, loadPricingForBatch, loadBroilerForBatch, saveWeight, saveBirdSale, loadEggsForBatch, saveEggCollection, saveEggSale } = useContext(FarmManagerContext);
 
   return (
-    <div className="grid">
+    <PageTemplate className="grid">
       <PageSection page="production" tab="eggs"><section id="eggs" className="card full">
           <div className="section-head">
             <h2>Layer egg production <MetricHelp id="hdp-formula-help" label="HDP formula">Hen-day production (HDP) is calculated for each date: total eggs collected that day (good + cracked) ÷ live layer birds on that date × 100. The numerator is in eggs and the denominator is birds, so the result is a percentage for that day. For example, 850 eggs from 1,000 live hens = 85%. The backend calculates the historical live-bird count; missing egg records are shown as gaps, not zero.</MetricHelp></h2>
@@ -45,16 +49,11 @@ export default function ProductionPage() {
               />
               <div className="subsection">
                 <h3>Egg inventory</h3>
-                <div className="table">
-                  <div className="row header"><span>Good collected</span><span>Good sold</span><span>Good remaining</span><span>Cracked</span><span>Total collected</span></div>
-                  <div className="row">
-                    <span>{eggInventory?.goodCollected ?? "—"}</span>
-                    <span>{eggInventory?.goodSold ?? "—"}</span>
-                    <span>{eggInventory?.goodRemaining ?? "—"}</span>
-                    <span>{eggInventory?.crackedCollected ?? "—"}</span>
-                    <span>{eggInventory?.totalCollected ?? "—"}</span>
-                  </div>
-                </div>
+                <DataTable caption="Egg inventory" columns={[
+                    { key: "goodCollected", label: "Good collected" }, { key: "goodSold", label: "Good sold" },
+                    { key: "goodRemaining", label: "Good remaining" }, { key: "crackedCollected", label: "Cracked" },
+                    { key: "totalCollected", label: "Total collected" },
+                  ]} rows={[{ id: "egg-inventory", goodCollected: eggInventory?.goodCollected ?? "—", goodSold: eggInventory?.goodSold ?? "—", goodRemaining: eggInventory?.goodRemaining ?? "—", crackedCollected: eggInventory?.crackedCollected ?? "—", totalCollected: eggInventory?.totalCollected ?? "—" }]} />
               </div>
 
               <div className="subsection">
@@ -66,11 +65,10 @@ export default function ProductionPage() {
                   <label className="field"><span>Notes</span><input value={eggCollectionForm.notes} onChange={e=>setEggCollectionForm({...eggCollectionForm,notes:e.target.value})}/></label>
                   <button disabled={saving}>Record collection</button>
                 </form>
-                <div className="table">
-                  <div className="row header"><span>Date</span><span>Good</span><span>Cracked</span><span>Total</span><span>Notes</span></div>
-                  {eggCollections.map(row=><div className="row" key={row.id}><span>{row.recordDate}</span><span>{row.good}</span><span>{row.cracked}</span><span>{row.total}</span><span>{row.notes || "—"}</span></div>)}
-                  {eggCollections.length===0 && <p className="muted empty">No egg collections recorded.</p>}
-                </div>
+                <DataTable caption="Egg collections" columns={[
+                    { key: "recordDate", label: "Date" }, { key: "good", label: "Good" }, { key: "cracked", label: "Cracked" },
+                    { key: "total", label: "Total" }, { key: "notes", label: "Notes", render: row => row.notes || "—" },
+                  ]} rows={eggCollections} emptyMessage="No egg collections recorded." />
               </div>
 
               <div className="subsection">
@@ -87,11 +85,12 @@ export default function ProductionPage() {
                   <label className="field"><span>Price per crate (₦)</span><input required type="text" inputMode="decimal" value={eggSaleForm.pricePerCrateMinor} onChange={e=>setEggSaleForm({...eggSaleForm,pricePerCrateMinor:e.target.value})}/></label>
                   <button disabled={saving}>Record sale</button>
                 </form>
-                <div className="table">
-                  <div className="row header"><span>Date</span><span>Customer</span><span>Crates</span><span>Eggs</span><span>Price / crate</span><span>Total</span></div>
-                  {eggSales.map(row=><div className="row" key={row.id}><span>{row.recordDate}</span><span>{row.customer}</span><span>{row.crates.toString()}</span><span>{row.soldEggs}</span><span>{formatMoney(row.pricePerCrateMinor, farm.currency)}</span><span>{formatMoney(row.totalAmountMinor, farm.currency)}</span></div>)}
-                  {eggSales.length===0 && <p className="muted empty">No egg sales recorded.</p>}
-                </div>
+                <DataTable caption="Egg sales" columns={[
+                    { key: "recordDate", label: "Date" }, { key: "customer", label: "Customer" },
+                    { key: "crates", label: "Crates", render: row => row.crates.toString() }, { key: "soldEggs", label: "Eggs" },
+                    { key: "pricePerCrateMinor", label: "Price / crate", render: row => formatMoney(row.pricePerCrateMinor, farm.currency) },
+                    { key: "totalAmountMinor", label: "Total", render: row => formatMoney(row.totalAmountMinor, farm.currency) },
+                  ]} rows={eggSales} emptyMessage="No egg sales recorded." />
               </div>
             </>
           )}
@@ -131,16 +130,12 @@ export default function ProductionPage() {
               />
               <div className="subsection">
                 <h3>Growth summary</h3>
-                <div className="table">
-                  <div className="row header"><span>Average weight</span><span>Weight gain</span><span>Feed consumed (converted)</span><span>FCR <MetricHelp id="production-fcr-help" label="FCR formula">Feed conversion ratio (FCR) = converted feed consumed (kg) ÷ live-weight gain (kg), for this broiler batch as of the selected report date. The backend converts each feed unit using its configured kg-per-unit factor. Feed consumption and weight gain are batch-to-date values, not a daily ratio. If any consumed feed conversion is unknown, or live-weight gain is zero or negative, FCR is undefined and shown as —. A result of 2.0 means 2 kg of feed per 1 kg of live-weight gain.</MetricHelp></span><span>Trend records</span></div>
-                  <div className="row">
-                    <span>{broilerGrowth?.averageWeightKg ?? "—"} kg</span>
-                    <span>{broilerGrowth?.weightGainKg ?? "—"} kg</span>
-                    <span>{broilerGrowth?.feedConsumedKg ?? "—"} kg</span>
-                    <span>{broilerGrowth?.fcr ?? "—"}</span>
-                    <span>{broilerGrowth?.trend?.length ?? 0}</span>
-                  </div>
-                </div>
+                <DataTable caption="Broiler growth summary" columns={[
+                    { key: "averageWeightKg", label: "Average weight", render: row => row.averageWeightKg == null ? "—" : `${row.averageWeightKg} kg` },
+                    { key: "weightGainKg", label: "Weight gain", render: row => row.weightGainKg == null ? "—" : `${row.weightGainKg} kg` },
+                    { key: "feedConsumedKg", label: "Feed consumed (converted)", render: row => row.feedConsumedKg == null ? "—" : `${row.feedConsumedKg} kg` },
+                    { key: "fcr", label: "FCR", render: row => row.fcr ?? "—" }, { key: "trend", label: "Trend records", render: row => row.trend?.length ?? 0 },
+                  ]} rows={[{ id: "growth-summary", ...(broilerGrowth || {}) }]} emptyMessage="No growth summary available." />
                 <p className="muted">FCR uses converted kilograms of all recorded feed divided by live-weight gain. Configure each non-kg feed type’s kg-per-unit factor in Feed management. If any consumed feed type has an unknown conversion, feed consumed and FCR display — until the factor is configured.</p>
               </div>
 
@@ -153,11 +148,10 @@ export default function ProductionPage() {
                   <label className="field"><span>Notes</span><input value={weightForm.notes} onChange={e=>setWeightForm({...weightForm,notes:e.target.value})}/></label>
                   <button disabled={saving}>Record weight</button>
                 </form>
-                <div className="table">
-                  <div className="row header"><span>Date</span><span>Sample</span><span>Total kg</span><span>Average kg</span><span>Gain kg/bird</span></div>
-                  {broilerWeights.map(row=><div className="row" key={row.id}><span>{row.recordDate}</span><span>{row.sampleQuantity}</span><span>{row.totalWeightKg}</span><span>{row.averageWeightKg}</span><span>{row.weightGainKg}</span></div>)}
-                  {broilerWeights.length===0 && <p className="muted empty">No weight records yet.</p>}
-                </div>
+                <DataTable caption="Broiler weight records" columns={[
+                    { key: "recordDate", label: "Date" }, { key: "sampleQuantity", label: "Sample" }, { key: "totalWeightKg", label: "Total kg" },
+                    { key: "averageWeightKg", label: "Average kg" }, { key: "weightGainKg", label: "Gain kg/bird" },
+                  ]} rows={broilerWeights} emptyMessage="No weight records yet." />
               </div>
 
               <div className="subsection">
@@ -168,10 +162,13 @@ export default function ProductionPage() {
                   <label className="field"><span>Pricing date</span><input required type="date" value={pricingForm.date} onChange={e=>setPricingForm({...pricingForm,date:e.target.value})}/></label>
                   <button disabled={saving}>Calculate price</button>
                 </form>
-                {pricing && <div className="table">
-                  <div className="row header"><span>Actual cost</span><span>Target margin</span><span>Target price / bird</span><span>Working margin</span><span>Working price / bird</span></div>
-                  <div className="row"><span>{formatMoney(pricing.actualCostMinor, farm.currency)}</span><span>{pricing.targetMarginPercent ?? "—"}%</span><span>{formatMoney(pricing.targetPricePerBirdMinor, farm.currency)}</span><span>{pricing.workingMarginPercent ?? "—"}%</span><span>{formatMoney(pricing.workingPricePerBirdMinor, farm.currency)}</span></div>
-                </div>}
+                {pricing && <DataTable caption="Cost-based pricing calculation" columns={[
+                    { key: "actualCostMinor", label: "Actual cost", render: row => formatMoney(row.actualCostMinor, farm.currency) },
+                    { key: "targetMarginPercent", label: "Target margin", render: row => `${row.targetMarginPercent ?? "—"}%` },
+                    { key: "targetPricePerBirdMinor", label: "Target price / bird", render: row => formatMoney(row.targetPricePerBirdMinor, farm.currency) },
+                    { key: "workingMarginPercent", label: "Working margin", render: row => `${row.workingMarginPercent ?? "—"}%` },
+                    { key: "workingPricePerBirdMinor", label: "Working price / bird", render: row => formatMoney(row.workingPricePerBirdMinor, farm.currency) },
+                  ]} rows={[{ id: "pricing", ...pricing }]} />}
               </div>
 
               <div className="subsection">
@@ -187,15 +184,16 @@ export default function ProductionPage() {
                   {!birdSaleForm.customerId && <label className="field"><span>Walk-in customer name</span><input required maxLength="120" value={birdSaleForm.customer} onChange={e=>setBirdSaleForm({...birdSaleForm,customer:e.target.value})} placeholder="Enter buyer name"/></label>}
                   <button disabled={saving}>Record bird sale</button>
                 </form>
-                <div className="table">
-                  <div className="row header"><span>Date</span><span>Quantity</span><span>Price / bird</span><span>Total</span><span>Customer</span></div>
-                  {broilerSales.map(row=><div className="row" key={row.id}><span>{row.recordDate}</span><span>{row.quantity}</span><span>{formatMoney(row.pricePerBirdMinor, farm.currency)}</span><span>{formatMoney(row.totalAmountMinor, farm.currency)}</span><span>{row.customer}</span></div>)}
-                  {broilerSales.length===0 && <p className="muted empty">No bird sales recorded.</p>}
-                </div>
+                <DataTable caption="Broiler bird sales" columns={[
+                    { key: "recordDate", label: "Date" }, { key: "quantity", label: "Quantity" },
+                    { key: "pricePerBirdMinor", label: "Price / bird", render: row => formatMoney(row.pricePerBirdMinor, farm.currency) },
+                    { key: "totalAmountMinor", label: "Total", render: row => formatMoney(row.totalAmountMinor, farm.currency) },
+                    { key: "customer", label: "Customer" },
+                  ]} rows={broilerSales} emptyMessage="No bird sales recorded." />
               </div>
             </>
           )}
         </section></PageSection>
-    </div>
+    </PageTemplate>
   );
 }
