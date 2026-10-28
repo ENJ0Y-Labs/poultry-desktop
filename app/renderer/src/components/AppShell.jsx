@@ -19,11 +19,12 @@ const groups = [
     { label: "Production", target: "production", icon: "eggs", shortcut: "Ctrl+6" },
     { label: "Sales & Money", target: "sales-money", icon: "sales", shortcut: "Ctrl+7" },
     { label: "Reports", target: "reports", icon: "reports", shortcut: "Ctrl+8" },
+    { label: "Import / Export", target: "import-export", icon: "importExport" },
     { label: "Settings", target: "settings", icon: "settings", shortcut: "Ctrl+9" },
   ]},
 ];
 
-const validPages = ["dashboard", "flocks", "daily-work", "feed-stock", "health", "production", "sales-money", "reports", "settings"];
+const validPages = ["dashboard", "flocks", "daily-work", "feed-stock", "health", "production", "sales-money", "reports", "import-export", "settings"];
 const legacyRoutes = {
   houses: "flocks", batches: "flocks", "batch-dashboard": "flocks",
   operations: "daily-work", feed: "feed-stock", inventory: "feed-stock",
@@ -87,7 +88,7 @@ const pageTabs = {
 const defaultTabs = {
   dashboard: "overview", flocks: "batch-dashboard", "daily-work": "daily-record",
   health: "health-record", "feed-stock": "feed", production: "eggs",
-  "sales-money": "sales", reports: "farm-report", settings: "farm",
+  "sales-money": "sales", reports: "farm-report", "import-export": "overview", settings: "farm",
 };
 
 function resolveTab(hash, page) {
@@ -120,6 +121,7 @@ function Icon({ name }) {
     customers: <><circle cx="9" cy="8" r="3" /><circle cx="17" cy="9" r="2.5" /><path d="M3 21c.6-4 2.5-6 6-6s5.4 2 6 6M14 15c3.5 0 5.5 1.7 6 5" /></>,
     expenses: <><path d="M5 4h14v17H5z" /><path d="M8 9h8M8 13h8M8 17h5" /></>,
     reports: <><path d="M4 19V5M4 19h16" /><path d="M7 15v-4M11 15V8M15 15V6M19 15v-7" /></>,
+    importExport: <><path d="M7 7h12l-3-3M19 7l-3 3" /><path d="M17 17H5l3 3M5 17l3-3" /></>,
     settings: <><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.8 1.8 0 0 0 .3 2l.1.1-1.7 1.7-.1-.1a1.8 1.8 0 0 0-2-.3 1.8 1.8 0 0 0-1 1.7v.2h-2.4v-.2a1.8 1.8 0 0 0-1-1.7 1.8 1.8 0 0 0-2 .3l-.1.1-1.7-1.7.1-.1a1.8 1.8 0 0 0 .3-2 1.8 1.8 0 0 0-1.7-1H6v-2.4h.2a1.8 1.8 0 0 0 1.7-1 1.8 1.8 0 0 0-.3-2l-.1-.1 1.7-1.7.1.1a1.8 1.8 0 0 0 2 .3 1.8 1.8 0 0 0 1-1.7V5h2.4v.2a1.8 1.8 0 0 0 1 1.7 1.8 1.8 0 0 0 2-.3l.1-.1 1.7 1.7-.1.1a1.8 1.8 0 0 0-.3 2 1.8 1.8 0 0 0 1.7 1h.2v2.4h-.2a1.8 1.8 0 0 0-1.7 1Z" /></>,
   };
   return <svg className="nav-glyph" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">{paths[name] || paths.dashboard}</svg>;
