@@ -135,3 +135,28 @@ Headers, in order: `batch_code,event_date,quantity,reason,notes`.
 - An exact repeated event (same batch, date, event type, quantity, reason, and notes) is treated as a duplicate and skipped. The importer does not update or delete an existing event.
 
 The server performs a read-only validation preview. Confirmation validates again and writes through the existing daily-record and bird-population services inside one transaction, preserving their audit behavior. If any confirmed write fails, the transaction must roll back in full.
+
+
+## Historical health, drug, and vaccination templates (v1.0)
+
+Import the batch opening record first. Every row references an existing batch through its exact human-readable `batch_code`, and the backend rejects batches that are not ACTIVE or dates before the batch placement date. The preview is read-only; confirmation revalidates and writes through the existing health-management service in one transaction.
+
+### Health / treatment records
+
+Headers: `batch_code,record_date,condition_problem,description,action`.
+
+All fields are required. The current domain stores health/treatment history as one health record with a condition/problem, description, and action. There is no separate treatment record type or controlled list of health-condition values in the current model; values remain text, matching manual entry.
+
+### Drug records
+
+Headers: `batch_code,record_date,drug,quantity,cost_minor,reason`.
+
+All fields are required. `quantity` is a positive whole number in the existing model's quantity units. `cost_minor` is a positive whole number of currency minor units, not naira formatted as a decimal. Importing a drug record uses the existing service, which also creates the normal DRUGS expense and audit entry. The current drug record model stores a drug name as text and does not reference an inventory item ID or consume stock. Do not interpret the drug name as an inventory code; no inventory linkage is invented by this import.
+
+### Vaccination records
+
+Headers: `batch_code,record_date,vaccine,dose,quantity,notes`.
+
+`batch_code`, `record_date`, `vaccine`, `dose`, and `quantity` are required; `notes` is optional. `quantity` is a positive whole number in the current model's quantity units. The dose remains text because the existing model has no structured dose-unit field or vaccine-type enum. Vaccine names and dose values are not linked to inventory item IDs in the current model.
+
+For all three modules, exact retries of the same batch/date and complete record details are skipped. Different health records on the same date are allowed. No existing record is silently updated. If any row fails validation or any confirmed write fails, the complete import transaction rolls back, including the existing service's expense and audit writes. Feed remains in its separate subsystem.
