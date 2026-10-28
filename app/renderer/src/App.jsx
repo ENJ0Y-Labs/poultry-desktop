@@ -160,6 +160,7 @@ export default function App() {
   const [feedUsageForm, setFeedUsageForm] = useState(emptyFeedUsage);
   const [dailyForm, setDailyForm] = useState(emptyDaily);
   const [dailyRecord, setDailyRecord] = useState(null);
+  const [dailyRecordLoading, setDailyRecordLoading] = useState(false);
   const [mortalityForm, setMortalityForm] = useState(emptyPopulationEvent);
   const [cullingForm, setCullingForm] = useState(emptyPopulationEvent);
   const [healthForm, setHealthForm] = useState(emptyHealth);
@@ -486,6 +487,27 @@ export default function App() {
     }
   }, [selectedBatchId]);
 
+  useEffect(() => {
+    let current = true;
+    const { batchId, date } = dailyForm;
+    setFeedUsageForm(form => ({ ...form, batchId, usageDate: date }));
+    setDailyRecord(null);
+    if (!batchId || !date) {
+      setDailyRecordLoading(false);
+      return () => { current = false; };
+    }
+    setDailyRecordLoading(true);
+    dailyApi.get(batchId, date)
+      .then(record => { if (current) setDailyRecord(record); })
+      .catch(err => {
+        if (!current) return;
+        if (err.status === 404) setDailyRecord(null);
+        else setError(displayApiError(err));
+      })
+      .finally(() => { if (current) setDailyRecordLoading(false); });
+    return () => { current = false; };
+  }, [dailyForm.batchId, dailyForm.date]);
+
   async function submitFarm(event) {
     event.preventDefault(); setSaving(true); setError("");
     try {
@@ -743,8 +765,16 @@ export default function App() {
         unit: type?.unit || feedUsageForm.unit,
         reason: feedUsageForm.reason.trim() || "Production feed usage",
       });
-      setFeedUsageForm(form => ({ ...emptyFeedUsage, batchId: form.batchId, feedTypeId: form.feedTypeId }));
+      setFeedUsageForm(form => ({ ...emptyFeedUsage, batchId: form.batchId, feedTypeId: form.feedTypeId, usageDate: form.usageDate }));
       setFeedInventory(await feedApi.inventory());
+      if (dailyForm.batchId === feedUsageForm.batchId && dailyForm.date === feedUsageForm.usageDate) {
+        try {
+          setDailyRecord(await dailyApi.get(feedUsageForm.batchId, feedUsageForm.usageDate));
+        } catch (err) {
+          if (err.status === 404) setDailyRecord(null);
+          else throw err;
+        }
+      }
       setSuccessMessage("Feed usage recorded successfully.");
       await Promise.all([loadDashboard(), loadBatchDashboard(feedUsageForm.batchId)]);
     } catch (err) { setError(displayApiError(err)); } finally { setSaving(false); }
@@ -1136,7 +1166,7 @@ export default function App() {
     </main>
   );
 
-  const pageModel = { suppliers, supplierForm, setSupplierForm, saveSupplier, archiveSupplier, formatMoney, formatQuantity, formatPercent, formatKg, formatMetric, formatCount, displayApiError, emptyWeight, emptyBirdSale, emptyPricing, emptyFarm, emptyHouse, emptyBatch, emptyCost, emptyFeedType, emptyFeedPurchase, emptyFeedUsage, emptyDaily, emptyPopulationEvent, emptyHealth, emptyDrug, emptyVaccination, emptyExpense, emptyCustomer, emptyInventoryItem, emptyInventoryMovement, farm, setFarm, farmForm, setFarmForm, houses, setHouses, batches, setBatches, batchForm, setBatchForm, costForm, setCostForm, feedTypes, setFeedTypes, feedInventory, setFeedInventory, feedTypeForm, setFeedTypeForm, feedPurchaseForm, setFeedPurchaseForm, feedUsageForm, setFeedUsageForm, dailyForm, setDailyForm, dailyRecord, setDailyRecord, mortalityForm, setMortalityForm, cullingForm, setCullingForm, healthForm, setHealthForm, drugForm, setDrugForm, vaccinationForm, setVaccinationForm, healthRecords, setHealthRecords, drugRecords, setDrugRecords, vaccinationRecords, setVaccinationRecords, expenseForm, setExpenseForm, expenses, setExpenses, expenseBatchFilter, setExpenseBatchFilter, inventoryItems, setInventoryItems, inventoryItemForm, setInventoryItemForm, inventoryMovementForm, setInventoryMovementForm, inventoryMovements, setInventoryMovements, customers, setCustomers, customerForm, setCustomerForm, sales, setSales, eggBatchId, setEggBatchId, broilerBatchId, setBroilerBatchId, broilerGrowth, setBroilerGrowth, broilerWeights, setBroilerWeights, broilerSales, setBroilerSales, weightForm, setWeightForm, birdSaleForm, setBirdSaleForm, pricingSettings, setPricingSettings, pricing, setPricing, pricingForm, setPricingForm, eggInventory, setEggInventory, eggCollections, setEggCollections, eggSales, setEggSales, eggCollectionForm, setEggCollectionForm, eggSaleForm, setEggSaleForm, houseForm, setHouseForm, crateSize, setCrateSize, defaultWater, setDefaultWater, waterSizes, setWaterSizes, waterUnitLabel, setWaterUnitLabel, loading, setLoading, saving, setSaving, error, setError, dashboard, setDashboard, attention, setAttention, auditRows, setAuditRows, expenseCategories, setExpenseCategories, expenseCategoryForm, setExpenseCategoryForm, account, setAccount, accountForm, setAccountForm, applicationSettings, setApplicationSettings, backupSettings, setBackupSettings, selectedBatchId, setSelectedBatchId, batchDashboard, setBatchDashboard, farmReport, setFarmReport, batchReport, setBatchReport, reportAsOf, setReportAsOf, load, loadReport, loadBatchReport, exportCsv, exportPdf, loadBatchDashboard, loadDashboard, submitFarm, saveFarm, createExpenseCategory, archiveExpenseCategory, saveAccount, saveApplicationSettings, chooseBackupSettingsDirectory, saveBackupSettings, createBackup, restoreBackup, saveSettings, loadExpenses, loadSales, saveCustomer, saveInventoryItem, loadInventoryMovements, saveInventoryMovement, saveExpense, createBatch, addBirdCost, createFeedType, purchaseFeed, useFeed, feedQuantity, parseWaterEntries, saveDailyRecord, recordPopulationEvent, loadPricingForBatch, savePricingSettings, loadBroilerForBatch, saveWeight, saveBirdSale, loadEggsForBatch, saveEggCollection, saveEggSale, saveHealth, saveDrug, saveVaccination, loadHealthForBatch, markBatchSold, reopenBatch, addHouse };
+  const pageModel = { dailyRecordLoading, suppliers, supplierForm, setSupplierForm, saveSupplier, archiveSupplier, formatMoney, formatQuantity, formatPercent, formatKg, formatMetric, formatCount, displayApiError, emptyWeight, emptyBirdSale, emptyPricing, emptyFarm, emptyHouse, emptyBatch, emptyCost, emptyFeedType, emptyFeedPurchase, emptyFeedUsage, emptyDaily, emptyPopulationEvent, emptyHealth, emptyDrug, emptyVaccination, emptyExpense, emptyCustomer, emptyInventoryItem, emptyInventoryMovement, farm, setFarm, farmForm, setFarmForm, houses, setHouses, batches, setBatches, batchForm, setBatchForm, costForm, setCostForm, feedTypes, setFeedTypes, feedInventory, setFeedInventory, feedTypeForm, setFeedTypeForm, feedPurchaseForm, setFeedPurchaseForm, feedUsageForm, setFeedUsageForm, dailyForm, setDailyForm, dailyRecord, setDailyRecord, mortalityForm, setMortalityForm, cullingForm, setCullingForm, healthForm, setHealthForm, drugForm, setDrugForm, vaccinationForm, setVaccinationForm, healthRecords, setHealthRecords, drugRecords, setDrugRecords, vaccinationRecords, setVaccinationRecords, expenseForm, setExpenseForm, expenses, setExpenses, expenseBatchFilter, setExpenseBatchFilter, inventoryItems, setInventoryItems, inventoryItemForm, setInventoryItemForm, inventoryMovementForm, setInventoryMovementForm, inventoryMovements, setInventoryMovements, customers, setCustomers, customerForm, setCustomerForm, sales, setSales, eggBatchId, setEggBatchId, broilerBatchId, setBroilerBatchId, broilerGrowth, setBroilerGrowth, broilerWeights, setBroilerWeights, broilerSales, setBroilerSales, weightForm, setWeightForm, birdSaleForm, setBirdSaleForm, pricingSettings, setPricingSettings, pricing, setPricing, pricingForm, setPricingForm, eggInventory, setEggInventory, eggCollections, setEggCollections, eggSales, setEggSales, eggCollectionForm, setEggCollectionForm, eggSaleForm, setEggSaleForm, houseForm, setHouseForm, crateSize, setCrateSize, defaultWater, setDefaultWater, waterSizes, setWaterSizes, waterUnitLabel, setWaterUnitLabel, loading, setLoading, saving, setSaving, error, setError, dashboard, setDashboard, attention, setAttention, auditRows, setAuditRows, expenseCategories, setExpenseCategories, expenseCategoryForm, setExpenseCategoryForm, account, setAccount, accountForm, setAccountForm, applicationSettings, setApplicationSettings, backupSettings, setBackupSettings, selectedBatchId, setSelectedBatchId, batchDashboard, setBatchDashboard, farmReport, setFarmReport, batchReport, setBatchReport, reportAsOf, setReportAsOf, load, loadReport, loadBatchReport, exportCsv, exportPdf, loadBatchDashboard, loadDashboard, submitFarm, saveFarm, createExpenseCategory, archiveExpenseCategory, saveAccount, saveApplicationSettings, chooseBackupSettingsDirectory, saveBackupSettings, createBackup, restoreBackup, saveSettings, loadExpenses, loadSales, saveCustomer, saveInventoryItem, loadInventoryMovements, saveInventoryMovement, saveExpense, createBatch, addBirdCost, createFeedType, purchaseFeed, useFeed, feedQuantity, parseWaterEntries, saveDailyRecord, recordPopulationEvent, loadPricingForBatch, savePricingSettings, loadBroilerForBatch, saveWeight, saveBirdSale, loadEggsForBatch, saveEggCollection, saveEggSale, saveHealth, saveDrug, saveVaccination, loadHealthForBatch, markBatchSold, reopenBatch, addHouse };
 
   return (
     <AppShell farm={farm} error={error} onRetry={() => initialize({ preserveScreen: true })} startPage={applicationSettings.startPage} startPageReady={settingsReady}>

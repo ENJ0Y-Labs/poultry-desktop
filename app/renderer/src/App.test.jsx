@@ -528,7 +528,7 @@ describe("App", () => {
     expect(screen.getByRole("button", { name: "Open houses" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Open batches" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Configure feed" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Record purchase" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Open daily record" })).toBeInTheDocument();
     expect(screen.queryByText("Total birds")).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Open houses" }));
@@ -771,8 +771,9 @@ describe("App", () => {
 
     dashboardNav();
     fireEvent.click(await screen.findByRole("button", { name: "Record feed usage" }));
-    expect(window.location.hash).toContain("feed-stock/feed");
-    expect(await screen.findByRole("combobox", { name: "Feed type" })).toHaveValue("feed-layer");
+    expect(window.location.hash).toContain("daily-work/daily-record");
+    expect(await screen.findByRole("combobox", { name: "Batch" })).toHaveValue("layer-1");
+    expect(screen.getByRole("combobox", { name: "Feed type" })).toHaveValue("feed-layer");
 
     dashboardNav();
     fireEvent.click(await screen.findByRole("button", { name: "Record a sale" }));

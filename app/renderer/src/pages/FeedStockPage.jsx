@@ -5,7 +5,7 @@ import { FarmManagerContext } from "../components/FarmManagerContext.jsx";
 import PageSection from "../components/PageSection.jsx";
 
 export default function FeedStockPage() {
-  const { formatMoney, farm, batches, feedTypes, setFeedTypes, feedInventory, feedTypeForm, setFeedTypeForm, setError, setSaving, feedPurchaseForm, setFeedPurchaseForm, feedUsageForm, setFeedUsageForm, inventoryItems, inventoryItemForm, setInventoryItemForm, inventoryMovementForm, setInventoryMovementForm, inventoryMovements, suppliers, supplierForm, setSupplierForm, saveSupplier, archiveSupplier, saving, saveInventoryItem, loadInventoryMovements, saveInventoryMovement, createFeedType, purchaseFeed, useFeed, feedQuantity } = useContext(FarmManagerContext);
+  const { formatMoney, farm, batches, feedTypes, setFeedTypes, feedInventory, feedTypeForm, setFeedTypeForm, setError, setSaving, feedPurchaseForm, setFeedPurchaseForm, inventoryItems, inventoryItemForm, setInventoryItemForm, inventoryMovementForm, setInventoryMovementForm, inventoryMovements, suppliers, supplierForm, setSupplierForm, saveSupplier, archiveSupplier, saving, saveInventoryItem, loadInventoryMovements, saveInventoryMovement, createFeedType, purchaseFeed, feedQuantity } = useContext(FarmManagerContext);
 
   async function saveConversion(event, type) {
     event.preventDefault();
@@ -49,24 +49,7 @@ export default function FeedStockPage() {
             </div>
           </div>
 
-          <div className="subsection">
-            <h3>Use feed</h3>
-            <form className="inline-form" onSubmit={useFeed}>
-              <label className="field"><span>Batch</span><select required value={feedUsageForm.batchId} onChange={e=>setFeedUsageForm({...feedUsageForm,batchId:e.target.value})}>
-                <option value="">Batch</option>{batches.filter(b=>b.status==="ACTIVE").map(b=><option key={b.id} value={b.id}>{b.code}</option>)}
-              </select></label>
-              <label className="field"><span>Feed type</span><select required value={feedUsageForm.feedTypeId} onChange={e=>{
-                const type=feedTypes.find(item=>item.id===e.target.value);
-                setFeedUsageForm({...feedUsageForm,feedTypeId:e.target.value,unit:type?.unit||"bag"});
-              }}>
-                <option value="">Feed type</option>{feedTypes.filter(t=>t.status==="ACTIVE").map(t=><option key={t.id} value={t.id}>{t.name} ({t.unit})</option>)}
-              </select></label>
-              <label className="field"><span>Usage date</span><input required type="date" value={feedUsageForm.usageDate} onChange={e=>setFeedUsageForm({...feedUsageForm,usageDate:e.target.value})}/></label>
-              <label className="field"><span>Quantity</span><input required min="0.001" step="0.001" type="number" value={feedUsageForm.quantity} onChange={e=>setFeedUsageForm({...feedUsageForm,quantity:e.target.value})}/></label>
-              <label className="field"><span>Reason</span><input value={feedUsageForm.reason} onChange={e=>setFeedUsageForm({...feedUsageForm,reason:e.target.value})}/></label>
-              <button disabled={saving}>Record usage</button>
-            </form>
-          </div>
+          <p className="muted">Record daily feed consumption in Daily Work. Feed usage still updates this inventory through the existing FIFO ledger.</p>
 
           <div className="subsection">
             <h3>Feed inventory</h3>
