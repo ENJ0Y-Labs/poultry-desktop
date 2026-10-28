@@ -43,6 +43,21 @@ export default function ImportExportPage() {
         preview.validRows = preview.rows.filter(row => row.valid).length;
         preview.invalidRows = preview.rows.filter(row => !row.valid).length;
       }
+      if (["egg-collections", "broiler-weights"].includes(importModule)) {
+        const serverPreview = await csvImportApi.previewProductionRecords(importModule, preview.rows.map(row => row.record));
+        for (let index = 0; index < preview.rows.length; index += 1) {
+          const row = preview.rows[index];
+          const checked = serverPreview.rows?.[index];
+          if (!checked) { row.errors.push("The backend could not validate this row."); row.valid = false; continue; }
+          row.errors = [...row.errors, ...(checked.errors || [])];
+          row.duplicate = Boolean(checked.duplicate);
+          row.existingDuplicate = Boolean(checked.duplicate);
+          row.valid = Boolean(checked.valid) && row.errors.length === 0;
+        }
+        preview.duplicates = serverPreview.duplicates || 0;
+        preview.validRows = preview.rows.filter(row => row.valid).length;
+        preview.invalidRows = preview.rows.filter(row => !row.valid).length;
+      }
       if (["health", "drugs", "vaccinations"].includes(importModule)) {
         const serverPreview = await csvImportApi.previewHealthRecords(importModule, preview.rows.map(row => row.record));
         for (let index = 0; index < preview.rows.length; index += 1) {
@@ -102,9 +117,12 @@ export default function ImportExportPage() {
       const healthHistory = ["health", "drugs", "vaccinations"].includes(importModule);
       const feedHistory = ["feed-purchases", "feed-usage"].includes(importModule);
       const operationalHistory = ["daily-records", "mortality", "culling"].includes(importModule);
-      const result = feedHistory
-        ? await csvImportApi.importFeedRecords(importModule, records)
-        : healthHistory
+      const productionHistory = ["egg-collections", "broiler-weights"].includes(importModule);
+      const result = productionHistory
+        ? await csvImportApi.importProductionRecords(importModule, records)
+        : feedHistory
+          ? await csvImportApi.importFeedRecords(importModule, records)
+          : healthHistory
           ? await csvImportApi.importHealthRecords(importModule, records)
           : operationalHistory
             ? await csvImportApi.importOperationalRecords(importModule, records)
@@ -137,7 +155,7 @@ export default function ImportExportPage() {
             <h2>Farm and batch records</h2>
           </div>
         </div>
-        <p>Houses and pens can be imported first as the prerequisite for historical batch imports. Batch import itself is not yet available. Health/treatment, drug, and vaccination history can be imported for existing active batches.</p>
+        <p>Houses and pens can be imported first as the prerequisite for historical batch imports. Batch import itself is not yet available. Health/treatment, drug, vaccination, layer egg collections, and broiler weight history can be imported for existing active batches.</p>
         <div className="dashboard-columns">
           <div className="subsection">
             <h3>Houses and pens</h3>
@@ -181,6 +199,8 @@ export default function ImportExportPage() {
               <option value="houses">{CSV_TEMPLATES.houses.label}</option>
               <option value="feed-purchases">{CSV_TEMPLATES["feed-purchases"].label}</option>
               <option value="feed-usage">{CSV_TEMPLATES["feed-usage"].label}</option>
+              <option value="egg-collections">{CSV_TEMPLATES["egg-collections"].label}</option>
+              <option value="broiler-weights">{CSV_TEMPLATES["broiler-weights"].label}</option>
               <option value="health">{CSV_TEMPLATES.health.label}</option>
               <option value="drugs">{CSV_TEMPLATES.drugs.label}</option>
               <option value="vaccinations">{CSV_TEMPLATES.vaccinations.label}</option>
