@@ -62,6 +62,31 @@ class HealthHistoryCsvImportIntegrationTest {
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM audit_logs WHERE entity_type = 'DRUG_RECORD'", Integer.class)).isEqualTo(1);
     }
 
+
+    @Test
+    void failedDrugImportRollsBackDrugRowsExpensesAndAuditWrites() {
+        var batch = setupBatch();
+        jdbc.execute("""
+                CREATE TRIGGER fail_drug_import_row
+                BEFORE INSERT ON drug_records
+                WHEN NEW.drug = 'Trigger failure'
+                BEGIN
+                    SELECT RAISE(ABORT, 'intentional integration-test failure');
+                END
+                """);
+
+        CsvImportRequest request = new CsvImportRequest("drugs", List.of(
+                Map.of("batch_code", batch.code(), "record_date", "2026-01-02", "drug", "Drug A",
+                        "quantity", "2", "cost_minor", "25000", "reason", "First treatment"),
+                Map.of("batch_code", batch.code(), "record_date", "2026-01-03", "drug", "Trigger failure",
+                        "quantity", "1", "cost_minor", "10000", "reason", "Second treatment")));
+
+        assertThatThrownBy(() -> importer.importRecords(request)).isInstanceOf(RuntimeException.class);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM drug_records", Integer.class)).isZero();
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM expenses WHERE category = 'DRUGS'", Integer.class)).isZero();
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM audit_logs WHERE entity_type = 'DRUG_RECORD'", Integer.class)).isZero();
+    }
+
     private BatchResponse setupBatch() {
         farmService.create(new FarmCreateRequest("Grantino Farms", "Port Harcourt", "Africa/Lagos", "NGN"));
         var house = houseService.create(new HouseCreateRequest("Broiler House", "BH1", null));
