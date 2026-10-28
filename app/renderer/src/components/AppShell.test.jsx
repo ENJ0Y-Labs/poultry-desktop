@@ -2,6 +2,8 @@ import { render, screen, fireEvent, within, waitFor } from "@testing-library/rea
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 // eslint-disable-next-line no-unused-vars
 import AppShell from "./AppShell.jsx";
+// eslint-disable-next-line no-unused-vars
+import PageSection from "./PageSection.jsx";
 
 describe("AppShell", () => {
   beforeEach(() => {
@@ -95,14 +97,19 @@ describe("AppShell", () => {
     window.location.hash = "#import-export/overview";
     render(
       <AppShell farm={{ name: "Grantino", location: "", currency: "NGN", timezone: "Africa/Lagos" }}>
-        <section id="import-export-content">Import / Export content</section>
+        <PageSection page="import-export"><section id="import-export-content">Import / Export content</section></PageSection>
+        <PageSection page="settings"><section id="settings-content">Settings content</section></PageSection>
       </AppShell>
     );
     const navigation = screen.getByRole("navigation", { name: "Main navigation" });
     expect(within(navigation).getByRole("button", { name: "Import / Export" })).toHaveAttribute("aria-current", "page");
+    expect(screen.getByText("Import / Export content")).toBeInTheDocument();
+    expect(screen.queryByText("Settings content")).not.toBeInTheDocument();
     fireEvent.click(within(navigation).getByRole("button", { name: "Settings" }));
     expect(window.location.hash).toBe("#settings/farm");
     expect(within(navigation).getByRole("button", { name: "Settings" })).toHaveAttribute("aria-current", "page");
+    expect(screen.getByText("Settings content")).toBeInTheDocument();
+    expect(screen.queryByText("Import / Export content")).not.toBeInTheDocument();
   });
 
   it("shows contextual page help with a useful next action", async () => {
