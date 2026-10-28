@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { CSV_TEMPLATES, downloadCsvTemplate, inspectCsvFile, csvErrorReport } from "../utils/csvImport.js";
-import { csvImportApi } from "../services/api.js";
+import { csvImportApi, farmApi } from "../services/api.js";
 // eslint-disable-next-line no-unused-vars
 import PageTemplate from "../components/PageTemplate.jsx";
 
@@ -20,7 +20,30 @@ export default function ImportExportPage() {
     setImportMessage("");
     if (!file) return;
     try {
-      setImportPreview(await inspectCsvFile(file, importModule));
+      const preview = await inspectCsvFile(file, importModule);
+      if (importModule === "houses") {
+        const existing = await farmApi.listHouses();
+        const byCode = new Map(existing.map(item => [String(item.code || "").trim().toUpperCase(), item]));
+        const byName = new Map(existing.map(item => [String(item.name || "").trim().toLocaleLowerCase(), item]));
+        for (const row of preview.rows) {
+          const codeMatch = byCode.get(row.record.code.trim().toUpperCase());
+          const nameMatch = byName.get(row.record.name.trim().toLocaleLowerCase());
+          if (!codeMatch && !nameMatch) continue;
+          const exactMatch = codeMatch && nameMatch && codeMatch.id === nameMatch.id
+            && codeMatch.name === row.record.name.trim()
+            && String(codeMatch.notes || "").trim() === row.record.notes.trim();
+          if (exactMatch) {
+            row.existingDuplicate = true;
+            preview.duplicates += 1;
+          } else {
+            row.errors.push(codeMatch ? "House/pen code conflicts with an existing record." : "House/pen name conflicts with an existing record.");
+            row.valid = false;
+          }
+        }
+        preview.validRows = preview.rows.filter(row => row.valid).length;
+        preview.invalidRows = preview.rows.filter(row => !row.valid).length;
+      }
+      setImportPreview(preview);
     } catch (error) {
       setImportError(error.message || "Could not inspect this CSV file.");
     }
@@ -39,14 +62,15 @@ export default function ImportExportPage() {
 
   async function confirmImport() {
     if (!importPreview || importPreview.invalidRows || !importPreview.totalRows || importBusy) return;
-    const confirmed = window.confirm(`Import ${importPreview.totalRows} ${CSV_TEMPLATES[importModule].label.toLowerCase()}? This will write records to this farm.`);
+    const confirmed = window.confirm(`Import ${importPreview.totalRows} ${CSV_TEMPLATES[importModule].label.toLowerCase()}? Existing exact matches will be skipped as duplicates. This will write records to this farm.`);
     if (!confirmed) return;
     setImportBusy(true);
     setImportError("");
     setImportMessage("");
     try {
       const result = await csvImportApi.importRecords(importModule, importPreview.rows.map(row => row.record));
-      setImportMessage(`Imported ${result.imported} ${CSV_TEMPLATES[importModule].label.toLowerCase()} successfully.`);
+      const duplicateText = result.duplicates ? ` ${result.duplicates} exact duplicate(s) skipped.` : "";
+      setImportMessage(`Imported ${result.imported} ${CSV_TEMPLATES[importModule].label.toLowerCase()} successfully.${duplicateText}`);
       setImportPreview(null);
       setImportFile(null);
       const input = document.getElementById("pomas-csv-file");
@@ -67,8 +91,13 @@ export default function ImportExportPage() {
             <h2>Farm and batch records</h2>
           </div>
         </div>
-        <p>Importing historical flock data is not yet available. Do not upload a generic spreadsheet and assume it has been imported.</p>
+        <p>Houses and pens can be imported first as the prerequisite for historical batch imports. Batch import itself is not yet available.</p>
         <div className="dashboard-columns">
+          <div className="subsection">
+            <h3>Houses and pens</h3>
+            <p className="muted">Import order: houses/pens first, then batches. The template uses the existing name, code, and notes fields. Capacity fields are not included because they are not part of the current house/pen model.</p>
+            <p className="muted">An exact existing record is skipped as a duplicate. Reusing a name or code with different details is a conflict. Existing records are never silently overwritten.</p>
+          </div>
           <div className="subsection">
             <h3>Existing batch opening records</h3>
             <p className="muted">Planned. The import path must preserve the real placement date, opening bird count, house or pen, supplier, and original bird cost before it can be enabled.</p>
@@ -88,10 +117,10 @@ export default function ImportExportPage() {
         <div className="section-head">
           <div>
             <p className="eyebrow">SUPPORTED REFERENCE DATA</p>
-            <h2>Customer and supplier import</h2>
+            <h2>CSV import</h2>
           </div>
         </div>
-        <p className="muted">These are the only currently supported CSV import modules. Download the matching template, keep its headers unchanged, and preview the file before confirming. Preview does not write records.</p>
+        <p className="muted">Download the versioned template, keep its headers unchanged, and preview the entire file before confirming. Preview does not write records. Imports are validated again by the backend and run in a database transaction.</p>
         <div className="form-grid">
           <label>Import module
             <select value={importModule} disabled={importBusy} onChange={event => {
@@ -103,12 +132,13 @@ export default function ImportExportPage() {
               const input = document.getElementById("pomas-csv-file");
               if (input) input.value = "";
             }}>
+              <option value="houses">{CSV_TEMPLATES.houses.label}</option>
               <option value="customers">{CSV_TEMPLATES.customers.label}</option>
               <option value="suppliers">{CSV_TEMPLATES.suppliers.label}</option>
             </select>
           </label>
           <div className="inline-form">
-            <button type="button" onClick={() => downloadCsvTemplate(importModule)}>Download {CSV_TEMPLATES[importModule].label.toLowerCase()} template</button>
+            <button type="button" onClick={() => downloadCsvTemplate(importModule)}>Download {CSV_TEMPLATES[importModule].label.toLowerCase()} template (v{CSV_TEMPLATES[importModule].version})</button>
           </div>
           <label>Choose completed CSV
             <input id="pomas-csv-file" type="file" accept=".csv,text/csv" disabled={importBusy} onChange={inspectImport} />
@@ -120,12 +150,12 @@ export default function ImportExportPage() {
         {importPreview && <div className="subsection">
           <h3>Import preview</h3>
           <p>{importFile?.name} · Template v{importPreview.templateVersion}</p>
-          <p>Total rows: <strong>{importPreview.totalRows}</strong> · Valid: <strong>{importPreview.validRows}</strong> · Invalid: <strong>{importPreview.invalidRows}</strong></p>
+          <p>Total rows: <strong>{importPreview.totalRows}</strong> · Valid: <strong>{importPreview.validRows}</strong> · Invalid: <strong>{importPreview.invalidRows}</strong>{importModule === "houses" && <> · Existing exact duplicates: <strong>{importPreview.duplicates}</strong></>}</p>
           {importPreview.invalidRows > 0 && <button type="button" onClick={downloadErrorReport}>Download row error report</button>}
           <div className="table-scroll">
             <table>
               <thead><tr><th>CSV row</th>{CSV_TEMPLATES[importModule].headers.map(header => <th key={header}>{header}</th>)}<th>Validation</th></tr></thead>
-              <tbody>{importPreview.rows.slice(0, 100).map(item => <tr key={item.rowNumber}><td>{item.rowNumber}</td>{CSV_TEMPLATES[importModule].headers.map(header => <td key={header}>{item.record[header]}</td>)}<td>{item.valid ? "Valid" : item.errors.join(" ")}</td></tr>)}</tbody>
+              <tbody>{importPreview.rows.slice(0, 100).map(item => <tr key={item.rowNumber}><td>{item.rowNumber}</td>{CSV_TEMPLATES[importModule].headers.map(header => <td key={header}>{item.record[header]}</td>)}<td>{item.errors.join(" ") || (item.existingDuplicate ? "Exact existing record; will be skipped" : "Valid")}</td></tr>)}</tbody>
             </table>
           </div>
           {importPreview.rows.length > 100 && <p className="muted">Showing first 100 rows. The import validates all {importPreview.totalRows} rows.</p>}
