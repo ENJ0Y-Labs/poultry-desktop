@@ -10,8 +10,8 @@ Pomas uses deep teal `#1A4D5C` and golden yellow `#F4B41A` as the brand palette.
 
 ### Light mode
 
-- Use white surfaces.
-- Use deep teal for primary actions, headings, and accent text.
+- Use white surfaces. In Dark mode, white page and panel surfaces must become black or near-black.
+- Use deep teal for primary actions, headings, and accent text. Any gold brand accent in Dark mode maps back to teal in Light mode.
 - Use gold for fills, indicators, and focus accents only. Gold must never be text on white.
 - Primary buttons use white text on a teal background.
 
@@ -19,7 +19,7 @@ Pomas uses deep teal `#1A4D5C` and golden yellow `#F4B41A` as the brand palette.
 
 - Use black `#000000` and near-black `#0A0A0A` surfaces.
 - Use off-white body text and gold accents.
-- Teal is permitted only for fills and borders where it carries no text. Teal must never be text on black.
+- Replace teal brand accents with golden yellow in Dark mode, including active navigation indicators and primary actions. Do not use teal as a visible brand accent in Dark mode. Keep contrast-safe text roles: gold text on black and black text on gold.
 - Primary buttons use black text on a gold background.
 
 ### Accessibility and implementation
