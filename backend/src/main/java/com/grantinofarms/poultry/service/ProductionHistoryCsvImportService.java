@@ -108,6 +108,10 @@ public class ProductionHistoryCsvImportService {
             if ("egg-collections".equals(module)) {
                 row.good = parseNonNegativeInt(values.get("good_eggs"), "good_eggs", row.errors);
                 row.cracked = parseNonNegativeInt(values.get("cracked_eggs"), "cracked_eggs", row.errors);
+                if (row.good != null && row.cracked != null
+                        && (long) row.good + row.cracked > Integer.MAX_VALUE) {
+                    row.errors.add("good_eggs + cracked_eggs exceeds the maximum supported total.");
+                }
             } else {
                 row.sampleQuantity = parsePositiveInt(values.get("sample_quantity"), "sample_quantity", row.errors);
                 try {
@@ -115,6 +119,7 @@ public class ProductionHistoryCsvImportService {
                     if (raw == null) throw new NumberFormatException();
                     row.totalWeightKg = new BigDecimal(raw).setScale(3, RoundingMode.UNNECESSARY);
                     if (row.totalWeightKg.signum() <= 0) throw new NumberFormatException();
+                    row.totalWeightKg.movePointRight(3).longValueExact();
                 } catch (NumberFormatException | ArithmeticException ex) {
                     row.errors.add("total_weight_kg must be positive and have at most 3 decimal places.");
                 }
