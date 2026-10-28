@@ -135,7 +135,7 @@ public class HealthHistoryCsvImportService {
                     List<DrugRecordResponse> list = existingDrugs.computeIfAbsent(batch.id(), health::drugs);
                     existingKey = drugKey(batch.id(), date, row.drug, row.quantity, row.costMinor, row.reason);
                     row.duplicate = !seen.add(existingKey) || list.stream().anyMatch(r ->
-                            r.recordDate().equals(date) && eq(r.drug(), row.drug) && r.quantity() == row.quantity
+                            r.recordDate().equals(rowDate) && eq(r.drug(), row.drug) && r.quantity() == row.quantity
                                     && r.costMinor() == row.costMinor && eq(r.reason(), row.reason));
                 } else {
                     List<VaccinationRecordResponse> list = existingVaccinations.computeIfAbsent(batch.id(), health::vaccinations);
