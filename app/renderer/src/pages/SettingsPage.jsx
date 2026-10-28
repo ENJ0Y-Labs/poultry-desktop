@@ -27,7 +27,7 @@ export default function SettingsPage() {
   }
   function downloadErrorReport() {
     if (!importPreview) return;
-    const blob = new Blob(["\\uFEFF", csvErrorReport(importPreview)], { type: "text/csv;charset=utf-8" });
+    const blob = new Blob(["\uFEFF", csvErrorReport(importPreview)], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob); const anchor = document.createElement("a");
     anchor.href = url; anchor.download = `pomas-${importModule}-import-errors.csv`; anchor.click(); URL.revokeObjectURL(url);
   }
@@ -79,7 +79,7 @@ export default function SettingsPage() {
         {importMessage && <p role="status" className="success-message">{importMessage}</p>}
         {importPreview && <div className="subsection">
           <h3>Import preview</h3><p>{importFile?.name} · Template v{importPreview.templateVersion}</p>
-          <p>Total rows: <strong>{importPreview.totalRows}</strong> · Valid: <strong>{importPreview.validRows}</strong> · Invalid: <strong>{importPreview.invalidRows}</strong></p>
+          <p>Total rows: <strong>{importPreview.totalRows}</strong> · Valid: <strong>{importPreview.validRows}</strong> · Invalid: <strong>{importPreview.invalidRows}</strong> · Duplicate rows: <strong>{importPreview.duplicateRows}</strong></p>
           {importPreview.invalidRows > 0 && <button type="button" onClick={downloadErrorReport}>Download row error report</button>}
           <div className="table-scroll"><table><thead><tr><th>CSV row</th>{CSV_TEMPLATES[importModule].headers.map(header => <th key={header}>{header}</th>)}<th>Validation</th></tr></thead>
             <tbody>{importPreview.rows.slice(0, 100).map(item => <tr key={item.rowNumber}><td>{item.rowNumber}</td>{CSV_TEMPLATES[importModule].headers.map(header => <td key={header}>{item.record[header]}</td>)}<td>{item.valid ? "Valid" : item.errors.join(" ")}</td></tr>)}</tbody>
