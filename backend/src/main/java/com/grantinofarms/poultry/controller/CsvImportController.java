@@ -13,11 +13,22 @@ public class CsvImportController {
     private final CsvImportService service;
     private final OperationalCsvImportService operationalService;
 
-    public CsvImportController(CsvImportService service) {
+    public CsvImportController(CsvImportService service, OperationalCsvImportService operationalService) {
         this.service = service;
+        this.operationalService = operationalService;
     }
 
-    @PostMapping("/csv/operational/preview")\n    public Map<String, Object> previewOperationalCsv(@Valid @RequestBody CsvImportRequest request) {\n        return Map.of("ok", true, "data", operationalService.preview(request));\n    }\n\n    @PostMapping("/csv/operational")\n    public Map<String, Object> importOperationalCsv(@Valid @RequestBody CsvImportRequest request) {\n        return Map.of("ok", true, "data", operationalService.importRecords(request));\n    }\n\n    @PostMapping("/csv")
+    @PostMapping("/csv/operational/preview")
+    public Map<String, Object> previewOperationalCsv(@Valid @RequestBody CsvImportRequest request) {
+        return Map.of("ok", true, "data", operationalService.preview(request));
+    }
+
+    @PostMapping("/csv/operational")
+    public Map<String, Object> importOperationalCsv(@Valid @RequestBody CsvImportRequest request) {
+        return Map.of("ok", true, "data", operationalService.importRecords(request));
+    }
+
+    @PostMapping("/csv")
     public Map<String, Object> importCsv(@Valid @RequestBody CsvImportRequest request) {
         return Map.of("ok", true, "data", service.importRecords(request));
     }
