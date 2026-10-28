@@ -82,7 +82,10 @@ export default function ImportExportPage() {
     setImportError("");
     setImportMessage("");
     try {
-      const operational = ["daily-records", "mortality", "culling"].includes(importModule);\n      const result = operational\n        ? await csvImportApi.importOperationalRecords(importModule, importPreview.rows.map(row => row.record))\n        : await csvImportApi.importRecords(importModule, importPreview.rows.map(row => row.record));
+      const operational = ["daily-records", "mortality", "culling"].includes(importModule);
+      const result = operational
+        ? await csvImportApi.importOperationalRecords(importModule, importPreview.rows.map(row => row.record))
+        : await csvImportApi.importRecords(importModule, importPreview.rows.map(row => row.record));
       const duplicateText = result.duplicates ? ` ${result.duplicates} exact duplicate(s) skipped.` : "";
       setImportMessage(`Imported ${result.imported} ${CSV_TEMPLATES[importModule].label.toLowerCase()} successfully.${duplicateText}`);
       setImportPreview(null);
