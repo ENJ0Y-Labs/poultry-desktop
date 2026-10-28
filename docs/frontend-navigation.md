@@ -4,8 +4,8 @@
 
 1. Dashboard: farm metrics, attention items, and recent audit activity.
 2. Flocks: batch dashboard, batches, houses/pens, and bird-cost controls.
-3. Daily Work: daily records, mortality, culling, and water.
-4. Feed & Stock: feed definitions, purchases, usage, and non-feed inventory.
+3. Daily Work: daily records, feed usage, mortality, culling, and water.
+4. Feed & Stock: feed definitions, purchases, remaining feed stock, suppliers, and non-feed inventory. Daily feed consumption is entered in Daily Work and still uses the authoritative FIFO feed ledger.
 5. Health: health records, drugs, and vaccinations.
 6. Production: layer egg workflows and broiler weight/growth and sales workflows.
 7. Sales & Money: customers, the common sales ledger, and expenses.
@@ -17,9 +17,9 @@
 - The current page and subpage are stored in the URL hash, for example `#daily-work/mortality` or `#feed-stock/suppliers`.
 - Back/forward and direct hash navigation are supported.
 - The saved start page is applied after application settings load, unless the app is opened with an explicit route hash.
-- Daily Work has separate Daily record, Mortality, Culling, and Water tabs.
+- Daily Work has separate Daily record, Mortality, Culling, and Water tabs. The Daily record tab uses one selected batch/date for notes and feed usage; feed usage remains a separate transaction in the authoritative FIFO feed ledger.
 - Health has separate Health records, Drugs & treatments, and Vaccination tabs.
-- Feed & Stock has separate Feed & usage, Purchases, Other stock, and Suppliers tabs.
+- Feed & Stock has separate Feed & usage, Purchases, Other stock, and Suppliers tabs. The Feed & usage tab manages feed types and stock visibility; daily consumption is recorded from Daily Work.
 - Supplier records are loaded and managed through the existing supplier API; feed purchases can reference a registered supplier.
 - The connection indicator probes the backend health endpoint and refreshes periodically. It reports healthy status only when the backend responds successfully and reports a valid database schema.
 - The API base can be configured with `VITE_API_BASE_URL` or the desktop bridge's `getApiBaseUrl`; the local loopback address is only the development fallback.
@@ -30,6 +30,7 @@ The nine page components live under `app/renderer/src/pages/`. Shared form state
 
 
 ## Farm dashboard presentation
+- The dashboard “Record feed usage” quick action opens Daily Work / Daily record and preselects the active batch, compatible feed type, and current farm-local date. Keep this aligned with the feed-usage form location.
 
 - The farm dashboard labels its business date as “Dashboard as of” so it is not mistaken for the computer's current date or a date-range selector.
 - The dashboard formats that date using the saved application date-format preference. Business dates are parsed as calendar components, not as UTC instants.
