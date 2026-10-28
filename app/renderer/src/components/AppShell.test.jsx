@@ -25,7 +25,7 @@ describe("AppShell", () => {
     const navigation = screen.getByRole("navigation", { name: "Main navigation" });
     for (const label of [
       "Dashboard", "Flocks", "Daily Work", "Feed & Stock", "Health",
-      "Production", "Sales & Money", "Reports", "Settings",
+      "Production", "Sales & Money", "Reports", "Import / Export", "Settings",
     ]) {
       expect(within(navigation).getByRole("button", { name: label })).toBeInTheDocument();
     }
@@ -82,6 +82,20 @@ describe("AppShell", () => {
     fireEvent.click(screen.getByRole("button", { name: "Suppliers" }));
     expect(window.location.hash).toBe("#feed-stock/suppliers");
   });
+  it("routes to Import / Export and keeps the selected navigation state on deep links", async () => {
+    window.location.hash = "#import-export/overview";
+    render(
+      <AppShell farm={{ name: "Grantino", location: "", currency: "NGN", timezone: "Africa/Lagos" }}>
+        <section id="import-export-content">Import / Export content</section>
+      </AppShell>
+    );
+    const navigation = screen.getByRole("navigation", { name: "Main navigation" });
+    expect(within(navigation).getByRole("button", { name: "Import / Export" })).toHaveAttribute("aria-current", "page");
+    fireEvent.click(within(navigation).getByRole("button", { name: "Settings" }));
+    expect(window.location.hash).toBe("#settings/farm");
+    expect(within(navigation).getByRole("button", { name: "Settings" })).toHaveAttribute("aria-current", "page");
+  });
+
   it("shows contextual page help with a useful next action", async () => {
     render(
       <AppShell farm={{ name: "Grantino", location: "", currency: "NGN", timezone: "Africa/Lagos" }}>
