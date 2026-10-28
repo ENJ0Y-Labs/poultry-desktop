@@ -91,6 +91,19 @@ class HealthHistoryCsvImportServiceTest {
         verify(health, never()).addVaccination(anyString(), any());
     }
 
+
+    @Test
+    void rejectsHealthRecordBeforeBatchPlacementDate() {
+        when(batches.list()).thenReturn(List.of(batch("B-2026-001", "ACTIVE")));
+        Map<String, Object> preview = importer.preview(new CsvImportRequest("health", List.of(
+                Map.of("batch_code", "B-2026-001", "record_date", "2025-12-31",
+                        "condition_problem", "Coughing", "description", "Several birds coughed",
+                        "action", "Isolated affected birds"))));
+        assertEquals(false, preview.get("valid"));
+        assertEquals(1, preview.get("rejected"));
+        verify(health, never()).addHealth(anyString(), any());
+    }
+
     private BatchResponse batch(String code, String status) {
         return new BatchResponse("batch-id", "farm-id", "house-id", null, code, "BROILER",
                 LocalDate.parse("2026-01-01"), 100, 100000L, status,
