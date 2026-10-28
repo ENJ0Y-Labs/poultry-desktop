@@ -3,6 +3,8 @@ import { FarmManagerContext } from "../components/FarmManagerContext.jsx";
 // eslint-disable-next-line no-unused-vars
 import PageSection from "../components/PageSection.jsx";
 import { rememberLastBatchId } from "../utils/farmUx.js";
+// eslint-disable-next-line no-unused-vars
+import DataTable from "../components/DataTable.jsx";
 
 const batchTypeLabel = type => type === "LAYER" ? "Layer" : type === "BROILER" ? "Broiler" : "Unknown type";
 const batchStatusLabel = status => status === "ACTIVE" ? "Active" : status === "SOLD" ? "Sold" : String(status || "Unknown").toLowerCase().replace(/\b\w/g, letter => letter.toUpperCase());
@@ -57,11 +59,14 @@ export default function FlocksPage() {
             <label className="field"><span>Purchase cost (₦)</span><input required type="text" inputMode="decimal" value={batchForm.purchaseCostMinor} onChange={e=>setBatchForm({...batchForm,purchaseCostMinor:e.target.value})}/></label>
             <button disabled={saving || houses.length===0}>Create batch</button>
           </form>
-          <div role="table" aria-label="Batch records" className="table">
-            <div role="row" className="row header"><span role="columnheader">Code</span><span role="columnheader">Type</span><span role="columnheader">Placement</span><span role="columnheader">Birds</span><span role="columnheader">Status</span><span role="columnheader">Action</span></div>
-            {batches.map(batch=><div role="row" className="row" key={batch.id}><span role="cell">{batch.code}</span><span role="cell">{batchTypeLabel(batch.type)}</span><span role="cell">{batch.placementDate}</span><span role="cell">{batch.initialBirdCount}</span><span role="cell">{batchStatusLabel(batch.status)}</span><span role="cell">{batch.status==="SOLD" ? <button type="button" onClick={()=>reopenBatch(batch.id)} disabled={saving}>Reopen</button> : batch.type==="BROILER" ? <button type="button" onClick={()=>markBatchSold(batch.id)} disabled={saving}>Mark sold</button> : "—"}</span></div>)}
-            {batches.length===0 && <p className="muted empty">No batches yet.</p>}
-          </div>
+          <DataTable caption="Batch records" columns={[
+              { key: "code", label: "Code" }, { key: "type", label: "Type", render: batch => batchTypeLabel(batch.type) },
+              { key: "placementDate", label: "Placement" }, { key: "initialBirdCount", label: "Birds" },
+              { key: "status", label: "Status", render: batch => batchStatusLabel(batch.status) },
+              { key: "action", label: "Action", render: batch => batch.status === "SOLD"
+                ? <button type="button" onClick={() => reopenBatch(batch.id)} disabled={saving}>Reopen</button>
+                : batch.type === "BROILER" ? <button type="button" onClick={() => markBatchSold(batch.id)} disabled={saving}>Mark sold</button> : "—" },
+            ]} rows={batches} emptyMessage="No batches yet." />
           <div className="subsection">
             <div className="section-head"><h3>Additional attributable bird cost</h3><p className="muted">Enter the amount in naira. The app converts it to integer kobo before saving.</p></div>
             <form className="inline-form" onSubmit={addBirdCost}>
@@ -79,10 +84,10 @@ export default function FlocksPage() {
 
       <PageSection page="flocks" tab="houses"><section id="houses" className="card full"><div className="section-head"><h2>Houses / pens</h2><p className="muted">Physical locations that batches belong to.</p></div>
           <form className="inline-form" onSubmit={addHouse}><label className="field"><span>Name</span><input required value={houseForm.name} onChange={e=>setHouseForm({...houseForm,name:e.target.value})}/></label><label className="field"><span>Code</span><input required value={houseForm.code} onChange={e=>setHouseForm({...houseForm,code:e.target.value})}/></label><label className="field"><span>Notes</span><input value={houseForm.notes} onChange={e=>setHouseForm({...houseForm,notes:e.target.value})}/></label><button disabled={saving}>Add house</button></form>
-          <div className="table"><div role="row" className="row header"><span role="columnheader">Name</span><span role="columnheader">Code</span><span role="columnheader">Status</span><span role="columnheader">Notes</span></div>
-            {houses.map(h=><div role="row" className="row" key={h.id}><span role="cell">{h.name}</span><span role="cell">{h.code}</span><span role="cell">{h.status}</span><span role="cell">{h.notes||"—"}</span></div>)}
-            {houses.length===0 && <p className="muted empty">No houses or pens yet.</p>}
-          </div>
+          <DataTable caption="Houses and pens" columns={[
+              { key: "name", label: "Name" }, { key: "code", label: "Code" }, { key: "status", label: "Status" },
+              { key: "notes", label: "Notes", render: house => house.notes || "—" },
+            ]} rows={houses} emptyMessage="No houses or pens yet." />
         </section></PageSection>
     </div>
   );
