@@ -967,15 +967,24 @@ body { min-width: 0; }
   .app-topbar { align-items: flex-start; flex-direction: column; gap: 12px; }
 }
 @media (max-width: 620px) {
-  .sidebar { width: 68px; }
-  .sidebar .brand-copy, .sidebar .workspace-summary, .sidebar .nav-group > p,
-  .sidebar .nav-label, .sidebar .nav-item kbd, .sidebar .sidebar-footer .nav-label { display: none; }
-  .sidebar .brand { justify-content: center; padding: 12px 6px; }
+  .sidebar { width: 220px; }
+  .app-shell.sidebar-collapsed .sidebar { width: 68px; }
+  .app-shell.sidebar-collapsed .sidebar .brand-copy, .app-shell.sidebar-collapsed .sidebar .workspace-summary, .app-shell.sidebar-collapsed .sidebar .nav-group > p,
+  .app-shell.sidebar-collapsed .sidebar .nav-label, .app-shell.sidebar-collapsed .sidebar .nav-item kbd, .app-shell.sidebar-collapsed .sidebar .sidebar-footer .nav-label { display: none; }
+  .app-shell.sidebar-collapsed .sidebar .brand { justify-content: center; padding: 12px 6px; }
+  .app-shell:not(.sidebar-collapsed) .sidebar .brand { justify-content: flex-start; padding: 4px 10px; }
+  .app-shell:not(.sidebar-collapsed) .sidebar .workspace-summary { display: block; }
+  .app-shell:not(.sidebar-collapsed) .sidebar .nav-item { justify-content: flex-start; padding: 6px 8px; }
   .sidebar .sidebar-toggle { display: inline-flex; }
   .sidebar .nav-item { justify-content: center; padding: 10px 4px; }
-  .app-main { margin-left: 68px; }
-  .app-shell:not(.sidebar-collapsed) .app-main { margin-left: 68px; }
+  .app-main { margin-left: 220px; }
+  .app-shell.sidebar-collapsed .app-main { margin-left: 68px; }
   .topbar-actions { justify-content: flex-start; }
   .shell { padding: 14px 10px 32px; }
 }
-\n\n/* Account session controls */\n.account-session-actions { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--border); }\n.danger-button { background: var(--red); color: #fff; border-color: var(--red); }\n.danger-button:hover:not(:disabled) { filter: brightness(.94); }\n
+
+
+/* Account session controls */
+.account-session-actions { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--border); }
+.danger-button { background: var(--red); color: #fff; border-color: var(--red); }
+.danger-button:hover:not(:disabled) { filter: brightness(.94); }
