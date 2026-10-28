@@ -54,6 +54,29 @@ describe("historical operational templates", () => {
   });
 });
 
+describe("historical production templates", () => {
+  it("defines versioned layer egg and broiler weight templates with stable batch codes", async () => {
+    expect(CSV_TEMPLATES["egg-collections"].version).toBe("1.0");
+    expect(CSV_TEMPLATES["egg-collections"].headers).toEqual([
+      "batch_code", "record_date", "good_eggs", "cracked_eggs", "notes",
+    ]);
+    expect(CSV_TEMPLATES["broiler-weights"].version).toBe("1.0");
+    expect(CSV_TEMPLATES["broiler-weights"].headers).toEqual([
+      "batch_code", "record_date", "sample_quantity", "total_weight_kg", "notes",
+    ]);
+    const eggs = await inspectCsvFile(csvFile(
+      "batch_code,record_date,good_eggs,cracked_eggs,notes\\nL-2026-001,2026-01-15,850,12,Historical collection\\n",
+    ), "egg-collections");
+    expect(eggs.validRows).toBe(1);
+    expect(eggs.rows[0].record.good_eggs).toBe("850");
+    const weights = await inspectCsvFile(csvFile(
+      "batch_code,record_date,sample_quantity,total_weight_kg,notes\\nB-2026-001,2026-01-15,10,18.500,Historical sample\\n",
+    ), "broiler-weights");
+    expect(weights.validRows).toBe(1);
+    expect(weights.rows[0].record.total_weight_kg).toBe("18.500");
+  });
+});
+
 describe("historical feed templates", () => {
   it("defines versioned purchase and usage templates with naira and stable references", async () => {
     expect(CSV_TEMPLATES["feed-purchases"].version).toBe("1.0");
