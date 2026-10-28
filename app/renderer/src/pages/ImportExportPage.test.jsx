@@ -12,11 +12,11 @@ describe("ImportExportPage", () => {
     expect(window.location.hash).toBe("#flocks/flocks");
   });
 
-  it("exposes only the supported customer and supplier CSV import modules", () => {
+  it("exposes all supported CSV import modules", () => {
     render(<ImportExportPage />);
     const selector = screen.getByRole("combobox", { name: "Import module" });
     expect(selector).toHaveValue("customers");
-    expect(Array.from(selector.options).map(option => option.value)).toEqual(["daily-records", "mortality", "culling", "customers", "suppliers"]);
+    expect(Array.from(selector.options).map(option => option.value)).toEqual(["houses", "daily-records", "mortality", "culling", "health", "drugs", "vaccinations", "customers", "suppliers"]);
   });
 
   it("links to the existing supported report export workflow", () => {
