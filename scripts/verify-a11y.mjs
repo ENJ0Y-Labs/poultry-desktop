@@ -78,16 +78,19 @@ for (const theme of themes) {
 
   assert.equal(tokens.focus.toLowerCase(), "#f4b41a", `${theme.name} theme must use the approved gold focus accent`);
   if (theme.name === "dark") {
+    assert.equal(tokens.activeNav.toLowerCase(), "#0a0a0a", "Dark active navigation surface must remain black, not teal");
     assert.equal(tokens.surface.toLowerCase(), "#000000", "Dark primary surface must be black");
     assert.equal(tokens.raised.toLowerCase(), "#0a0a0a", "Dark raised surface must be near-black");
     assert.equal(tokens.accent.toLowerCase(), "#f4b41a", "Dark accent text must use gold");
     assert.equal(tokens.actionBg.toLowerCase(), "#f4b41a", "Dark primary action must use gold fill");
     assert.equal(tokens.actionText.toLowerCase(), "#000000", "Dark primary action text must be black");
+    assert.ok(contrast(tokens.accent, tokens.activeNav) >= 4.5, "Dark gold navigation text must contrast with the black active surface");
   } else {
     assert.equal(tokens.surface.toLowerCase(), "#ffffff", "Light primary surface must be white");
     assert.equal(tokens.accent.toLowerCase(), "#1a4d5c", "Light accent text must use teal");
     assert.equal(tokens.actionBg.toLowerCase(), "#1a4d5c", "Light primary action must use teal fill");
     assert.equal(tokens.actionText.toLowerCase(), "#ffffff", "Light primary action text must be white");
+    assert.equal(tokens.raised.toLowerCase(), "#ffffff", "Light raised surfaces must be white");
   }
 
   for (const [label, foreground, background, minimum] of checks) {

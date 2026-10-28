@@ -458,3 +458,114 @@ input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-
 .form-field-label { display: flex; flex-direction: column; gap: .35rem; }
 .form-field-hint { margin: .25rem 0 0; font-size: .875rem; }
 .form-field-error { margin: .25rem 0 0; color: var(--color-danger, #b42318); font-size: .875rem; }
+
+
+/* Strict light/dark polarity: white surfaces become black, teal brand accents become gold in dark mode. */
+:root:not([data-theme="light"]) {
+  color-scheme: dark;
+  --a11y-surface: #000000;
+  --a11y-surface-raised: #0A0A0A;
+  --a11y-text: #F5F5F5;
+  --a11y-secondary: #C8C8C8;
+  --a11y-tertiary: #C8C8C8;
+  --a11y-accent-text: #F4B41A;
+  --a11y-nav-active-bg: #0A0A0A;
+  --a11y-shortcut-bg: #0A0A0A;
+  --a11y-warning-bg: #3B2B08;
+  --a11y-warning-text: #FFD77A;
+  --a11y-critical-bg: #481D22;
+  --a11y-critical-text: #FFB8BD;
+  --a11y-error-bg: #32171B;
+  --a11y-error-text: #FFC2C7;
+  --pomas-page-bg: #000000;
+  --pomas-panel-bg: #000000;
+  --pomas-panel-raised: #0A0A0A;
+  --pomas-border: #303030;
+  --pomas-primary-action-bg: #F4B41A;
+  --pomas-primary-action-text: #000000;
+  --pomas-primary-action-hover: #FFD15C;
+  --pomas-focus-ring: #F4B41A;
+  --cyan: #F4B41A;
+  --brand-accent: #F4B41A;
+}
+:root[data-theme="light"] {
+  color-scheme: light;
+  --a11y-surface: #FFFFFF;
+  --a11y-surface-raised: #FFFFFF;
+  --a11y-text: #1A4D5C;
+  --a11y-secondary: #425B61;
+  --a11y-tertiary: #425B61;
+  --a11y-accent-text: #1A4D5C;
+  --a11y-nav-active-bg: #FFF2C9;
+  --a11y-shortcut-bg: #F4F7F7;
+  --a11y-warning-bg: #FFF1CF;
+  --a11y-warning-text: #704400;
+  --a11y-critical-bg: #FFE4E6;
+  --a11y-critical-text: #9F1239;
+  --a11y-error-bg: #FFF0F0;
+  --a11y-error-text: #9F2525;
+  --pomas-page-bg: #FFFFFF;
+  --pomas-panel-bg: #FFFFFF;
+  --pomas-panel-raised: #FFFFFF;
+  --pomas-border: #D5E0E2;
+  --pomas-primary-action-bg: #1A4D5C;
+  --pomas-primary-action-text: #FFFFFF;
+  --pomas-primary-action-hover: #246779;
+  --pomas-focus-ring: #F4B41A;
+  --cyan: #1A4D5C;
+  --brand-accent: #1A4D5C;
+}
+:root:not([data-theme="light"]) .app-shell,
+:root:not([data-theme="light"]) .app-main,
+:root:not([data-theme="light"]) .app-topbar,
+:root:not([data-theme="light"]) .sidebar,
+:root:not([data-theme="light"]) .card,
+:root:not([data-theme="light"]) .metric-card,
+:root:not([data-theme="light"]) .subsection,
+:root:not([data-theme="light"]) .workspace-summary,
+:root:not([data-theme="light"]) .sidebar-footer,
+:root:not([data-theme="light"]) .table-container,
+:root:not([data-theme="light"]) .table-scroll,
+:root:not([data-theme="light"]) .activity-table-container,
+:root:not([data-theme="light"]) .data-table th,
+:root:not([data-theme="light"]) input,
+:root:not([data-theme="light"]) select,
+:root:not([data-theme="light"]) textarea {
+  background-color: var(--pomas-page-bg);
+  color: var(--a11y-text);
+  border-color: var(--pomas-border);
+}
+:root:not([data-theme="light"]) .card,
+:root:not([data-theme="light"]) .metric-card,
+:root:not([data-theme="light"]) .subsection,
+:root:not([data-theme="light"]) .workspace-summary,
+:root:not([data-theme="light"]) .data-table th {
+  background-color: var(--pomas-panel-raised);
+}
+:root:not([data-theme="light"]) .nav-item.active {
+  background: var(--a11y-nav-active-bg);
+  color: var(--a11y-accent-text);
+  border-color: var(--brand-gold);
+  box-shadow: inset 3px 0 0 var(--brand-gold);
+}
+:root[data-theme="light"] .nav-item.active {
+  background: var(--a11y-nav-active-bg);
+  color: var(--a11y-accent-text);
+  border-color: var(--brand-teal);
+  box-shadow: inset 3px 0 0 var(--brand-teal);
+}
+:root[data-theme="light"] .app-shell,
+:root[data-theme="light"] .app-main,
+:root[data-theme="light"] .app-topbar,
+:root[data-theme="light"] .sidebar,
+:root[data-theme="light"] .card,
+:root[data-theme="light"] .metric-card,
+:root[data-theme="light"] .subsection,
+:root[data-theme="light"] .workspace-summary,
+:root[data-theme="light"] .sidebar-footer,
+:root[data-theme="light"] .table-container,
+:root[data-theme="light"] .table-scroll,
+:root[data-theme="light"] .activity-table-container,
+:root[data-theme="light"] .data-table th {
+  color: var(--a11y-text);
+}
