@@ -178,7 +178,7 @@ public class OperationalCsvImportService {
                     DailyRecordResponse existing = dailyOperations.get(batch.id(), date);
                     int eventQuantity = quantity;
                     boolean exact = existing.populationEvents().stream().anyMatch(event ->
-                            type.equals(event.eventType()) && event.quantity() == eventQuantity
+                            type.equals(event.type()) && event.quantity() == eventQuantity
                                     && Objects.equals(norm(event.reason()), norm(reason))
                                     && Objects.equals(norm(event.notes()), norm(notes)));
                     if (exact) row.duplicate = true;
