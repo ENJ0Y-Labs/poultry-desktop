@@ -4,6 +4,7 @@ import com.grantinofarms.poultry.domain.BirdPopulationEvent;
 import com.grantinofarms.poultry.dto.*;
 import com.grantinofarms.poultry.exception.ApiException;
 import com.grantinofarms.poultry.repository.BirdPopulationRepository;
+import com.grantinofarms.poultry.repository.DailyOperationsRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -24,6 +25,7 @@ class OperationalCsvImportServiceTest {
     @Mock DailyOperationsService dailyOperations;
     @Mock BirdPopulationService population;
     @Mock BirdPopulationRepository populationRepository;
+    @Mock DailyOperationsRepository dailyRepository;
 
     private OperationalCsvImportService service;
     private final BatchResponse batch = new BatchResponse(
@@ -33,7 +35,7 @@ class OperationalCsvImportServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new OperationalCsvImportService(batches, dailyOperations, population, populationRepository);
+        service = new OperationalCsvImportService(batches, dailyOperations, population, populationRepository, dailyRepository);
         when(batches.list()).thenReturn(List.of(batch));
         when(dailyOperations.get(eq("batch-id"), any(LocalDate.class))).thenAnswer(call -> {
             LocalDate date = call.getArgument(1);
