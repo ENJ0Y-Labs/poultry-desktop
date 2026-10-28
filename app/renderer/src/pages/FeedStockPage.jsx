@@ -130,7 +130,7 @@ export default function FeedStockPage() {
               { key: "movementDate", label: "Date" }, { key: "movementType", label: "Movement" },
               { key: "quantity", label: "Quantity" }, { key: "reason", label: "Reason" }, { key: "source", label: "Source" },
               { key: "batchId", label: "Batch", render: row => row.batchId ? (batches.find(batch => batch.id === row.batchId)?.code || row.batchId) : "Farm" },
-            ]} rows={inventoryMovements} emptyMessage="No movements for this item." />}}
+            ]} rows={inventoryMovements} emptyMessage="No movements for this item." />}
           </div>
         </section></PageSection>
       <PageSection page="feed-stock" tab="purchases"><section id="purchases" className="card full"><div className="section-head"><h2>Feed purchases</h2><p className="muted">Choose a registered supplier or leave it blank if the source is unknown.</p></div>

@@ -166,7 +166,7 @@ export default function ProductionPage() {
                     { key: "targetPricePerBirdMinor", label: "Target price / bird", render: row => formatMoney(row.targetPricePerBirdMinor, farm.currency) },
                     { key: "workingMarginPercent", label: "Working margin", render: row => `${row.workingMarginPercent ?? "—"}%` },
                     { key: "workingPricePerBirdMinor", label: "Working price / bird", render: row => formatMoney(row.workingPricePerBirdMinor, farm.currency) },
-                  ]} rows={[{ id: "pricing", ...pricing }]} />}}
+                  ]} rows={[{ id: "pricing", ...pricing }]} />}
               </div>
 
               <div className="subsection">
