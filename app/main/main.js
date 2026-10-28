@@ -293,8 +293,8 @@ async function createWindow() {
     backgroundColor: initialBackground,
     width: 1366,
     height: 768,
-    minWidth: 1100,
-    minHeight: 650,
+    minWidth: 680,
+    minHeight: 600,
     webPreferences: {
       preload: join(__dirname, "../preload/preload.cjs"),
       contextIsolation: true,
