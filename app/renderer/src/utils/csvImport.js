@@ -131,14 +131,15 @@ export async function inspectCsvFile(file, moduleKey) {
     if (values.length !== headers.length) errors.push(`Expected ${headers.length} columns, found ${values.length}.`);
     for (const required of template.required) if (!record[required]) errors.push(`${required} is required.`);
     const key = record.name.toLocaleLowerCase("en");
-    const duplicate = key && seen.has(key);
+    const duplicate = Boolean(key && seen.has(key));
+    if (duplicate) errors.push("Duplicate name within this file.");
     if (key) seen.add(key);
     if (moduleKey === "houses") {
       const code = record.code.toLocaleUpperCase();
       if (code && seenCodes.has(code)) errors.push("Duplicate house/pen code within this file.");
       if (code) seenCodes.add(code);
     }
-    return { rowNumber: index + 2, record, errors, valid: errors.length === 0 };
+    return { rowNumber: index + 2, record, errors, duplicate, valid: errors.length === 0 };
   });
   return {
     moduleKey,
