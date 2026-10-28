@@ -34,7 +34,7 @@ describe("parseCsv", () => {
 
   it("neutralizes spreadsheet formulas in generated error reports", () => {
     expect(encodeCsv([["=HYPERLINK(\"https://example.test\")", "-1", "+2", "@SUM(A1)"]]))
-      .toBe('"\'=HYPERLINK(""https://example.test""),\'-1,\'+2,\'@SUM(A1)\r\n');
+      .toBe('"\'=HYPERLINK(""https://example.test"")",\'-1,\'+2,\'@SUM(A1)\r\n');
   });
 
   it("rejects cells larger than the configured limit", () => {
