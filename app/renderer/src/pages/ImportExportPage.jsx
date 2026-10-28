@@ -55,7 +55,7 @@ export default function ImportExportPage() {
 
   async function confirmImport() {
     if (!importPreview || importPreview.invalidRows || !importPreview.totalRows || importBusy) return;
-    const confirmed = window.confirm(`Import ${importPreview.totalRows} ${CSV_TEMPLATES[importModule].label.toLowerCase()}? This will write records to this farm.`);
+    const confirmed = window.confirm(`Import ${importPreview.totalRows} ${CSV_TEMPLATES[importModule].label.toLowerCase()}? Exact duplicate rows will be skipped; conflicting or invalid rows block the import. This will write records to this farm.`);
     if (!confirmed) return;
     setImportBusy(true);
     setImportError("");
@@ -65,7 +65,7 @@ export default function ImportExportPage() {
             const result = operational
               ? await csvImportApi.importOperationalRecords(importModule, importPreview.rows.map(row => row.record))
               : await csvImportApi.importRecords(importModule, importPreview.rows.map(row => row.record));
-      setImportMessage(`Imported ${result.imported} ${CSV_TEMPLATES[importModule].label.toLowerCase()} successfully.`);
+      setImportMessage(`Imported ${result.imported} ${CSV_TEMPLATES[importModule].label.toLowerCase()} successfully.${result.duplicates ? ` ${result.duplicates} exact duplicate(s) skipped.` : ""}`);
       setImportPreview(null);
       setImportFile(null);
       const input = document.getElementById("pomas-csv-file");
