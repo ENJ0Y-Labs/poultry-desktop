@@ -3,9 +3,11 @@
 ## Prerequisites
 
 - Windows for the primary desktop workflow
-- Node.js 20+
+- Node.js 22.12+
 - npm
 - JDK 17
+
+The Windows installer and executable use `build/icon.ico`. Keep this as a valid Windows ICO with an image size of at least 256×256 pixels; `build/icon.png` is the high-resolution Pomas artwork source. A 32×32-only ICO will fail Electron Builder's Windows resource packaging.
 - Git
 - PowerShell for the documented Windows commands
 
