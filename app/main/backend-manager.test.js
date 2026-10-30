@@ -26,16 +26,18 @@ function createTempUserDataPath() {
 
 describe("BackendManager", () => {
   let resourcesPath;
+  let javaExecutable;
 
   beforeEach(() => {
     spawnMock.mockReset();
     globalThis.fetch = vi.fn(async () => ({ ok: true }));
 
     resourcesPath = mkdtempSync(join(tmpdir(), "poultry-electron-resources-"));
+    javaExecutable = process.platform === "win32" ? "java.exe" : "java";
     mkdirSync(join(resourcesPath, "backend"), { recursive: true });
     mkdirSync(join(resourcesPath, "runtime", "bin"), { recursive: true });
     writeFileSync(join(resourcesPath, "backend", "poultry-backend.jar"), "");
-    writeFileSync(join(resourcesPath, "runtime", "bin", "java.exe"), "");
+    writeFileSync(join(resourcesPath, "runtime", "bin", javaExecutable), "");
 
   });
 
@@ -44,7 +46,7 @@ describe("BackendManager", () => {
   });
 
   it("refuses to fall back to a system Java runtime in packaged builds", () => {
-    rmSync(join(resourcesPath, "runtime", "bin", "java.exe"), { force: true });
+    rmSync(join(resourcesPath, "runtime", "bin", javaExecutable), { force: true });
 
     const manager = new BackendManager({
       userDataPath: "C:/Users/test/AppData/Roaming/Poultry Farm Manager",
