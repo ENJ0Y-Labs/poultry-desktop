@@ -3,7 +3,7 @@
 ## Prerequisites
 
 - Windows for the primary desktop workflow
-- Node.js 20+
+- Node.js 22.12+
 - npm
 - JDK 17
 - Git
