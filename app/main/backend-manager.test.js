@@ -43,6 +43,19 @@ describe("BackendManager", () => {
     rmSync(resourcesPath, { recursive: true, force: true });
   });
 
+  it("refuses to fall back to a system Java runtime in packaged builds", () => {
+    rmSync(join(resourcesPath, "runtime", "bin", "java.exe"), { force: true });
+
+    const manager = new BackendManager({
+      userDataPath: "C:/Users/test/AppData/Roaming/Poultry Farm Manager",
+      appPath: "C:/project",
+      isPackaged: true,
+      resourcesPath,
+    });
+
+    expect(() => manager.javaPath).toThrow(/bundled Java runtime is missing/i);
+  });
+
   it("keeps the packaged backend on the CSP-allowed default port", () => {
     const previousPort = process.env.POULTRY_BACKEND_PORT;
     process.env.POULTRY_BACKEND_PORT = "19003";
