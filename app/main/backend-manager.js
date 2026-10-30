@@ -50,7 +50,19 @@ export class BackendManager {
 
   get javaPath() {
     const bundled = join(this.resourcesPath, "runtime", process.platform === "win32" ? "bin/java.exe" : "bin/java");
-    return this.isPackaged && existsSync(bundled) ? bundled : "java";
+
+    if (!this.isPackaged) return "java";
+
+    // Production must be self-contained. Falling back to PATH makes the same
+    // installer behave differently depending on whether a customer happens to
+    // have Java installed, and can silently use an incompatible runtime.
+    if (!existsSync(bundled)) {
+      throw new Error(
+        `The bundled Java runtime is missing: ${bundled}. Rebuild the Pomas installer with the packaged runtime; do not require customers to install Java.`
+      );
+    }
+
+    return bundled;
   }
 
   get jarPath() {
