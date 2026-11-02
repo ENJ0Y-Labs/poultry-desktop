@@ -40,6 +40,7 @@ export class BackendManager {
     this.userDataPath = userDataPath;
     this.appPath = appPath;
     this.isPackaged = isPackaged;
+    this.explicitPort = port !== undefined && port !== null;
     this.resourcesPath = resourcesPath;
     this.spawnProcess = spawnProcess;
     this.process = null;
@@ -127,7 +128,7 @@ export class BackendManager {
     let lastStartupError;
 
     for (let attempt = 1; attempt <= attempts; attempt += 1) {
-      if (this.isPackaged) this.port = await findAvailablePort();
+      if (this.isPackaged && !(attempt === 1 && this.explicitPort)) this.port = await findAvailablePort();
       this.instanceId = randomUUID();
 
       try {
