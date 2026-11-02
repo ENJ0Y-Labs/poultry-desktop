@@ -11,6 +11,7 @@ import { BackendManager } from "./backend-manager.js";
 function fakeChild() {
   const child = new EventEmitter();
   child.exitCode = null;
+  child.signalCode = null;
   child.killed = false;
   child.kill = vi.fn(() => {
     child.killed = true;
@@ -30,7 +31,13 @@ describe("BackendManager", () => {
 
   beforeEach(() => {
     spawnMock.mockReset();
-    globalThis.fetch = vi.fn(async () => ({ ok: true }));
+    globalThis.fetch = vi.fn(async () => ({
+      ok: true,
+      json: async () => ({
+        status: "UP",
+        instanceId: spawnMock.mock.calls.at(-1)?.[2]?.env?.POULTRY_INSTANCE_ID
+      })
+    }));
 
     resourcesPath = mkdtempSync(join(tmpdir(), "poultry-electron-resources-"));
     javaExecutable = process.platform === "win32" ? "java.exe" : "java";
@@ -38,7 +45,6 @@ describe("BackendManager", () => {
     mkdirSync(join(resourcesPath, "runtime", "bin"), { recursive: true });
     writeFileSync(join(resourcesPath, "backend", "poultry-backend.jar"), "");
     writeFileSync(join(resourcesPath, "runtime", "bin", javaExecutable), "");
-
   });
 
   afterEach(() => {
@@ -58,7 +64,7 @@ describe("BackendManager", () => {
     expect(() => manager.javaPath).toThrow(/bundled Java runtime is missing/i);
   });
 
-  it("keeps the packaged backend on the CSP-allowed default port", () => {
+  it("does not pin the packaged backend to the development port", () => {
     const previousPort = process.env.POULTRY_BACKEND_PORT;
     process.env.POULTRY_BACKEND_PORT = "19003";
 
@@ -69,7 +75,7 @@ describe("BackendManager", () => {
         isPackaged: true,
       });
 
-      expect(manager.port).toBe(18942);
+      expect(manager.port).toBe(0);
     } finally {
       if (previousPort === undefined) delete process.env.POULTRY_BACKEND_PORT;
       else process.env.POULTRY_BACKEND_PORT = previousPort;
@@ -98,7 +104,7 @@ describe("BackendManager", () => {
     expect(manager.databasePath).toMatch(/data[\\/]poultry\.db$/);
   });
 
-  it("starts Spring Boot with the database path and waits for health", async () => {
+  it("starts Spring Boot with a unique instance ID and waits for its health response", async () => {
     const child = fakeChild();
     spawnMock.mockReturnValue(child);
     const userDataPath = createTempUserDataPath();
@@ -125,14 +131,69 @@ describe("BackendManager", () => {
           expect.stringContaining("--poultry.database-path="),
           "--spring.profiles.active=prod",
         ]),
-        expect.objectContaining({ windowsHide: true, stdio: ["ignore", "pipe", "pipe"] })
+        expect.objectContaining({
+          windowsHide: true,
+          stdio: ["ignore", "pipe", "pipe"],
+          env: expect.objectContaining({ POULTRY_INSTANCE_ID: manager.instanceId })
+        })
       );
+      expect(manager.instanceId).toMatch(/^[0-9a-f-]{36}$/i);
       expect(globalThis.fetch).toHaveBeenCalledWith("http://127.0.0.1:19002/api/v1/health");
       expect(existsSync(join(userDataPath, "logs", "backend-process.log"))).toBe(true);
-      expect(readFileSync(join(userDataPath, "logs", "backend-process.log"), "utf8")).toContain("Backend health check passed.");
+      expect(readFileSync(join(userDataPath, "logs", "backend-process.log"), "utf8")).toContain("Backend health check passed");
     } finally {
       rmSync(userDataPath, { recursive: true, force: true });
     }
+  });
+
+  it("chooses an available non-development port for a packaged backend", async () => {
+    const child = fakeChild();
+    spawnMock.mockReturnValue(child);
+    const userDataPath = createTempUserDataPath();
+
+    try {
+      const manager = new BackendManager({
+        userDataPath,
+        appPath: "C:/project",
+        isPackaged: true,
+        resourcesPath,
+        spawnProcess: spawnMock,
+      });
+
+      await manager.start();
+
+      expect(manager.port).toBeGreaterThan(0);
+      expect(manager.port).not.toBe(18942);
+      expect(spawnMock.mock.calls[0][1]).toContain(`--server.port=${manager.port}`);
+      expect(globalThis.fetch).toHaveBeenCalledWith(`http://127.0.0.1:${manager.port}/api/v1/health`);
+    } finally {
+      rmSync(userDataPath, { recursive: true, force: true });
+    }
+  });
+
+  it("rejects a successful health response from a different backend instance", async () => {
+    globalThis.fetch.mockResolvedValue({
+      ok: true,
+      json: async () => ({ status: "UP", instanceId: "some-other-instance" })
+    });
+    const child = fakeChild();
+    const manager = new BackendManager({
+      userDataPath: createTempUserDataPath(),
+      appPath: "C:/project",
+      isPackaged: true,
+      port: 19124,
+      resourcesPath,
+      spawnProcess: spawnMock,
+    });
+    manager.process = child;
+    manager.instanceId = "expected-instance";
+
+    await expect(manager.waitForHealth({
+      child,
+      instanceId: "expected-instance",
+      timeoutMs: 1,
+      intervalMs: 0
+    })).rejects.toThrow(/did not prove its identity/i);
   });
 
   it("stops the Spring Boot process during shutdown", async () => {
@@ -157,8 +218,10 @@ describe("BackendManager", () => {
       rmSync(userDataPath, { recursive: true, force: true });
     }
   });
+
   it("reports actionable startup recovery guidance when health never becomes ready", async () => {
     globalThis.fetch.mockRejectedValue(new Error("connection refused"));
+    const child = fakeChild();
     const manager = new BackendManager({
       userDataPath: createTempUserDataPath(),
       appPath: "C:/project",
@@ -167,12 +230,9 @@ describe("BackendManager", () => {
       resourcesPath,
       spawnProcess: spawnMock,
     });
+    manager.process = child;
 
-    const child = fakeChild();
-    spawnMock.mockReturnValue(child);
-
-    await expect(manager.waitForHealth({ timeoutMs: 1, intervalMs: 0 }))
-      .rejects.toThrow(/port 19123.*database may be unavailable.*migration may have failed/i);
+    await expect(manager.waitForHealth({ child, timeoutMs: 1, intervalMs: 0 }))
+      .rejects.toThrow(/did not prove its identity.*database may be unavailable.*migration may have failed/i);
   });
-
 });
