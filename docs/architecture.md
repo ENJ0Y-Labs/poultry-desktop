@@ -123,12 +123,13 @@ Packaged:
 Electron
   -> create %APPDATA%/Poultry Farm Manager/data
   -> start bundled Java + poultry-backend.jar
-  -> bind Spring Boot to 127.0.0.1:18942
-  -> poll /api/v1/health
+  -> select an available loopback port
+  -> pass a unique per-launch instance ID to Spring Boot
+  -> accept /api/v1/health only when its instance ID matches
   -> open React window
 ```
 
-The window is not opened until the backend is healthy.
+The window is not opened until the backend is healthy and its health response proves it is the process launched by this Electron instance. Packaged startup retries with a newly selected port if the backend exits before readiness. The renderer obtains the selected API base URL through the `backend:base-url` IPC handler; its packaged Content Security Policy restricts API connections to loopback.
 
 ## Shutdown
 

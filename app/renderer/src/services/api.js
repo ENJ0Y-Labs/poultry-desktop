@@ -1,4 +1,4 @@
-const configuredApiBase = import.meta.env?.VITE_API_BASE_URL || window.poultryDesktop?.apiBaseUrl;
+const configuredApiBase = import.meta.env?.VITE_API_BASE_URL;
 
 function signalBackendUnavailable() {
   if (typeof window !== "undefined") {
@@ -15,10 +15,12 @@ function dateRangeQuery(from, to) {
 }
 
 async function getApiBase() {
-  const desktopBase = window.poultryDesktop?.getApiBaseUrl
-    ? await window.poultryDesktop.getApiBaseUrl()
-    : null;
-  const configured = desktopBase || configuredApiBase || "http://127.0.0.1:18942";
+  const isDesktop = typeof window.poultryDesktop?.getApiBaseUrl === "function";
+  const desktopBase = isDesktop ? await window.poultryDesktop.getApiBaseUrl() : null;
+  if (isDesktop && !desktopBase) {
+    throw new Error("The desktop backend URL is unavailable until the local backend starts.");
+  }
+  const configured = isDesktop ? desktopBase : configuredApiBase || "http://127.0.0.1:18942";
   const normalized = configured.replace(/\/+$/, "");
   return normalized.endsWith("/api/v1") ? normalized : normalized + "/api/v1";
 }
