@@ -10,7 +10,7 @@ const rendererDevelopmentCsp = {
     // exist only while serving the renderer and must not enter the packaged HTML.
     return html.replace(
       /<meta http-equiv="Content-Security-Policy" content="[^"]*"\s*\/?>/i,
-      `<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self' http://127.0.0.1:18942 ws://127.0.0.1:5173 ws://localhost:5173;"/>`
+      `<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self' http://127.0.0.1:* ws://127.0.0.1:5173 ws://localhost:5173;"/>`
     );
   }
 };
