@@ -40,7 +40,7 @@ export class BackendManager {
     this.userDataPath = userDataPath;
     this.appPath = appPath;
     this.isPackaged = isPackaged;
-    this.explicitPort = port !== undefined && port !== null;
+    this.explicitPort = Number(port) > 0;
     this.resourcesPath = resourcesPath;
     this.spawnProcess = spawnProcess;
     this.process = null;
