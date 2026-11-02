@@ -196,7 +196,7 @@ Use:
 - narrow typed `contextBridge`
 - no direct `ipcRenderer` exposure
 - no direct `fs` exposure
-- strict CSP: packaged renderer allows only bundled same-origin resources and the local API at `http://127.0.0.1:18942`; development-only Vite HMR sources are injected only in serve mode and must never ship
+- strict CSP: packaged renderer allows bundled same-origin resources and the local API only on `127.0.0.1` using a dynamic port; development-only Vite HMR sources are injected only in serve mode and must never ship
 - controlled navigation
 - controlled window creation
 
@@ -214,7 +214,8 @@ Development:
 
 - start Spring Boot locally
 - start Electron/React locally, or use the documented browser-only Vite workflow (`npm run dev:browser:all`)
-- Electron connects to the configured local API address
+- Electron selects an available loopback port for the packaged backend, passes a per-launch instance ID to Spring Boot, and accepts readiness only when the health response echoes that ID
+- Electron exposes the selected backend URL through the validated `backend:base-url` IPC handler; the desktop renderer must use that IPC instead of a hardcoded port
 - the datasource URL must be derived from `poultry.database-path`; never hardcode a developer-specific database path
 - Spring Boot file logs go to `logs/backend.log`; Electron-captured process stdout/stderr and startup diagnostics go to `logs/backend-process.log`
 

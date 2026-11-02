@@ -1,5 +1,6 @@
 package com.grantinofarms.poultry.controller;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -14,6 +15,9 @@ import java.util.Map;
 public class HealthController {
 
     private final JdbcTemplate jdbcTemplate;
+
+    @Value("${POULTRY_INSTANCE_ID:}")
+    private String instanceId;
 
     public HealthController(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
@@ -35,7 +39,8 @@ public class HealthController {
                         "status", "DEGRADED",
                         "database", "UP",
                         "schema", "INVALID",
-                        "schemaVersion", schemaVersion
+                        "schemaVersion", schemaVersion,
+                        "instanceId", instanceId
                 ));
             }
 
@@ -44,14 +49,16 @@ public class HealthController {
                     "status", "UP",
                     "database", "UP",
                     "schema", "VALID",
-                    "schemaVersion", schemaVersion
+                    "schemaVersion", schemaVersion,
+                    "instanceId", instanceId
             ));
         } catch (Exception exception) {
             return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(Map.of(
                     "ok", false,
                     "status", "DOWN",
                     "database", "DOWN",
-                    "schema", "UNKNOWN"
+                    "schema", "UNKNOWN",
+                    "instanceId", instanceId
             ));
         }
     }

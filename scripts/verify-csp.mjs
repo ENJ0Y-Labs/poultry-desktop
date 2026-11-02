@@ -18,18 +18,18 @@ const expectedDirectives = [
   "default-src 'self'",
   "style-src 'self'",
   "script-src 'self'",
-  "connect-src 'self' http://127.0.0.1:18942",
+  "connect-src 'self' http://127.0.0.1:*",
 ].sort();
 
 assert.deepEqual(
   directives,
   expectedDirectives,
-  "Packaged renderer CSP must allow only bundled resources and the intended local backend origin/port.",
+  "Packaged renderer CSP must allow bundled resources and only the loopback backend on a dynamically assigned port.",
 );
 
 assert.doesNotMatch(
   match[1],
-  /unsafe-inline|unsafe-eval|ws:|wss:|vite|localhost:5173|127\.0\.0\.1:\*/i,
+  /unsafe-inline|unsafe-eval|ws:|wss:|vite|localhost:5173/i,
   "Development-only or unsafe CSP sources must not appear in the packaged renderer.",
 );
 
