@@ -167,7 +167,38 @@ npm run build
 
 This produces the Electron/Vite build output used by packaging.
 
-## Packaging
+## Building and Packaging Pomas for Windows
+
+Create the production Windows package:
+
+```powershell
+$env:JAVA_HOME = "C:\Path\To\JDK-17"
+npm run package
+```
+
+`npm run package` runs the full pipeline: `package:runtime` → `build` → `backend:package` → `package:verify` → `electron-builder`. Individual commands help troubleshoot failures.
+
+### Outputs
+
+| Output | Location | Description |
+|---|---|---|
+| **Windows installer** | `release/PomasSetup.exe` | NSIS installer |
+| **Portable app** | `release/win-unpacked/` | Unpacked app with runtime and JAR |
+| **Bundled Java runtime** | `release/win-unpacked/resources/runtime/bin/java.exe` | jlink-generated (no separate Java install needed) |
+| **Bundled Spring Boot backend** | `release/win-unpacked/resources/backend/poultry-backend.jar` | Spring Boot application |
+
+### Verification
+
+```powershell
+node scripts/verify-production-inputs.mjs   # check modules
+node scripts/verify-csp.mjs                 # check CSP
+node scripts/verify-a11y.mjs                # check accessibility
+```
+
+### Note
+
+Successful packaging does not guarantee a verified clean-machine installation and launch test.
+"
 
 Create the production Windows package:
 
