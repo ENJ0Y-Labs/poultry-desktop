@@ -38,7 +38,6 @@ async function getApiBase() {
   const isDesktop = typeof window.poultryDesktop?.getApiBaseUrl === "function";
 
   if (isDesktop) {
-    let lastError;
     for (let attempt = 0; attempt < IPC_RETRY_COUNT; attempt++) {
       try {
         const desktopBase = await window.poultryDesktop.getApiBaseUrl();
@@ -46,8 +45,8 @@ async function getApiBase() {
           const normalized = desktopBase.replace(/\/+$/, "");
           return normalized.endsWith("/api/v1") ? normalized : normalized + "/api/v1";
         }
-      } catch (error) {
-        lastError = error;
+      } catch {
+        // IPC may fail while Electron is still starting; retry before reporting the URL unavailable.
       }
       if (attempt < IPC_RETRY_COUNT - 1) {
         await new Promise(resolve => setTimeout(resolve, IPC_RETRY_DELAY_MS));
