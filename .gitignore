@@ -32,3 +32,25 @@ backups/
 Thumbs.db
 
 .mvn/wrapper/maven-wrapper.jar
+
+# Temporary backend test outputs
+/apl-test.txt
+/api-test.txt
+/backend-err.txt
+/backend-tests-out.txt
+/backend-tests-sum.txt
+/backend-tests.txt
+
+# Temporary frontend test outputs
+/check.txt
+/frontend-err.txt
+/frontend-tests-final.txt
+/frontend-tests.txt
+
+# General test output
+/test-output.txt
+
+# Application runtime logs
+/logs/
+*.log
+*.log.*.gz

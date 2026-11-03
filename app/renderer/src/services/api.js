@@ -14,13 +14,54 @@ function dateRangeQuery(from, to) {
   return query ? "?" + query : "";
 }
 
+// Error codes for classifying backend communication failures.
+export const BackendErrorCode = Object.freeze({
+  URL_UNAVAILABLE: "BACKEND_URL_UNAVAILABLE",
+  UNAVAILABLE: "BACKEND_UNAVAILABLE",
+  REQUEST_FAILED: "REQUEST_FAILED",
+});
+
+const IPC_RETRY_COUNT = 3;
+const IPC_RETRY_DELAY_MS = 300;
+
+/**
+ * Resolves the API base URL.
+ *
+ * Desktop mode: the URL MUST come from the Electron main process via IPC.
+ *   - No hardcoded port fallback. If IPC fails, retry up to IPC_RETRY_COUNT times.
+ *   - If all retries fail, throw BACKEND_URL_UNAVAILABLE (not BACKEND_UNAVAILABLE).
+ *   - The URL is re-resolved on every call so backend restarts are picked up.
+ *
+ * Browser-only mode: use configuredApiBase or the default development port.
+ */
 async function getApiBase() {
   const isDesktop = typeof window.poultryDesktop?.getApiBaseUrl === "function";
-  const desktopBase = isDesktop ? await window.poultryDesktop.getApiBaseUrl() : null;
-  if (isDesktop && !desktopBase) {
-    throw new Error("The desktop backend URL is unavailable until the local backend starts.");
+
+  if (isDesktop) {
+    let lastError;
+    for (let attempt = 0; attempt < IPC_RETRY_COUNT; attempt++) {
+      try {
+        const desktopBase = await window.poultryDesktop.getApiBaseUrl();
+        if (desktopBase) {
+          const normalized = desktopBase.replace(/\/+$/, "");
+          return normalized.endsWith("/api/v1") ? normalized : normalized + "/api/v1";
+        }
+      } catch (error) {
+        lastError = error;
+      }
+      if (attempt < IPC_RETRY_COUNT - 1) {
+        await new Promise(resolve => setTimeout(resolve, IPC_RETRY_DELAY_MS));
+      }
+    }
+    throw new ApiError(
+      "BACKEND_URL_UNAVAILABLE",
+      "The desktop backend URL is temporarily unavailable. The local backend may still be starting. The current screen will remain open during recovery.",
+      503,
+    );
   }
-  const configured = isDesktop ? desktopBase : configuredApiBase || "http://127.0.0.1:18942";
+
+  // Browser-only development mode: use configured URL or default dev port.
+  const configured = configuredApiBase || "http://127.0.0.1:18942";
   const normalized = configured.replace(/\/+$/, "");
   return normalized.endsWith("/api/v1") ? normalized : normalized + "/api/v1";
 }
@@ -48,15 +89,34 @@ export class ApiError extends Error {
 }
 
 async function request(path, options = {}) {
+  let apiBase;
+  try {
+    apiBase = await getApiBase();
+  } catch (error) {
+    // IPC URL resolution failed in desktop mode. The backend may still be starting.
+    // Do NOT signal backend unavailable — this is a URL resolution failure, not a
+    // network failure. The backend process may still be running.
+    if (error instanceof ApiError && error.code === "BACKEND_URL_UNAVAILABLE") {
+      throw error;
+    }
+    // Unexpected error during URL resolution
+    throw new ApiError(
+      "BACKEND_URL_UNAVAILABLE",
+      "The desktop backend URL could not be resolved. The local backend may still be starting.",
+      503,
+    );
+  }
+
   let response;
   try {
-    response = await fetch((await getApiBase()) + path, {
+    response = await fetch(apiBase + path, {
       credentials: "include",
       headers: { "Content-Type": "application/json", "X-Requested-With": "XMLHttpRequest", ...(options.headers || {}) },
       signal: AbortSignal.timeout(8000),
       ...options,
     });
   } catch {
+    // Network connection failure (backend truly unreachable)
     signalBackendUnavailable();
     throw new ApiError(
       "BACKEND_UNAVAILABLE",
