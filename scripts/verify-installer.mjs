@@ -1,6 +1,8 @@
 import { existsSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
-import packageJson from "../package.json" with { type: "json" };
+import { readFileSync } from "node:fs";
+
+const packageJson = JSON.parse(readFileSync(join(process.cwd(), "package.json"), "utf8"));
 
 const releaseDir = join(process.cwd(), "release");
 const unpackedDir = join(releaseDir, "win-unpacked");
