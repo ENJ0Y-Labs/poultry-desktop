@@ -78,6 +78,18 @@ export class BackendManager {
     return bundled;
   }
 
+  /**
+   * Returns true when JAVA_HOME points to a directory containing a usable java executable.
+   * Used to validate the environment before launching the Maven wrapper in development mode.
+   * Never hardcodes a developer-specific JDK path.
+   */
+  javaHomePointsToValidJava() {
+    const javaHome = process.env.JAVA_HOME;
+    if (!javaHome) return false;
+    const javaExecutable = join(javaHome, "bin", process.platform === "win32" ? "java.exe" : "java");
+    return existsSync(javaExecutable);
+  }
+
   get jarPath() {
     return join(this.resourcesPath, "backend", "poultry-backend.jar");
   }
@@ -155,6 +167,18 @@ export class BackendManager {
       if (!this.isPackaged) {
         const isWin = process.platform === "win32";
         const wrapper = join(this.appPath, isWin ? "mvnw.cmd" : "mvnw");
+        // Pass a copy of the environment so we can drop a broken JAVA_HOME without
+        // mutating the Electron process environment. The Maven wrapper validates
+        // JAVA_HOME and exits with code 1 when it points to a missing java/javac.
+        // Dropping an invalid JAVA_HOME lets the wrapper resolve Java from PATH instead.
+        const env = { ...process.env };
+        if (process.env.JAVA_HOME && !this.javaHomePointsToValidJava()) {
+          this.writeLog(
+            `Warning: JAVA_HOME="${process.env.JAVA_HOME}" does not point to a valid Java executable. ` +
+              `Removing JAVA_HOME so the Maven wrapper can resolve Java from PATH.`
+          );
+          delete env.JAVA_HOME;
+        }
         this.process = this.spawnProcess(
           wrapper,
           ["-f", join(this.appPath, "backend", "pom.xml"), "spring-boot:run"],
@@ -164,7 +188,7 @@ export class BackendManager {
             stdio: ["ignore", "pipe", "pipe"],
             shell: isWin,
             env: {
-              ...process.env,
+              ...env,
               SERVER_PORT: String(this.port),
               DATABASE_PATH: this.databasePath,
               LOG_FILE: this.logFilePath,
