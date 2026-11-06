@@ -48,6 +48,7 @@ if (existsSync(installerScriptPath)) {
   requireSetting(installerScript.includes("!macro customWelcomePage"), "NSIS must register the maintenance page.");
   requireSetting(installerScript.includes('Page custom PomasMaintenancePage'), "NSIS must show the Pomas maintenance page.");
   requireSetting(installerScript.includes("!ifndef BUILD_UNINSTALLER"), "the installer-only maintenance page must not be compiled into the uninstaller.");
+  requireSetting(/!ifndef BUILD_UNINSTALLER\s+Var PomasExistingInstall\s+!endif/.test(installerScript), "the maintenance-state variable must not be compiled into the uninstaller.");
   requireSetting(installerScript.includes('Modify the existing Pomas installation'), "the only maintenance action must be Modify.");
   requireSetting(installerScript.includes("StrCpy $INSTDIR"), "maintenance mode must retain the detected installation directory.");
   requireSetting(installerScript.includes("farm database, settings, and backups"), "the maintenance page must explain that farm data is preserved.");
