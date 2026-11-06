@@ -62,7 +62,7 @@ public class BatchRepository {
 
     public void insert(String id, String farmId, String houseId, String supplierId,
                        String code, String type, LocalDate placementDate,
-                       int initialBirdCount, Long purchaseCostMinor, String now) {
+                       int initialBirdCount, Long purchaseCostMinor, String populationCountStatus, String now) {
         jdbc.update("""
                 INSERT INTO batches
                     (id, farm_id, house_id, supplier_id, code, batch_type,
@@ -71,7 +71,7 @@ public class BatchRepository {
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'ACTIVE', ?, ?)
                 """,
                 id, farmId, houseId, supplierId, code, type, placementDate.toString(),
-                initialBirdCount, purchaseCostMinor, now, now);
+                initialBirdCount, purchaseCostMinor, now, now, populationCountStatus);
     }
 
     public void updateStatus(String id, String status, String now) {
