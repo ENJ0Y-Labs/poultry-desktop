@@ -44,6 +44,9 @@ public class FeedService {
         String unit = clean(request.unit());
         String name = clean(request.name());
         BigDecimal kgPerUnit = request.kgPerUnit();
+        if (request.packageWeightKg() != null && request.packageWeightKg().signum() <= 0) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_PACKAGE_WEIGHT", "Package weight must be greater than zero, or left blank when unknown.");
+        }
         if (kgPerUnit != null && kgPerUnit.signum() <= 0) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_FEED_CONVERSION",
                     "Kilograms per unit must be greater than zero.");
@@ -63,7 +66,7 @@ public class FeedService {
         String id = UUID.randomUUID().toString();
         String now = Instant.now().toString();
         try {
-            repository.insertType(id, farmId, name, unit, scope, kgPerUnit, now);
+            repository.insertType(id, farmId, name, unit, scope, kgPerUnit, cleanNullable(request.brand()), cleanNullable(request.packagingName()), request.packageWeightKg(), now);
         } catch (org.springframework.dao.DataIntegrityViolationException e) {
             throw new ApiException(HttpStatus.CONFLICT, "DUPLICATE_FEED_TYPE",
                     "A feed type with this name already exists.");
@@ -107,7 +110,7 @@ public class FeedService {
                 "Feed type archived",
                 String.format("{\"name\":\"%s\",\"unit\":\"%s\",\"applicableType\":\"%s\",\"status\":\"ACTIVE\"}", type.name(), type.unit(), type.applicableType()),
                 String.format("{\"name\":\"%s\",\"unit\":\"%s\",\"applicableType\":\"%s\",\"status\":\"ARCHIVED\"}", type.name(), type.unit(), type.applicableType()), now);
-        return new FeedTypeResponse(type.id(), type.name(), type.unit(), type.applicableType(), "ARCHIVED", type.kgPerUnit());
+        return new FeedTypeResponse(type.id(), type.name(), type.unit(), type.applicableType(), "ARCHIVED", type.kgPerUnit(), type.brand(), type.packagingName(), type.packageWeightKg());
     }
     @Transactional
     public FeedPurchaseResponse purchase(FeedPurchaseRequest request) {

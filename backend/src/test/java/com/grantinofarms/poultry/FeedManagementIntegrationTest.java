@@ -52,6 +52,22 @@ class FeedManagementIntegrationTest {
     }
 
     @Test
+    void feedProductRetainsBrandAndPackageWeightWithoutGuessingUnknowns() {
+        setupFarm();
+        var known = feedService.createType(new FeedTypeCreateRequest(
+                "Hybrid Broiler Finisher Pellets", "bag", "BROILER", new BigDecimal("25"),
+                "Hybrid", "25 kg bag", new BigDecimal("25")));
+        var unknown = feedService.createType(new FeedTypeCreateRequest(
+                "Hybrid Layer Mash", "bag", "LAYER", null, "Hybrid", "bag", null));
+
+        assertThat(known.brand()).isEqualTo("Hybrid");
+        assertThat(known.packagingName()).isEqualTo("25 kg bag");
+        assertThat(known.packageWeightKg()).isEqualByComparingTo("25");
+        assertThat(unknown.packageWeightKg()).isNull();
+        assertThat(unknown.kgPerUnit()).isNull();
+    }
+
+    @Test
     void purchaseCreatesInventoryAndOneExpense() {
         setupFarm();
         var type = feedService.createType(new FeedTypeCreateRequest("Starter", "bag", "BROILER"));

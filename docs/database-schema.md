@@ -72,7 +72,7 @@ Dated additional and transfer-in costs attached to batches.
 
 ### `feed_types`
 
-Farm-scoped feed definitions, including display unit and Layer/Broiler applicability. Feed types are archived instead of deleted.
+Farm-scoped feed product definitions, including product name, optional brand, packaging name, optional standard package weight in kilograms, display unit, kilogram conversion, and Layer/Broiler/Turkey applicability. Unknown package weights and conversions remain NULL; never assume a standard bag size. V30 adds the descriptive brand and packaging fields without rewriting historical purchases or usage. Feed types are archived instead of deleted.
 
 ### `feed_purchases`
 
