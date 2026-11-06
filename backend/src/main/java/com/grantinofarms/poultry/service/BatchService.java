@@ -70,9 +70,12 @@ public class BatchService {
                     "The selected house/pen does not belong to this farm or is archived.");
         }
 
+        if (request.purchaseCostRecorded() == null && request.purchaseCostMinor() == null) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_PURCHASE_COST_MODE",
+                    "Choose whether purchase information is being recorded.");
+        }
         boolean purchaseCostRecorded = request.purchaseCostRecorded() == null
-                ? request.purchaseCostMinor() != null
-                : request.purchaseCostRecorded();
+                || request.purchaseCostRecorded();
         if ((purchaseCostRecorded && request.purchaseCostMinor() == null)
                 || (!purchaseCostRecorded && request.purchaseCostMinor() != null)) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_PURCHASE_COST_MODE",
