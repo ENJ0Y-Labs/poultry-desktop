@@ -70,9 +70,11 @@ public class BatchService {
                     "The selected house/pen does not belong to this farm or is archived.");
         }
 
-        if (request.purchaseCostRecorded() == null
-                || (request.purchaseCostRecorded() && request.purchaseCostMinor() == null)
-                || (!request.purchaseCostRecorded() && request.purchaseCostMinor() != null)) {
+        boolean purchaseCostRecorded = request.purchaseCostRecorded() == null
+                ? request.purchaseCostMinor() != null
+                : request.purchaseCostRecorded();
+        if ((purchaseCostRecorded && request.purchaseCostMinor() == null)
+                || (!purchaseCostRecorded && request.purchaseCostMinor() != null)) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_PURCHASE_COST_MODE",
                     "Record purchase cost requires an actual cost. Existing stock must not include a purchase cost.");
         }
@@ -106,7 +108,7 @@ public class BatchService {
                     now
             );
 
-            if (request.purchaseCostRecorded()) {
+            if (purchaseCostRecorded) {
                 birdPurchaseRepository.insert(
                         UUID.randomUUID().toString(),
                         id,
