@@ -13,7 +13,7 @@ public record BatchCreateRequest(
         @NotBlank String houseId,
         @NotNull @Positive Integer initialBirdCount,
         String supplierId,
-        @NotNull Boolean purchaseCostRecorded,
+        Boolean purchaseCostRecorded,
         @PositiveOrZero Long purchaseCostMinor
 ) {
     public BatchCreateRequest(String type, LocalDate placementDate, String houseId,
