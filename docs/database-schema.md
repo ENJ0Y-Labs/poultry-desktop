@@ -36,7 +36,7 @@ Suppliers and traceable sources used for purchases.
 
 ### `batches`
 
-Layer or Broiler flock records. Stores initial bird count and, when recorded, original purchase cost. `original_purchase_cost_minor IS NULL` means the historical purchase cost is unknown/unrecorded; a value of `0` means a genuine zero-cost purchase. Current bird population is derived from population events rather than stored as a mutable total.
+Layer, Broiler, or Turkey flock records. Stores initial bird count and, when recorded, original purchase cost. `original_purchase_cost_minor IS NULL` means the historical purchase cost is unknown/unrecorded; a value of `0` means a genuine zero-cost purchase. Current bird population is derived from population events rather than stored as a mutable total.
 
 ### `bird_purchases`
 
@@ -110,7 +110,7 @@ Good and cracked egg collection records.
 
 Sellable egg sales. Individual sold eggs are authoritative; the crate size used at sale time is retained so later crate-size settings cannot rewrite history.
 
-## Broiler production
+## Meat-bird production
 
 ### `weight_records`
 
@@ -222,7 +222,7 @@ farm
 
 ## Migration history
 
-The repository currently contains V1 through V23.
+The repository currently contains V1 through V27, including independent Turkey support.
 
 Broad progression:
 
@@ -237,6 +237,7 @@ Broad progression:
 - V9: health management
 - V10: Layer egg management
 - V11: Broiler production
+- V27: independent Turkey batch, feed applicability, and sales support
 - V12: pricing and margins
 - V13: expenses
 - V14: customers and sales
