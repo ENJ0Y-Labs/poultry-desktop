@@ -64,7 +64,7 @@ The current population formula is:
 
 ### `bird_population_adjustments`
 
-Append-only physical-count reconciliations. Each row stores the effective date, previous calculated count, new physical count, signed difference, required reason, authenticated user ID, and server timestamp. The difference is included in chronological population calculations but remains separate from mortality, culling, sales, and transfer events. A successful adjustment changes batch confidence to VERIFIED; a later explicit provisional flag changes it back to ESTIMATED with an audit record.
+Append-only physical-count reconciliations. Each row stores the effective date, previous calculated count, new physical count, signed difference, required reason, authenticated user ID, and server timestamp. The difference is included in chronological population calculations but remains separate from mortality, culling, sales, and transfer events. A successful adjustment changes batch confidence to VERIFIED; a later explicit provisional flag changes it back to ESTIMATED with an audit record. Count adjustments do not create a purchase cost or mortality/culling expense; existing carried bird cost remains with the batch.
 
 ### `bird_cost_events`
 
