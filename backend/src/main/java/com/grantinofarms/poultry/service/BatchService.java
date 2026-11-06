@@ -60,9 +60,9 @@ public class BatchService {
         String farmId = requireFarmId();
         String type = request.type().trim().toUpperCase();
 
-        if (!type.equals("LAYER") && !type.equals("BROILER")) {
+        if (!List.of("LAYER", "BROILER", "TURKEY").contains(type)) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_BATCH_TYPE",
-                    "Batch type must be LAYER or BROILER.");
+                    "Batch type must be LAYER, BROILER, or TURKEY.");
         }
 
         if (!batchRepository.houseBelongsToFarm(request.houseId(), farmId)) {
@@ -91,7 +91,7 @@ public class BatchService {
         int year = request.placementDate().getYear();
         batchRepository.ensureSequence(type, year);
         int sequence = batchRepository.allocateSequenceNumber(type, year);
-        String prefix = type.equals("LAYER") ? "L" : "B";
+        String prefix = switch (type) { case "LAYER" -> "L"; case "BROILER" -> "B"; default -> "TY"; };
         String code = String.format("%s-%d-%03d", prefix, year, sequence);
 
         String id = UUID.randomUUID().toString();
@@ -136,9 +136,9 @@ public class BatchService {
     @Transactional
     public BatchResponse markSold(String id) {
         BatchResponse current = get(id);
-        if (!"BROILER".equals(current.type())) {
+        if (!List.of("BROILER", "TURKEY").contains(current.type())) {
             throw new ApiException(HttpStatus.CONFLICT, "INVALID_SOLD_TRANSITION",
-                    "Only BROILER batches use the SOLD terminal lifecycle in this stage.");
+                    "Only meat-production batches (BROILER or TURKEY) use the SOLD terminal lifecycle.");
         }
         if ("SOLD".equals(current.status())) {
             throw new ApiException(HttpStatus.CONFLICT, "BATCH_ALREADY_SOLD",
