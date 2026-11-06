@@ -45,7 +45,7 @@ public class BroilerProductionService {
 
     @Transactional
     public WeightRecordResponse addWeight(String batchId, WeightRecordRequest request) {
-        requireActiveBroiler(batchId);
+        requireActiveMeatBirdBatch(batchId);
         validateDate(batchId, request.recordDate());
 
         long grams;
@@ -110,7 +110,7 @@ public class BroilerProductionService {
 
     @Transactional
     public BirdSaleResponse addSale(String batchId, BirdSaleRequest request) {
-        requireActiveBroiler(batchId);
+        requireActiveMeatBirdBatch(batchId);
         validateDate(batchId, request.recordDate());
 
         long total;
@@ -143,7 +143,7 @@ public class BroilerProductionService {
                 request.pricePerBirdMinor(), total, customer, customerRecord.id(), now);
         salesRepository.insert(
                 id, repository.batchFarmId(batchId), batchId, customerRecord.id(),
-                request.recordDate(), "BROILER",
+                request.recordDate(), repository.batchType(batchId),
                 BigDecimal.valueOf(request.quantity()), "BIRD",
                 request.pricePerBirdMinor(), total, "BIRD_SALE", id, now);
 
@@ -193,11 +193,11 @@ public class BroilerProductionService {
         return raw;
     }
 
-    private void requireActiveBroiler(String batchId) {
+    private void requireActiveMeatBirdBatch(String batchId) {
         requireBatch(batchId);
-        if (!"BROILER".equals(repository.batchType(batchId))) {
-            throw new ApiException(HttpStatus.CONFLICT, "BROILER_ONLY",
-                    "This feature is only available for BROILER batches.");
+        if (!isMeatBirdType(repository.batchType(batchId))) {
+            throw new ApiException(HttpStatus.CONFLICT, "MEAT_PRODUCTION_ONLY",
+                    "Weight and bird sales are only available for BROILER or TURKEY batches.");
         }
         if (!"ACTIVE".equals(repository.batchStatus(batchId))) {
             throw new ApiException(HttpStatus.CONFLICT, "BATCH_NOT_ACTIVE",
@@ -205,13 +205,17 @@ public class BroilerProductionService {
         }
     }
 
+    private boolean isMeatBirdType(String type) {
+        return "BROILER".equals(type) || "TURKEY".equals(type);
+    }
+
     private void requireBatch(String batchId) {
         if (repository.batchFarmId(batchId) == null) {
             throw new ApiException(HttpStatus.NOT_FOUND, "BATCH_NOT_FOUND", "Batch not found.");
         }
-        if (!"BROILER".equals(repository.batchType(batchId))) {
-            throw new ApiException(HttpStatus.CONFLICT, "BROILER_ONLY",
-                    "This feature is only available for BROILER batches.");
+        if (!isMeatBirdType(repository.batchType(batchId))) {
+            throw new ApiException(HttpStatus.CONFLICT, "MEAT_PRODUCTION_ONLY",
+                    "Weight and bird sales are only available for BROILER or TURKEY batches.");
         }
     }
 
