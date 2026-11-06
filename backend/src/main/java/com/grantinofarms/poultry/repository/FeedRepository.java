@@ -63,6 +63,31 @@ public class FeedRepository {
                 """, id, farmId, name, unit, scope, kgPerUnit, brand, packagingName, packageWeightKg, now, now);
     }
 
+
+    public void insertOpeningBalance(String id, String farmId, String feedTypeId, LocalDate date,
+                                    long quantityMilli, String unit, String reason, String now) {
+        jdbc.update("""
+                INSERT INTO feed_opening_balances
+                    (id, farm_id, feed_type_id, effective_date, quantity_milli, unit, reason, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """, id, farmId, feedTypeId, date.toString(), quantityMilli, unit, reason, now);
+    }
+
+    public List<com.grantinofarms.poultry.dto.FeedOpeningBalanceResponse> findOpeningBalances(String feedTypeId) {
+        return jdbc.query("""
+                SELECT b.id, b.feed_type_id, t.name AS feed_type_name, b.effective_date,
+                       b.quantity_milli, b.unit, b.reason, b.created_at
+                FROM feed_opening_balances b
+                JOIN feed_types t ON t.id = b.feed_type_id
+                WHERE b.feed_type_id = ?
+                ORDER BY b.effective_date, b.created_at
+                """, (rs, n) -> new com.grantinofarms.poultry.dto.FeedOpeningBalanceResponse(
+                rs.getString("id"), rs.getString("feed_type_id"), rs.getString("feed_type_name"),
+                LocalDate.parse(rs.getString("effective_date")), rs.getLong("quantity_milli"),
+                rs.getString("unit"), rs.getString("reason"), rs.getString("created_at")
+        ), feedTypeId);
+    }
+
     public void updateKgPerUnit(String id, java.math.BigDecimal kgPerUnit, String now) {
         jdbc.update("UPDATE feed_types SET kg_per_unit = ?, updated_at = ? WHERE id = ?", kgPerUnit, now, id);
     }
