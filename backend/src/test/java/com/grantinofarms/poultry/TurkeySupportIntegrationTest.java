@@ -89,7 +89,7 @@ class TurkeySupportIntegrationTest {
                 .hasMessage("Egg production is only available for LAYER batches.");
 
         Map<String, Object> farmDashboard = dashboardService.farm(ACTIVITY);
-        assertThat(((Number) farmDashboard.get("totalBirds")).longValue()).isEqualTo(87);
+        assertThat(((Number) farmDashboard.get("totalBirds")).longValue()).isEqualTo(85);
         assertThat(((Number) farmDashboard.get("layerBirds")).longValue()).isEqualTo(40);
         assertThat(((Number) farmDashboard.get("broilerBirds")).longValue()).isEqualTo(30);
         assertThat(((Number) farmDashboard.get("turkeyBirds")).longValue()).isEqualTo(15);
@@ -103,8 +103,9 @@ class TurkeySupportIntegrationTest {
         assertThat(broilerGrowth).hasSize(1);
         assertThat(((BatchResponse) broilerGrowth.get(0).get("batch")).id()).isEqualTo(broiler.id());
         assertThat(meatBirdGrowth).hasSize(2);
-        assertThat(farmReport.get("eggProduction")).asList()
-                .extracting(row -> ((BatchResponse) ((Map<?, ?>) row).get("batch")).id())
+        List<Map<String, Object>> eggProduction = (List<Map<String, Object>>) farmReport.get("eggProduction");
+        assertThat(eggProduction)
+                .extracting(row -> ((BatchResponse) row.get("batch")).id())
                 .containsExactly(layer.id());
     }
 
