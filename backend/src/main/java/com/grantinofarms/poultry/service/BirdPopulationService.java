@@ -57,8 +57,8 @@ public class BirdPopulationService {
         String now = Instant.now().toString();
         batchRepository.updatePopulationCountStatus(batchId, "ESTIMATED", now);
         auditRepository.append(batch.farmId(), "MARK_POPULATION_ESTIMATED", "BATCH", batchId,
-                reason, String.format("{\\"countStatus\\":\\"%s\\"}", before),
-                "{\\"countStatus\\":\\"ESTIMATED\\"}", now);
+                reason, String.format("{\"countStatus\":\"%s\"}", before),
+                "{\"countStatus\":\"ESTIMATED\"}", now);
     }
 
     public List<PopulationAdjustmentResponse> adjustments(String batchId) {
