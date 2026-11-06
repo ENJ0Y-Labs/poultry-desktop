@@ -12,7 +12,7 @@ const batchTypeLabel = type => type === "LAYER" ? "Layer" : type === "BROILER" ?
 const batchStatusLabel = status => status === "ACTIVE" ? "Active" : status === "SOLD" ? "Sold" : String(status || "Unknown").toLowerCase().replace(/\b\w/g, letter => letter.toUpperCase());
 
 export default function FlocksPage() {
-  const { formatMoney, formatQuantity, formatPercent, formatKg, formatMetric, farm, houses, batches, suppliers, batchForm, setBatchForm, costForm, setCostForm, houseForm, setHouseForm, saving, selectedBatchId, setSelectedBatchId, batchDashboard, createBatch, addBirdCost, markBatchSold, reopenBatch, addHouse, editHouse, editingHouseId, cancelHouseEdit, populationAdjustmentForm, setPopulationAdjustmentForm, populationAdjustments, savePopulationAdjustment } = useContext(FarmManagerContext);
+  const { formatMoney, formatQuantity, formatPercent, formatKg, formatMetric, farm, houses, batches, suppliers, batchForm, setBatchForm, costForm, setCostForm, houseForm, setHouseForm, saving, selectedBatchId, setSelectedBatchId, batchDashboard, createBatch, addBirdCost, markBatchSold, reopenBatch, addHouse, editHouse, editingHouseId, cancelHouseEdit, populationAdjustmentForm, setPopulationAdjustmentForm, populationAdjustments, savePopulationAdjustment, markPopulationEstimated } = useContext(FarmManagerContext);
 
   return (
     <PageTemplate className="grid">
@@ -81,6 +81,7 @@ export default function FlocksPage() {
           <DataTable caption="Batch records" columns={[
               { key: "code", label: "Code" }, { key: "type", label: "Type", render: batch => batchTypeLabel(batch.type) },
               { key: "placementDate", label: "Placement" }, { key: "initialBirdCount", label: "Initial birds" }, { key: "populationCountStatus", label: "Count confidence", render: batch => batch.populationCountStatus === "ESTIMATED" ? "Estimated" : "Verified" },
+              { key: "confidenceAction", label: "Count action", render: batch => batch.populationCountStatus !== "ESTIMATED" ? <button type="button" className="secondary-button" disabled={saving} onClick={() => markPopulationEstimated(batch.id)}>Mark estimated</button> : "Awaiting physical count" },
               { key: "status", label: "Status", render: batch => batchStatusLabel(batch.status) },
               { key: "action", label: "Action", render: batch => batch.status === "SOLD"
                 ? <button type="button" onClick={() => reopenBatch(batch.id)} disabled={saving}>Reopen</button>
