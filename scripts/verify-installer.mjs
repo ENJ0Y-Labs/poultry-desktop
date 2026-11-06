@@ -20,10 +20,11 @@ function requireSetting(condition, description) {
 if (!existsSync(releaseDir)) {
   errors.push("- release directory is missing.");
 } else {
-  const installerPath = join(releaseDir, "PomasSetup.exe");
-  const installers = readdirSync(releaseDir).filter(file => /^PomasSetup\.exe$/i.test(file));
+  const expectedInstaller = `POMAS-v${packageJson.version}-Setup-x64.exe`;
+  const installerPath = join(releaseDir, expectedInstaller);
+  const installers = readdirSync(releaseDir).filter(file => /^POMAS-v.+-Setup-x64\\.exe$/i.test(file));
 
-  requireSetting(installers.includes("PomasSetup.exe"), "expected release/PomasSetup.exe.");
+  requireSetting(installers.includes(expectedInstaller), `expected release/${expectedInstaller}.`);
   if (existsSync(installerPath)) {
     const size = statSync(installerPath).size;
     requireSetting(size >= 1024 * 1024, `installer is unexpectedly small (${size} bytes).`);
@@ -31,7 +32,11 @@ if (!existsSync(releaseDir)) {
 }
 
 const nsis = packageJson.build?.nsis ?? {};
-requireSetting(packageJson.version === "1.0.2", "package version must be 1.0.2.");
+requireSetting(/^\\d+\\.\\d+\\.\\d+(?:-[0-9A-Za-z.-]+)?$/.test(packageJson.version), "package version must be a valid release version.");
+requireSetting(packageJson.build?.companyName === "Grantino Farms", "Windows product metadata must use the approved Grantino Farms identity.");
+requireSetting(packageJson.build?.artifactName === "POMAS-v${version}-Setup-${arch}.${ext}", "installer artifact name must include product, version, setup type, and architecture.");
+const windowsTargets = packageJson.build?.win?.target ?? [];
+requireSetting(windowsTargets.some(target => target.target === "nsis" && target.arch?.includes("x64")), "Windows NSIS builds must explicitly target x64.");
 requireSetting(nsis.oneClick === false, "NSIS must use the multi-page wizard (oneClick: false).");
 requireSetting(nsis.allowToChangeInstallationDirectory === true, "new users must be able to choose the installation directory.");
 requireSetting(nsis.include === "build/installer.nsh", "NSIS must load the Pomas maintenance-mode include.");
@@ -77,5 +82,5 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log(`Pomas ${packageJson.version} installer verified: release/PomasSetup.exe`);
+console.log(`Pomas ${packageJson.version} x64 installer verified: release/POMAS-v${packageJson.version}-Setup-x64.exe`);
 console.log("Verified NSIS first-install/Modify flow, install-directory selection, shortcuts, launch-after-finish, data preservation settings, bundled Java, and backend JAR.");
