@@ -8,5 +8,6 @@ public record HouseResponse(
         String notes,
         String status,
         String createdAt,
-        String updatedAt
+        String updatedAt,
+        String houseType
 ) {}
