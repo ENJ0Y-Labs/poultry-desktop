@@ -6,6 +6,7 @@ import com.grantinofarms.poultry.dto.BirdPopulationEventRequest;
 import com.grantinofarms.poultry.dto.BirdPopulationResponse;
 import com.grantinofarms.poultry.dto.PopulationAdjustmentRequest;
 import com.grantinofarms.poultry.dto.PopulationAdjustmentResponse;
+import com.grantinofarms.poultry.dto.PopulationConfidenceRequest;
 import com.grantinofarms.poultry.repository.BatchRepository;
 import com.grantinofarms.poultry.dto.BirdTransferRequest;
 import com.grantinofarms.poultry.exception.ApiException;
@@ -37,6 +38,28 @@ public class BirdPopulationService {
         this.batchRepository = batchRepository;
     }
 
+
+
+    @Transactional
+    public void markCountEstimated(String batchId, PopulationConfidenceRequest request) {
+        requireWritableBatch(batchId);
+        var batch = batchRepository.findById(batchId);
+        String userId = CurrentUserContext.get();
+        if (userId == null || userId.isBlank()) {
+            throw new ApiException(HttpStatus.UNAUTHORIZED, "AUTHENTICATION_REQUIRED",
+                    "An authenticated owner session is required.");
+        }
+        String reason = request.reason().trim();
+        if (reason.isBlank()) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "ESTIMATE_REASON_REQUIRED", "A reason is required.");
+        }
+        String before = populationRepository.populationCountStatus(batchId);
+        String now = Instant.now().toString();
+        batchRepository.updatePopulationCountStatus(batchId, "ESTIMATED", now);
+        auditRepository.append(batch.farmId(), "MARK_POPULATION_ESTIMATED", "BATCH", batchId,
+                reason, String.format("{\\"countStatus\\":\\"%s\\"}", before),
+                "{\\"countStatus\\":\\"ESTIMATED\\"}", now);
+    }
 
     public List<PopulationAdjustmentResponse> adjustments(String batchId) {
         requireBatch(batchId);
