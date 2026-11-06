@@ -33,7 +33,7 @@ if (!existsSync(releaseDir)) {
 
 const nsis = packageJson.build?.nsis ?? {};
 requireSetting(/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(packageJson.version), "package version must be a valid release version.");
-requireSetting(packageJson.build?.companyName === "Grantino Farms", "Windows product metadata must use the approved Grantino Farms identity.");
+requireSetting(packageJson.author?.name === "Grantino Farms", "Windows product metadata must use the approved Grantino Farms identity via package author metadata.");
 requireSetting(packageJson.build?.artifactName === "POMAS-v${version}-Setup-${arch}.${ext}", "installer artifact name must include product, version, setup type, and architecture.");
 const windowsTargets = packageJson.build?.win?.target ?? [];
 requireSetting(windowsTargets.some(target => target.target === "nsis" && target.arch?.includes("x64")), "Windows NSIS builds must explicitly target x64.");
