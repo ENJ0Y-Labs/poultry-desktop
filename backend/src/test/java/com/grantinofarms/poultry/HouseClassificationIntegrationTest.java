@@ -3,6 +3,7 @@ package com.grantinofarms.poultry;
 import com.grantinofarms.poultry.dto.BatchCreateRequest;
 import com.grantinofarms.poultry.dto.FarmCreateRequest;
 import com.grantinofarms.poultry.dto.HouseCreateRequest;
+import com.grantinofarms.poultry.dto.HouseResponse;
 import com.grantinofarms.poultry.dto.HouseUpdateRequest;
 import com.grantinofarms.poultry.service.BatchService;
 import com.grantinofarms.poultry.service.DashboardService;
@@ -57,9 +58,9 @@ class HouseClassificationIntegrationTest {
         assertThat(((Number) dashboard.get("occupiedHouses")).intValue()).isEqualTo(5);
         assertThat(((Number) dashboard.get("emptyHouses")).intValue()).isEqualTo(2);
 
-        assertThat(houseService.list()).extracting("houseType")
+        assertThat(houseService.list()).extracting(HouseResponse::houseType)
                 .containsExactlyInAnyOrder("PERMANENT", "PERMANENT", "PERMANENT", "PERMANENT", "TEMPORARY", "TEMPORARY", "TEMPORARY");
-        assertThat(houseService.list()).extracting("code")
+        assertThat(houseService.list()).extracting(HouseResponse::code)
                 .contains("H001", "H002", "H003", "H004", "T001", "T002", "T003");
 
         // A closed historical batch no longer occupies its house; the house remains reusable.
@@ -80,7 +81,7 @@ class HouseClassificationIntegrationTest {
                 "Permanent House", "H001", "Updated notes", "ACTIVE", "PERMANENT"));
         assertThat(updated.houseType()).isEqualTo("PERMANENT");
         assertThat(updated.code()).isEqualTo("H001");
-        assertThat(batchService.list()).extracting("id").contains(batch.id());
+        assertThat(batchService.list()).extracting(com.grantinofarms.poultry.dto.BatchResponse::id).contains(batch.id());
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM audit_logs WHERE entity_type='HOUSE' AND entity_id=? AND action='UPDATE'", Integer.class, house.id())).isEqualTo(1);
     }
 
