@@ -59,6 +59,25 @@ class BirdCostIntegrationTest {
     }
 
     @Test
+    void unknownPurchaseCostStaysUnknownWhilePopulationRecordsRemainAvailable() {
+        farmService.create(new FarmCreateRequest(
+                "Grantino Farms", "Port Harcourt", "Africa/Lagos", "NGN"));
+        var house = houseService.create(new HouseCreateRequest("Layer House", "LH1", null));
+        var batch = batchService.create(new BatchCreateRequest(
+                "LAYER", LocalDate.of(2026, 1, 1), house.id(), 100, null, false, null
+        ));
+
+        populationService.addSale(batch.id(), new BirdPopulationEventRequest(
+                LocalDate.of(2026, 1, 2), 10, "Existing stock sale"));
+
+        var costs = costService.get(batch.id(), LocalDate.of(2026, 1, 2));
+        assertThat(costs.initialPurchaseCostMinor()).isNull();
+        assertThat(costs.soldBirdCostMinor()).isNull();
+        assertThat(costs.carriedCostMinor()).isNull();
+        assertThat(costs.currentBirds()).isEqualTo(90);
+    }
+
+    @Test
     void nonDivisiblePurchaseCostIsFullyAllocatedWhenAllBirdsLeave() {
         farmService.create(new FarmCreateRequest(
                 "Grantino Farms", "Port Harcourt", "Africa/Lagos", "NGN"));
