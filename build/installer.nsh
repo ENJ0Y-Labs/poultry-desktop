@@ -4,7 +4,9 @@
 
 !include "nsDialogs.nsh"
 
+!ifndef BUILD_UNINSTALLER
 Var PomasExistingInstall
+!endif
 
 !macro customInit
   StrCpy $PomasExistingInstall "0"
