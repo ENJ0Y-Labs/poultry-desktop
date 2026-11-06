@@ -94,6 +94,8 @@ public class DashboardService {
         } else {
             out.put("broilerGrowth", broilers.growth(batchId,date));
             out.put("broilerSales", broilers.sales(batchId,date));
+            out.put("meatBirdGrowth", out.get("broilerGrowth"));
+            out.put("meatBirdSales", out.get("broilerSales"));
         }
         out.put("attention",attentionForBatch(batchId,date));
         return out;
