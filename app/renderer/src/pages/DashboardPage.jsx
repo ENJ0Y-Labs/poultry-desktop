@@ -167,6 +167,7 @@ export default function DashboardPage() {
                 ["Total birds", formatCount(dashboard.totalBirds), ""],
                 ["Layer birds", formatCount(dashboard.layerBirds), ""],
                 ["Broiler birds", formatCount(dashboard.broilerBirds), ""],
+                ["Turkey birds", formatCount(dashboard.turkeyBirds), ""],
                 ["Active batches", formatCount(dashboard.activeBatches), ""],
                 ["Mortality", formatCount(dashboard.mortality), "birds"],
                 ["Good eggs", formatCount(dashboard.eggsGood), "eggs"],
