@@ -63,9 +63,9 @@ public class ProductionTrendService {
 
     public Map<String, Object> broilerAverageWeight(String batchId, LocalDate from, LocalDate to) {
         BatchInfo batch = requireBatch(batchId);
-        if (!"BROILER".equals(batch.type())) {
+        if (!"BROILER".equals(batch.type()) && !"TURKEY".equals(batch.type())) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "INCOMPATIBLE_BATCH_TYPE",
-                    "Average-weight trends are only available for BROILER batches.");
+                    "Average-weight trends are only available for BROILER or TURKEY batches.");
         }
         DateRange range = range(batch.placementDate(), from, to);
         Map<LocalDate, BigDecimal> averageByDate = new TreeMap<>();
@@ -92,7 +92,7 @@ public class ProductionTrendService {
             point.put("recorded", averageByDate.containsKey(date));
             points.add(point);
         }
-        return response(batchId, "BROILER", "Average weight", "kg", range, points);
+        return response(batchId, batch.type(), "Average weight", "kg", range, points);
     }
 
     private BatchInfo requireBatch(String batchId) {
