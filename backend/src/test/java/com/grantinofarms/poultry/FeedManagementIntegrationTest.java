@@ -67,6 +67,21 @@ class FeedManagementIntegrationTest {
         assertThat(unknown.kgPerUnit()).isNull();
     }
 
+
+    @Test
+    void openingFeedStockIsAuditedWithoutCreatingPurchaseOrExpense() {
+        setupFarm();
+        var type = feedService.createType(new FeedTypeCreateRequest("Hybrid Layer Mash", "bag", "LAYER"));
+        var opening = feedService.createOpeningBalance(new FeedOpeningBalanceRequest(
+                type.id(), LocalDate.of(2026, 11, 6), new BigDecimal("55"), "bag", "Opening physical stock count"));
+
+        assertThat(opening.quantityMilli()).isEqualTo(55_000L);
+        assertThat(feedService.openingBalances(type.id())).hasSize(1);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM feed_purchases", Integer.class)).isZero();
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM expenses WHERE category = 'FEED'", Integer.class)).isZero();
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM audit_logs WHERE entity_type = 'FEED_OPENING_BALANCE'", Integer.class)).isEqualTo(1);
+    }
+
     @Test
     void purchaseCreatesInventoryAndOneExpense() {
         setupFarm();
