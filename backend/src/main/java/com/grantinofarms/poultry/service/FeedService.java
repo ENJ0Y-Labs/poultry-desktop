@@ -56,9 +56,9 @@ public class FeedService {
             kgPerUnit = BigDecimal.ONE;
         }
         String farmId = repository.farmId();
-        if (!List.of("LAYER", "BROILER", "BOTH").contains(scope)) {
+        if (!List.of("LAYER", "BROILER", "TURKEY", "BOTH").contains(scope)) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_FEED_SCOPE",
-                    "Feed type must apply to LAYER, BROILER, or BOTH.");
+                    "Feed type must apply to LAYER, BROILER, TURKEY, or BOTH.");
         }
         String id = UUID.randomUUID().toString();
         String now = Instant.now().toString();
