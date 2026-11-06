@@ -75,7 +75,7 @@ const emptyBatch = {
   supplierId: "",
   purchaseCostRecorded: true,
   purchaseCostMinor: "",
-  populationCountStatus: "VERIFIED",
+  populationCountStatus: "ESTIMATED",
 };
 const emptyCost = {
   batchId: "",
@@ -749,7 +749,7 @@ export default function App() {
         purchaseCostMinor: batchForm.purchaseCostRecorded
           ? parseNairaToKobo(batchForm.purchaseCostMinor, { allowZero: true })
           : null,
-        populationCountStatus: batchForm.populationCountStatus || "VERIFIED",
+        populationCountStatus: batchForm.populationCountStatus || "ESTIMATED",
       });
       setBatches(current => [created, ...current]);
       rememberLastBatchId(created.id);
