@@ -43,14 +43,11 @@ npm run package
 npm run installer:verify
 ```
 
-The installer is written to `release/PomasSetup.exe`. The package command prepares the bundled Java runtime, builds and verifies the renderer, packages the Spring Boot backend, checks production inputs, and runs Electron Builder.
+The installer is written to `release/POMAS-v<version>-Setup-x64.exe` (for example, `release/POMAS-v1.0.3-Setup-x64.exe`). The filename version and architecture are generated from `package.json` and the explicit Windows x64 target. The Windows executable metadata uses the `Pomas` product name and `Grantino Farms` company identity. The package command prepares the bundled Java runtime, builds and verifies the renderer, packages the Spring Boot backend, checks production inputs, and runs Electron Builder.
 
 ## 2. Prepare the release
 
-Update the application version consistently:
-
-- `package.json`
-- `backend/pom.xml`
+Update the application release version in `package.json` only. Electron reads this value for the installed application version, Windows executable version metadata, and installer filename. Keep `backend/pom.xml` on its independent backend artifact version unless the backend artifact itself is being released.
 
 Review migrations and ensure every schema change has a new forward-only migration.
 
