@@ -116,7 +116,7 @@ class BroilerProductionIntegrationTest {
         var batch = batchService.create(new BatchCreateRequest(
                 "LAYER", LocalDate.of(2026, 1, 1), house.id(), 100, null, 1_000_000L));
         assertThatThrownBy(() -> broilerService.weights(batch.id(), LocalDate.of(2026, 1, 10)))
-                .hasMessage("This feature is only available for BROILER batches.");
+                .hasMessage("Weight and bird sales are only available for BROILER or TURKEY batches.");
     }
 
 
