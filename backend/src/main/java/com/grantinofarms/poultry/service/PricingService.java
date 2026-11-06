@@ -177,9 +177,9 @@ public class PricingService {
         if (batch == null) {
             throw new ApiException(HttpStatus.NOT_FOUND, "BATCH_NOT_FOUND", "Batch not found.");
         }
-        if (!"BROILER".equals(batch.type())) {
-            throw new ApiException(HttpStatus.CONFLICT, "BROILER_ONLY",
-                    "Pricing is currently available for BROILER batches.");
+        if (!"BROILER".equals(batch.type()) && !"TURKEY".equals(batch.type())) {
+            throw new ApiException(HttpStatus.CONFLICT, "MEAT_PRODUCTION_ONLY",
+                    "Pricing is currently available for BROILER and TURKEY batches.");
         }
         return batch;
     }
