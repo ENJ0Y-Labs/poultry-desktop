@@ -29,7 +29,7 @@ public class BatchRepository {
         return jdbc.query("""
                 SELECT id, farm_id, house_id, supplier_id, code, batch_type,
                        placement_date, initial_bird_count, original_purchase_cost_minor,
-                       status, created_at, updated_at
+                       status, created_at, updated_at, population_count_status
                 FROM batches
                 WHERE farm_id = ?
                 ORDER BY placement_date DESC, code DESC
