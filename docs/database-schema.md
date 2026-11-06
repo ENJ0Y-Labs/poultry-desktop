@@ -82,6 +82,10 @@ Immutable feed purchase lots. A feed purchase also creates one corresponding FEE
 
 Feed consumption by batch and date. Usage is costed through FIFO and does not create a second expense.
 
+### `feed_opening_balances`
+
+Append-only opening stock snapshots for feed already on hand before the application's purchase ledger begins. They are not purchases and create no supplier, expense, or cash-flow records. Opening quantities have no historical valuation unless supported by source records; do not assign a fabricated zero or estimated cost.
+
 ## Daily and health operations
 
 ### `daily_records`
