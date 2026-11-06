@@ -1,4 +1,4 @@
-ALTER TABLE batches ADD COLUMN population_count_status TEXT NOT NULL DEFAULT 'VERIFIED'
+ALTER TABLE batches ADD COLUMN population_count_status TEXT NOT NULL DEFAULT 'ESTIMATED'
     CHECK (population_count_status IN ('ESTIMATED', 'VERIFIED'));
 
 CREATE TABLE bird_population_adjustments (
