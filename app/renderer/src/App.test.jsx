@@ -565,7 +565,7 @@ describe("App", () => {
     await waitFor(() => expect(batchApi.create).toHaveBeenCalledWith({
       type: "LAYER", placementDate: "2026-11-06", houseId: "house-1",
       initialBirdCount: 250, supplierId: null,
-      purchaseCostRecorded: false, purchaseCostMinor: null,
+      purchaseCostRecorded: false, purchaseCostMinor: null, populationCountStatus: "ESTIMATED",
     }));
   });
 
