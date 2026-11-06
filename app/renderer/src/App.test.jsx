@@ -552,7 +552,7 @@ describe("App", () => {
       .getByRole("button", { name: "Flocks" }));
     fireEvent.click(await screen.findByRole("button", { name: "Batches & bird costs" }));
 
-    fireEvent.change(await screen.findByLabelText("Purchase information"),
+    fireEvent.change(await screen.findByLabelText("Purchase information"), {
       target: { value: "EXISTING_STOCK" },
     });
     expect(screen.queryByLabelText("Purchase cost (₦)")).not.toBeInTheDocument();
