@@ -61,6 +61,36 @@ class BatchManagementIntegrationTest {
 
 
     @Test
+    void registersExistingStockWithoutCreatingPurchaseOrExpenseRows() {
+        farmService.create(new FarmCreateRequest(
+                "Grantino Farms", "Port Harcourt", "Africa/Lagos", "NGN"));
+        var house = houseService.create(new HouseCreateRequest("Layer House", "LH1", null));
+        var batch = batchService.create(new BatchCreateRequest(
+                "LAYER", LocalDate.of(2026, 6, 1), house.id(), 250, null, false, null
+        ));
+
+        assertThat(batch.purchaseCostMinor()).isNull();
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM bird_purchases WHERE batch_id = ?",
+                Integer.class, batch.id())).isZero();
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM expenses WHERE batch_id = ?",
+                Integer.class, batch.id())).isZero();
+    }
+
+    @Test
+    void rejectsPurchaseCostWhenModeAndAmountDisagree() {
+        farmService.create(new FarmCreateRequest(
+                "Grantino Farms", "Port Harcourt", "Africa/Lagos", "NGN"));
+        var house = houseService.create(new HouseCreateRequest("Layer House", "LH1", null));
+
+        assertThatThrownBy(() -> batchService.create(new BatchCreateRequest(
+                "LAYER", LocalDate.of(2026, 6, 1), house.id(), 100, null, true, null
+        ))).hasMessage("Record purchase cost requires an actual cost. Existing stock must not include a purchase cost.");
+        assertThatThrownBy(() -> batchService.create(new BatchCreateRequest(
+                "LAYER", LocalDate.of(2026, 6, 1), house.id(), 100, null, false, 100L
+        ))).hasMessage("Record purchase cost requires an actual cost. Existing stock must not include a purchase cost.");
+    }
+
+    @Test
     void acceptsPurchaseCostWithRemainderAndPreservesExactTotal() {
         farmService.create(new FarmCreateRequest(
                 "Grantino Farms", "Port Harcourt", "Africa/Lagos", "NGN"));
@@ -139,6 +169,18 @@ class BatchManagementIntegrationTest {
                 "LAYER", LocalDate.of(2026, 5, 1), house.id(), 100, null, 1_000_000L));
 
         assertThatThrownBy(() -> batchService.markSold(batch.id()))
-                .hasMessage("Only BROILER batches use the SOLD terminal lifecycle in this stage.");
+                .hasMessage("Only meat-production batches (BROILER or TURKEY) use the SOLD terminal lifecycle.");
+    }
+
+    @Test
+    void createsIndependentTurkeyBatchWithTurkeyCodeAndPopulation() {
+        farmService.create(new FarmCreateRequest(
+                "Grantino Farms", "Port Harcourt", "Africa/Lagos", "NGN"));
+        var house = houseService.create(new HouseCreateRequest("Turkey House", "TH1", null));
+        var turkey = batchService.create(new BatchCreateRequest(
+                "TURKEY", LocalDate.of(2026, 6, 1), house.id(), 75, null, 750_000L));
+        assertThat(turkey.type()).isEqualTo("TURKEY");
+        assertThat(turkey.code()).isEqualTo("TY-2026-001");
+        assertThat(populationService.get(turkey.id(), LocalDate.of(2026, 6, 1)).currentBirds()).isEqualTo(75);
     }
 }

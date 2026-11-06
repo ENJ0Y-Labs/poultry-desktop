@@ -33,10 +33,15 @@ public final class BirdCostCalculator {
                     continue;
                 }
 
+                if ("ADJUSTMENT".equals(event.eventType())) {
+                    int difference = event.quantity();
+                    population = Math.addExact(population, difference);
+                    if (population < 0) throw new IllegalArgumentException("Bird population cannot become negative.");
+                    continue;
+                }
                 if (event.quantity() <= 0) {
                     throw new IllegalArgumentException("Population event quantity must be positive.");
                 }
-
                 int signed = BirdPopulationCalculator.signedQuantity(event);
                 if (signed < 0) {
                     if (event.quantity() > population) {
@@ -88,10 +93,15 @@ public final class BirdCostCalculator {
                 if (!event.eventDate().equals(date)) {
                     continue;
                 }
+                if ("ADJUSTMENT".equals(event.eventType())) {
+                    int difference = event.quantity();
+                    population = Math.addExact(population, difference);
+                    if (population < 0) throw new IllegalArgumentException("Bird population cannot become negative.");
+                    continue;
+                }
                 if (event.quantity() <= 0) {
                     throw new IllegalArgumentException("Population event quantity must be positive.");
                 }
-
                 int signed = BirdPopulationCalculator.signedQuantity(event);
                 if (signed < 0) {
                     if (event.quantity() > population) {

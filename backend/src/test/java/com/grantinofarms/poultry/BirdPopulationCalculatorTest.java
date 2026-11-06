@@ -80,6 +80,31 @@ class BirdPopulationCalculatorTest {
                 .hasMessage("sold quantity exceeds available birds.");
     }
 
+
+    @Test
+    void physicalCountAdjustmentChangesCalculatedPopulationWithoutChangingInitialBirdsOrEventTotals() {
+        List<BirdPopulationEvent> events = List.of(
+                new BirdPopulationEvent(LocalDate.of(2026, 1, 2), "MORTALITY", 20),
+                new BirdPopulationEvent(LocalDate.of(2026, 1, 4), "ADJUSTMENT", -15),
+                new BirdPopulationEvent(LocalDate.of(2026, 1, 5), "CULLING", 5)
+        );
+        assertThat(BirdPopulationCalculator.currentBirds(700, events, LocalDate.of(2026, 1, 5))).isEqualTo(660);
+        assertThat(BirdPopulationCalculator.signedQuantity(
+                new BirdPopulationEvent(LocalDate.of(2026, 1, 4), "ADJUSTMENT", 10))).isEqualTo(10);
+    }
+
+    @Test
+    void physicalCountAdjustmentCannotMakeLaterPopulationEventsNegative() {
+        List<BirdPopulationEvent> events = List.of(
+                new BirdPopulationEvent(LocalDate.of(2026, 1, 5), "MORTALITY", 40)
+        );
+        assertThatThrownBy(() -> BirdPopulationCalculator.currentBirds(100, List.of(
+                new BirdPopulationEvent(LocalDate.of(2026, 1, 3), "ADJUSTMENT", -70),
+                events.get(0)), LocalDate.of(2026, 1, 5)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Bird population cannot become negative.");
+    }
+
     @Test
     void rejectsUnknownEventTypes() {
         assertThatThrownBy(() -> BirdPopulationCalculator.signedQuantity(

@@ -46,7 +46,7 @@ public class HouseService {
 
         try {
             houseRepository.insert(id, farmId, request.name().trim(), request.code().trim().toUpperCase(),
-                    clean(request.notes()), now);
+                    clean(request.notes()), request.houseType(), now);
         } catch (DataIntegrityViolationException e) {
             throw new ApiException(HttpStatus.CONFLICT, "HOUSE_DUPLICATE",
                     "A house/pen with that name or code already exists in this farm.");
@@ -68,7 +68,7 @@ public class HouseService {
         String now = Instant.now().toString();
         try {
             houseRepository.update(id, farmId, request.name().trim(), request.code().trim().toUpperCase(),
-                    clean(request.notes()), request.status(), now);
+                    clean(request.notes()), request.status(), request.houseType(), now);
         } catch (DataIntegrityViolationException e) {
             throw new ApiException(HttpStatus.CONFLICT, "HOUSE_DUPLICATE",
                     "A house/pen with that name or code already exists in this farm.");

@@ -148,7 +148,7 @@ Money remains integer minor units.
 
 Back-dated sales are validated against the chronological egg ledger so a sale cannot create a negative historical sellable balance.
 
-## Broiler weights and growth
+## Meat-bird weights and growth
 
 Weight records store total sample weight in grams and sampled bird count.
 
@@ -171,7 +171,7 @@ current live biomass - starting live biomass
 
 ## FCR
 
-The authoritative broiler FCR is:
+The authoritative meat-bird FCR is:
 
 ```
 FCR = feed consumed (kg) / live-weight gain (kg)
@@ -187,7 +187,7 @@ If live-weight gain is zero or negative, FCR is undefined and the API returns nu
 
 Each feed type has an optional `kg_per_unit` conversion factor. Feed consumed in a configured unit is converted using `entered quantity × kg_per_unit` before FCR is calculated. Kilogram units always use a factor of 1. Other units with unknown conversions are not guessed: if a batch has any feed usage whose conversion is unknown, converted feed kilograms and FCR are undefined (`null`, displayed as —). If there are no feed usage records, converted feed kilograms and FCR are also undefined.\n\nConversion factors are configured explicitly in Feed management. For example, a confirmed 25 kg bag uses `25 kg per bag`. Existing bag and other non-kg feed types migrate with no assumed factor; their historical quantities, purchase records, FIFO allocations, and costs remain unchanged. Updating a feed type conversion is audited and changes how its historical usage is interpreted for FCR, so operators should only enter a verified package weight.
 
-## Broiler sales and revenue
+## Meat-bird sales and revenue
 
 Broiler population reduction from a sale is represented by a SOLD population event.
 
@@ -195,7 +195,7 @@ Broiler population reduction from a sale is represented by a SOLD population eve
 sale revenue = quantity × price per bird
 ```
 
-When the calculated current population reaches zero, an active Broiler batch transitions to SOLD and ordinary production/population writes are locked.
+When the calculated current population reaches zero, an active Broiler or Turkey batch transitions to SOLD and ordinary production/population writes are locked.
 
 ## Pricing and margins
 

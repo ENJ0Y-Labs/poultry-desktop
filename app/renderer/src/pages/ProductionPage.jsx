@@ -98,13 +98,13 @@ export default function ProductionPage() {
 
       <PageSection page="production" tab="broiler"><section className="card full">
           <div className="section-head">
-            <h2>Broiler production</h2>
-            <p className="muted">Only BROILER batches expose weights, growth, FCR, and bird sales. FCR is calculated by the backend from feed consumed and live-weight gain.</p>
+            <h2>Meat-bird production</h2>
+            <p className="muted">BROILER and TURKEY batches expose weight, growth, FCR, and bird sales. FCR is calculated by the backend from feed consumed and live-weight gain.</p>
           </div>
 
           <div className="subsection">
-            <h3>Broiler batch</h3>
-            <label className="field"><span>Broiler batch</span><select value={broilerBatchId} onChange={e => {
+            <h3>Meat-production batch</h3>
+            <label className="field"><span>Meat-production batch</span><select value={broilerBatchId} onChange={e => {
               const id = e.target.value;
               setBroilerBatchId(id);
               setWeightForm(form => ({ ...form, batchId: id }));
@@ -112,8 +112,8 @@ export default function ProductionPage() {
               setPricingForm(form => ({ ...form, quantity: "" }));
               loadBroilerForBatch(id);
             }}>
-              <option value="">Select a broiler batch</option>
-              {batches.filter(b => b.type === "BROILER").map(b =>
+              <option value="">Select a batch</option>
+              {batches.filter(b => b.type === "BROILER" || b.type === "TURKEY").map(b =>
                 <option key={b.id} value={b.id}>{b.code} · {b.status}</option>
               )}
             </select></label>
@@ -123,14 +123,14 @@ export default function ProductionPage() {
             <>
               <ProductionTrendChart
                 batchId={broilerBatchId}
-                title="Broiler average weight"
+                title="Meat-bird average weight"
                 description="Average sampled bird weight by record date, in kilograms. Days without weight records appear as gaps."
                 unit="kg"
                 loadTrend={productionTrendApi.broilerAverageWeight}
               />
               <div className="subsection">
                 <h3>Growth summary</h3>
-                <DataTable caption="Broiler growth summary" columns={[
+                <DataTable caption="Meat-bird growth summary" columns={[
                     { key: "averageWeightKg", label: "Average weight", render: row => row.averageWeightKg == null ? "—" : `${row.averageWeightKg} kg` },
                     { key: "weightGainKg", label: "Weight gain", render: row => row.weightGainKg == null ? "—" : `${row.weightGainKg} kg` },
                     { key: "feedConsumedKg", label: "Feed consumed (converted)", render: row => row.feedConsumedKg == null ? "—" : `${row.feedConsumedKg} kg` },
@@ -148,7 +148,7 @@ export default function ProductionPage() {
                   <label className="field"><span>Notes</span><input value={weightForm.notes} onChange={e=>setWeightForm({...weightForm,notes:e.target.value})}/></label>
                   <button disabled={saving}>Record weight</button>
                 </form>
-                <DataTable caption="Broiler weight records" columns={[
+                <DataTable caption="Meat-bird weight records" columns={[
                     { key: "recordDate", label: "Date" }, { key: "sampleQuantity", label: "Sample" }, { key: "totalWeightKg", label: "Total kg" },
                     { key: "averageWeightKg", label: "Average kg" }, { key: "weightGainKg", label: "Gain kg/bird" },
                   ]} rows={broilerWeights} emptyMessage="No weight records yet." />
@@ -184,7 +184,7 @@ export default function ProductionPage() {
                   {!birdSaleForm.customerId && <label className="field"><span>Walk-in customer name</span><input required maxLength="120" value={birdSaleForm.customer} onChange={e=>setBirdSaleForm({...birdSaleForm,customer:e.target.value})} placeholder="Enter buyer name"/></label>}
                   <button disabled={saving}>Record bird sale</button>
                 </form>
-                <DataTable caption="Broiler bird sales" columns={[
+                <DataTable caption="Meat-bird sales" columns={[
                     { key: "recordDate", label: "Date" }, { key: "quantity", label: "Quantity" },
                     { key: "pricePerBirdMinor", label: "Price / bird", render: row => formatMoney(row.pricePerBirdMinor, farm.currency) },
                     { key: "totalAmountMinor", label: "Total", render: row => formatMoney(row.totalAmountMinor, farm.currency) },

@@ -6,6 +6,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
 import java.util.List;
+import com.grantinofarms.poultry.dto.PopulationAdjustmentResponse;
 
 @Repository
 public class BirdPopulationRepository {
@@ -17,9 +18,12 @@ public class BirdPopulationRepository {
 
     public List<BirdPopulationEvent> findEvents(String batchId) {
         return jdbc.query("""
-                SELECT event_date, event_type, quantity
-                FROM bird_population_events
-                WHERE batch_id = ?
+                SELECT event_date, event_type, quantity, created_at
+                FROM bird_population_events WHERE batch_id = ?
+                UNION ALL
+                SELECT effective_date AS event_date, 'ADJUSTMENT' AS event_type,
+                       difference AS quantity, created_at
+                FROM bird_population_adjustments WHERE batch_id = ?
                 ORDER BY event_date ASC, created_at ASC
                 """,
                 (rs, rowNum) -> new BirdPopulationEvent(
@@ -27,8 +31,12 @@ public class BirdPopulationRepository {
                         rs.getString("event_type"),
                         rs.getInt("quantity")
                 ),
-                batchId
+                batchId, batchId
         );
+    }
+
+    public String populationCountStatus(String batchId) {
+        return jdbc.queryForObject("SELECT population_count_status FROM batches WHERE id=?", String.class, batchId);
     }
 
     public int initialBirds(String batchId) {
@@ -93,6 +101,28 @@ public class BirdPopulationRepository {
                 notes,
                 createdAt
         );
+    }
+
+    public void insertAdjustment(String id, String batchId, LocalDate effectiveDate,
+                                 int previousCount, int newCount, int difference,
+                                 String reason, String userId, String createdAt) {
+        jdbc.update("""
+                INSERT INTO bird_population_adjustments
+                    (id, batch_id, effective_date, previous_count, new_count, difference, reason, user_id, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, id, batchId, effectiveDate.toString(), previousCount, newCount,
+                difference, reason, userId, createdAt);
+    }
+
+    public List<PopulationAdjustmentResponse> findAdjustments(String batchId) {
+        return jdbc.query("""
+                SELECT id, batch_id, effective_date, previous_count, new_count, difference, reason, user_id, created_at
+                FROM bird_population_adjustments WHERE batch_id=?
+                ORDER BY effective_date DESC, created_at DESC
+                """, (rs, n) -> new PopulationAdjustmentResponse(
+                rs.getString("id"), rs.getString("batch_id"), LocalDate.parse(rs.getString("effective_date")),
+                rs.getInt("previous_count"), rs.getInt("new_count"), rs.getInt("difference"),
+                rs.getString("reason"), rs.getString("user_id"), rs.getString("created_at")), batchId);
     }
 
     public int countEvents(String batchId, String eventType, LocalDate asOf) {

@@ -4,7 +4,7 @@ Instructions for AI coding agents and humans working in this repository. Read th
 
 ## 1. Product
 
-A **local-first poultry farm management system for layer and broiler farms**, delivered as a Windows Electron desktop app and usable fully offline.
+A **local-first poultry farm management system for layer, broiler, and turkey farms**, delivered as a Windows Electron desktop app and usable fully offline.
 
 Core loop:
 
@@ -20,15 +20,15 @@ Priority order:
 
 A boring screen with correct poultry numbers beats a beautiful dashboard showing agricultural fiction.
 
-**Current stage: 16 — Inventory.**
+**Current stage: 17 — Independent Turkey support.**
 
-Stage 8 feed management is implemented. Stage 9 daily farm operations is implemented. Stage 10 health management is implemented. Stage 11 added Layer-only egg production, egg inventory, cracked-egg history, configurable crate conversion, and egg sales. Stage 12 adds Broiler-only weight records, growth calculations, backend-owned FCR, bird sales, and automatic SOLD lifecycle locking. Stage 13 adds cost-based Broiler pricing, configurable target margin, working/latest margin, and audited below-target sale confirmation. Stage 14 adds a simple farm/batch expense ledger. Stage 15 adds reusable customers and a common sales ledger while preserving Layer egg and Broiler bird sale behavior. Stage 16 adds a transaction-based inventory system for drugs, vaccines, and farm supplies, while the existing feed subsystem remains authoritative for feed stock and FIFO costing.
+Stage 8 feed management is implemented. Stage 9 daily farm operations is implemented. Stage 10 health management is implemented. Stage 11 added Layer-only egg production, egg inventory, cracked-egg history, configurable crate conversion, and egg sales. Stage 12 adds Broiler-only weight records, growth calculations, backend-owned FCR, bird sales, and automatic SOLD lifecycle locking. Stage 13 adds cost-based Broiler pricing, configurable target margin, working/latest margin, and audited below-target sale confirmation. Stage 14 adds a simple farm/batch expense ledger. Stage 15 adds reusable customers and a common sales ledger while preserving Layer egg and Broiler bird sale behavior. Stage 16 adds a transaction-based inventory system for drugs, vaccines, and farm supplies, while the existing feed subsystem remains authoritative for feed stock and FIFO costing. Feed definitions may include brand, package name, and confirmed package weight in kilograms; unknown weights must remain unset. Feed quantities continue to use the existing precision-safe FIFO ledger; do not infer package weights or applicability from product names.
 
 Do not build later-stage features unless the owner explicitly changes the stage.
 
 ### Branding
 
-The product is branded **Pomas** (egg-and-M logo). Logo sources: `build/icon.ico` and `build/icon.png` (installer/executable), `app/assets/icon.png` (window icon), `app/renderer/src/assets/pomas-logo.png` (sidebar mark).
+The product is branded **Pomas** (egg-and-M logo). The root `package.json` version is the authoritative desktop application release version. Electron exposes `app.getVersion()` and the actual `process.arch` to the renderer through the narrow preload IPC bridge; do not hardcode release versions in UI components. Windows packages explicitly target x64 and use `POMAS-v<version>-Setup-x64.exe`. Keep the backend Maven artifact version independent from the desktop release version. Packaged Windows metadata uses the existing `Grantino Farms` product identity. Logo sources: `build/icon.ico` and `build/icon.png` (installer/executable), `app/assets/icon.png` (window icon), `app/renderer/src/assets/pomas-logo.png` (sidebar mark).
 
 The installer ID (`appId`), repository name, Java packages, and database file name are intentionally unchanged. Packaged builds pin Electron's `userData` to the folder `%APPDATA%/Poultry Farm Manager` (see `app/main/main.js`) so installs created before the rename keep finding their data. Do not remove that pin without a data-migration plan.
 
@@ -182,6 +182,20 @@ or
 
 Do not expose raw SQL/database exceptions to the UI.
 
+## House classification and occupancy
+
+Every house has an explicit `houseType` of `PERMANENT` or `TEMPORARY`. Never derive house type from a code prefix. V28 uses `PERMANENT` as a deliberate legacy-row default so existing installations migrate safely; administrators must reclassify any legacy temporary houses after upgrade. New house creation requires an explicit type. House occupancy is derived from the existence of at least one `ACTIVE` batch assigned to that house; SOLD/CLOSED/ARCHIVED batches do not occupy it. Houses can be reused after their prior batch is no longer active. Farm dashboard fields are `totalHouses`, `permanentHouses`, `temporaryHouses`, `occupiedHouses`, and `emptyHouses`, counting ACTIVE houses only. See `docs/database-schema.md`.
+
+## Estimated and verified bird population
+
+Every batch has a population_count_status of ESTIMATED or VERIFIED. Default new and migrated batch counts to ESTIMATED; never imply a physical count was performed when it was not. Initial population is immutable and remains the starting baseline. Calculated population is initial birds plus/minus dated mortality, culling, sales, transfers, and signed physical-count adjustment events. An adjustment is not mortality, culling, or a sale and must never fabricate those records.
+
+Physical count adjustments are append-only records containing the previous calculated count, physically counted quantity, signed difference, effective date, required reason, authenticated owner user ID, and server-generated UTC timestamp. Validate the entire later population history before accepting a backdated adjustment; reject it if any later event would make population negative. A successful physical count adjustment marks the batch VERIFIED. Administrators can explicitly mark a batch ESTIMATED again with a required reason and audit event. Population adjustments change live quantity without creating a new purchase cost or a mortality/culling cost allocation. Existing carried bird cost remains with the batch and its per-bird average is recalculated against the reconciled population. Farm dashboards and reports must expose estimated batch/bird totals so provisional populations are not presented as verified facts. Transfers remain paired source/target events and must not change the farm-wide total. See docs/decisions/2026-11-06-estimated-population-adjustments.md and docs/database-schema.md.
+
+## Turkey reporting contract
+
+Turkey is an independent `TURKEY` batch type, not a Broiler subtype. Farm dashboard totals must expose `turkeyBirds` separately from `broilerBirds` and `layerBirds`. Farm reports must keep `broilerGrowth` BROILER-only and expose `turkeyGrowth` for TURKEY-only results; `meatBirdGrowth` is the explicitly combined BROILER + TURKEY view. Turkey uses the shared meat-bird weight/growth and bird-sale services, but egg collection remains LAYER-only and must be rejected by backend validation. See `docs/decisions/2026-11-06-independent-turkey-reporting.md`.
+
 ## Historical production CSV import
 
 The Import / Export screen supports versioned CSV imports for layer egg collections (`egg-collections`) and broiler weight records (`broiler-weights`) for existing ACTIVE batches. Batch references use human-readable batch codes. Egg imports must use LAYER batches and preserve good/cracked separation; weight imports must use BROILER batches and store sample count plus total sample weight in kilograms. All writes go through `EggManagementService` or `BroilerProductionService` in a single transaction so existing validation and audit behavior remain authoritative. Do not import derived averages, growth, sellable cracked eggs, or synthetic zero records for missing dates. See `docs/csv-bulk-import.md`.
@@ -241,12 +255,12 @@ Hierarchy:
 
 Every batch has:
 - unique human-readable code
-- type: LAYER or BROILER
+- type: LAYER, BROILER, or TURKEY
 - placement/opening date
 - initial bird count
 - house/pen
 - supplier/source where applicable
-- original bird purchase cost in integer minor units
+- original bird purchase cost in integer minor units when recorded; otherwise explicitly unknown
 - status
 - audit history
 
@@ -275,7 +289,7 @@ Layers additionally:
 - Egg Quality
 - Egg Inventory
 
-Broilers additionally:
+Broilers and turkeys additionally:
 - Weight
 - Growth
 - FCR
@@ -455,7 +469,7 @@ Mortality and culling must also be handled by an explicit tested cost-allocation
 
 Money is always stored and calculated in integer minor units. For NGN, ₦500 is 50,000 kobo.
 
-Initial bird purchase cost is required when a batch is opened and is preserved in both the batch opening data and `bird_purchases` history.
+When actual purchase information is available, record the original bird purchase cost in integer minor units and preserve it in both the batch opening data and `bird_purchases` history. For existing stock with an unknown/unrecorded cost, keep `batches.original_purchase_cost_minor` NULL and create no `bird_purchases` row. NULL means unknown; zero means a genuine recorded zero-cost purchase. Never substitute zero for an unknown cost. Cost-derived values and margins remain unavailable when the initial cost is unknown. Population records remain available, but transferring birds from an unknown-cost batch is rejected because the carried cost cannot be determined.
 
 Bird cost uses a deterministic weighted-average carried-cost pool:
 1. start with the batch purchase cost

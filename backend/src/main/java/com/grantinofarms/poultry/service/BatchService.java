@@ -60,14 +60,26 @@ public class BatchService {
         String farmId = requireFarmId();
         String type = request.type().trim().toUpperCase();
 
-        if (!type.equals("LAYER") && !type.equals("BROILER")) {
+        if (!List.of("LAYER", "BROILER", "TURKEY").contains(type)) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_BATCH_TYPE",
-                    "Batch type must be LAYER or BROILER.");
+                    "Batch type must be LAYER, BROILER, or TURKEY.");
         }
 
         if (!batchRepository.houseBelongsToFarm(request.houseId(), farmId)) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_HOUSE",
                     "The selected house/pen does not belong to this farm or is archived.");
+        }
+
+        if (request.purchaseCostRecorded() == null && request.purchaseCostMinor() == null) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_PURCHASE_COST_MODE",
+                    "Choose whether purchase information is being recorded.");
+        }
+        boolean purchaseCostRecorded = request.purchaseCostRecorded() == null
+                || request.purchaseCostRecorded();
+        if ((purchaseCostRecorded && request.purchaseCostMinor() == null)
+                || (!purchaseCostRecorded && request.purchaseCostMinor() != null)) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_PURCHASE_COST_MODE",
+                    "Record purchase cost requires an actual cost. Existing stock must not include a purchase cost.");
         }
 
         if (request.supplierId() != null && !request.supplierId().isBlank()
@@ -79,7 +91,7 @@ public class BatchService {
         int year = request.placementDate().getYear();
         batchRepository.ensureSequence(type, year);
         int sequence = batchRepository.allocateSequenceNumber(type, year);
-        String prefix = type.equals("LAYER") ? "L" : "B";
+        String prefix = switch (type) { case "LAYER" -> "L"; case "BROILER" -> "B"; default -> "TY"; };
         String code = String.format("%s-%d-%03d", prefix, year, sequence);
 
         String id = UUID.randomUUID().toString();
@@ -96,19 +108,22 @@ public class BatchService {
                     request.placementDate(),
                     request.initialBirdCount(),
                     request.purchaseCostMinor(),
+                    request.populationCountStatus() == null ? "ESTIMATED" : request.populationCountStatus(),
                     now
             );
 
-            birdPurchaseRepository.insert(
-                    UUID.randomUUID().toString(),
-                    id,
-                    clean(request.supplierId()),
-                    request.placementDate(),
-                    request.initialBirdCount(),
-                    request.purchaseCostMinor() / request.initialBirdCount(),
-                    request.purchaseCostMinor(),
-                    now
-            );
+            if (purchaseCostRecorded) {
+                birdPurchaseRepository.insert(
+                        UUID.randomUUID().toString(),
+                        id,
+                        clean(request.supplierId()),
+                        request.placementDate(),
+                        request.initialBirdCount(),
+                        request.purchaseCostMinor() / request.initialBirdCount(),
+                        request.purchaseCostMinor(),
+                        now
+                );
+            }
         } catch (DataIntegrityViolationException e) {
             throw new ApiException(HttpStatus.CONFLICT, "BATCH_CREATE_CONFLICT",
                     "The batch could not be created because one of its references is no longer valid.");
@@ -122,9 +137,9 @@ public class BatchService {
     @Transactional
     public BatchResponse markSold(String id) {
         BatchResponse current = get(id);
-        if (!"BROILER".equals(current.type())) {
+        if (!List.of("BROILER", "TURKEY").contains(current.type())) {
             throw new ApiException(HttpStatus.CONFLICT, "INVALID_SOLD_TRANSITION",
-                    "Only BROILER batches use the SOLD terminal lifecycle in this stage.");
+                    "Only meat-production batches (BROILER or TURKEY) use the SOLD terminal lifecycle.");
         }
         if ("SOLD".equals(current.status())) {
             throw new ApiException(HttpStatus.CONFLICT, "BATCH_ALREADY_SOLD",

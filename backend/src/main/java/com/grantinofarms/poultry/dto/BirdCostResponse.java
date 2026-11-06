@@ -6,12 +6,12 @@ public record BirdCostResponse(
         String batchId,
         LocalDate asOf,
         int currentBirds,
-        long initialPurchaseCostMinor,
+        Long initialPurchaseCostMinor,
         long additionalCostsMinor,
         long transferInCostMinor,
-        long soldBirdCostMinor,
-        long mortalityCostMinor,
-        long cullingCostMinor,
-        long transferOutCostMinor,
-        long carriedCostMinor
+        Long soldBirdCostMinor,
+        Long mortalityCostMinor,
+        Long cullingCostMinor,
+        Long transferOutCostMinor,
+        Long carriedCostMinor
 ) {}

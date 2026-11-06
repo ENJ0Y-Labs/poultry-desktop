@@ -8,11 +8,11 @@ import { rememberLastBatchId } from "../utils/farmUx.js";
 // eslint-disable-next-line no-unused-vars
 import DataTable from "../components/DataTable.jsx";
 
-const batchTypeLabel = type => type === "LAYER" ? "Layer" : type === "BROILER" ? "Broiler" : "Unknown type";
+const batchTypeLabel = type => type === "LAYER" ? "Layer" : type === "BROILER" ? "Broiler" : type === "TURKEY" ? "Turkey" : "Unknown type";
 const batchStatusLabel = status => status === "ACTIVE" ? "Active" : status === "SOLD" ? "Sold" : String(status || "Unknown").toLowerCase().replace(/\b\w/g, letter => letter.toUpperCase());
 
 export default function FlocksPage() {
-  const { formatMoney, formatQuantity, formatPercent, formatKg, formatMetric, farm, houses, batches, suppliers, batchForm, setBatchForm, costForm, setCostForm, houseForm, setHouseForm, saving, selectedBatchId, setSelectedBatchId, batchDashboard, createBatch, addBirdCost, markBatchSold, reopenBatch, addHouse } = useContext(FarmManagerContext);
+  const { formatMoney, formatQuantity, formatPercent, formatKg, formatMetric, farm, houses, batches, suppliers, batchForm, setBatchForm, costForm, setCostForm, houseForm, setHouseForm, saving, selectedBatchId, setSelectedBatchId, batchDashboard, createBatch, addBirdCost, markBatchSold, reopenBatch, addHouse, editHouse, editingHouseId, cancelHouseEdit, populationAdjustmentForm, setPopulationAdjustmentForm, populationAdjustments, savePopulationAdjustment, markPopulationEstimated } = useContext(FarmManagerContext);
 
   return (
     <PageTemplate className="grid">
@@ -34,6 +34,21 @@ export default function FlocksPage() {
               ["Profit", formatMoney(batchDashboard.profitMinor, farm.currency), ""]
             ].map(([label,value]) => <div className="metric-card" key={label}><span>{label}</span><strong>{value ?? "—"}</strong></div>)}
           </div>
+          <div className="notice-banner" role="status"><strong>{batchDashboard.population?.countStatus === "ESTIMATED" ? "Estimated population" : "Verified population"}</strong><span>{batchDashboard.population?.countStatus === "ESTIMATED" ? "Current bird count is provisional. Record a physical count when the flock is counted." : "The current population has a recorded physical count."}</span></div>
+          <div className="subsection">
+            <h3>Record physical bird count</h3>
+            <p className="muted">This records a dated adjustment against the calculated population. It does not change initial birds or rewrite mortality, culling, transfers or sales.</p>
+            <form className="inline-form" onSubmit={savePopulationAdjustment}>
+              <label className="field"><span>Count date</span><input type="date" required value={populationAdjustmentForm.effectiveDate} min={batchDashboard.batch.placementDate} onChange={e=>setPopulationAdjustmentForm({...populationAdjustmentForm,effectiveDate:e.target.value})}/></label>
+              <label className="field"><span>Physical count</span><input type="number" min="0" step="1" required value={populationAdjustmentForm.newCount} onChange={e=>setPopulationAdjustmentForm({...populationAdjustmentForm,newCount:e.target.value})}/></label>
+              <label className="field"><span>Reason / notes</span><input required value={populationAdjustmentForm.reason} onChange={e=>setPopulationAdjustmentForm({...populationAdjustmentForm,reason:e.target.value})} placeholder="Physical count completed by farm operator"/></label>
+              <button disabled={saving}>Save verified count</button>
+            </form>
+            <DataTable caption="Physical count adjustment history" columns={[
+              {key:"effectiveDate",label:"Effective date"},{key:"previousCount",label:"Previous calculated"},{key:"newCount",label:"Physical count"},
+              {key:"difference",label:"Adjustment"},{key:"reason",label:"Reason"},{key:"userId",label:"Recorded by"},{key:"createdAt",label:"Recorded at"}
+            ]} rows={populationAdjustments} emptyMessage="No physical count adjustments recorded."/>
+          </div>
           <div className="dashboard-columns">
             <div className="subsection"><h3>Production</h3>{batchDashboard.batch.type === "LAYER" ? <div className="dashboard-list">
               <div><span>Good eggs</span><strong>{batchDashboard.eggInventory?.goodCollected ?? "—"}</strong></div>
@@ -53,21 +68,24 @@ export default function FlocksPage() {
 
       <PageSection page="flocks" tab="flocks"><section id="batches" className="card full"><div className="section-head"><h2>Batches</h2><p className="muted">Opening a batch creates a permanent flock record and generates its code automatically.</p></div>
           <form className="inline-form" onSubmit={createBatch}>
-            <label className="field"><span>Batch type</span><select value={batchForm.type} onChange={e=>setBatchForm({...batchForm,type:e.target.value})}><option value="LAYER">Layer</option><option value="BROILER">Broiler</option></select></label>
+            <label className="field"><span>Batch type</span><select value={batchForm.type} onChange={e=>setBatchForm({...batchForm,type:e.target.value})}><option value="LAYER">Layer</option><option value="BROILER">Broiler</option><option value="TURKEY">Turkey</option></select></label>
             <label className="field"><span>Placement date</span><input required type="date" value={batchForm.placementDate} onChange={e=>setBatchForm({...batchForm,placementDate:e.target.value})}/></label>
             <label className="field"><span>House / pen</span><select required value={batchForm.houseId} onChange={e=>setBatchForm({...batchForm,houseId:e.target.value})}><option value="">House / pen</option>{houses.filter(h=>h.status==="ACTIVE").map(h=><option key={h.id} value={h.id}>{h.name} ({h.code})</option>)}</select></label>
             <label className="field"><span>Initial birds</span><input required min="1" type="number" value={batchForm.initialBirdCount} onChange={e=>setBatchForm({...batchForm,initialBirdCount:e.target.value})}/></label>
+            <label className="field"><span>Starting count confidence</span><select value={batchForm.populationCountStatus || "ESTIMATED"} onChange={e=>setBatchForm({...batchForm,populationCountStatus:e.target.value})}><option value="VERIFIED">Verified physical count</option><option value="ESTIMATED">Estimated / provisional count</option></select></label>
+            <label className="field"><span>Purchase information</span><select aria-label="Purchase information" value={batchForm.purchaseCostRecorded ? "RECORDED" : "EXISTING_STOCK"} onChange={e=>setBatchForm({...batchForm,purchaseCostRecorded:e.target.value==="RECORDED",purchaseCostMinor:""})}><option value="RECORDED">Record purchase cost</option><option value="EXISTING_STOCK">Not recorded / Existing stock</option></select></label>
             <label className="field"><span>Supplier / source (optional)</span><select value={batchForm.supplierId} onChange={e=>setBatchForm({...batchForm,supplierId:e.target.value})}><option value="">Unknown / not recorded</option>{suppliers.filter(supplier=>supplier.status!=="ARCHIVED").map(supplier=><option key={supplier.id} value={supplier.id}>{supplier.name}</option>)}</select></label>
-            <label className="field"><span>Purchase cost (₦)</span><input required type="text" inputMode="decimal" value={batchForm.purchaseCostMinor} onChange={e=>setBatchForm({...batchForm,purchaseCostMinor:e.target.value})}/></label>
+            {batchForm.purchaseCostRecorded && <label className="field"><span>Purchase cost (₦)</span><input required type="text" inputMode="decimal" value={batchForm.purchaseCostMinor} onChange={e=>setBatchForm({...batchForm,purchaseCostMinor:e.target.value})}/></label>}
             <button disabled={saving || houses.length===0}>Create batch</button>
           </form>
           <DataTable caption="Batch records" columns={[
               { key: "code", label: "Code" }, { key: "type", label: "Type", render: batch => batchTypeLabel(batch.type) },
-              { key: "placementDate", label: "Placement" }, { key: "initialBirdCount", label: "Birds" },
+              { key: "placementDate", label: "Placement" }, { key: "initialBirdCount", label: "Initial birds" }, { key: "populationCountStatus", label: "Count confidence", render: batch => batch.populationCountStatus === "ESTIMATED" ? "Estimated" : "Verified" },
+              { key: "confidenceAction", label: "Count action", render: batch => batch.populationCountStatus !== "ESTIMATED" ? <button type="button" className="secondary-button" disabled={saving} onClick={() => markPopulationEstimated(batch.id)}>Mark estimated</button> : "Awaiting physical count" },
               { key: "status", label: "Status", render: batch => batchStatusLabel(batch.status) },
               { key: "action", label: "Action", render: batch => batch.status === "SOLD"
                 ? <button type="button" onClick={() => reopenBatch(batch.id)} disabled={saving}>Reopen</button>
-                : batch.type === "BROILER" ? <button type="button" onClick={() => markBatchSold(batch.id)} disabled={saving}>Mark sold</button> : "—" },
+                : ["BROILER", "TURKEY"].includes(batch.type) ? <button type="button" onClick={() => markBatchSold(batch.id)} disabled={saving}>Mark sold</button> : "—" },
             ]} rows={batches} emptyMessage="No batches yet." />
           <div className="subsection">
             <div className="section-head"><h3>Additional attributable bird cost</h3><p className="muted">Enter the amount in naira. The app converts it to integer kobo before saving.</p></div>
@@ -85,10 +103,12 @@ export default function FlocksPage() {
         </section></PageSection>
 
       <PageSection page="flocks" tab="houses"><section id="houses" className="card full"><div className="section-head"><h2>Houses / pens</h2><p className="muted">Physical locations that batches belong to.</p></div>
-          <form className="inline-form" onSubmit={addHouse}><label className="field"><span>Name</span><input required value={houseForm.name} onChange={e=>setHouseForm({...houseForm,name:e.target.value})}/></label><label className="field"><span>Code</span><input required value={houseForm.code} onChange={e=>setHouseForm({...houseForm,code:e.target.value})}/></label><label className="field"><span>Notes</span><input value={houseForm.notes} onChange={e=>setHouseForm({...houseForm,notes:e.target.value})}/></label><button disabled={saving}>Add house</button></form>
+          <form className="inline-form" onSubmit={addHouse}><label className="field"><span>Name</span><input required value={houseForm.name} onChange={e=>setHouseForm({...houseForm,name:e.target.value})}/></label><label className="field"><span>Code</span><input required value={houseForm.code} onChange={e=>setHouseForm({...houseForm,code:e.target.value})}/></label><label className="field"><span>House type</span><select required value={houseForm.houseType} onChange={e=>setHouseForm({...houseForm,houseType:e.target.value})}><option value="PERMANENT">Permanent</option><option value="TEMPORARY">Temporary</option></select></label><label className="field"><span>Notes</span><input value={houseForm.notes} onChange={e=>setHouseForm({...houseForm,notes:e.target.value})}/></label><button disabled={saving}>{editingHouseId ? "Save house" : "Add house"}</button>{editingHouseId && <button type="button" className="secondary-button" onClick={cancelHouseEdit}>Cancel</button>}</form>
           <DataTable caption="Houses and pens" columns={[
-              { key: "name", label: "Name" }, { key: "code", label: "Code" }, { key: "status", label: "Status" },
+              { key: "name", label: "Name" }, { key: "code", label: "Code" }, { key: "houseType", label: "Type", render: house => house.houseType === "TEMPORARY" ? "Temporary" : "Permanent" }, { key: "status", label: "Status" },
+              { key: "occupancy", label: "Occupancy", render: house => batches.some(batch => batch.houseId === house.id && batch.status === "ACTIVE") ? "Occupied" : "Empty" },
               { key: "notes", label: "Notes", render: house => house.notes || "—" },
+              { key: "action", label: "Action", render: house => <button type="button" className="secondary-button" onClick={() => editHouse(house)}>Edit</button> },
             ]} rows={houses} emptyMessage="No houses or pens yet." />
         </section></PageSection>
     </PageTemplate>

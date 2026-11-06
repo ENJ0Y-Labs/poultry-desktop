@@ -4,6 +4,10 @@ import com.grantinofarms.poultry.domain.BirdPopulationCalculator;
 import com.grantinofarms.poultry.domain.BirdPopulationEvent;
 import com.grantinofarms.poultry.dto.BirdPopulationEventRequest;
 import com.grantinofarms.poultry.dto.BirdPopulationResponse;
+import com.grantinofarms.poultry.dto.PopulationAdjustmentRequest;
+import com.grantinofarms.poultry.dto.PopulationAdjustmentResponse;
+import com.grantinofarms.poultry.dto.PopulationConfidenceRequest;
+import com.grantinofarms.poultry.repository.BatchRepository;
 import com.grantinofarms.poultry.dto.BirdTransferRequest;
 import com.grantinofarms.poultry.exception.ApiException;
 import com.grantinofarms.poultry.repository.AuditRepository;
@@ -22,13 +26,85 @@ public class BirdPopulationService {
     private final BirdPopulationRepository populationRepository;
     private final BirdCostService birdCostService;
     private final AuditRepository auditRepository;
+    private final BatchRepository batchRepository;
 
     public BirdPopulationService(BirdPopulationRepository populationRepository,
                                   BirdCostService birdCostService,
-                                  AuditRepository auditRepository) {
+                                  AuditRepository auditRepository,
+                                  BatchRepository batchRepository) {
         this.populationRepository = populationRepository;
         this.birdCostService = birdCostService;
         this.auditRepository = auditRepository;
+        this.batchRepository = batchRepository;
+    }
+
+
+
+    @Transactional
+    public void markCountEstimated(String batchId, PopulationConfidenceRequest request) {
+        requireWritableBatch(batchId);
+        var batch = batchRepository.findById(batchId);
+        String userId = CurrentUserContext.get();
+        if (userId == null || userId.isBlank()) {
+            throw new ApiException(HttpStatus.UNAUTHORIZED, "AUTHENTICATION_REQUIRED",
+                    "An authenticated owner session is required.");
+        }
+        String reason = request.reason().trim();
+        if (reason.isBlank()) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "ESTIMATE_REASON_REQUIRED", "A reason is required.");
+        }
+        String before = populationRepository.populationCountStatus(batchId);
+        String now = Instant.now().toString();
+        batchRepository.updatePopulationCountStatus(batchId, "ESTIMATED", now);
+        auditRepository.append(batch.farmId(), "MARK_POPULATION_ESTIMATED", "BATCH", batchId,
+                reason, String.format("{\"countStatus\":\"%s\"}", before),
+                "{\"countStatus\":\"ESTIMATED\"}", now);
+    }
+
+    public List<PopulationAdjustmentResponse> adjustments(String batchId) {
+        requireBatch(batchId);
+        return populationRepository.findAdjustments(batchId);
+    }
+
+    @Transactional
+    public PopulationAdjustmentResponse adjustPhysicalCount(String batchId, PopulationAdjustmentRequest request) {
+        requireWritableBatch(batchId);
+        var batch = batchRepository.findById(batchId);
+        if (request.effectiveDate().isBefore(batch.placementDate())) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_ADJUSTMENT_DATE",
+                    "A physical count cannot be dated before batch placement.");
+        }
+        String userId = CurrentUserContext.get();
+        if (userId == null || userId.isBlank()) {
+            throw new ApiException(HttpStatus.UNAUTHORIZED, "AUTHENTICATION_REQUIRED",
+                    "An authenticated owner session is required to adjust a physical bird count.");
+        }
+        int previous = calculate(batchId, request.effectiveDate()).currentBirds();
+        int difference = Math.subtractExact(request.newCount(), previous);
+        List<BirdPopulationEvent> proposedEvents = new java.util.ArrayList<>(populationRepository.findEvents(batchId));
+        proposedEvents.add(new BirdPopulationEvent(request.effectiveDate(), "ADJUSTMENT", difference));
+        LocalDate validationDate = proposedEvents.stream().map(BirdPopulationEvent::eventDate)
+                .max(LocalDate::compareTo).orElse(request.effectiveDate());
+        try {
+            BirdPopulationCalculator.currentBirds(batch.initialBirdCount(), proposedEvents, validationDate);
+        } catch (IllegalArgumentException | ArithmeticException e) {
+            throw populationConflict("This adjustment would make a later population event invalid: " + e.getMessage());
+        }
+        String reason = request.reason().trim();
+        if (reason.isBlank()) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "ADJUSTMENT_REASON_REQUIRED", "A reason is required.");
+        }
+        String id = UUID.randomUUID().toString();
+        String now = Instant.now().toString();
+        populationRepository.insertAdjustment(id, batchId, request.effectiveDate(), previous,
+                request.newCount(), difference, reason, userId, now);
+        batchRepository.updatePopulationCountStatus(batchId, "VERIFIED", now);
+        auditRepository.append(batch.farmId(), "PHYSICAL_COUNT_ADJUSTMENT", "BIRD_POPULATION_ADJUSTMENT",
+                id, reason, String.format("{\"batchId\":\"%s\",\"previousCount\":%d}", batchId, previous),
+                String.format("{\"batchId\":\"%s\",\"newCount\":%d,\"difference\":%d,\"effectiveDate\":\"%s\",\"userId\":\"%s\"}",
+                        batchId, request.newCount(), difference, request.effectiveDate(), userId), now);
+        return populationRepository.findAdjustments(batchId).stream()
+                .filter(adjustment -> adjustment.id().equals(id)).findFirst().orElseThrow();
     }
 
     public BirdPopulationResponse get(String batchId, LocalDate asOf) {
@@ -84,9 +160,13 @@ public class BirdPopulationService {
             throw populationConflict(e.getMessage());
         }
 
-        long transferredCost;
+        Long transferredCost;
         try {
             transferredCost = birdCostService.costForReduction(sourceBatchId, outbound);
+            if (transferredCost == null) {
+                throw new ApiException(HttpStatus.CONFLICT, "UNKNOWN_BIRD_COST",
+                        "Birds cannot be transferred from a batch with an unrecorded purchase cost because their carrying cost is unknown.");
+            }
         } catch (ApiException e) {
             throw e;
         } catch (ArithmeticException e) {
@@ -170,7 +250,7 @@ public class BirdPopulationService {
             throw populationConflict(e.getMessage());
         }
 
-        long allocatedCost = birdCostService.costForReduction(batchId, proposed);
+        Long allocatedCost = birdCostService.costForReduction(batchId, proposed);
 
         String now = Instant.now().toString();
         String id = UUID.randomUUID().toString();
@@ -195,7 +275,7 @@ public class BirdPopulationService {
                 clean(request.reason()),
                 null,
                 String.format(
-                        "{\"batchId\":\"%s\",\"eventType\":\"%s\",\"quantity\":%d,\"eventDate\":\"%s\",\"allocatedCostMinor\":%d}",
+                        "{\"batchId\":\"%s\",\"eventType\":\"%s\",\"quantity\":%d,\"eventDate\":\"%s\",\"allocatedCostMinor\":%s}",
                         batchId,
                         eventType,
                         request.quantity(),
@@ -221,7 +301,7 @@ public class BirdPopulationService {
 
         return new BirdPopulationResponse(
                 batchId, asOf, initialBirds, mortality, culling, sold,
-                transfersIn, transfersOut, current
+                transfersIn, transfersOut, current, populationRepository.populationCountStatus(batchId)
         );
     }
 

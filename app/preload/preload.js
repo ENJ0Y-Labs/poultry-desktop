@@ -5,6 +5,7 @@ const channels = Object.freeze({
   CHOOSE_BACKUP_DIRECTORY: "backup:choose-directory",
   SET_THEME: "theme:set",
   GET_BACKEND_BASE_URL: "backend:base-url",
+  GET_APP_INFO: "app:info",
 });
 
 contextBridge.exposeInMainWorld("poultryDesktop", Object.freeze({
@@ -12,4 +13,5 @@ contextBridge.exposeInMainWorld("poultryDesktop", Object.freeze({
   chooseBackupDirectory: () => ipcRenderer.invoke(channels.CHOOSE_BACKUP_DIRECTORY),
   setTheme: (theme) => ipcRenderer.invoke(channels.SET_THEME, theme),
   getApiBaseUrl: () => ipcRenderer.invoke(channels.GET_BACKEND_BASE_URL),
+  getAppInfo: () => ipcRenderer.invoke(channels.GET_APP_INFO),
 }));

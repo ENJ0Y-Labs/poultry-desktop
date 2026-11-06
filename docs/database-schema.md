@@ -1,6 +1,6 @@
 # Database schema
 
-SQLite schema changes are managed by Flyway. Migrations are forward-only and currently run through V22.
+SQLite schema changes are managed by Flyway. Migrations are forward-only and currently run through V29.
 
 ## Design rules
 
@@ -28,7 +28,7 @@ Farm users and authentication data. Passwords are stored only as password hashes
 
 ### `houses`
 
-Farm houses/pens. Names and codes are farm-scoped and historical houses are archived rather than deleted.
+Farm houses/pens. Each house has an explicit `house_type` (`PERMANENT` or `TEMPORARY`); type is never inferred from its code. Names and codes are farm-scoped and historical houses are archived rather than deleted. Occupancy is derived from active batch assignments. V28 assigns legacy rows the documented `PERMANENT` default without inspecting house codes; administrators can reclassify them.
 
 ### `suppliers`
 
@@ -36,11 +36,11 @@ Suppliers and traceable sources used for purchases.
 
 ### `batches`
 
-Layer or Broiler flock records. Stores initial bird count and original purchase cost. Current bird population is derived from population events rather than stored as a mutable total.
+Layer, Broiler, or Turkey flock records. Stores initial bird count and, when recorded, original purchase cost. `original_purchase_cost_minor IS NULL` means the historical purchase cost is unknown/unrecorded; a value of `0` means a genuine zero-cost purchase. Current bird population is derived from population events and physical-count adjustments rather than stored as a mutable total. population_count_status is ESTIMATED or VERIFIED; new and migrated batches default to ESTIMATED until physically counted.
 
 ### `bird_purchases`
 
-Original bird purchase facts, including quantity, purchase date and integer minor-unit costs.
+Original bird purchase facts, including quantity, purchase date and integer minor-unit costs. Existing-stock batches with unknown purchase details have no bird-purchase row; do not synthesize one.
 
 ### `batch_code_sequences`
 
@@ -60,7 +60,11 @@ Authoritative population changes:
 
 The current population formula is:
 
-`initial - mortality - culling - sold + transfers in - transfers out`.
+`initial - mortality - culling - sold + transfers in - transfers out + physical-count adjustments`.
+
+### `bird_population_adjustments`
+
+Append-only physical-count reconciliations. Each row stores the effective date, previous calculated count, new physical count, signed difference, required reason, authenticated user ID, and server timestamp. The difference is included in chronological population calculations but remains separate from mortality, culling, sales, and transfer events. A successful adjustment changes batch confidence to VERIFIED; a later explicit provisional flag changes it back to ESTIMATED with an audit record. Count adjustments do not create a purchase cost or mortality/culling expense; existing carried bird cost remains with the batch.
 
 ### `bird_cost_events`
 
@@ -68,7 +72,7 @@ Dated additional and transfer-in costs attached to batches.
 
 ### `feed_types`
 
-Farm-scoped feed definitions, including display unit and Layer/Broiler applicability. Feed types are archived instead of deleted.
+Farm-scoped feed product definitions, including product name, optional brand, packaging name, optional standard package weight in kilograms, display unit, kilogram conversion, and Layer/Broiler/Turkey applicability. Unknown package weights and conversions remain NULL; never assume a standard bag size. V30 adds the descriptive brand and packaging fields without rewriting historical purchases or usage. Feed types are archived instead of deleted.
 
 ### `feed_purchases`
 
@@ -77,6 +81,10 @@ Immutable feed purchase lots. A feed purchase also creates one corresponding FEE
 ### `feed_usage`
 
 Feed consumption by batch and date. Usage is costed through FIFO and does not create a second expense.
+
+### `feed_opening_balances`
+
+Append-only opening stock snapshots for feed already on hand before the application's purchase ledger begins. They are not purchases and create no supplier, expense, or cash-flow records. Opening quantities have no historical valuation unless supported by source records; do not assign a fabricated zero or estimated cost.
 
 ## Daily and health operations
 
@@ -110,7 +118,7 @@ Good and cracked egg collection records.
 
 Sellable egg sales. Individual sold eggs are authoritative; the crate size used at sale time is retained so later crate-size settings cannot rewrite history.
 
-## Broiler production
+## Meat-bird production
 
 ### `weight_records`
 
@@ -222,7 +230,7 @@ farm
 
 ## Migration history
 
-The repository currently contains V1 through V23.
+The repository currently contains V1 through V29, including independent Turkey support and population confidence/adjustments.
 
 Broad progression:
 
@@ -237,6 +245,9 @@ Broad progression:
 - V9: health management
 - V10: Layer egg management
 - V11: Broiler production
+- V27: independent Turkey batch, feed applicability, and sales support
+- V28: explicit permanent/temporary house classification and occupancy index
+- V29: estimated/verified population confidence and auditable physical-count adjustments
 - V12: pricing and margins
 - V13: expenses
 - V14: customers and sales
@@ -247,7 +258,7 @@ Broad progression:
 - V19: performance indexes
 - V20: settings management and configurable expense categories\n- V21: optional feed kilogram conversion factors
 
-Never edit an applied migration. Add a new version greater than V23 for future schema changes.
+Never edit an applied migration. Add a new version greater than the current highest version for future schema changes.
 
 
 ## Auditable transaction reversals (planned by ADR)

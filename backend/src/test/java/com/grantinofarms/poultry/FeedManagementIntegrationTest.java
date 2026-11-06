@@ -52,6 +52,37 @@ class FeedManagementIntegrationTest {
     }
 
     @Test
+    void feedProductRetainsBrandAndPackageWeightWithoutGuessingUnknowns() {
+        setupFarm();
+        var known = feedService.createType(new FeedTypeCreateRequest(
+                "Hybrid Broiler Finisher Pellets", "bag", "BROILER", new BigDecimal("25"),
+                "Hybrid", "25 kg bag", new BigDecimal("25")));
+        var unknown = feedService.createType(new FeedTypeCreateRequest(
+                "Hybrid Layer Mash", "bag", "LAYER", null, "Hybrid", "bag", null));
+
+        assertThat(known.brand()).isEqualTo("Hybrid");
+        assertThat(known.packagingName()).isEqualTo("25 kg bag");
+        assertThat(known.packageWeightKg()).isEqualByComparingTo("25");
+        assertThat(unknown.packageWeightKg()).isNull();
+        assertThat(unknown.kgPerUnit()).isNull();
+    }
+
+
+    @Test
+    void openingFeedStockIsAuditedWithoutCreatingPurchaseOrExpense() {
+        setupFarm();
+        var type = feedService.createType(new FeedTypeCreateRequest("Hybrid Layer Mash", "bag", "LAYER"));
+        var opening = feedService.createOpeningBalance(new FeedOpeningBalanceRequest(
+                type.id(), LocalDate.of(2026, 11, 6), new BigDecimal("55"), "bag", "Opening physical stock count"));
+
+        assertThat(opening.quantityMilli()).isEqualTo(55_000L);
+        assertThat(feedService.openingBalances(type.id())).hasSize(1);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM feed_purchases", Integer.class)).isZero();
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM expenses WHERE category = 'FEED'", Integer.class)).isZero();
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM audit_logs WHERE entity_type = 'FEED_OPENING_BALANCE'", Integer.class)).isEqualTo(1);
+    }
+
+    @Test
     void purchaseCreatesInventoryAndOneExpense() {
         setupFarm();
         var type = feedService.createType(new FeedTypeCreateRequest("Starter", "bag", "BROILER"));

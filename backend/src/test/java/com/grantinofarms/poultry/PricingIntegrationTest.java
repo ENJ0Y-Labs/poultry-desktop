@@ -40,6 +40,23 @@ class PricingIntegrationTest {
     }
 
     @Test
+    void existingStockDoesNotReceiveInventedCostOrMargin() {
+        farmService.create(new FarmCreateRequest(
+                "Grantino Farms", "Port Harcourt", "Africa/Lagos", "NGN"));
+        var house = houseService.create(new HouseCreateRequest("Broiler House", "BH1", null));
+        var batch = batchService.create(new BatchCreateRequest(
+                "BROILER", LocalDate.of(2026, 1, 1), house.id(), 100, null, false, null
+        ));
+        pricingService.updateSettings(new PricingSettingsRequest(new BigDecimal("20")));
+
+        assertThatThrownBy(() -> pricingService.price(batch.id(), 10, LocalDate.of(2026, 1, 10)))
+                .hasMessage("Pricing is unavailable because this batch has no recorded original purchase cost.");
+        broilerService.addSale(batch.id(), new BirdSaleRequest(
+                LocalDate.of(2026, 1, 10), 10, 15_000L, "Existing stock customer"));
+        assertThat(pricingService.settings().workingMarginPercent()).isNull();
+    }
+
+    @Test
     void belowTargetSaleRequiresConfirmationAndDoesNotLowerTarget() {
         var batch = setupBroiler();
         pricingService.updateSettings(new PricingSettingsRequest(new BigDecimal("20")));

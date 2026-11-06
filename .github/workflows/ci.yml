@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [dev, main]
   pull_request:
-    branches: [main]
+    branches: [dev, main]
 
 permissions:
   contents: read
@@ -76,7 +76,7 @@ jobs:
         run: npm ci
 
       - name: Package backend
-        run: .\mvnw.cmd -f backend\pom.xml package -DskipTests
+        run: .\\mvnw.cmd -f backend\\pom.xml package -DskipTests
 
       - name: Build and package Electron application
         run: npm run package
@@ -88,6 +88,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: pomas-windows-installer
-          path: release/PomasSetup.exe
+          path: release/POMAS-v*-Setup-x64.exe
           if-no-files-found: error
           retention-days: 14

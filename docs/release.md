@@ -43,14 +43,11 @@ npm run package
 npm run installer:verify
 ```
 
-The installer is written to `release/PomasSetup.exe`. The package command prepares the bundled Java runtime, builds and verifies the renderer, packages the Spring Boot backend, checks production inputs, and runs Electron Builder.
+The installer is written to `release/POMAS-v<version>-Setup-x64.exe` (for example, `release/POMAS-v1.0.3-Setup-x64.exe`). The filename version and architecture are generated from `package.json` and the explicit Windows x64 target. The Windows executable metadata uses the `Pomas` product name and `Grantino Farms` company identity. The package command prepares the bundled Java runtime, builds and verifies the renderer, packages the Spring Boot backend, checks production inputs, and runs Electron Builder.
 
 ## 2. Prepare the release
 
-Update the application version consistently:
-
-- `package.json`
-- `backend/pom.xml`
+Update the application release version in `package.json` only. Electron reads this value for the installed application version, Windows executable version metadata, and installer filename. Keep `backend/pom.xml` on its independent backend artifact version unless the backend artifact itself is being released.
 
 Review migrations and ensure every schema change has a new forward-only migration.
 
@@ -75,7 +72,7 @@ The Windows CI job builds/packages the Electron application and verifies the ins
 Test the installed app, not only the local Vite browser tab.
 
 1. Run `npm run package` and `npm run installer:verify`.
-2. Install `release/PomasSetup.exe`.
+2. Locate the generated installer with `Get-ChildItem release\\POMAS-v*-Setup-x64.exe`, then run the returned installer.
 3. Disconnect from the internet to confirm normal operation has no external dependency.
 4. Launch Pomas from the Start Menu or desktop shortcut.
 5. Confirm the backend starts and the dashboard loads.
@@ -92,31 +89,27 @@ A browser session at `127.0.0.1:5173` is expected to contain Vite development re
 On a clean Windows environment:
 
 1. Install the NSIS installer.
-2. Launch the application.
-3. Confirm the backend becomes healthy.
-4. Confirm first-time account setup works.
-5. Confirm the database is created under the user's application-data directory.
-6. Confirm normal farm operations work.
+2. Confirm the normal first-time installation flow appears, including installation-directory selection.
+3. Launch the application.
+4. Confirm the backend becomes healthy.
+5. Confirm first-time account setup works.
+6. Confirm the database is created under the user's application-data directory.
+7. Confirm normal farm operations work.
 
-## 6. Upgrade
+## 6. Upgrade and maintenance mode
 
-Use an existing database:
+The assisted NSIS installer detects an existing per-user or per-machine Pomas installation. It presents one maintenance action, **Modify**, and retains the detected installation directory. A clean machine skips this maintenance page and continues through the normal first-install wizard.
 
-```text
-existing application data
-        ↓
-install new version
-        ↓
-start application
-        ↓
-Flyway migration
-        ↓
-health check
-        ↓
-verify existing records
-```
+Test on disposable Windows test machines or snapshots. Never use a production farm database for installer experiments.
 
-Test both a normal migration and a deliberately failing migration scenario where practical.
+1. Install the current Pomas version and create disposable test farm records.
+2. Run the same-version installer again. Confirm the maintenance page identifies the existing installation and offers only **Modify**.
+3. Continue with Modify. Confirm the installer targets the existing installation directory and replaces application files without removing the farm database, settings, or backups.
+4. Install a newer build over the existing installation. Confirm it also takes the Modify path and preserves the same user data.
+5. Launch Pomas after each operation. Confirm the backend starts, existing records remain visible, and the application version is updated when applicable.
+6. Repeat for per-user and per-machine installs if both installation modes are supported by the release.
+
+The user-data directory is intentionally pinned to the legacy `Poultry Farm Manager` folder. Do not change that path as part of installer maintenance work.
 
 ## 7. Backup and restore
 
@@ -204,7 +197,9 @@ The release source revision must be identifiable from the published version.
 - [ ] Installed app starts without port 5173 or a manual backend launch
 - [ ] Installed renderer has no Vite/HMR references or CSP errors
 - [ ] Fresh installation tested
-- [ ] Upgrade tested
+- [ ] Same-version installer Modify path tested
+- [ ] Updated-version installer Modify path tested
+- [ ] Existing farm data/settings/backups preserved during Modify
 - [ ] Flyway migration tested
 - [ ] Backup creation tested
 - [ ] Backup validation tested

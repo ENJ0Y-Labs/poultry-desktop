@@ -20,23 +20,25 @@ public class FeedRepository {
 
     public List<FeedTypeResponse> findTypes(String farmId) {
         return jdbc.query("""
-                SELECT id, name, unit, applicable_type, status, kg_per_unit
+                SELECT id, name, unit, applicable_type, status, kg_per_unit, brand, packaging_name, package_weight_kg
                 FROM feed_types WHERE farm_id = ? ORDER BY name
                 """,
                 (rs, n) -> new FeedTypeResponse(
                         rs.getString("id"), rs.getString("name"), rs.getString("unit"),
-                        rs.getString("applicable_type"), rs.getString("status"), rs.getBigDecimal("kg_per_unit")
+                        rs.getString("applicable_type"), rs.getString("status"), rs.getBigDecimal("kg_per_unit"),
+                        rs.getString("brand"), rs.getString("packaging_name"), rs.getBigDecimal("package_weight_kg")
                 ), farmId);
     }
 
     public FeedTypeResponse findType(String id) {
         List<FeedTypeResponse> rows = jdbc.query("""
-                SELECT id, name, unit, applicable_type, status, kg_per_unit
+                SELECT id, name, unit, applicable_type, status, kg_per_unit, brand, packaging_name, package_weight_kg
                 FROM feed_types WHERE id = ?
                 """,
                 (rs, n) -> new FeedTypeResponse(
                         rs.getString("id"), rs.getString("name"), rs.getString("unit"),
-                        rs.getString("applicable_type"), rs.getString("status"), rs.getBigDecimal("kg_per_unit")
+                        rs.getString("applicable_type"), rs.getString("status"), rs.getBigDecimal("kg_per_unit"),
+                        rs.getString("brand"), rs.getString("packaging_name"), rs.getBigDecimal("package_weight_kg")
                 ), id);
         return rows.isEmpty() ? null : rows.get(0);
     }
@@ -53,12 +55,37 @@ public class FeedRepository {
         return jdbc.queryForObject("SELECT applicable_type FROM feed_types WHERE id = ?", String.class, id);
     }
 
-    public void insertType(String id, String farmId, String name, String unit, String scope, java.math.BigDecimal kgPerUnit, String now) {
+    public void insertType(String id, String farmId, String name, String unit, String scope, java.math.BigDecimal kgPerUnit, String brand, String packagingName, java.math.BigDecimal packageWeightKg, String now) {
         jdbc.update("""
                 INSERT INTO feed_types
-                    (id, farm_id, name, unit, applicable_type, status, kg_per_unit, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, 'ACTIVE', ?, ?, ?)
-                """, id, farmId, name, unit, scope, kgPerUnit, now, now);
+                    (id, farm_id, name, unit, applicable_type, status, kg_per_unit, brand, packaging_name, package_weight_kg, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, 'ACTIVE', ?, ?, ?, ?, ?, ?)
+                """, id, farmId, name, unit, scope, kgPerUnit, brand, packagingName, packageWeightKg, now, now);
+    }
+
+
+    public void insertOpeningBalance(String id, String farmId, String feedTypeId, LocalDate date,
+                                    long quantityMilli, String unit, String reason, String now) {
+        jdbc.update("""
+                INSERT INTO feed_opening_balances
+                    (id, farm_id, feed_type_id, effective_date, quantity_milli, unit, reason, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """, id, farmId, feedTypeId, date.toString(), quantityMilli, unit, reason, now);
+    }
+
+    public List<com.grantinofarms.poultry.dto.FeedOpeningBalanceResponse> findOpeningBalances(String feedTypeId) {
+        return jdbc.query("""
+                SELECT b.id, b.feed_type_id, t.name AS feed_type_name, b.effective_date,
+                       b.quantity_milli, b.unit, b.reason, b.created_at
+                FROM feed_opening_balances b
+                JOIN feed_types t ON t.id = b.feed_type_id
+                WHERE b.feed_type_id = ?
+                ORDER BY b.effective_date, b.created_at
+                """, (rs, n) -> new com.grantinofarms.poultry.dto.FeedOpeningBalanceResponse(
+                rs.getString("id"), rs.getString("feed_type_id"), rs.getString("feed_type_name"),
+                LocalDate.parse(rs.getString("effective_date")), rs.getLong("quantity_milli"),
+                rs.getString("unit"), rs.getString("reason"), rs.getString("created_at")
+        ), feedTypeId);
     }
 
     public void updateKgPerUnit(String id, java.math.BigDecimal kgPerUnit, String now) {

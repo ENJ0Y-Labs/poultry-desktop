@@ -230,6 +230,13 @@ describe("App", () => {
     render(<App />);
 
     expect(await screen.findByRole("heading", { name: "Sign in to Pomas" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "What's new" })).toBeInTheDocument();
+    expect(screen.getByText("POMAS v1.0.3")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Independent turkey management" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "House and pen classification" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Verified bird counts" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "More detailed feed records" })).toBeInTheDocument();
+    expect(screen.getByText("POMAS · DEVELOPMENT BUILD")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Sign in to your farm/ })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /create account/i })).not.toBeInTheDocument();
     expect(screen.queryByLabelText("Full name")).not.toBeInTheDocument();
@@ -535,6 +542,39 @@ describe("App", () => {
     expect(window.location.hash).toBe("#flocks/houses");
   });
 
+  it("registers an existing-stock batch without asking for purchase cost", async () => {
+    mockFarmApis();
+    vi.mocked(farmApi.listHouses).mockResolvedValue([
+      { id: "house-1", name: "House A", code: "H001", status: "ACTIVE" },
+    ]);
+    vi.spyOn(batchApi, "create").mockResolvedValue({
+      id: "batch-existing", code: "L-2026-001", type: "LAYER",
+      placementDate: "2026-11-06", initialBirdCount: 250, status: "ACTIVE",
+      purchaseCostMinor: null,
+    });
+
+    render(<App />);
+    await screen.findByRole("heading", { name: "Farm dashboard" });
+    fireEvent.click(within(screen.getByRole("navigation", { name: "Main navigation" }))
+      .getByRole("button", { name: "Flocks" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Batches & bird costs" }));
+
+    fireEvent.change(await screen.findByLabelText("Purchase information"), {
+      target: { value: "EXISTING_STOCK" },
+    });
+    expect(screen.queryByLabelText("Purchase cost (₦)")).not.toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText("Placement date"), { target: { value: "2026-11-06" } });
+    fireEvent.change(screen.getByLabelText("House / pen"), { target: { value: "house-1" } });
+    fireEvent.change(screen.getByLabelText("Initial birds"), { target: { value: "250" } });
+    fireEvent.click(screen.getByRole("button", { name: "Create batch" }));
+
+    await waitFor(() => expect(batchApi.create).toHaveBeenCalledWith({
+      type: "LAYER", placementDate: "2026-11-06", houseId: "house-1",
+      initialBirdCount: 250, supplierId: null,
+      purchaseCostRecorded: false, purchaseCostMinor: null, populationCountStatus: "ESTIMATED",
+    }));
+  });
+
   it("keeps the normal dashboard when zero metrics belong to a farm with setup records", async () => {
     mockFarmApis({
       currentBatches: [],
@@ -716,8 +756,8 @@ describe("App", () => {
     expect(within(eggBatch).getByRole("option", { name: "L-2026-001" })).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Weight & growth" }));
-    await waitFor(() => expect(screen.getByRole("option", { name: "Select a broiler batch" })).toBeInTheDocument());
-    const broilerBatch = screen.getByRole("option", { name: "Select a broiler batch" }).parentElement;
+    await waitFor(() => expect(screen.getByRole("option", { name: "Select a batch" })).toBeInTheDocument());
+    const broilerBatch = screen.getByRole("option", { name: "Select a batch" }).parentElement;
     fireEvent.change(broilerBatch, { target: { value: "broiler-1" } });
     await waitFor(() => expect(screen.getByRole("heading", { name: "Record weight" })).toBeInTheDocument());
     expect(within(broilerBatch).getByRole("option", { name: /B-2026-001/ })).toBeInTheDocument();

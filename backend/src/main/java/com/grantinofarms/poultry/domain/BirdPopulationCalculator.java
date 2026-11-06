@@ -37,6 +37,7 @@ public final class BirdPopulationCalculator {
         return switch (event.eventType()) {
             case "MORTALITY", "CULLING", "SOLD", "TRANSFER_OUT" -> -event.quantity();
             case "TRANSFER_IN" -> event.quantity();
+            case "ADJUSTMENT" -> event.quantity();
             default -> throw new IllegalArgumentException("Unknown population event type: " + event.eventType());
         };
     }

@@ -165,9 +165,17 @@ export default function DashboardPage() {
             <div className="metric-grid">
               {[
                 ["Total birds", formatCount(dashboard.totalBirds), ""],
+                ["Estimated birds", formatCount(dashboard.estimatedBirds), ""],
+                ["Estimated batches", formatCount(dashboard.estimatedBatches), ""],
                 ["Layer birds", formatCount(dashboard.layerBirds), ""],
                 ["Broiler birds", formatCount(dashboard.broilerBirds), ""],
+                ["Turkey birds", formatCount(dashboard.turkeyBirds), ""],
                 ["Active batches", formatCount(dashboard.activeBatches), ""],
+                ["Total houses", formatCount(dashboard.totalHouses), ""],
+                ["Permanent houses", formatCount(dashboard.permanentHouses), ""],
+                ["Temporary houses", formatCount(dashboard.temporaryHouses), ""],
+                ["Occupied houses", formatCount(dashboard.occupiedHouses), ""],
+                ["Empty houses", formatCount(dashboard.emptyHouses), ""],
                 ["Mortality", formatCount(dashboard.mortality), "birds"],
                 ["Good eggs", formatCount(dashboard.eggsGood), "eggs"],
                 ["Revenue", formatMoney(dashboard.revenueMinor, farm.currency), ""],

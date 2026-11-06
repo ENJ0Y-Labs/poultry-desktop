@@ -8,6 +8,10 @@ import com.grantinofarms.poultry.service.BirdPopulationService;
 import com.grantinofarms.poultry.service.BatchService;
 import com.grantinofarms.poultry.service.FarmService;
 import com.grantinofarms.poultry.service.HouseService;
+import com.grantinofarms.poultry.service.CurrentUserContext;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.junit.jupiter.api.AfterEach;
+import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -28,6 +32,10 @@ class BirdPopulationIntegrationTest {
     @Autowired HouseService houseService;
     @Autowired BatchService batchService;
     @Autowired BirdPopulationService populationService;
+    @Autowired JdbcTemplate jdbc;
+
+    @AfterEach
+    void clearCurrentUser() { CurrentUserContext.clear(); }
 
     @Test
     void recordsPopulationEventsAndCalculatesHistoricalState() {
@@ -60,6 +68,41 @@ class BirdPopulationIntegrationTest {
         assertThat(current.culling()).isEqualTo(10);
         assertThat(current.sold()).isEqualTo(50);
         assertThat(current.currentBirds()).isEqualTo(420);
+    }
+
+
+    @Test
+    void estimatedCountCanBePhysicallyVerifiedWithoutRewritingInitialPopulationOrMortality() {
+        farmService.create(new FarmCreateRequest(
+                "Grantino Farms", "Port Harcourt", "Africa/Lagos", "NGN"));
+        var house = houseService.create(new HouseCreateRequest("Layer House", "LH-EST", null));
+        var batch = batchService.create(new com.grantinofarms.poultry.dto.BatchCreateRequest(
+                "LAYER", LocalDate.of(2026, 11, 1), house.id(), 700, null, false, null, "ESTIMATED"));
+        populationService.addMortality(batch.id(),
+                new BirdPopulationEventRequest(LocalDate.of(2026, 11, 2), 10, "Recorded mortality"));
+        assertThat(populationService.get(batch.id(), LocalDate.of(2026, 11, 2)).currentBirds()).isEqualTo(690);
+        assertThat(populationService.get(batch.id(), LocalDate.of(2026, 11, 2)).countStatus()).isEqualTo("ESTIMATED");
+
+        String userId = UUID.randomUUID().toString();
+        String now = "2026-11-06T00:00:00Z";
+        jdbc.update("INSERT INTO users (id,username,email,password_hash,full_name,created_at,updated_at) VALUES (?,?,?,?,?,?,?)",
+                userId, "owner-175", "owner-175@example.test", "test-hash", "Test Owner", now, now);
+        CurrentUserContext.set(userId);
+
+        var adjustment = populationService.adjustPhysicalCount(batch.id(),
+                new com.grantinofarms.poultry.dto.PopulationAdjustmentRequest(
+                        LocalDate.of(2026, 11, 6), 680, "Physical head count completed"));
+        var verified = populationService.get(batch.id(), LocalDate.of(2026, 11, 6));
+        assertThat(adjustment.previousCount()).isEqualTo(690);
+        assertThat(adjustment.newCount()).isEqualTo(680);
+        assertThat(adjustment.difference()).isEqualTo(-10);
+        assertThat(adjustment.userId()).isEqualTo(userId);
+        assertThat(verified.initialBirds()).isEqualTo(700);
+        assertThat(verified.mortality()).isEqualTo(10);
+        assertThat(verified.currentBirds()).isEqualTo(680);
+        assertThat(verified.countStatus()).isEqualTo("VERIFIED");
+        assertThat(populationService.adjustments(batch.id())).hasSize(1);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM audit_logs WHERE entity_type='BIRD_POPULATION_ADJUSTMENT'", Integer.class)).isEqualTo(1);
     }
 
     @Test
