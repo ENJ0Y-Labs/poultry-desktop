@@ -22,7 +22,7 @@ if (!existsSync(releaseDir)) {
 } else {
   const expectedInstaller = `POMAS-v${packageJson.version}-Setup-x64.exe`;
   const installerPath = join(releaseDir, expectedInstaller);
-  const installers = readdirSync(releaseDir).filter(file => /^POMAS-v.+-Setup-x64\\.exe$/i.test(file));
+  const installers = readdirSync(releaseDir).filter(file => /^POMAS-v.+-Setup-x64\.exe$/i.test(file));
 
   requireSetting(installers.includes(expectedInstaller), `expected release/${expectedInstaller}.`);
   if (existsSync(installerPath)) {
@@ -32,7 +32,7 @@ if (!existsSync(releaseDir)) {
 }
 
 const nsis = packageJson.build?.nsis ?? {};
-requireSetting(/^\\d+\\.\\d+\\.\\d+(?:-[0-9A-Za-z.-]+)?$/.test(packageJson.version), "package version must be a valid release version.");
+requireSetting(/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(packageJson.version), "package version must be a valid release version.");
 requireSetting(packageJson.build?.companyName === "Grantino Farms", "Windows product metadata must use the approved Grantino Farms identity.");
 requireSetting(packageJson.build?.artifactName === "POMAS-v${version}-Setup-${arch}.${ext}", "installer artifact name must include product, version, setup type, and architecture.");
 const windowsTargets = packageJson.build?.win?.target ?? [];
