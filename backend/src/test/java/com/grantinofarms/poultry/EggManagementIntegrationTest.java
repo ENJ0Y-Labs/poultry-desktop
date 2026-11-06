@@ -169,6 +169,21 @@ class EggManagementIntegrationTest {
                 .hasMessage("The sale exceeds good eggs available on that date.");
     }
 
+
+    @Test
+    void turkeyCannotRecordEggCollectionsOrEggInventory() {
+        setupFarm();
+        var house = houseService.create(new HouseCreateRequest("Turkey House", "TH1", null));
+        var turkey = batchService.create(new BatchCreateRequest(
+                "TURKEY", LocalDate.of(2026, 1, 1), house.id(), 50, null, 500_000L));
+
+        assertThatThrownBy(() -> eggService.addCollection(turkey.id(), new EggCollectionRequest(
+                LocalDate.of(2026, 2, 1), 1, 0, null)))
+                .hasMessage("Egg production is only available for LAYER batches.");
+        assertThatThrownBy(() -> eggService.inventory(turkey.id(), LocalDate.of(2026, 2, 1)))
+                .hasMessage("Egg production is only available for LAYER batches.");
+    }
+
     private BatchResponse setupLayer() {
         setupFarm();
         var house = houseService.create(new HouseCreateRequest("Layer House", "LH1", null));
