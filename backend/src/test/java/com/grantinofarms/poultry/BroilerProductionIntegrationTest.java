@@ -119,6 +119,22 @@ class BroilerProductionIntegrationTest {
                 .hasMessage("This feature is only available for BROILER batches.");
     }
 
+
+    @Test
+    void turkeySupportsWeightGrowthAndMeatSalesWithoutBecomingBroiler() {
+        setupFarm();
+        var house = houseService.create(new HouseCreateRequest("Turkey House", "TH1", null));
+        var turkey = batchService.create(new BatchCreateRequest(
+                "TURKEY", LocalDate.of(2026, 1, 1), house.id(), 20, null, 200_000L));
+        var weight = broilerService.addWeight(turkey.id(), new WeightRecordRequest(
+                LocalDate.of(2026, 1, 8), 5, new BigDecimal("12.500"), "Turkey sample"));
+        assertThat(weight.averageWeightKg()).isEqualByComparingTo("2.5");
+        var sale = broilerService.addSale(turkey.id(), new BirdSaleRequest(
+                LocalDate.of(2026, 1, 10), 20, 15_000L, "Turkey customer"));
+        assertThat(sale.quantity()).isEqualTo(20);
+        assertThat(batchService.get(turkey.id()).status()).isEqualTo("SOLD");
+    }
+
     private BatchResponse setupBroiler() {
         setupFarm();
         var house = houseService.create(new HouseCreateRequest("Broiler House", "BH1", null));
