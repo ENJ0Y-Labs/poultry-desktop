@@ -39,3 +39,20 @@ INSERT INTO feed_types_new SELECT id,farm_id,name,unit,applicable_type,status,cr
 DROP TABLE feed_types;
 ALTER TABLE feed_types_new RENAME TO feed_types;
 CREATE INDEX idx_feed_types_farm_status ON feed_types(farm_id,status);
+
+CREATE TABLE sales_new (
+ id TEXT PRIMARY KEY, farm_id TEXT NOT NULL, batch_id TEXT NOT NULL, customer_id TEXT NOT NULL,
+ sale_date TEXT NOT NULL, sale_type TEXT NOT NULL CHECK(sale_type IN ('EGG','BROILER','TURKEY')),
+ quantity NUMERIC NOT NULL CHECK(quantity>0), unit TEXT NOT NULL CHECK(length(trim(unit))>0),
+ unit_price_minor INTEGER NOT NULL CHECK(unit_price_minor>0),
+ total_amount_minor INTEGER NOT NULL CHECK(total_amount_minor>0),
+ reference_type TEXT NOT NULL, reference_id TEXT NOT NULL, created_at TEXT NOT NULL,
+ FOREIGN KEY(farm_id) REFERENCES farms(id), FOREIGN KEY(batch_id) REFERENCES batches(id),
+ FOREIGN KEY(customer_id) REFERENCES customers(id)
+);
+INSERT INTO sales_new SELECT * FROM sales;
+DROP TABLE sales;
+ALTER TABLE sales_new RENAME TO sales;
+CREATE INDEX idx_sales_farm_date ON sales(farm_id,sale_date);
+CREATE INDEX idx_sales_batch_date ON sales(batch_id,sale_date);
+CREATE INDEX idx_sales_customer_date ON sales(customer_id,sale_date);
