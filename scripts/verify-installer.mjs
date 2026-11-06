@@ -2,9 +2,10 @@ import { existsSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { readFileSync } from "node:fs";
 
-const packageJson = JSON.parse(readFileSync(join(process.cwd(), "package.json"), "utf8"));
+const projectDir = process.cwd();
+const packageJson = JSON.parse(readFileSync(join(projectDir, "package.json"), "utf8"));
 
-const releaseDir = join(process.cwd(), "release");
+const releaseDir = join(projectDir, "release");
 const unpackedDir = join(releaseDir, "win-unpacked");
 const errors = [];
 
@@ -32,11 +33,26 @@ if (!existsSync(releaseDir)) {
 const nsis = packageJson.build?.nsis ?? {};
 requireSetting(packageJson.version === "1.0.2", "package version must be 1.0.2.");
 requireSetting(nsis.oneClick === false, "NSIS must use the multi-page wizard (oneClick: false).");
-requireSetting(nsis.allowToChangeInstallationDirectory === true, "users must be able to choose the installation directory.");
+requireSetting(nsis.allowToChangeInstallationDirectory === true, "new users must be able to choose the installation directory.");
+requireSetting(nsis.include === "build/installer.nsh", "NSIS must load the Pomas maintenance-mode include.");
 requireSetting(nsis.createDesktopShortcut === true, "desktop shortcut creation must be enabled.");
 requireSetting(nsis.createStartMenuShortcut === true, "Start Menu shortcut creation must be enabled.");
 requireSetting(nsis.runAfterFinish === true, "launch-after-install must be enabled.");
 requireSetting(nsis.deleteAppDataOnUninstall === false, "uninstall must preserve application data.");
+
+const installerScriptPath = join(projectDir, "build", "installer.nsh");
+requireFile(installerScriptPath, "NSIS maintenance-mode script");
+if (existsSync(installerScriptPath)) {
+  const installerScript = readFileSync(installerScriptPath, "utf8");
+  requireSetting(installerScript.includes("!macro customInit"), "NSIS must detect existing per-user/per-machine installations.");
+  requireSetting(installerScript.includes("!macro customWelcomePage"), "NSIS must register the maintenance page.");
+  requireSetting(installerScript.includes('Page custom PomasMaintenancePage'), "NSIS must show the Pomas maintenance page.");
+  requireSetting(installerScript.includes("!ifndef BUILD_UNINSTALLER"), "the installer-only maintenance page must not be compiled into the uninstaller.");
+  requireSetting(/!ifndef BUILD_UNINSTALLER\s+Var PomasExistingInstall\s+!endif/.test(installerScript), "the maintenance-state variable must not be compiled into the uninstaller.");
+  requireSetting(installerScript.includes('Modify the existing Pomas installation'), "the only maintenance action must be Modify.");
+  requireSetting(installerScript.includes("StrCpy $INSTDIR"), "maintenance mode must retain the detected installation directory.");
+  requireSetting(installerScript.includes("farm database, settings, and backups"), "the maintenance page must explain that farm data is preserved.");
+}
 
 const resources = packageJson.build?.extraResources ?? [];
 requireSetting(
@@ -62,4 +78,4 @@ if (errors.length) {
 }
 
 console.log(`Pomas ${packageJson.version} installer verified: release/PomasSetup.exe`);
-console.log("Verified NSIS wizard, install-directory selection, shortcuts, launch-after-finish, data preservation settings, bundled Java, and backend JAR.");
+console.log("Verified NSIS first-install/Modify flow, install-directory selection, shortcuts, launch-after-finish, data preservation settings, bundled Java, and backend JAR.");
