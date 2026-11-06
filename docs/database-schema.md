@@ -36,11 +36,11 @@ Suppliers and traceable sources used for purchases.
 
 ### `batches`
 
-Layer or Broiler flock records. Stores initial bird count and original purchase cost. Current bird population is derived from population events rather than stored as a mutable total.
+Layer or Broiler flock records. Stores initial bird count and, when recorded, original purchase cost. `original_purchase_cost_minor IS NULL` means the historical purchase cost is unknown/unrecorded; a value of `0` means a genuine zero-cost purchase. Current bird population is derived from population events rather than stored as a mutable total.
 
 ### `bird_purchases`
 
-Original bird purchase facts, including quantity, purchase date and integer minor-unit costs.
+Original bird purchase facts, including quantity, purchase date and integer minor-unit costs. Existing-stock batches with unknown purchase details have no bird-purchase row; do not synthesize one.
 
 ### `batch_code_sequences`
 
