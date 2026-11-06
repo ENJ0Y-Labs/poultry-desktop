@@ -11,6 +11,7 @@ import java.util.Map;
 public class BirdPopulationController {
  private final BirdPopulationService populationService;
  public BirdPopulationController(BirdPopulationService populationService){this.populationService=populationService;}
+ @PostMapping("/population-confidence/estimated") public Map<String,Object> markEstimated(@PathVariable String batchId,@Valid @RequestBody PopulationConfidenceRequest r){populationService.markCountEstimated(batchId,r);return ok(Map.of("countStatus","ESTIMATED"));}
  @GetMapping("/population-adjustments") public Map<String,Object> adjustments(@PathVariable String batchId){return ok(populationService.adjustments(batchId));}
  @PostMapping("/population-adjustments") public Map<String,Object> adjust(@PathVariable String batchId,@Valid @RequestBody PopulationAdjustmentRequest r){return ok(populationService.adjustPhysicalCount(batchId,r));}
  @GetMapping("/population") public Map<String,Object> population(@PathVariable String batchId,@RequestParam(required=false) @DateTimeFormat(iso=DateTimeFormat.ISO.DATE) LocalDate asOf){return ok(populationService.get(batchId,asOf));}
