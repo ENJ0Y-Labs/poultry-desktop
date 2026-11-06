@@ -22,6 +22,10 @@ Var PomasExistingInstall
   Page custom PomasMaintenancePage
 !macroend
 
+; The installer include is also compiled while electron-builder builds the
+; uninstaller. The uninstaller does not register installer pages, so keep this
+; page function out of the uninstaller compilation.
+!ifndef BUILD_UNINSTALLER
 Function PomasMaintenancePage
   ; A clean installation keeps the standard first-install wizard.
   ${If} $PomasExistingInstall != "1"
@@ -34,7 +38,7 @@ Function PomasMaintenancePage
   ${NSD_CreateLabel} 0 0 100% 18u "Modify Pomas"
   Pop $1
 
-  ${NSD_CreateLabel} 0 24u 100% 58u "Pomas is already installed on this computer.$\r$\n$\r$\nChoose Modify to update the existing application files. Your farm database, settings, and backups are stored separately and will be preserved."
+  ${NSD_CreateLabel} 0 24u 100% 58u "Pomas is already installed on this computer.$\\r$\\n$\\r$\\nChoose Modify to update the existing application files. Your farm database, settings, and backups are stored separately and will be preserved."
   Pop $2
 
   ${NSD_CreateRadioButton} 0 90u 100% 14u "Modify the existing Pomas installation"
@@ -43,3 +47,4 @@ Function PomasMaintenancePage
 
   nsDialogs::Show
 FunctionEnd
+!endif
