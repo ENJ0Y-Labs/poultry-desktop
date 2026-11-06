@@ -1165,6 +1165,37 @@ export default function App() {
             </article>
           </div>
 
+          <section className="auth-whats-new" aria-labelledby="auth-whats-new-title">
+            <div className="auth-whats-new-heading">
+              <p className="auth-whats-new-kicker">POMAS v1.0.3</p>
+              <h2 id="auth-whats-new-title">What's new</h2>
+              <p>More control over flock records, clearer farm visibility, and safer ways to manage your data.</p>
+            </div>
+            <div className="auth-whats-new-grid">
+              <article className="auth-whats-new-item">
+                <span>01</span><div><h3>Independent turkey management</h3><p>Track turkey batches, populations, growth, sales, and reporting separately from broilers.</p></div>
+              </article>
+              <article className="auth-whats-new-item">
+                <span>02</span><div><h3>House and pen classification</h3><p>Classify housing as permanent or temporary, with occupancy visibility on the farm dashboard.</p></div>
+              </article>
+              <article className="auth-whats-new-item">
+                <span>03</span><div><h3>Verified bird counts</h3><p>Distinguish estimated populations from physical counts. Record dated, reasoned adjustments with an audit trail.</p></div>
+              </article>
+              <article className="auth-whats-new-item">
+                <span>04</span><div><h3>More detailed feed records</h3><p>Capture feed brand, package name, confirmed package weight, and unit conversions without guessing unknown weights.</p></div>
+              </article>
+              <article className="auth-whats-new-item">
+                <span>05</span><div><h3>Data import and reporting</h3><p>Preview and validate supported CSV history before import, and review expanded farm and batch reports.</p></div>
+              </article>
+              <article className="auth-whats-new-item">
+                <span>06</span><div><h3>A more guided workflow</h3><p>Use the interactive tour, first-run setup guidance, dashboard quick actions, and clearer attention links.</p></div>
+              </article>
+              <article className="auth-whats-new-item">
+                <span>07</span><div><h3>Safer desktop upgrades</h3><p>Improved Windows installer maintenance and verification help preserve existing farm records during upgrades.</p></div>
+              </article>
+            </div>
+          </section>
+
           <div className="auth-local-note">
             <span className="auth-local-symbol" aria-hidden="true">⌂</span>
             <div><strong>Your records stay local.</strong><p>Pomas runs on this computer and is designed to work without an internet connection.</p></div>
