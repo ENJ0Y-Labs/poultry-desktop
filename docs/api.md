@@ -49,7 +49,7 @@ Used by Electron during startup.
 ## Batches and population
 
 - GET `/batches`
-- POST `/batches`
+- POST `/batches` (requires `purchaseCostRecorded`; when true, provide `purchaseCostMinor`, including `0` only for a genuine zero-cost purchase; when false, send `purchaseCostMinor: null` and no purchase record is created)
 - GET `/batches/{id}`
 - POST `/batches/{id}/sold`
 - POST `/batches/{id}/reopen`
