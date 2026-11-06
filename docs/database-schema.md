@@ -1,6 +1,6 @@
 # Database schema
 
-SQLite schema changes are managed by Flyway. Migrations are forward-only and currently run through V28.
+SQLite schema changes are managed by Flyway. Migrations are forward-only and currently run through V29.
 
 ## Design rules
 
@@ -36,7 +36,7 @@ Suppliers and traceable sources used for purchases.
 
 ### `batches`
 
-Layer, Broiler, or Turkey flock records. Stores initial bird count and, when recorded, original purchase cost. `original_purchase_cost_minor IS NULL` means the historical purchase cost is unknown/unrecorded; a value of `0` means a genuine zero-cost purchase. Current bird population is derived from population events rather than stored as a mutable total.
+Layer, Broiler, or Turkey flock records. Stores initial bird count and, when recorded, original purchase cost. `original_purchase_cost_minor IS NULL` means the historical purchase cost is unknown/unrecorded; a value of `0` means a genuine zero-cost purchase. Current bird population is derived from population events and physical-count adjustments rather than stored as a mutable total. population_count_status is ESTIMATED or VERIFIED; new and migrated batches default to ESTIMATED until physically counted.
 
 ### `bird_purchases`
 
@@ -222,7 +222,7 @@ farm
 
 ## Migration history
 
-The repository currently contains V1 through V27, including independent Turkey support.
+The repository currently contains V1 through V29, including independent Turkey support and population confidence/adjustments.
 
 Broad progression:
 
@@ -239,6 +239,7 @@ Broad progression:
 - V11: Broiler production
 - V27: independent Turkey batch, feed applicability, and sales support
 - V28: explicit permanent/temporary house classification and occupancy index
+- V29: estimated/verified population confidence and auditable physical-count adjustments
 - V12: pricing and margins
 - V13: expenses
 - V14: customers and sales
