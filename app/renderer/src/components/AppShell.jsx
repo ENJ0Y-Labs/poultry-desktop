@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { NavigationContext } from "./NavigationContext.jsx";
 import { getThemePreference, setThemePreference } from "../utils/theme.js";
 import { connectionApi } from "../services/api.js";
+import { appVersionLabel } from "../utils/appInfo.js";
 import pomasLogo from "../assets/pomas-logo.png";
 // eslint-disable-next-line no-unused-vars
 import PageHelp from "./PageHelp.jsx";
@@ -137,7 +138,7 @@ function localDateLabel() {
   return new Intl.DateTimeFormat("en-NG", { day: "2-digit", month: "short", year: "numeric" }).format(new Date());
 }
 
-export default function AppShell({ farm, error, onRetry, children, startPage = "dashboard", startPageReady = true }) {
+export default function AppShell({ farm, error, appInfo, onRetry, children, startPage = "dashboard", startPageReady = true }) {
   const [active, setActive] = useState(() => resolvePage(window.location.hash, startPage));
   const [activeTab, setActiveTab] = useState(() => resolveTab(window.location.hash, resolvePage(window.location.hash, startPage)));
   const [theme, setTheme] = useState(getThemePreference);
@@ -379,6 +380,10 @@ export default function AppShell({ farm, error, onRetry, children, startPage = "
           <NavigationContext.Provider value={{ activePage: active, activeTab }}>
             {children}
           </NavigationContext.Provider>
+          <footer className="app-version-footer" aria-label="Application information">
+            <span>{appVersionLabel(appInfo)}</span>
+            <span>Grantino Farms · Local-first</span>
+          </footer>
         </div>
         <GuidedTour open={tourOpen} onClose={() => setTourOpen(false)} onNavigate={navigateTourTarget} />
       </main>
