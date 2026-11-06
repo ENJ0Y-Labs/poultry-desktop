@@ -246,7 +246,7 @@ Every batch has:
 - initial bird count
 - house/pen
 - supplier/source where applicable
-- original bird purchase cost in integer minor units
+- original bird purchase cost in integer minor units when recorded; otherwise explicitly unknown
 - status
 - audit history
 
@@ -455,7 +455,7 @@ Mortality and culling must also be handled by an explicit tested cost-allocation
 
 Money is always stored and calculated in integer minor units. For NGN, ₦500 is 50,000 kobo.
 
-Initial bird purchase cost is required when a batch is opened and is preserved in both the batch opening data and `bird_purchases` history.
+When actual purchase information is available, record the original bird purchase cost in integer minor units and preserve it in both the batch opening data and `bird_purchases` history. For existing stock with an unknown/unrecorded cost, keep `batches.original_purchase_cost_minor` NULL and create no `bird_purchases` row. NULL means unknown; zero means a genuine recorded zero-cost purchase. Never substitute zero for an unknown cost. Cost-derived values and margins remain unavailable when the initial cost is unknown. Population records remain available, but transferring birds from an unknown-cost batch is rejected because the carried cost cannot be determined.
 
 Bird cost uses a deterministic weighted-average carried-cost pool:
 1. start with the batch purchase cost

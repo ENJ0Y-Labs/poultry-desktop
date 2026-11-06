@@ -43,13 +43,10 @@ public class BirdCostService {
         List<BirdPopulationEvent> populationEvents = populationRepository.findEvents(batchId);
         List<BirdCostEvent> costEvents = costRepository.findEvents(batchId);
 
-        BirdCostCalculator.CostSnapshot snapshot = BirdCostCalculator.calculate(
-                batch.initialBirdCount(),
-                costRepository.initialCost(batchId),
-                populationEvents,
-                costEvents,
-                effectiveDate
-        );
+        Long initialPurchaseCost = costRepository.initialCost(batchId);
+        BirdCostCalculator.CostSnapshot snapshot = initialPurchaseCost == null ? null
+                : BirdCostCalculator.calculate(batch.initialBirdCount(), initialPurchaseCost,
+                        populationEvents, costEvents, effectiveDate);
 
         long additionalCosts = costEvents.stream()
                 .filter(event -> "ADDITIONAL_COST".equals(event.eventType()))
@@ -63,23 +60,26 @@ public class BirdCostService {
                 .mapToLong(BirdCostEvent::amountMinor)
                 .reduce(0L, Math::addExact);
 
-        long sold = reductionCost(batchId, effectiveDate, populationEvents, costEvents, "SOLD");
-        long mortality = reductionCost(batchId, effectiveDate, populationEvents, costEvents, "MORTALITY");
-        long culling = reductionCost(batchId, effectiveDate, populationEvents, costEvents, "CULLING");
-        long transferOut = reductionCost(batchId, effectiveDate, populationEvents, costEvents, "TRANSFER_OUT");
+        Long sold = initialPurchaseCost == null ? null : reductionCost(batchId, effectiveDate, populationEvents, costEvents, "SOLD");
+        Long mortality = initialPurchaseCost == null ? null : reductionCost(batchId, effectiveDate, populationEvents, costEvents, "MORTALITY");
+        Long culling = initialPurchaseCost == null ? null : reductionCost(batchId, effectiveDate, populationEvents, costEvents, "CULLING");
+        Long transferOut = initialPurchaseCost == null ? null : reductionCost(batchId, effectiveDate, populationEvents, costEvents, "TRANSFER_OUT");
 
         return new BirdCostResponse(
                 batchId,
                 effectiveDate,
-                snapshot.currentBirds(),
-                costRepository.initialCost(batchId),
+                snapshot == null
+                        ? com.grantinofarms.poultry.domain.BirdPopulationCalculator.currentBirds(
+                                batch.initialBirdCount(), populationEvents, effectiveDate)
+                        : snapshot.currentBirds(),
+                initialPurchaseCost,
                 additionalCosts,
                 transferIn,
                 sold,
                 mortality,
                 culling,
                 transferOut,
-                snapshot.carriedCostMinor()
+                snapshot == null ? null : snapshot.carriedCostMinor()
         );
     }
 
@@ -121,12 +121,14 @@ public class BirdCostService {
         return get(batchId, request.eventDate());
     }
 
-    public long costForReduction(String batchId, BirdPopulationEvent proposedReduction) {
+    public Long costForReduction(String batchId, BirdPopulationEvent proposedReduction) {
         requireBatch(batchId);
+        Long initialCost = costRepository.initialCost(batchId);
+        if (initialCost == null) return null;
         try {
             return BirdCostCalculator.costForReduction(
                     populationRepository.initialBirds(batchId),
-                    costRepository.initialCost(batchId),
+                    initialCost,
                     populationRepository.findEvents(batchId),
                     costRepository.findEvents(batchId),
                     proposedReduction
@@ -166,13 +168,15 @@ public class BirdCostService {
         );
     }
 
-    private long reductionCost(
+    private Long reductionCost(
             String batchId,
             LocalDate asOf,
             List<BirdPopulationEvent> allEvents,
             List<BirdCostEvent> costEvents,
             String eventType
     ) {
+        Long initialCost = costRepository.initialCost(batchId);
+        if (initialCost == null) return null;
         List<BirdPopulationEvent> prefix = new ArrayList<>();
 
         long total = 0L;
@@ -185,7 +189,7 @@ public class BirdCostService {
                         total,
                         BirdCostCalculator.costForReduction(
                                 populationRepository.initialBirds(batchId),
-                                costRepository.initialCost(batchId),
+                                initialCost,
                                 prefix,
                                 costEvents,
                                 event

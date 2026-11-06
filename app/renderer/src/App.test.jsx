@@ -535,6 +535,38 @@ describe("App", () => {
     expect(window.location.hash).toBe("#flocks/houses");
   });
 
+  it("registers an existing-stock batch without asking for purchase cost", async () => {
+    mockFarmApis();
+    vi.mocked(farmApi.listHouses).mockResolvedValue([
+      { id: "house-1", name: "House A", code: "H001", status: "ACTIVE" },
+    ]);
+    vi.spyOn(batchApi, "create").mockResolvedValue({
+      id: "batch-existing", code: "L-2026-001", type: "LAYER",
+      placementDate: "2026-11-06", initialBirdCount: 250, status: "ACTIVE",
+      purchaseCostMinor: null,
+    });
+
+    render(<App />);
+    await screen.findByRole("heading", { name: "Farm dashboard" });
+    fireEvent.click(within(screen.getByRole("navigation", { name: "Main navigation" }))
+      .getByRole("button", { name: "Flocks" }));
+
+    fireEvent.change(await screen.findByLabelText("Purchase information"), {
+      target: { value: "EXISTING_STOCK" },
+    });
+    expect(screen.queryByLabelText("Purchase cost (₦)")).not.toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText("Placement date"), { target: { value: "2026-11-06" } });
+    fireEvent.change(screen.getByLabelText("House / pen"), { target: { value: "house-1" } });
+    fireEvent.change(screen.getByLabelText("Initial birds"), { target: { value: "250" } });
+    fireEvent.click(screen.getByRole("button", { name: "Create batch" }));
+
+    await waitFor(() => expect(batchApi.create).toHaveBeenCalledWith({
+      type: "LAYER", placementDate: "2026-11-06", houseId: "house-1",
+      initialBirdCount: 250, supplierId: null,
+      purchaseCostRecorded: false, purchaseCostMinor: null,
+    }));
+  });
+
   it("keeps the normal dashboard when zero metrics belong to a farm with setup records", async () => {
     mockFarmApis({
       currentBatches: [],

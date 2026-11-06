@@ -31,16 +31,12 @@ public class BirdCostRepository {
         );
     }
 
-    public long initialCost(String batchId) {
-        Long value = jdbc.queryForObject(
+    public Long initialCost(String batchId) {
+        return jdbc.queryForObject(
                 "SELECT original_purchase_cost_minor FROM batches WHERE id = ?",
                 Long.class,
                 batchId
         );
-        if (value == null) {
-            throw new IllegalStateException("Batch purchase cost is required for cost accounting.");
-        }
-        return value;
     }
 
     public void insert(

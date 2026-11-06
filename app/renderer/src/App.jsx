@@ -72,6 +72,7 @@ const emptyBatch = {
   houseId: "",
   initialBirdCount: "",
   supplierId: "",
+  purchaseCostRecorded: true,
   purchaseCostMinor: "",
 };
 const emptyCost = {
@@ -725,7 +726,10 @@ export default function App() {
         houseId: batchForm.houseId,
         initialBirdCount: Number(batchForm.initialBirdCount),
         supplierId: batchForm.supplierId.trim() || null,
-        purchaseCostMinor: parseNairaToKobo(batchForm.purchaseCostMinor, { allowZero: true }),
+        purchaseCostRecorded: batchForm.purchaseCostRecorded,
+        purchaseCostMinor: batchForm.purchaseCostRecorded
+          ? parseNairaToKobo(batchForm.purchaseCostMinor, { allowZero: true })
+          : null,
       });
       setBatches(current => [created, ...current]);
       rememberLastBatchId(created.id);

@@ -84,9 +84,13 @@ public class BirdPopulationService {
             throw populationConflict(e.getMessage());
         }
 
-        long transferredCost;
+        Long transferredCost;
         try {
             transferredCost = birdCostService.costForReduction(sourceBatchId, outbound);
+            if (transferredCost == null) {
+                throw new ApiException(HttpStatus.CONFLICT, "UNKNOWN_BIRD_COST",
+                        "Birds cannot be transferred from a batch with an unrecorded purchase cost because their carrying cost is unknown.");
+            }
         } catch (ApiException e) {
             throw e;
         } catch (ArithmeticException e) {
@@ -170,7 +174,7 @@ public class BirdPopulationService {
             throw populationConflict(e.getMessage());
         }
 
-        long allocatedCost = birdCostService.costForReduction(batchId, proposed);
+        Long allocatedCost = birdCostService.costForReduction(batchId, proposed);
 
         String now = Instant.now().toString();
         String id = UUID.randomUUID().toString();
@@ -195,7 +199,7 @@ public class BirdPopulationService {
                 clean(request.reason()),
                 null,
                 String.format(
-                        "{\"batchId\":\"%s\",\"eventType\":\"%s\",\"quantity\":%d,\"eventDate\":\"%s\",\"allocatedCostMinor\":%d}",
+                        "{\"batchId\":\"%s\",\"eventType\":\"%s\",\"quantity\":%d,\"eventDate\":\"%s\",\"allocatedCostMinor\":%s}",
                         batchId,
                         eventType,
                         request.quantity(),
