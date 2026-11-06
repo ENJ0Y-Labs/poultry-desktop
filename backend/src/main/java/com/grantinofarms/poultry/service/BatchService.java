@@ -108,7 +108,7 @@ public class BatchService {
                     request.placementDate(),
                     request.initialBirdCount(),
                     request.purchaseCostMinor(),
-                    request.populationCountStatus() == null ? "VERIFIED" : request.populationCountStatus(),
+                    request.populationCountStatus() == null ? "ESTIMATED" : request.populationCountStatus(),
                     now
             );
 
