@@ -20,7 +20,7 @@ public record BatchCreateRequest(
 ) {
     public BatchCreateRequest(String type, LocalDate placementDate, String houseId,
                               Integer initialBirdCount, String supplierId, Long purchaseCostMinor) {
-        this(type, placementDate, houseId, initialBirdCount, supplierId, true, purchaseCostMinor, "VERIFIED");
+        this(type, placementDate, houseId, initialBirdCount, supplierId, true, purchaseCostMinor, "ESTIMATED");
     }
 
     public BatchCreateRequest(String type, LocalDate placementDate, String houseId, Integer initialBirdCount,
