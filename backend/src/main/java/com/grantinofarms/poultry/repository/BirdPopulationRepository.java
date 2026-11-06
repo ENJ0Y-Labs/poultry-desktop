@@ -35,6 +35,10 @@ public class BirdPopulationRepository {
         );
     }
 
+    public String populationCountStatus(String batchId) {
+        return jdbc.queryForObject("SELECT population_count_status FROM batches WHERE id=?", String.class, batchId);
+    }
+
     public int initialBirds(String batchId) {
         Integer value = jdbc.queryForObject(
                 "SELECT initial_bird_count FROM batches WHERE id = ?",
