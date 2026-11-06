@@ -77,7 +77,7 @@ export default function ReportsPage() {
                   <div className="dashboard-list">
                     <div><span>Average weight</span><strong>{formatKg(batchReport.production.growth?.currentAverageWeightKg)}</strong></div>
                     <div><span>Growth</span><strong>{formatKg(batchReport.production.growth?.liveWeightGainKg)}</strong></div>
-                    <div><span>FCR <MetricHelp id="report-fcr-help" label="FCR formula">Feed conversion ratio (FCR) = converted feed consumed (kg) ÷ live-weight gain (kg) for this broiler batch as of the report date. The backend converts configured feed units to kilograms; non-kg feed is included when its kg-per-unit factor is configured. These are batch-to-date values, not a daily ratio. Lower FCR means less feed per kilogram of live-weight gain. If any consumed feed conversion is unknown, or live-weight gain is zero or negative, FCR is undefined and shown as —.</MetricHelp></span><strong>{formatMetric(batchReport.production.growth?.fcr)}</strong></div>
+                    <div><span>FCR <MetricHelp id="report-fcr-help" label="FCR formula">Feed conversion ratio (FCR) = converted feed consumed (kg) ÷ live-weight gain (kg) for this meat-production batch as of the report date. The backend converts configured feed units to kilograms; non-kg feed is included when its kg-per-unit factor is configured. These are batch-to-date values, not a daily ratio. Lower FCR means less feed per kilogram of live-weight gain. If any consumed feed conversion is unknown, or live-weight gain is zero or negative, FCR is undefined and shown as —.</MetricHelp></span><strong>{formatMetric(batchReport.production.growth?.fcr)}</strong></div>
                   </div>
                 </>}
               </div>
@@ -101,7 +101,7 @@ export default function ReportsPage() {
               loadTrend={productionTrendApi.layerHdp}
             />
           )}
-          {selectedBatchId && batches.find(batch => batch.id === selectedBatchId)?.type === "BROILER" && (
+          {selectedBatchId && ["BROILER", "TURKEY"].includes(batches.find(batch => batch.id === selectedBatchId)?.type) && (
             <ProductionTrendChart
               batchId={selectedBatchId}
               title="Broiler average weight"
