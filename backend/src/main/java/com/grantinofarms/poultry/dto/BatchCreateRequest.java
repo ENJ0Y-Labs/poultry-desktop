@@ -13,5 +13,11 @@ public record BatchCreateRequest(
         @NotBlank String houseId,
         @NotNull @Positive Integer initialBirdCount,
         String supplierId,
-        @NotNull @PositiveOrZero Long purchaseCostMinor
-) {}
+        @NotNull Boolean purchaseCostRecorded,
+        @PositiveOrZero Long purchaseCostMinor
+) {
+    public BatchCreateRequest(String type, LocalDate placementDate, String houseId,
+                              Integer initialBirdCount, String supplierId, Long purchaseCostMinor) {
+        this(type, placementDate, houseId, initialBirdCount, supplierId, true, purchaseCostMinor);
+    }
+}
