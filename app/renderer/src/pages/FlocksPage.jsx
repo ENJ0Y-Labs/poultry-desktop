@@ -12,7 +12,7 @@ const batchTypeLabel = type => type === "LAYER" ? "Layer" : type === "BROILER" ?
 const batchStatusLabel = status => status === "ACTIVE" ? "Active" : status === "SOLD" ? "Sold" : String(status || "Unknown").toLowerCase().replace(/\b\w/g, letter => letter.toUpperCase());
 
 export default function FlocksPage() {
-  const { formatMoney, formatQuantity, formatPercent, formatKg, formatMetric, farm, houses, batches, suppliers, batchForm, setBatchForm, costForm, setCostForm, houseForm, setHouseForm, saving, selectedBatchId, setSelectedBatchId, batchDashboard, createBatch, addBirdCost, markBatchSold, reopenBatch, addHouse } = useContext(FarmManagerContext);
+  const { formatMoney, formatQuantity, formatPercent, formatKg, formatMetric, farm, houses, batches, suppliers, batchForm, setBatchForm, costForm, setCostForm, houseForm, setHouseForm, saving, selectedBatchId, setSelectedBatchId, batchDashboard, createBatch, addBirdCost, markBatchSold, reopenBatch, addHouse, editHouse, editingHouseId, cancelHouseEdit } = useContext(FarmManagerContext);
 
   return (
     <PageTemplate className="grid">
@@ -86,10 +86,12 @@ export default function FlocksPage() {
         </section></PageSection>
 
       <PageSection page="flocks" tab="houses"><section id="houses" className="card full"><div className="section-head"><h2>Houses / pens</h2><p className="muted">Physical locations that batches belong to.</p></div>
-          <form className="inline-form" onSubmit={addHouse}><label className="field"><span>Name</span><input required value={houseForm.name} onChange={e=>setHouseForm({...houseForm,name:e.target.value})}/></label><label className="field"><span>Code</span><input required value={houseForm.code} onChange={e=>setHouseForm({...houseForm,code:e.target.value})}/></label><label className="field"><span>Notes</span><input value={houseForm.notes} onChange={e=>setHouseForm({...houseForm,notes:e.target.value})}/></label><button disabled={saving}>Add house</button></form>
+          <form className="inline-form" onSubmit={addHouse}><label className="field"><span>Name</span><input required value={houseForm.name} onChange={e=>setHouseForm({...houseForm,name:e.target.value})}/></label><label className="field"><span>Code</span><input required value={houseForm.code} onChange={e=>setHouseForm({...houseForm,code:e.target.value})}/></label><label className="field"><span>House type</span><select required value={houseForm.houseType} onChange={e=>setHouseForm({...houseForm,houseType:e.target.value})}><option value="PERMANENT">Permanent</option><option value="TEMPORARY">Temporary</option></select></label><label className="field"><span>Notes</span><input value={houseForm.notes} onChange={e=>setHouseForm({...houseForm,notes:e.target.value})}/></label><button disabled={saving}>{editingHouseId ? "Save house" : "Add house"}</button>{editingHouseId && <button type="button" className="secondary-button" onClick={cancelHouseEdit}>Cancel</button>}</form>
           <DataTable caption="Houses and pens" columns={[
-              { key: "name", label: "Name" }, { key: "code", label: "Code" }, { key: "status", label: "Status" },
+              { key: "name", label: "Name" }, { key: "code", label: "Code" }, { key: "houseType", label: "Type", render: house => house.houseType === "TEMPORARY" ? "Temporary" : "Permanent" }, { key: "status", label: "Status" },
+              { key: "occupancy", label: "Occupancy", render: house => batches.some(batch => batch.houseId === house.id && batch.status === "ACTIVE") ? "Occupied" : "Empty" },
               { key: "notes", label: "Notes", render: house => house.notes || "—" },
+              { key: "action", label: "Action", render: house => <button type="button" className="secondary-button" onClick={() => editHouse(house)}>Edit</button> },
             ]} rows={houses} emptyMessage="No houses or pens yet." />
         </section></PageSection>
     </PageTemplate>
