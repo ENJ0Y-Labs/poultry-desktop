@@ -105,7 +105,14 @@ public class ReportService {
         report.put("revenueMinor", dashboardData.get("revenueMinor"));
         report.put("profitMinor", dashboardData.get("profitMinor"));
         report.put("eggProduction", eggRows);
-        report.put("broilerGrowth", broilerRows.stream().filter(row -> "BROILER".equals(((BatchResponse) row.get("batch")).type())).toList());
+        List<Map<String, Object>> turkeyRows = broilerRows.stream()
+                .filter(row -> "TURKEY".equals(((BatchResponse) row.get("batch")).type()))
+                .toList();
+        List<Map<String, Object>> broilerOnlyRows = broilerRows.stream()
+                .filter(row -> "BROILER".equals(((BatchResponse) row.get("batch")).type()))
+                .toList();
+        report.put("broilerGrowth", broilerOnlyRows);
+        report.put("turkeyGrowth", turkeyRows);
         report.put("meatBirdGrowth", broilerRows);
         report.put("sales", sales.list(null, null, null, date));
         report.put("inventory", inventory.listItems());
