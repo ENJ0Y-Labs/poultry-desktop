@@ -75,6 +75,7 @@ const emptyBatch = {
   supplierId: "",
   purchaseCostRecorded: true,
   purchaseCostMinor: "",
+  populationCountStatus: "VERIFIED",
 };
 const emptyCost = {
   batchId: "",
