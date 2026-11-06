@@ -1,6 +1,6 @@
 {
   "name": "poultry-desktop",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "private": true,
   "description": "Pomas: local-first poultry farm management desktop application.",
   "main": "dist/main/main.js",
@@ -55,7 +55,14 @@
       "package.json"
     ],
     "win": {
-      "target": "nsis",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
       "icon": "build/icon.ico"
     },
     "extraResources": [
@@ -68,7 +75,7 @@
         "to": "runtime"
       }
     ],
-    "artifactName": "PomasSetup.${ext}",
+    "artifactName": "POMAS-v${version}-Setup-${arch}.${ext}",
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
@@ -87,5 +94,8 @@
     "esbuild": true,
     "electron-winstaller": true
   },
-  "type": "module"
+  "type": "module",
+  "author": {
+    "name": "Grantino Farms"
+  }
 }

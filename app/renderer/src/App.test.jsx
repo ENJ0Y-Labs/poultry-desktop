@@ -230,6 +230,7 @@ describe("App", () => {
     render(<App />);
 
     expect(await screen.findByRole("heading", { name: "Sign in to Pomas" })).toBeInTheDocument();
+    expect(screen.getByText("POMAS · DEVELOPMENT BUILD")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Sign in to your farm/ })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /create account/i })).not.toBeInTheDocument();
     expect(screen.queryByLabelText("Full name")).not.toBeInTheDocument();

@@ -984,6 +984,21 @@ body { min-width: 0; }
 }
 
 
+.app-version-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 24px 0 4px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-soft);
+  color: var(--muted-2);
+  font-size: 11px;
+  letter-spacing: .035em;
+}
+@media (max-width: 620px) {
+  .app-version-footer { flex-wrap: wrap; font-size: 10px; }
+}
+
 /* Account session controls */
 .account-session-actions { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--border); }
 .danger-button { background: var(--red); color: #fff; border-color: var(--red); }

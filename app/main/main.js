@@ -16,6 +16,11 @@ let mainWindow;
 let backendManager;
 let shutdownInProgress = false;
 
+ipcMain.handle("app:info", async (_event, ...args) => {
+  if (args.length !== 0) throw new Error("Invalid IPC message.");
+  return Object.freeze({ version: app.getVersion(), architecture: process.arch, isPackaged: app.isPackaged });
+});
+
 ipcMain.handle("backend:base-url", async (_event, ...args) => {
   if (args.length !== 0) throw new Error("Invalid IPC message.");
   if (!backendManager?.port) throw new Error("The local backend is not ready.");
