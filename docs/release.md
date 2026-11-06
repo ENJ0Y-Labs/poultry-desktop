@@ -72,7 +72,7 @@ The Windows CI job builds/packages the Electron application and verifies the ins
 Test the installed app, not only the local Vite browser tab.
 
 1. Run `npm run package` and `npm run installer:verify`.
-2. Install `release/PomasSetup.exe`.
+2. Locate the generated installer with `Get-ChildItem release\\POMAS-v*-Setup-x64.exe`, then run the returned installer.
 3. Disconnect from the internet to confirm normal operation has no external dependency.
 4. Launch Pomas from the Start Menu or desktop shortcut.
 5. Confirm the backend starts and the dashboard loads.
