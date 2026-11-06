@@ -20,18 +20,19 @@ public class FeedRepository {
 
     public List<FeedTypeResponse> findTypes(String farmId) {
         return jdbc.query("""
-                SELECT id, name, unit, applicable_type, status, kg_per_unit
+                SELECT id, name, unit, applicable_type, status, kg_per_unit, brand, packaging_name, package_weight_kg
                 FROM feed_types WHERE farm_id = ? ORDER BY name
                 """,
                 (rs, n) -> new FeedTypeResponse(
                         rs.getString("id"), rs.getString("name"), rs.getString("unit"),
-                        rs.getString("applicable_type"), rs.getString("status"), rs.getBigDecimal("kg_per_unit")
+                        rs.getString("applicable_type"), rs.getString("status"), rs.getBigDecimal("kg_per_unit"),
+                        rs.getString("brand"), rs.getString("packaging_name"), rs.getBigDecimal("package_weight_kg")
                 ), farmId);
     }
 
     public FeedTypeResponse findType(String id) {
         List<FeedTypeResponse> rows = jdbc.query("""
-                SELECT id, name, unit, applicable_type, status, kg_per_unit
+                SELECT id, name, unit, applicable_type, status, kg_per_unit, brand, packaging_name, package_weight_kg
                 FROM feed_types WHERE id = ?
                 """,
                 (rs, n) -> new FeedTypeResponse(
@@ -53,12 +54,12 @@ public class FeedRepository {
         return jdbc.queryForObject("SELECT applicable_type FROM feed_types WHERE id = ?", String.class, id);
     }
 
-    public void insertType(String id, String farmId, String name, String unit, String scope, java.math.BigDecimal kgPerUnit, String now) {
+    public void insertType(String id, String farmId, String name, String unit, String scope, java.math.BigDecimal kgPerUnit, String brand, String packagingName, java.math.BigDecimal packageWeightKg, String now) {
         jdbc.update("""
                 INSERT INTO feed_types
-                    (id, farm_id, name, unit, applicable_type, status, kg_per_unit, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, 'ACTIVE', ?, ?, ?)
-                """, id, farmId, name, unit, scope, kgPerUnit, now, now);
+                    (id, farm_id, name, unit, applicable_type, status, kg_per_unit, brand, packaging_name, package_weight_kg, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, 'ACTIVE', ?, ?, ?, ?, ?, ?)
+                """, id, farmId, name, unit, scope, kgPerUnit, brand, packagingName, packageWeightKg, now, now);
     }
 
     public void updateKgPerUnit(String id, java.math.BigDecimal kgPerUnit, String now) {
