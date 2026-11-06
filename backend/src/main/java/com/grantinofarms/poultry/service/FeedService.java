@@ -112,6 +112,38 @@ public class FeedService {
                 String.format("{\"name\":\"%s\",\"unit\":\"%s\",\"applicableType\":\"%s\",\"status\":\"ARCHIVED\"}", type.name(), type.unit(), type.applicableType()), now);
         return new FeedTypeResponse(type.id(), type.name(), type.unit(), type.applicableType(), "ARCHIVED", type.kgPerUnit(), type.brand(), type.packagingName(), type.packageWeightKg());
     }
+
+    @Transactional
+    public FeedOpeningBalanceResponse createOpeningBalance(FeedOpeningBalanceRequest request) {
+        FeedTypeResponse type = requireType(request.feedTypeId());
+        if (!"ACTIVE".equals(type.status())) {
+            throw new ApiException(HttpStatus.CONFLICT, "FEED_TYPE_NOT_ACTIVE", "The feed type is archived.");
+        }
+        String farmId = repository.farmId();
+        if (!farmId.equals(repository.typeFarmId(type.id()))) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_FEED_TYPE", "Feed type does not belong to the active farm.");
+        }
+        if (!type.unit().equalsIgnoreCase(clean(request.unit()))) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_FEED_UNIT", "Opening balance unit must match the feed type unit.");
+        }
+        long quantityMilli = toMilli(request.quantity());
+        String id = UUID.randomUUID().toString();
+        String now = Instant.now().toString();
+        String reason = clean(request.reason());
+        repository.insertOpeningBalance(id, farmId, type.id(), request.effectiveDate(),
+                quantityMilli, type.unit(), reason, now);
+        auditRepository.append(farmId, "CREATE", "FEED_OPENING_BALANCE", id, reason,
+                null, String.format("{\"feedTypeId\":\"%s\",\"effectiveDate\":\"%s\",\"quantityMilli\":%d,\"unit\":\"%s\"}",
+                        type.id(), request.effectiveDate(), quantityMilli, type.unit()), now);
+        return new FeedOpeningBalanceResponse(id, type.id(), type.name(), request.effectiveDate(),
+                quantityMilli, type.unit(), reason, now);
+    }
+
+    public List<FeedOpeningBalanceResponse> openingBalances(String feedTypeId) {
+        requireType(feedTypeId);
+        return repository.findOpeningBalances(feedTypeId);
+    }
+
     @Transactional
     public FeedPurchaseResponse purchase(FeedPurchaseRequest request) {
         FeedTypeResponse type = requireType(request.feedTypeId());
