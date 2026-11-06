@@ -107,6 +107,7 @@ class DatabaseSchemaTest {
 
         List<String> batchColumns = jdbcTemplate.query("PRAGMA table_info(batches)", (rs, rowNum) -> rs.getString("name"));
         assertThat(batchColumns).contains("population_count_status");
+        assertThat(jdbcTemplate.queryForObject("SELECT dflt_value FROM pragma_table_info('batches') WHERE name='population_count_status'", String.class)).contains("ESTIMATED");
 
         List<String> adjustmentColumns = jdbcTemplate.query("PRAGMA table_info(bird_population_adjustments)", (rs, rowNum) -> rs.getString("name"));
         assertThat(adjustmentColumns).contains("effective_date", "previous_count", "new_count", "difference", "reason", "user_id", "created_at");
