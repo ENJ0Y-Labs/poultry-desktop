@@ -15,13 +15,13 @@ class BirdCostCalculatorTest {
 
 
     @Test
-    void physicalCountAdjustmentAllocatesCarriedCostForReducedPopulation() {
+    void physicalCountAdjustmentRetainsExistingCarriedCostForReducedPopulation() {
         var result = BirdCostCalculator.calculate(100, 100_000L, List.of(
                 new BirdPopulationEvent(LocalDate.of(2026, 1, 2), "ADJUSTMENT", -20)
         ), List.of(), LocalDate.of(2026, 1, 2));
         assertThat(result.currentBirds()).isEqualTo(80);
-        assertThat(result.carriedCostMinor()).isEqualTo(80_000L);
-        assertThat(result.allocatedCostMinor()).isEqualTo(20_000L);
+        assertThat(result.carriedCostMinor()).isEqualTo(100_000L);
+        assertThat(result.allocatedCostMinor()).isZero();
     }
 
     @Test
