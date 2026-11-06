@@ -37,6 +37,11 @@ public class DashboardService {
         out.put("asOf", date);
         out.put("farm", farm);
         out.put("activeBatches", scalar("SELECT COUNT(*) FROM batches WHERE farm_id = ? AND status = 'ACTIVE'", farm.id()));
+        out.put("totalHouses", scalar("SELECT COUNT(*) FROM houses WHERE farm_id=? AND status='ACTIVE'", farm.id()));
+        out.put("permanentHouses", scalar("SELECT COUNT(*) FROM houses WHERE farm_id=? AND status='ACTIVE' AND house_type='PERMANENT'", farm.id()));
+        out.put("temporaryHouses", scalar("SELECT COUNT(*) FROM houses WHERE farm_id=? AND status='ACTIVE' AND house_type='TEMPORARY'", farm.id()));
+        out.put("occupiedHouses", scalar("SELECT COUNT(*) FROM houses h WHERE h.farm_id=? AND h.status='ACTIVE' AND EXISTS (SELECT 1 FROM batches b WHERE b.house_id=h.id AND b.status='ACTIVE')", farm.id()));
+        out.put("emptyHouses", scalar("SELECT COUNT(*) FROM houses h WHERE h.farm_id=? AND h.status='ACTIVE' AND NOT EXISTS (SELECT 1 FROM batches b WHERE b.house_id=h.id AND b.status='ACTIVE')", farm.id()));
         out.put("totalBirds", populationTotal(farm.id(), date, null));
         out.put("layerBirds", populationTotal(farm.id(), date, "LAYER"));
         out.put("broilerBirds", populationTotal(farm.id(), date, "BROILER"));
