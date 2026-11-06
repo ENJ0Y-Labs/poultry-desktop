@@ -179,6 +179,8 @@ export const feedApi = {
 };
 
 export const populationApi = {
+  adjustments: (batchId) => request("/batches/" + batchId + "/population-adjustments"),
+  adjust: (batchId, data) => request("/batches/" + batchId + "/population-adjustments", { method: "POST", body: JSON.stringify(data) }),
   mortality: (batchId, data) => request("/batches/" + batchId + "/mortality", { method: "POST", body: JSON.stringify(data) }),
   culling: (batchId, data) => request("/batches/" + batchId + "/culling", { method: "POST", body: JSON.stringify(data) }),
 };
