@@ -33,6 +33,7 @@ class DatabaseSchemaTest {
                 "farm_settings",
                 "water_container_sizes",
                 "bird_population_events",
+                "bird_population_adjustments",
                 "bird_cost_events",
                 "feed_types",
                 "feed_purchases",
@@ -68,7 +69,7 @@ class DatabaseSchemaTest {
                 "SELECT COUNT(*) FROM flyway_schema_history WHERE success = 1",
                 Integer.class
         );
-        assertThat(flywaySuccess).isGreaterThanOrEqualTo(18);
+        assertThat(flywaySuccess).isGreaterThanOrEqualTo(29);
     }
 
 
@@ -103,6 +104,12 @@ class DatabaseSchemaTest {
                 (rs, rowNum) -> rs.getString("name")
         );
         assertThat(houseColumns).contains("house_type");
+
+        List<String> batchColumns = jdbcTemplate.query("PRAGMA table_info(batches)", (rs, rowNum) -> rs.getString("name"));
+        assertThat(batchColumns).contains("population_count_status");
+
+        List<String> adjustmentColumns = jdbcTemplate.query("PRAGMA table_info(bird_population_adjustments)", (rs, rowNum) -> rs.getString("name"));
+        assertThat(adjustmentColumns).contains("effective_date", "previous_count", "new_count", "difference", "reason", "user_id", "created_at");
 
         List<String> itemColumns = jdbcTemplate.query(
                 "PRAGMA table_info(inventory_items)",
