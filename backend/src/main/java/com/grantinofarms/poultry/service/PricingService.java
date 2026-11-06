@@ -75,7 +75,11 @@ public class PricingService {
             throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_PRICING_QUANTITY", "Quantity must be positive.");
         }
         LocalDate effective = asOf == null ? LocalDate.now() : asOf;
-        long actualCost = actualCost(batchId, quantity, effective);
+        Long actualCost = actualCost(batchId, quantity, effective);
+        if (actualCost == null) {
+            throw new ApiException(HttpStatus.CONFLICT, "BIRD_COST_UNRECORDED",
+                    "Pricing is unavailable because this batch has no recorded original purchase cost.");
+        }
         PricingSettingsResponse settings = pricingRepository.settings(batch.farmId());
 
         Long targetPrice = settings.targetMarginPercent() == null
@@ -91,7 +95,8 @@ public class PricingService {
     }
 
     public BigDecimal marginForSale(String batchId, int quantity, long salePricePerBirdMinor, LocalDate date) {
-        long cost = actualCost(batchId, quantity, date);
+        Long cost = actualCost(batchId, quantity, date);
+        if (cost == null) return null;
         long revenue = Math.multiplyExact(quantity, salePricePerBirdMinor);
         return PricingCalculator.marginPercent(revenue, cost);
     }
@@ -102,6 +107,7 @@ public class PricingService {
         var batch = requireBroiler(batchId);
         PricingSettingsResponse settings = pricingRepository.settings(batch.farmId());
         BigDecimal actualMargin = marginForSale(batchId, quantity, salePricePerBirdMinor, date);
+        if (actualMargin == null) return;
 
         if (PricingCalculator.isBelowTarget(actualMargin, settings.targetMarginPercent())
                 && !confirmedBelowTarget) {
@@ -146,15 +152,17 @@ public class PricingService {
         }
     }
 
-    private long actualCost(String batchId, int quantity, LocalDate date) {
+    private Long actualCost(String batchId, int quantity, LocalDate date) {
         requireBroiler(batchId);
+        Long initialCost = costRepository.initialCost(batchId);
+        if (initialCost == null) return null;
         try {
             BirdPopulationEvent proposed = new BirdPopulationEvent(
                     date, "SOLD", quantity
             );
             return com.grantinofarms.poultry.domain.BirdCostCalculator.costForReduction(
                     populationRepository.initialBirds(batchId),
-                    costRepository.initialCost(batchId),
+                    initialCost,
                     populationRepository.findEvents(batchId),
                     costRepository.findEvents(batchId),
                     proposed
