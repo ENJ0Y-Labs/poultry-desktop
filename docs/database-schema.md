@@ -1,6 +1,6 @@
 # Database schema
 
-SQLite schema changes are managed by Flyway. Migrations are forward-only and currently run through V28.
+SQLite schema changes are managed by Flyway. Migrations are forward-only and currently run through V29.
 
 ## Design rules
 
@@ -36,7 +36,7 @@ Suppliers and traceable sources used for purchases.
 
 ### `batches`
 
-Layer, Broiler, or Turkey flock records. Stores initial bird count and, when recorded, original purchase cost. `original_purchase_cost_minor IS NULL` means the historical purchase cost is unknown/unrecorded; a value of `0` means a genuine zero-cost purchase. Current bird population is derived from population events rather than stored as a mutable total.
+Layer, Broiler, or Turkey flock records. Stores initial bird count and, when recorded, original purchase cost. `original_purchase_cost_minor IS NULL` means the historical purchase cost is unknown/unrecorded; a value of `0` means a genuine zero-cost purchase. Current bird population is derived from population events and physical-count adjustments rather than stored as a mutable total. population_count_status is ESTIMATED or VERIFIED; new and migrated batches default to ESTIMATED until physically counted.
 
 ### `bird_purchases`
 
@@ -60,7 +60,11 @@ Authoritative population changes:
 
 The current population formula is:
 
-`initial - mortality - culling - sold + transfers in - transfers out`.
+`initial - mortality - culling - sold + transfers in - transfers out + physical-count adjustments`.
+
+### `bird_population_adjustments`
+
+Append-only physical-count reconciliations. Each row stores the effective date, previous calculated count, new physical count, signed difference, required reason, authenticated user ID, and server timestamp. The difference is included in chronological population calculations but remains separate from mortality, culling, sales, and transfer events. A successful adjustment changes batch confidence to VERIFIED; a later explicit provisional flag changes it back to ESTIMATED with an audit record. Count adjustments do not create a purchase cost or mortality/culling expense; existing carried bird cost remains with the batch.
 
 ### `bird_cost_events`
 
@@ -222,7 +226,7 @@ farm
 
 ## Migration history
 
-The repository currently contains V1 through V27, including independent Turkey support.
+The repository currently contains V1 through V29, including independent Turkey support and population confidence/adjustments.
 
 Broad progression:
 
@@ -239,6 +243,7 @@ Broad progression:
 - V11: Broiler production
 - V27: independent Turkey batch, feed applicability, and sales support
 - V28: explicit permanent/temporary house classification and occupancy index
+- V29: estimated/verified population confidence and auditable physical-count adjustments
 - V12: pricing and margins
 - V13: expenses
 - V14: customers and sales

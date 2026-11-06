@@ -19,7 +19,7 @@ public class BatchRepository {
         return jdbc.query("""
                 SELECT id, farm_id, house_id, supplier_id, code, batch_type,
                        placement_date, initial_bird_count, original_purchase_cost_minor,
-                       status, created_at, updated_at
+                       status, created_at, updated_at, population_count_status
                 FROM batches
                 WHERE id = ?
                 """, (rs, rowNum) -> map(rs), id).stream().findFirst().orElse(null);
@@ -29,7 +29,7 @@ public class BatchRepository {
         return jdbc.query("""
                 SELECT id, farm_id, house_id, supplier_id, code, batch_type,
                        placement_date, initial_bird_count, original_purchase_cost_minor,
-                       status, created_at, updated_at
+                       status, created_at, updated_at, population_count_status
                 FROM batches
                 WHERE farm_id = ?
                 ORDER BY placement_date DESC, code DESC
@@ -62,16 +62,20 @@ public class BatchRepository {
 
     public void insert(String id, String farmId, String houseId, String supplierId,
                        String code, String type, LocalDate placementDate,
-                       int initialBirdCount, Long purchaseCostMinor, String now) {
+                       int initialBirdCount, Long purchaseCostMinor, String populationCountStatus, String now) {
         jdbc.update("""
                 INSERT INTO batches
                     (id, farm_id, house_id, supplier_id, code, batch_type,
                      placement_date, initial_bird_count, original_purchase_cost_minor,
-                     status, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'ACTIVE', ?, ?)
+                     status, created_at, updated_at, population_count_status)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'ACTIVE', ?, ?, ?)
                 """,
                 id, farmId, houseId, supplierId, code, type, placementDate.toString(),
-                initialBirdCount, purchaseCostMinor, now, now);
+                initialBirdCount, purchaseCostMinor, now, now, populationCountStatus);
+    }
+
+    public void updatePopulationCountStatus(String id, String status, String now) {
+        jdbc.update("UPDATE batches SET population_count_status=?, updated_at=? WHERE id=?", status, now, id);
     }
 
     public void updateStatus(String id, String status, String now) {
@@ -125,7 +129,8 @@ public class BatchRepository {
                 purchaseCost == null ? null : rs.getLong("original_purchase_cost_minor"),
                 rs.getString("status"),
                 rs.getString("created_at"),
-                rs.getString("updated_at")
+                rs.getString("updated_at"),
+                rs.getString("population_count_status")
         );
     }
 }

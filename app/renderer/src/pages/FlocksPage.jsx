@@ -12,7 +12,7 @@ const batchTypeLabel = type => type === "LAYER" ? "Layer" : type === "BROILER" ?
 const batchStatusLabel = status => status === "ACTIVE" ? "Active" : status === "SOLD" ? "Sold" : String(status || "Unknown").toLowerCase().replace(/\b\w/g, letter => letter.toUpperCase());
 
 export default function FlocksPage() {
-  const { formatMoney, formatQuantity, formatPercent, formatKg, formatMetric, farm, houses, batches, suppliers, batchForm, setBatchForm, costForm, setCostForm, houseForm, setHouseForm, saving, selectedBatchId, setSelectedBatchId, batchDashboard, createBatch, addBirdCost, markBatchSold, reopenBatch, addHouse, editHouse, editingHouseId, cancelHouseEdit } = useContext(FarmManagerContext);
+  const { formatMoney, formatQuantity, formatPercent, formatKg, formatMetric, farm, houses, batches, suppliers, batchForm, setBatchForm, costForm, setCostForm, houseForm, setHouseForm, saving, selectedBatchId, setSelectedBatchId, batchDashboard, createBatch, addBirdCost, markBatchSold, reopenBatch, addHouse, editHouse, editingHouseId, cancelHouseEdit, populationAdjustmentForm, setPopulationAdjustmentForm, populationAdjustments, savePopulationAdjustment, markPopulationEstimated } = useContext(FarmManagerContext);
 
   return (
     <PageTemplate className="grid">
@@ -33,6 +33,21 @@ export default function FlocksPage() {
               ["Revenue", formatMoney(batchDashboard.revenueMinor, farm.currency), ""],
               ["Profit", formatMoney(batchDashboard.profitMinor, farm.currency), ""]
             ].map(([label,value]) => <div className="metric-card" key={label}><span>{label}</span><strong>{value ?? "—"}</strong></div>)}
+          </div>
+          <div className="notice-banner" role="status"><strong>{batchDashboard.population?.countStatus === "ESTIMATED" ? "Estimated population" : "Verified population"}</strong><span>{batchDashboard.population?.countStatus === "ESTIMATED" ? "Current bird count is provisional. Record a physical count when the flock is counted." : "The current population has a recorded physical count."}</span></div>
+          <div className="subsection">
+            <h3>Record physical bird count</h3>
+            <p className="muted">This records a dated adjustment against the calculated population. It does not change initial birds or rewrite mortality, culling, transfers or sales.</p>
+            <form className="inline-form" onSubmit={savePopulationAdjustment}>
+              <label className="field"><span>Count date</span><input type="date" required value={populationAdjustmentForm.effectiveDate} min={batchDashboard.batch.placementDate} onChange={e=>setPopulationAdjustmentForm({...populationAdjustmentForm,effectiveDate:e.target.value})}/></label>
+              <label className="field"><span>Physical count</span><input type="number" min="0" step="1" required value={populationAdjustmentForm.newCount} onChange={e=>setPopulationAdjustmentForm({...populationAdjustmentForm,newCount:e.target.value})}/></label>
+              <label className="field"><span>Reason / notes</span><input required value={populationAdjustmentForm.reason} onChange={e=>setPopulationAdjustmentForm({...populationAdjustmentForm,reason:e.target.value})} placeholder="Physical count completed by farm operator"/></label>
+              <button disabled={saving}>Save verified count</button>
+            </form>
+            <DataTable caption="Physical count adjustment history" columns={[
+              {key:"effectiveDate",label:"Effective date"},{key:"previousCount",label:"Previous calculated"},{key:"newCount",label:"Physical count"},
+              {key:"difference",label:"Adjustment"},{key:"reason",label:"Reason"},{key:"userId",label:"Recorded by"},{key:"createdAt",label:"Recorded at"}
+            ]} rows={populationAdjustments} emptyMessage="No physical count adjustments recorded."/>
           </div>
           <div className="dashboard-columns">
             <div className="subsection"><h3>Production</h3>{batchDashboard.batch.type === "LAYER" ? <div className="dashboard-list">
@@ -57,6 +72,7 @@ export default function FlocksPage() {
             <label className="field"><span>Placement date</span><input required type="date" value={batchForm.placementDate} onChange={e=>setBatchForm({...batchForm,placementDate:e.target.value})}/></label>
             <label className="field"><span>House / pen</span><select required value={batchForm.houseId} onChange={e=>setBatchForm({...batchForm,houseId:e.target.value})}><option value="">House / pen</option>{houses.filter(h=>h.status==="ACTIVE").map(h=><option key={h.id} value={h.id}>{h.name} ({h.code})</option>)}</select></label>
             <label className="field"><span>Initial birds</span><input required min="1" type="number" value={batchForm.initialBirdCount} onChange={e=>setBatchForm({...batchForm,initialBirdCount:e.target.value})}/></label>
+            <label className="field"><span>Starting count confidence</span><select value={batchForm.populationCountStatus || "ESTIMATED"} onChange={e=>setBatchForm({...batchForm,populationCountStatus:e.target.value})}><option value="VERIFIED">Verified physical count</option><option value="ESTIMATED">Estimated / provisional count</option></select></label>
             <label className="field"><span>Purchase information</span><select aria-label="Purchase information" value={batchForm.purchaseCostRecorded ? "RECORDED" : "EXISTING_STOCK"} onChange={e=>setBatchForm({...batchForm,purchaseCostRecorded:e.target.value==="RECORDED",purchaseCostMinor:""})}><option value="RECORDED">Record purchase cost</option><option value="EXISTING_STOCK">Not recorded / Existing stock</option></select></label>
             <label className="field"><span>Supplier / source (optional)</span><select value={batchForm.supplierId} onChange={e=>setBatchForm({...batchForm,supplierId:e.target.value})}><option value="">Unknown / not recorded</option>{suppliers.filter(supplier=>supplier.status!=="ARCHIVED").map(supplier=><option key={supplier.id} value={supplier.id}>{supplier.name}</option>)}</select></label>
             {batchForm.purchaseCostRecorded && <label className="field"><span>Purchase cost (₦)</span><input required type="text" inputMode="decimal" value={batchForm.purchaseCostMinor} onChange={e=>setBatchForm({...batchForm,purchaseCostMinor:e.target.value})}/></label>}
@@ -64,7 +80,8 @@ export default function FlocksPage() {
           </form>
           <DataTable caption="Batch records" columns={[
               { key: "code", label: "Code" }, { key: "type", label: "Type", render: batch => batchTypeLabel(batch.type) },
-              { key: "placementDate", label: "Placement" }, { key: "initialBirdCount", label: "Birds" },
+              { key: "placementDate", label: "Placement" }, { key: "initialBirdCount", label: "Initial birds" }, { key: "populationCountStatus", label: "Count confidence", render: batch => batch.populationCountStatus === "ESTIMATED" ? "Estimated" : "Verified" },
+              { key: "confidenceAction", label: "Count action", render: batch => batch.populationCountStatus !== "ESTIMATED" ? <button type="button" className="secondary-button" disabled={saving} onClick={() => markPopulationEstimated(batch.id)}>Mark estimated</button> : "Awaiting physical count" },
               { key: "status", label: "Status", render: batch => batchStatusLabel(batch.status) },
               { key: "action", label: "Action", render: batch => batch.status === "SOLD"
                 ? <button type="button" onClick={() => reopenBatch(batch.id)} disabled={saving}>Reopen</button>
