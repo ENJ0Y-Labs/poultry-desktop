@@ -369,4 +369,55 @@ class MigrationUpgradeTest {
             return 0;
         }
     }
+
+    @Test
+    void houseTypeMigrationPreservesLegacyHouseIdentityAndDoesNotInferFromCode() throws Exception {
+        Path database = tempDir.resolve("house-type-upgrade.db");
+        String databaseUrl = sqliteUrl(database);
+        Flyway.configure()
+                .dataSource(databaseUrl, "", "")
+                .locations(LOCATIONS)
+                .target(MigrationVersion.fromVersion("27"))
+                .load()
+                .migrate();
+
+        String farmId = seedV1Farm(databaseUrl, "house-type-upgrade");
+        String houseId = UUID.randomUUID().toString();
+        try (Connection connection = DriverManager.getConnection(databaseUrl);
+             PreparedStatement insert = connection.prepareStatement("""
+                     INSERT INTO houses (id, farm_id, name, code, notes, status, created_at, updated_at)
+                     VALUES (?, ?, ?, ?, ?, 'ACTIVE', ?, ?)
+                     """)) {
+            insert.setString(1, houseId);
+            insert.setString(2, farmId);
+            insert.setString(3, "Legacy temporary shelter");
+            insert.setString(4, "T777");
+            insert.setString(5, "Preserve this note");
+            insert.setString(6, "created-before-v28");
+            insert.setString(7, "updated-before-v28");
+            assertThat(insert.executeUpdate()).isEqualTo(1);
+        }
+
+        configuredFlyway(databaseUrl).migrate();
+
+        try (Connection connection = DriverManager.getConnection(databaseUrl);
+             PreparedStatement query = connection.prepareStatement("""
+                     SELECT id, farm_id, name, code, notes, house_type, created_at, updated_at
+                     FROM houses WHERE id = ?
+                     """)) {
+            query.setString(1, houseId);
+            try (ResultSet result = query.executeQuery()) {
+                assertThat(result.next()).isTrue();
+                assertThat(result.getString("id")).isEqualTo(houseId);
+                assertThat(result.getString("farm_id")).isEqualTo(farmId);
+                assertThat(result.getString("name")).isEqualTo("Legacy temporary shelter");
+                assertThat(result.getString("code")).isEqualTo("T777");
+                assertThat(result.getString("notes")).isEqualTo("Preserve this note");
+                assertThat(result.getString("house_type")).isEqualTo("PERMANENT");
+                assertThat(result.getString("created_at")).isEqualTo("created-before-v28");
+                assertThat(result.getString("updated_at")).isEqualTo("updated-before-v28");
+            }
+        }
+    }
+
 }

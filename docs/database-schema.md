@@ -1,6 +1,6 @@
 # Database schema
 
-SQLite schema changes are managed by Flyway. Migrations are forward-only and currently run through V22.
+SQLite schema changes are managed by Flyway. Migrations are forward-only and currently run through V28.
 
 ## Design rules
 
@@ -28,7 +28,7 @@ Farm users and authentication data. Passwords are stored only as password hashes
 
 ### `houses`
 
-Farm houses/pens. Names and codes are farm-scoped and historical houses are archived rather than deleted.
+Farm houses/pens. Each house has an explicit `house_type` (`PERMANENT` or `TEMPORARY`); type is never inferred from its code. Names and codes are farm-scoped and historical houses are archived rather than deleted. Occupancy is derived from active batch assignments. V28 assigns legacy rows the documented `PERMANENT` default without inspecting house codes; administrators can reclassify them.
 
 ### `suppliers`
 
@@ -238,6 +238,7 @@ Broad progression:
 - V10: Layer egg management
 - V11: Broiler production
 - V27: independent Turkey batch, feed applicability, and sales support
+- V28: explicit permanent/temporary house classification and occupancy index
 - V12: pricing and margins
 - V13: expenses
 - V14: customers and sales
@@ -248,7 +249,7 @@ Broad progression:
 - V19: performance indexes
 - V20: settings management and configurable expense categories\n- V21: optional feed kilogram conversion factors
 
-Never edit an applied migration. Add a new version greater than V23 for future schema changes.
+Never edit an applied migration. Add a new version greater than the current highest version for future schema changes.
 
 
 ## Auditable transaction reversals (planned by ADR)

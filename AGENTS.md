@@ -182,6 +182,10 @@ or
 
 Do not expose raw SQL/database exceptions to the UI.
 
+## House classification and occupancy
+
+Every house has an explicit `houseType` of `PERMANENT` or `TEMPORARY`. Never derive house type from a code prefix. V28 uses `PERMANENT` as a deliberate legacy-row default so existing installations migrate safely; administrators must reclassify any legacy temporary houses after upgrade. New house creation requires an explicit type. House occupancy is derived from the existence of at least one `ACTIVE` batch assigned to that house; SOLD/CLOSED/ARCHIVED batches do not occupy it. Houses can be reused after their prior batch is no longer active. Farm dashboard fields are `totalHouses`, `permanentHouses`, `temporaryHouses`, `occupiedHouses`, and `emptyHouses`, counting ACTIVE houses only. See `docs/database-schema.md`.
+
 ## Turkey reporting contract
 
 Turkey is an independent `TURKEY` batch type, not a Broiler subtype. Farm dashboard totals must expose `turkeyBirds` separately from `broilerBirds` and `layerBirds`. Farm reports must keep `broilerGrowth` BROILER-only and expose `turkeyGrowth` for TURKEY-only results; `meatBirdGrowth` is the explicitly combined BROILER + TURKEY view. Turkey uses the shared meat-bird weight/growth and bird-sale services, but egg collection remains LAYER-only and must be rejected by backend validation. See `docs/decisions/2026-11-06-independent-turkey-reporting.md`.

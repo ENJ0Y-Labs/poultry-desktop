@@ -98,6 +98,12 @@ class DatabaseSchemaTest {
 
     @Test
     void inventorySupportsItemsAndMovementReasons() {
+        List<String> houseColumns = jdbcTemplate.query(
+                "PRAGMA table_info(houses)",
+                (rs, rowNum) -> rs.getString("name")
+        );
+        assertThat(houseColumns).contains("house_type");
+
         List<String> itemColumns = jdbcTemplate.query(
                 "PRAGMA table_info(inventory_items)",
                 (rs, rowNum) -> rs.getString("name")
