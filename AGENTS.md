@@ -4,7 +4,7 @@ Instructions for AI coding agents and humans working in this repository. Read th
 
 ## 1. Product
 
-A **local-first poultry farm management system for layer and broiler farms**, delivered as a Windows Electron desktop app and usable fully offline.
+A **local-first poultry farm management system for layer, broiler, and turkey farms**, delivered as a Windows Electron desktop app and usable fully offline.
 
 Core loop:
 
@@ -20,7 +20,7 @@ Priority order:
 
 A boring screen with correct poultry numbers beats a beautiful dashboard showing agricultural fiction.
 
-**Current stage: 16 — Inventory.**
+**Current stage: 17 — Independent Turkey support.**
 
 Stage 8 feed management is implemented. Stage 9 daily farm operations is implemented. Stage 10 health management is implemented. Stage 11 added Layer-only egg production, egg inventory, cracked-egg history, configurable crate conversion, and egg sales. Stage 12 adds Broiler-only weight records, growth calculations, backend-owned FCR, bird sales, and automatic SOLD lifecycle locking. Stage 13 adds cost-based Broiler pricing, configurable target margin, working/latest margin, and audited below-target sale confirmation. Stage 14 adds a simple farm/batch expense ledger. Stage 15 adds reusable customers and a common sales ledger while preserving Layer egg and Broiler bird sale behavior. Stage 16 adds a transaction-based inventory system for drugs, vaccines, and farm supplies, while the existing feed subsystem remains authoritative for feed stock and FIFO costing.
 
@@ -241,7 +241,7 @@ Hierarchy:
 
 Every batch has:
 - unique human-readable code
-- type: LAYER or BROILER
+- type: LAYER, BROILER, or TURKEY
 - placement/opening date
 - initial bird count
 - house/pen
@@ -275,7 +275,7 @@ Layers additionally:
 - Egg Quality
 - Egg Inventory
 
-Broilers additionally:
+Broilers and turkeys additionally:
 - Weight
 - Growth
 - FCR

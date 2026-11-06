@@ -31,6 +31,7 @@ export default function ReportsPage() {
                 ["Profit", formatMoney(farmReport.dashboard?.profitMinor, farm.currency)],
                 ["Egg batches", formatCount(farmReport.eggProduction?.length)],
                 ["Broiler batches", formatCount(farmReport.broilerGrowth?.length)],
+                ["Turkey batches", formatCount(farmReport.meatBirdGrowth?.filter(row => row.batch?.type === "TURKEY").length)],
                 ["Sales records", formatCount(farmReport.sales?.length)],
                 ["Inventory items", formatCount(farmReport.inventory?.length)]
               ].map(([label,value]) => <div className="metric-card" key={label}><span>{label}</span><strong>{value ?? "—"}</strong></div>)}
@@ -43,7 +44,7 @@ export default function ReportsPage() {
           <div className="section-head"><div><p className="eyebrow">REPORTING</p><h2>Batch reports</h2></div>
             <div className="inline-form">
               <select aria-label="Batch report" value={selectedBatchId} onChange={e => { setSelectedBatchId(e.target.value); rememberLastBatchId(e.target.value); }}>
-                <option value="">Select a batch</option>{batches.map(batch => <option key={batch.id} value={batch.id}>{batch.code} · {batch.type === "LAYER" ? "Layer" : batch.type === "BROILER" ? "Broiler" : "Unknown type"}</option>)}
+                <option value="">Select a batch</option>{batches.map(batch => <option key={batch.id} value={batch.id}>{batch.code} · {batch.type === "LAYER" ? "Layer" : batch.type === "BROILER" ? "Broiler" : batch.type === "TURKEY" ? "Turkey" : "Unknown type"}</option>)}
               </select>
               <button type="button" onClick={() => loadBatchReport(selectedBatchId, reportAsOf)}>Refresh</button>
               <button type="button" disabled={!selectedBatchId} onClick={() => exportCsv(() => reportApi.batchCsv(selectedBatchId, reportAsOf), "batch-report.csv")}>Export CSV</button>
@@ -76,7 +77,7 @@ export default function ReportsPage() {
                   <div className="dashboard-list">
                     <div><span>Average weight</span><strong>{formatKg(batchReport.production.growth?.currentAverageWeightKg)}</strong></div>
                     <div><span>Growth</span><strong>{formatKg(batchReport.production.growth?.liveWeightGainKg)}</strong></div>
-                    <div><span>FCR <MetricHelp id="report-fcr-help" label="FCR formula">Feed conversion ratio (FCR) = converted feed consumed (kg) ÷ live-weight gain (kg) for this broiler batch as of the report date. The backend converts configured feed units to kilograms; non-kg feed is included when its kg-per-unit factor is configured. These are batch-to-date values, not a daily ratio. Lower FCR means less feed per kilogram of live-weight gain. If any consumed feed conversion is unknown, or live-weight gain is zero or negative, FCR is undefined and shown as —.</MetricHelp></span><strong>{formatMetric(batchReport.production.growth?.fcr)}</strong></div>
+                    <div><span>FCR <MetricHelp id="report-fcr-help" label="FCR formula">Feed conversion ratio (FCR) = converted feed consumed (kg) ÷ live-weight gain (kg) for this meat-production batch as of the report date. The backend converts configured feed units to kilograms; non-kg feed is included when its kg-per-unit factor is configured. These are batch-to-date values, not a daily ratio. Lower FCR means less feed per kilogram of live-weight gain. If any consumed feed conversion is unknown, or live-weight gain is zero or negative, FCR is undefined and shown as —.</MetricHelp></span><strong>{formatMetric(batchReport.production.growth?.fcr)}</strong></div>
                   </div>
                 </>}
               </div>
@@ -100,7 +101,7 @@ export default function ReportsPage() {
               loadTrend={productionTrendApi.layerHdp}
             />
           )}
-          {selectedBatchId && batches.find(batch => batch.id === selectedBatchId)?.type === "BROILER" && (
+          {selectedBatchId && ["BROILER", "TURKEY"].includes(batches.find(batch => batch.id === selectedBatchId)?.type) && (
             <ProductionTrendChart
               batchId={selectedBatchId}
               title="Broiler average weight"

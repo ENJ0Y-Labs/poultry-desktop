@@ -42,7 +42,7 @@ export default function FeedStockPage() {
               <label className="field"><span>Unit e.g. bag or kg</span><input required value={feedTypeForm.unit} onChange={e=>setFeedTypeForm({...feedTypeForm,unit:e.target.value,kgPerUnit:e.target.value.trim().toLowerCase()==="kg"?"1":feedTypeForm.kgPerUnit})}/></label>
               <label className="field"><span>Kg per unit (leave blank if unknown)</span><input min="0.001" step="0.001" type="number" value={feedTypeForm.unit.trim().toLowerCase()==="kg"?"1":feedTypeForm.kgPerUnit} disabled={feedTypeForm.unit.trim().toLowerCase()==="kg"} onChange={e=>setFeedTypeForm({...feedTypeForm,kgPerUnit:e.target.value})}/></label>
               <label className="field"><span>Applicable to</span><select value={feedTypeForm.applicableType} onChange={e=>setFeedTypeForm({...feedTypeForm,applicableType:e.target.value})}>
-                <option value="BOTH">Both</option><option value="LAYER">Layers</option><option value="BROILER">Broilers</option>
+                <option value="BOTH">All bird types</option><option value="LAYER">Layers</option><option value="BROILER">Broilers</option><option value="TURKEY">Turkeys</option>
               </select></label>
               <button disabled={saving}>Add feed type</button>
             </form>

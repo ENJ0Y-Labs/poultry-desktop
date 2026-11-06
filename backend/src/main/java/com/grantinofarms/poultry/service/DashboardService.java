@@ -40,6 +40,7 @@ public class DashboardService {
         out.put("totalBirds", populationTotal(farm.id(), date, null));
         out.put("layerBirds", populationTotal(farm.id(), date, "LAYER"));
         out.put("broilerBirds", populationTotal(farm.id(), date, "BROILER"));
+        out.put("turkeyBirds", populationTotal(farm.id(), date, "TURKEY"));
         out.put("mortality", scalar("SELECT COALESCE(SUM(e.quantity),0) FROM bird_population_events e JOIN batches b ON b.id=e.batch_id WHERE b.farm_id=? AND e.event_type='MORTALITY' AND e.event_date<=?", farm.id(), date.toString()));
         out.put("feed", feed.inventory(date));
         out.put("eggsGood", scalar("SELECT COALESCE(SUM(good_eggs),0) FROM egg_collections e JOIN batches b ON b.id=e.batch_id WHERE b.farm_id=? AND e.record_date<=?", farm.id(), date.toString()));
@@ -93,6 +94,8 @@ public class DashboardService {
         } else {
             out.put("broilerGrowth", broilers.growth(batchId,date));
             out.put("broilerSales", broilers.sales(batchId,date));
+            out.put("meatBirdGrowth", out.get("broilerGrowth"));
+            out.put("meatBirdSales", out.get("broilerSales"));
         }
         out.put("attention",attentionForBatch(batchId,date));
         return out;

@@ -750,8 +750,8 @@ describe("App", () => {
     expect(within(eggBatch).getByRole("option", { name: "L-2026-001" })).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Weight & growth" }));
-    await waitFor(() => expect(screen.getByRole("option", { name: "Select a broiler batch" })).toBeInTheDocument());
-    const broilerBatch = screen.getByRole("option", { name: "Select a broiler batch" }).parentElement;
+    await waitFor(() => expect(screen.getByRole("option", { name: "Select a batch" })).toBeInTheDocument());
+    const broilerBatch = screen.getByRole("option", { name: "Select a batch" }).parentElement;
     fireEvent.change(broilerBatch, { target: { value: "broiler-1" } });
     await waitFor(() => expect(screen.getByRole("heading", { name: "Record weight" })).toBeInTheDocument());
     expect(within(broilerBatch).getByRole("option", { name: /B-2026-001/ })).toBeInTheDocument();
