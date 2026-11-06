@@ -33,10 +33,23 @@ public final class BirdCostCalculator {
                     continue;
                 }
 
+                if ("ADJUSTMENT".equals(event.eventType())) {
+                    int difference = event.quantity();
+                    if (difference < 0) {
+                        int removed = Math.negateExact(difference);
+                        if (removed > population) throw new IllegalArgumentException("Bird population cannot become negative.");
+                        long removedCost = allocateCost(carriedCost, population, removed);
+                        carriedCost = Math.subtractExact(carriedCost, removedCost);
+                        allocatedCost = addExact(allocatedCost, removedCost);
+                        population -= removed;
+                    } else {
+                        population = Math.addExact(population, difference);
+                    }
+                    continue;
+                }
                 if (event.quantity() <= 0) {
                     throw new IllegalArgumentException("Population event quantity must be positive.");
                 }
-
                 int signed = BirdPopulationCalculator.signedQuantity(event);
                 if (signed < 0) {
                     if (event.quantity() > population) {
@@ -88,10 +101,21 @@ public final class BirdCostCalculator {
                 if (!event.eventDate().equals(date)) {
                     continue;
                 }
+                if ("ADJUSTMENT".equals(event.eventType())) {
+                    int difference = event.quantity();
+                    if (difference < 0) {
+                        int removed = Math.negateExact(difference);
+                        if (removed > population) throw new IllegalArgumentException("Bird population cannot become negative.");
+                        carriedCost = Math.subtractExact(carriedCost, allocateCost(carriedCost, population, removed));
+                        population -= removed;
+                    } else {
+                        population = Math.addExact(population, difference);
+                    }
+                    continue;
+                }
                 if (event.quantity() <= 0) {
                     throw new IllegalArgumentException("Population event quantity must be positive.");
                 }
-
                 int signed = BirdPopulationCalculator.signedQuantity(event);
                 if (signed < 0) {
                     if (event.quantity() > population) {
