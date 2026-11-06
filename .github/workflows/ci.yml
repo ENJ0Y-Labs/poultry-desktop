@@ -88,6 +88,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: pomas-windows-installer
-          path: release/PomasSetup.exe
+          path: release/POMAS-v*-Setup-x64.exe
           if-no-files-found: error
           retention-days: 14
