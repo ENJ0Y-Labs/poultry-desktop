@@ -35,16 +35,8 @@ public final class BirdCostCalculator {
 
                 if ("ADJUSTMENT".equals(event.eventType())) {
                     int difference = event.quantity();
-                    if (difference < 0) {
-                        int removed = Math.negateExact(difference);
-                        if (removed > population) throw new IllegalArgumentException("Bird population cannot become negative.");
-                        long removedCost = allocateCost(carriedCost, population, removed);
-                        carriedCost = Math.subtractExact(carriedCost, removedCost);
-                        allocatedCost = addExact(allocatedCost, removedCost);
-                        population -= removed;
-                    } else {
-                        population = Math.addExact(population, difference);
-                    }
+                    population = Math.addExact(population, difference);
+                    if (population < 0) throw new IllegalArgumentException("Bird population cannot become negative.");
                     continue;
                 }
                 if (event.quantity() <= 0) {
@@ -103,14 +95,8 @@ public final class BirdCostCalculator {
                 }
                 if ("ADJUSTMENT".equals(event.eventType())) {
                     int difference = event.quantity();
-                    if (difference < 0) {
-                        int removed = Math.negateExact(difference);
-                        if (removed > population) throw new IllegalArgumentException("Bird population cannot become negative.");
-                        carriedCost = Math.subtractExact(carriedCost, allocateCost(carriedCost, population, removed));
-                        population -= removed;
-                    } else {
-                        population = Math.addExact(population, difference);
-                    }
+                    population = Math.addExact(population, difference);
+                    if (population < 0) throw new IllegalArgumentException("Bird population cannot become negative.");
                     continue;
                 }
                 if (event.quantity() <= 0) {
