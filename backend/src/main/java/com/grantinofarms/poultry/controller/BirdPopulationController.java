@@ -11,6 +11,8 @@ import java.util.Map;
 public class BirdPopulationController {
  private final BirdPopulationService populationService;
  public BirdPopulationController(BirdPopulationService populationService){this.populationService=populationService;}
+ @GetMapping("/population-adjustments") public Map<String,Object> adjustments(@PathVariable String batchId){return ok(populationService.adjustments(batchId));}
+ @PostMapping("/population-adjustments") public Map<String,Object> adjust(@PathVariable String batchId,@Valid @RequestBody PopulationAdjustmentRequest r){return ok(populationService.adjustPhysicalCount(batchId,r));}
  @GetMapping("/population") public Map<String,Object> population(@PathVariable String batchId,@RequestParam(required=false) @DateTimeFormat(iso=DateTimeFormat.ISO.DATE) LocalDate asOf){return ok(populationService.get(batchId,asOf));}
  @PostMapping("/mortality") public Map<String,Object> mortality(@PathVariable String batchId,@Valid @RequestBody BirdPopulationEventRequest r){return ok(populationService.addMortality(batchId,r));}
  @PostMapping("/culling") public Map<String,Object> culling(@PathVariable String batchId,@Valid @RequestBody BirdPopulationEventRequest r){return ok(populationService.addCulling(batchId,r));}
