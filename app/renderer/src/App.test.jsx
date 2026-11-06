@@ -550,6 +550,7 @@ describe("App", () => {
     await screen.findByRole("heading", { name: "Farm dashboard" });
     fireEvent.click(within(screen.getByRole("navigation", { name: "Main navigation" }))
       .getByRole("button", { name: "Flocks" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Batches & bird costs" }));
 
     fireEvent.change(await screen.findByLabelText("Purchase information"), {
       target: { value: "EXISTING_STOCK" },
