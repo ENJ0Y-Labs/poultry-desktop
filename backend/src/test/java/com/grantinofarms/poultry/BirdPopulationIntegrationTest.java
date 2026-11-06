@@ -85,8 +85,8 @@ class BirdPopulationIntegrationTest {
 
         String userId = UUID.randomUUID().toString();
         String now = "2026-11-06T00:00:00Z";
-        jdbc.update("INSERT INTO users (id,email,password_hash,full_name,created_at,updated_at) VALUES (?,?,?,?,?,?)",
-                userId, "owner-175@example.test", "test-hash", "Test Owner", now, now);
+        jdbc.update("INSERT INTO users (id,username,email,password_hash,full_name,created_at,updated_at) VALUES (?,?,?,?,?,?,?)",
+                userId, "owner-175", "owner-175@example.test", "test-hash", "Test Owner", now, now);
         CurrentUserContext.set(userId);
 
         var adjustment = populationService.adjustPhysicalCount(batch.id(),
