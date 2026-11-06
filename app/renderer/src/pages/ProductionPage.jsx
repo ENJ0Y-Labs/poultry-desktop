@@ -99,12 +99,12 @@ export default function ProductionPage() {
       <PageSection page="production" tab="broiler"><section className="card full">
           <div className="section-head">
             <h2>Broiler production</h2>
-            <p className="muted">Only BROILER batches expose weights, growth, FCR, and bird sales. FCR is calculated by the backend from feed consumed and live-weight gain.</p>
+            <p className="muted">BROILER and TURKEY batches expose weight, growth, FCR, and bird sales. FCR is calculated by the backend from feed consumed and live-weight gain.</p>
           </div>
 
           <div className="subsection">
-            <h3>Broiler batch</h3>
-            <label className="field"><span>Broiler batch</span><select value={broilerBatchId} onChange={e => {
+            <h3>Meat-production batch</h3>
+            <label className="field"><span>Meat-production batch</span><select value={broilerBatchId} onChange={e => {
               const id = e.target.value;
               setBroilerBatchId(id);
               setWeightForm(form => ({ ...form, batchId: id }));
@@ -113,7 +113,7 @@ export default function ProductionPage() {
               loadBroilerForBatch(id);
             }}>
               <option value="">Select a broiler batch</option>
-              {batches.filter(b => b.type === "BROILER").map(b =>
+              {batches.filter(b => b.type === "BROILER" || b.type === "TURKEY").map(b =>
                 <option key={b.id} value={b.id}>{b.code} · {b.status}</option>
               )}
             </select></label>
