@@ -37,7 +37,7 @@ export default function SalesMoneyPage() {
       <PageSection page="sales-money" tab="sales"><section id="sales" className="card full">
           <div className="section-head">
             <h2>Sales</h2>
-            <p className="muted">Common commercial ledger for Layer egg and Broiler bird sales. Type-specific rules remain in their production modules.</p>
+            <p className="muted">Common commercial ledger for Layer egg, Broiler bird, and Turkey bird sales. Type-specific rules remain in their production modules.</p>
           </div>
           <div className="subsection">
             <DataTable caption="Sales ledger" columns={[
@@ -46,7 +46,7 @@ export default function SalesMoneyPage() {
                 { key: "quantity", label: "Quantity", render: row => row.quantity?.toString() }, { key: "unit", label: "Unit" },
                 { key: "unitPriceMinor", label: "Unit price", render: row => formatMoney(row.unitPriceMinor, farm.currency) },
                 { key: "totalAmountMinor", label: "Total", render: row => formatMoney(row.totalAmountMinor, farm.currency) },
-              ]} rows={sales} emptyMessage="No sales recorded yet. Record an egg or bird sale in Production to see it here." />
+              ]} rows={sales} emptyMessage="No sales recorded yet. Record an egg or meat-bird sale in Production to see it here." />
           </div>
         </section></PageSection>
 
