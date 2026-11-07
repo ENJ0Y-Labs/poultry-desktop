@@ -34,7 +34,7 @@ class MasterRecordEditingIntegrationTest {
                 "Layer Mash", "bag", "LAYER", null, "Brand A", "25kg bag", new BigDecimal("25")));
 
         var updated = feedService.updateType(type.id(), new FeedTypeUpdateRequest(
-                "Premium Layer Mash", "bag", "LAYER", "Brand B", "25kg bag", new BigDecimal("25")));
+                "Premium Layer Mash", "Brand B", "25kg bag", new BigDecimal("25")));
 
         assertThat(updated.name()).isEqualTo("Premium Layer Mash");
         assertThat(updated.brand()).isEqualTo("Brand B");
@@ -44,15 +44,20 @@ class MasterRecordEditingIntegrationTest {
     }
 
     @Test
-    void feedUnitCannotChangeAfterAnOpeningBalanceExists() {
+    void feedIdentityCanBeEditedWithoutChangingUnitOrOpeningBalanceHistory() {
         setupFarm();
         var type = feedService.createType(new FeedTypeCreateRequest("Layer Mash", "bag", "LAYER"));
         feedService.createOpeningBalance(new FeedOpeningBalanceRequest(
                 type.id(), LocalDate.of(2026, 11, 1), new BigDecimal("10"), "bag", "Opening stock count"));
 
-        assertThatThrownBy(() -> feedService.updateType(type.id(), new FeedTypeUpdateRequest(
-                "Layer Mash", "kg", "LAYER", null, null, null)))
-                .hasMessageContaining("cannot change after purchases or usage exist");
+        var updated = feedService.updateType(type.id(), new FeedTypeUpdateRequest(
+                "Premium Layer Mash", "Brand B", "25kg bag", new BigDecimal("25")));
+
+        assertThat(updated.name()).isEqualTo("Premium Layer Mash");
+        assertThat(updated.unit()).isEqualTo("bag");
+        assertThat(updated.applicableType()).isEqualTo("LAYER");
+        assertThat(feedService.openingBalances(type.id())).hasSize(1);
+        assertThat(feedService.openingBalances(type.id()).get(0).unit()).isEqualTo("bag");
     }
 
     @Test
