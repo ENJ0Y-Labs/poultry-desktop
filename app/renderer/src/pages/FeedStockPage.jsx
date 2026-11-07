@@ -1,4 +1,4 @@
-import { useContext } from "react";
+import { useContext, useEffect, useState } from "react";
 import { feedApi } from "../services/api.js";
 import { FarmManagerContext } from "../components/FarmManagerContext.jsx";
 // eslint-disable-next-line no-unused-vars
@@ -10,6 +10,56 @@ import PageTemplate from "../components/PageTemplate.jsx";
 
 export default function FeedStockPage() {
   const { formatMoney, farm, batches, feedTypes, setFeedTypes, feedInventory, feedTypeForm, setFeedTypeForm, setError, setSaving, feedPurchaseForm, setFeedPurchaseForm, inventoryItems, inventoryItemForm, setInventoryItemForm, inventoryMovementForm, setInventoryMovementForm, inventoryMovements, suppliers, supplierForm, setSupplierForm, saveSupplier, archiveSupplier, saving, saveInventoryItem, loadInventoryMovements, saveInventoryMovement, createFeedType, purchaseFeed, feedQuantity } = useContext(FarmManagerContext);
+  const [openingStockForm, setOpeningStockForm] = useState({
+    feedTypeId: "", effectiveDate: "", quantity: "", reason: "",
+  });
+  const [openingBalances, setOpeningBalances] = useState([]);
+
+  useEffect(() => {
+    let active = true;
+    if (!feedTypes.length) {
+      setOpeningBalances([]);
+      return () => { active = false; };
+    }
+    Promise.all(feedTypes.map(type => feedApi.openingBalances(type.id)))
+      .then(results => {
+        if (active) setOpeningBalances(results.flat());
+      })
+      .catch(error => {
+        if (active) setError(error.message || "Could not load opening-stock history.");
+      });
+    return () => { active = false; };
+  }, [feedTypes, setError]);
+
+  async function recordOpeningStock(event) {
+    event.preventDefault();
+    const type = feedTypes.find(item => item.id === openingStockForm.feedTypeId);
+    if (!type) {
+      setError("Select a feed type before recording opening stock.");
+      return;
+    }
+    setSaving(true);
+    setError("");
+    try {
+      await feedApi.createOpeningBalance({
+        feedTypeId: type.id,
+        effectiveDate: openingStockForm.effectiveDate,
+        quantity: Number(openingStockForm.quantity),
+        unit: type.unit,
+        reason: openingStockForm.reason.trim(),
+      });
+      const history = await feedApi.openingBalances(type.id);
+      setOpeningBalances(current => [
+        ...current.filter(item => item.feedTypeId !== type.id),
+        ...history,
+      ]);
+      setOpeningStockForm(current => ({ ...current, quantity: "", reason: "" }));
+    } catch (error) {
+      setError(error.message || "Could not record opening stock.");
+    } finally {
+      setSaving(false);
+    }
+  }
 
   async function saveConversion(event, type) {
     event.preventDefault();
@@ -76,6 +126,28 @@ export default function FeedStockPage() {
             ]} rows={feedTypes} emptyMessage="No feed types yet." />
           </div>
 
+          <div className="subsection">
+            <h3>Add opening stock</h3>
+            <p className="muted">Record feed already on the farm or received without a purchase. This creates an unvalued FIFO stock lot only. It does not create a supplier, purchase, invoice, or feed expense. If it is consumed, the affected feed cost is shown as unknown rather than ₦0.</p>
+            <form className="inline-form" onSubmit={recordOpeningStock}>
+              <label className="field"><span>Feed type</span><select required value={openingStockForm.feedTypeId} onChange={event => setOpeningStockForm({ ...openingStockForm, feedTypeId: event.target.value })}>
+                <option value="">Select feed type</option>
+                {feedTypes.filter(type => type.status === "ACTIVE").map(type => <option key={type.id} value={type.id}>{type.name} ({type.unit})</option>)}
+              </select></label>
+              <label className="field"><span>Effective date</span><input required type="date" value={openingStockForm.effectiveDate} onChange={event => setOpeningStockForm({ ...openingStockForm, effectiveDate: event.target.value })}/></label>
+              <label className="field"><span>Quantity</span><input required min="0.001" step="0.001" type="number" value={openingStockForm.quantity} onChange={event => setOpeningStockForm({ ...openingStockForm, quantity: event.target.value })}/></label>
+              <label className="field"><span>Reason / source</span><input required maxLength="500" value={openingStockForm.reason} onChange={event => setOpeningStockForm({ ...openingStockForm, reason: event.target.value })} placeholder="e.g. Physical stock count at setup"/></label>
+              <button disabled={saving || !openingStockForm.feedTypeId}>Record opening stock</button>
+            </form>
+            <DataTable caption="Opening stock history" columns={[
+              { key: "effectiveDate", label: "Effective date" },
+              { key: "feedTypeName", label: "Feed" },
+              { key: "quantityMilli", label: "Quantity", render: item => `${feedQuantity(item.quantityMilli)} ${item.unit}` },
+              { key: "reason", label: "Reason / source" },
+              { key: "valuation", label: "Valuation", render: () => "Unvalued opening stock" },
+            ]} rows={openingBalances} emptyMessage="No opening stock recorded yet." />
+          </div>
+
           <p className="muted">Record daily feed consumption in Daily Work. Feed usage still updates this inventory through the existing FIFO ledger.</p>
 
           <div className="subsection">
@@ -83,9 +155,10 @@ export default function FeedStockPage() {
             <DataTable caption="Feed inventory" columns={[
               { key: "feedTypeName", label: "Feed" },
               { key: "purchasedQuantityMilli", label: "Purchased", render: item => `${feedQuantity(item.purchasedQuantityMilli)} ${item.unit}` },
+              { key: "openingQuantityMilli", label: "Opening stock", render: item => `${feedQuantity(item.openingQuantityMilli)} ${item.unit}` },
               { key: "consumedQuantityMilli", label: "Used", render: item => `${feedQuantity(item.consumedQuantityMilli)} ${item.unit}` },
               { key: "remainingQuantityMilli", label: "Remaining", render: item => `${feedQuantity(item.remainingQuantityMilli)} ${item.unit}` },
-              { key: "remainingCostMinor", label: "Remaining cost", render: item => formatMoney(item.remainingCostMinor, farm.currency) },
+              { key: "remainingCostMinor", label: "Remaining cost", render: item => item.remainingCostMinor == null ? "Unknown" : formatMoney(item.remainingCostMinor, farm.currency) },
             ]} rows={feedInventory} emptyMessage="No feed inventory yet." />
           </div>
         </section></PageSection>
@@ -122,7 +195,7 @@ export default function FeedStockPage() {
               { key: "feedTypeName", label: "Feed" },
               { key: "remainingQuantityMilli", label: "Remaining", render: item => `${feedQuantity(item.remainingQuantityMilli)} ${item.unit}` },
               { key: "consumedQuantityMilli", label: "Used", render: item => `${feedQuantity(item.consumedQuantityMilli)} ${item.unit}` },
-              { key: "remainingCostMinor", label: "Remaining cost", render: item => formatMoney(item.remainingCostMinor, farm.currency) },
+              { key: "remainingCostMinor", label: "Remaining cost", render: item => item.remainingCostMinor == null ? "Unknown" : formatMoney(item.remainingCostMinor, farm.currency) },
             ]} rows={feedInventory} emptyMessage="No feed stock yet." />
           </div>
 
