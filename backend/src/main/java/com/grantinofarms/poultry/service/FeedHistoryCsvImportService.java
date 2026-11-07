@@ -117,7 +117,7 @@ public class FeedHistoryCsvImportService {
         // Simulate each historical usage date independently. The calculator receives only
         // purchases and usage dated on or before that date, so a future purchase cannot fund
         // an earlier consumption event.
-        Instant previewOrderBase = Instant.now().plusSeconds(1);
+        Instant previewOrderBase = Instant.now();
         Map<String, List<ParsedRow>> byType = new HashMap<>();
         for (ParsedRow row : parsed) {
             if (row.module.equals("feed-usage")) byType.computeIfAbsent(row.feedType.id(), ignored -> new ArrayList<>()).add(row);
