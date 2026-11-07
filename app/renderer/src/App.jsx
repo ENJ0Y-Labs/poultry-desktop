@@ -1265,6 +1265,12 @@ export default function App() {
               <article className="auth-whats-new-item">
                 <span>07</span><div><h3>Safer desktop upgrades</h3><p>Improved Windows installer maintenance and verification help preserve existing farm records during upgrades.</p></div>
               </article>
+              <article className="auth-whats-new-item">
+                <span>08</span><div><h3>Edit farm records when details change</h3><p>Update batch setup, customer details, supplier contacts, and inventory item information without recreating records.</p></div>
+              </article>
+              <article className="auth-whats-new-item">
+                <span>09</span><div><h3>Audited changes and safer controls</h3><p>Important master-record edits are tracked. Feed-unit changes respect existing stock history, and houses with active batches cannot be archived.</p></div>
+              </article>
             </div>
           </section>
 
