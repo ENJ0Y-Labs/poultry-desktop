@@ -7,10 +7,11 @@ public record FeedInventoryResponse(
         String feedTypeName,
         String unit,
         long purchasedQuantityMilli,
+        long openingQuantityMilli,
         long consumedQuantityMilli,
         long remainingQuantityMilli,
-        long remainingCostMinor,
-        long consumedCostMinor,
+        Long remainingCostMinor,
+        Long consumedCostMinor,
         List<String> applicableTypes
 ) {
     public FeedInventoryResponse {
@@ -19,9 +20,17 @@ public record FeedInventoryResponse(
 
     public FeedInventoryResponse(String feedTypeId, String feedTypeName, String unit,
                                  long purchasedQuantityMilli, long consumedQuantityMilli,
-                                 long remainingQuantityMilli, long remainingCostMinor,
-                                 long consumedCostMinor) {
-        this(feedTypeId, feedTypeName, unit, purchasedQuantityMilli, consumedQuantityMilli,
+                                 long remainingQuantityMilli, Long remainingCostMinor,
+                                 Long consumedCostMinor, List<String> applicableTypes) {
+        this(feedTypeId, feedTypeName, unit, purchasedQuantityMilli, 0L, consumedQuantityMilli,
+                remainingQuantityMilli, remainingCostMinor, consumedCostMinor, applicableTypes);
+    }
+
+    public FeedInventoryResponse(String feedTypeId, String feedTypeName, String unit,
+                                 long purchasedQuantityMilli, long consumedQuantityMilli,
+                                 long remainingQuantityMilli, Long remainingCostMinor,
+                                 Long consumedCostMinor) {
+        this(feedTypeId, feedTypeName, unit, purchasedQuantityMilli, 0L, consumedQuantityMilli,
                 remainingQuantityMilli, remainingCostMinor, consumedCostMinor, List.of());
     }
 }
