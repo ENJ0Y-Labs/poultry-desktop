@@ -4,7 +4,7 @@ import { appVersionLabel } from "./appInfo.js";
 describe("appVersionLabel", () => {
   it("shows the packaged application version without its runtime architecture", () => {
     expect(appVersionLabel({ version: "1.0.3", architecture: "x64", isPackaged: true }))
-      .toBe("POMAS v1.0.3");
+      .toBe("POMAS v1.0.4");
   });
 
   it("does not expose architecture in development version labels", () => {

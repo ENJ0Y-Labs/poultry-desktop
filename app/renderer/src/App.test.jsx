@@ -237,7 +237,7 @@ describe("App", () => {
     expect(document.documentElement.dataset.theme).toBe("light");
     expect(localStorage.getItem("pomas:theme")).toBe("light");
     expect(screen.getByRole("heading", { name: "What's new" })).toBeInTheDocument();
-    expect(screen.getByText("POMAS v1.0.3")).toBeInTheDocument();
+    expect(screen.getByText("POMAS v1.0.4")).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Independent turkey management" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "House and pen classification" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Verified bird counts" })).toBeInTheDocument();

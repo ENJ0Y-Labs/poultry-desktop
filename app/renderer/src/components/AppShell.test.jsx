@@ -203,7 +203,7 @@ describe("AppShell", () => {
     );
 
     expect(screen.getByRole("contentinfo", { name: "Application information" }))
-      .toHaveTextContent("POMAS v1.0.3");
+      .toHaveTextContent("POMAS v1.0.4");
   });
 
 });
