@@ -45,6 +45,7 @@ public class FeedService {
         String scope = legacyScope(applicableTypes);
         String unit = clean(request.unit());
         String name = clean(request.name());
+        String brand = cleanNullable(request.brand());
         BigDecimal kgPerUnit = request.kgPerUnit();
         if (request.packageWeightKg() != null && request.packageWeightKg().signum() <= 0) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_PACKAGE_WEIGHT", "Package weight must be greater than zero, or left blank when unknown.");
@@ -61,17 +62,45 @@ public class FeedService {
             kgPerUnit = BigDecimal.ONE;
         }
         String farmId = repository.farmId();
+        if (repository.productIdentityExists(farmId, name, brand, null)) {
+            throw new ApiException(HttpStatus.CONFLICT, "DUPLICATE_FEED_PRODUCT",
+                    "A feed product with this name and brand already exists.");
+        }
         String id = UUID.randomUUID().toString();
         String now = Instant.now().toString();
         try {
-            repository.insertType(id, farmId, name, unit, scope, kgPerUnit, cleanNullable(request.brand()), cleanNullable(request.packagingName()), request.packageWeightKg(), applicableTypes, now);
+            repository.insertType(id, farmId, name, unit, scope, kgPerUnit, brand, cleanNullable(request.packagingName()), request.packageWeightKg(), applicableTypes, now);
         } catch (org.springframework.dao.DataIntegrityViolationException e) {
-            throw new ApiException(HttpStatus.CONFLICT, "DUPLICATE_FEED_TYPE",
-                    "A feed type with this name already exists.");
+            throw new ApiException(HttpStatus.CONFLICT, "DUPLICATE_FEED_PRODUCT",
+                    "A feed product with this name and brand already exists.");
         }
         auditRepository.append(farmId, "CREATE", "FEED_TYPE", id, null, null,
                 String.format("{\"name\":\"%s\",\"unit\":\"%s\",\"applicableTypes\":%s,\"kgPerUnit\":%s}",
                         name, unit, applicableTypesJson(applicableTypes), kgPerUnit == null ? "null" : kgPerUnit.toPlainString()), now);
+        return repository.findType(id);
+    }
+
+    @Transactional
+    public FeedTypeResponse updateProductIdentity(String id, FeedTypeUpdateRequest request) {
+        FeedTypeResponse type = requireType(id);
+        String name = clean(request.name());
+        String brand = cleanNullable(request.brand());
+        String packagingName = cleanNullable(request.packagingName());
+        BigDecimal packageWeightKg = request.packageWeightKg();
+        if (packageWeightKg != null && packageWeightKg.signum() <= 0) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_PACKAGE_WEIGHT",
+                    "Package weight must be greater than zero, or left blank when unknown.");
+        }
+        String farmId = repository.farmId();
+        if (repository.productIdentityExists(farmId, name, brand, id)) {
+            throw new ApiException(HttpStatus.CONFLICT, "DUPLICATE_FEED_PRODUCT",
+                    "A feed product with this name and brand already exists.");
+        }
+        String now = Instant.now().toString();
+        repository.updateProductIdentity(id, name, brand, packagingName, packageWeightKg, now);
+        auditRepository.append(farmId, "UPDATE", "FEED_TYPE", id, "Update feed product identity",
+                feedIdentityJson(type.name(), type.brand(), type.packagingName(), type.packageWeightKg()),
+                feedIdentityJson(name, brand, packagingName, packageWeightKg), now);
         return repository.findType(id);
     }
 
@@ -208,7 +237,7 @@ public class FeedService {
             long opening = openingLots.stream().mapToLong(FeedOpeningStockLot::quantityMilli).reduce(0L, Math::addExact);
             result.add(new FeedInventoryResponse(type.id(), type.name(), type.unit(), purchased, opening,
                     snapshot.consumedQuantityMilli(), snapshot.remainingQuantityMilli(),
-                    snapshot.remainingCostMinor(), snapshot.consumedCostMinor(), type.applicableTypes()));
+                    snapshot.remainingCostMinor(), snapshot.consumedCostMinor(), type.applicableTypes(), type.brand(), type.packagingName(), type.packageWeightKg()));
         }
         return result;
     }
@@ -377,6 +406,18 @@ public class FeedService {
 
     private String clean(String value) {
         return value == null ? null : value.trim();
+    }
+
+    private String feedIdentityJson(String name, String brand, String packagingName, BigDecimal packageWeightKg) {
+        return "{\"name\":" + jsonString(name) + ",\"brand\":" + jsonString(brand)
+                + ",\"packagingName\":" + jsonString(packagingName)
+                + ",\"packageWeightKg\":" + (packageWeightKg == null ? "null" : packageWeightKg.toPlainString()) + "}";
+    }
+
+    private String jsonString(String value) {
+        if (value == null) return "null";
+        return "\"" + value.replace("\\", "\\\\").replace("\"", "\\\"")
+                .replace("\n", "\\n").replace("\r", "\\r") + "\"";
     }
 
     private String cleanNullable(String value) {
