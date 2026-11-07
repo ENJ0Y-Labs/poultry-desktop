@@ -100,6 +100,9 @@ public class FeedService {
                     "Package weight must be greater than zero, or left blank when unknown.");
         }
         String farmId = repository.farmId();
+        if (!farmId.equals(repository.typeFarmId(id))) {
+            throw new ApiException(HttpStatus.NOT_FOUND, "FEED_TYPE_NOT_FOUND", "Feed type not found.");
+        }
         if (repository.productIdentityExists(farmId, name, brand, id)) {
             throw new ApiException(HttpStatus.CONFLICT, "DUPLICATE_FEED_PRODUCT",
                     "A feed product with this name and brand already exists.");
@@ -117,45 +120,14 @@ public class FeedService {
         return repository.findType(id);
     }
 
+    /**
+     * Backward-compatible service alias. Feed type edits now change descriptive
+     * product identity only; unit and bird applicability are immutable here.
+     * Conversion changes use updateConversion().
+     */
     @Transactional
     public FeedTypeResponse updateType(String id, FeedTypeUpdateRequest request) {
-        FeedTypeResponse current = requireType(id);
-        String farmId = repository.farmId();
-        if (!farmId.equals(repository.typeFarmId(id))) {
-            throw new ApiException(HttpStatus.NOT_FOUND, "FEED_TYPE_NOT_FOUND", "Feed type not found.");
-        }
-        String name = clean(request.name());
-        String unit = clean(request.unit());
-        String scope = normalizeScope(request.applicableType());
-        BigDecimal packageWeight = request.packageWeightKg();
-        if (packageWeight != null && packageWeight.signum() <= 0) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_PACKAGE_WEIGHT",
-                    "Package weight must be greater than zero, or left blank when unknown.");
-        }
-        if (!List.of("LAYER", "BROILER", "TURKEY", "BOTH").contains(scope)) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_FEED_SCOPE",
-                    "Feed type must apply to LAYER, BROILER, TURKEY, or BOTH.");
-        }
-        boolean hasHistory = repository.hasPurchasesOrUsage(id);
-        if (hasHistory && (!current.unit().equalsIgnoreCase(unit)
-                || !current.applicableType().equals(scope))) {
-            throw new ApiException(HttpStatus.CONFLICT, "FEED_TYPE_HISTORY_LOCKED",
-                    "Unit and bird-type applicability cannot change after purchases or usage exist. Edit the descriptive fields instead.");
-        }
-        BigDecimal kgPerUnit = "kg".equalsIgnoreCase(unit) ? BigDecimal.ONE
-                : current.unit().equalsIgnoreCase(unit) ? current.kgPerUnit() : null;
-        String now = Instant.now().toString();
-        try {
-            repository.updateType(id, farmId, name, unit, scope, kgPerUnit, cleanNullable(request.brand()),
-                    cleanNullable(request.packagingName()), packageWeight, now);
-        } catch (org.springframework.dao.DataIntegrityViolationException e) {
-            throw new ApiException(HttpStatus.CONFLICT, "DUPLICATE_FEED_TYPE",
-                    "A feed type with this name already exists.");
-        }
-        FeedTypeResponse updated = repository.findType(id);
-        auditRepository.append(farmId, "UPDATE", "FEED_TYPE", id, null,
-                json(current), json(updated), now);
-        return updated;
+        return updateProductIdentity(id, request);
     }
 
     @Transactional
