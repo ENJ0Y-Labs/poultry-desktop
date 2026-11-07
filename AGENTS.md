@@ -1172,7 +1172,7 @@ These decisions are intentional and should not be changed casually:
 - Broiler terminal lifecycle state is SOLD when all birds are sold.
 - Reopening requires an audited reason.
 - Feed purchases are inventory and expense at purchase time; later batch consumption is allocation, not a second expense.
-- Feed types are configurable and declare a unit plus applicable flock type.
+- Feed types are configurable and declare a unit plus a non-empty set of applicable bird types.
 - Feed quantities use integer thousandths of the configured unit.
 - FIFO feed consumption preserves each purchase lot's original cost.
 - Feed usage cost is added once to the batch's attributable bird-cost pool.
