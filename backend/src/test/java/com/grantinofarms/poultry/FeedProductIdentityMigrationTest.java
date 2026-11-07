@@ -131,7 +131,7 @@ class FeedProductIdentityMigrationTest {
                 try (PreparedStatement duplicate = connection.prepareStatement("""
                         INSERT INTO feed_types
                         (id, farm_id, name, unit, applicable_type, status, created_at, updated_at, brand)
-                        VALUES ('brand-duplicate', ?, ' grower mash ', 'bag', 'BROILER', 'ACTIVE', ?, ?, ' hybrid ')
+                        VALUES ('brand-duplicate', ?, 'Grower Mash', 'bag', 'BROILER', 'ACTIVE', ?, ?, 'Hybrid')
                         """)) {
                     duplicate.setString(1, farmId);
                     duplicate.setString(2, created);
