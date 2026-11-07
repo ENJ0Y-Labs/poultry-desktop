@@ -13,5 +13,6 @@ public class SupplierController {
     public SupplierController(SupplierService service){this.service=service;}
     @GetMapping public Map<String,Object> list(){return Map.of("ok",true,"data",service.list());}
     @PostMapping public Map<String,Object> create(@Valid @RequestBody SupplierCreateRequest request){return Map.of("ok",true,"data",service.create(request));}
+    @PutMapping("/{id}") public Map<String,Object> update(@PathVariable String id,@Valid @RequestBody SupplierUpdateRequest request){return Map.of("ok",true,"data",service.update(id,request));}
     @PostMapping("/{id}/archive") public Map<String,Object> archive(@PathVariable String id){return Map.of("ok",true,"data",service.archive(id));}
 }
