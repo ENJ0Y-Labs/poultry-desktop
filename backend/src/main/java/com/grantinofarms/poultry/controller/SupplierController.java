@@ -1,6 +1,7 @@
 package com.grantinofarms.poultry.controller;
 
 import com.grantinofarms.poultry.dto.SupplierCreateRequest;
+import com.grantinofarms.poultry.dto.SupplierUpdateRequest;
 import com.grantinofarms.poultry.service.SupplierService;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
