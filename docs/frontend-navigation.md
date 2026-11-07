@@ -129,3 +129,11 @@ The top-level page components live under `app/renderer/src/pages/`. Shared form 
 - Feed & Stock → Feed types must render the package metadata fields as normal adjacent form controls. Do not place literal `\\n` text between JSX elements; use actual JSX whitespace/structure and CSS layout.
 - Fix hard-coded markup artifacts at their source. Do not sanitize arbitrary form values or strip legitimate backslashes entered by farm operators.
 - Vitest renders the feed form and verifies the package fields are present without visible literal backslash-n text. Keep the inline form responsive through its existing layout styles and preserve labels for accessible control names.
+
+
+## Feed applicability controls
+
+- Feed type creation uses independent Layers, Broilers, and Turkeys checkboxes. At least one must be selected.
+- Daily Work feed usage options are filtered to active feed types whose `applicableTypes` contains the selected batch type. Changing the batch clears a previously selected feed type if it is no longer applicable.
+- The backend remains authoritative and rejects incompatible feed usage even if a client submits a forged or stale selection.
+- Farm feed inventory report rows include each feed type's applicability set.

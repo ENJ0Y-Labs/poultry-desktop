@@ -17,12 +17,25 @@ export default function DailyWorkPage() {
     useFeed, feedQuantity,
   } = useContext(FarmManagerContext);
   const activeBatches = batches.filter(batch => batch.status === "ACTIVE");
+  const selectedBatch = activeBatches.find(batch => batch.id === dailyForm.batchId);
+  const applicableFeedTypes = feedTypes.filter(type =>
+    type.status === "ACTIVE" && selectedBatch && (type.applicableTypes || []).includes(selectedBatch.type)
+  );
   const batchOptions = <><option value="">Batch</option>{activeBatches.map(batch => <option key={batch.id} value={batch.id}>{batch.code}</option>)}</>;
   const hasSavedActivity = Boolean(dailyRecord && (dailyRecord.id || dailyRecord.feed?.length || dailyRecord.water?.length || dailyRecord.populationEvents?.length || dailyRecord.notes || dailyRecord.mortality || dailyRecord.culling));
 
   function updateDailyBatch(batchId) {
     setDailyForm(form => ({ ...form, batchId }));
-    setFeedUsageForm(form => ({ ...form, batchId }));
+    const nextBatch = activeBatches.find(batch => batch.id === batchId);
+    const nextApplicableTypes = feedTypes.filter(type =>
+      type.status === "ACTIVE" && nextBatch && (type.applicableTypes || []).includes(nextBatch.type)
+    );
+    setFeedUsageForm(form => ({
+      ...form,
+      batchId,
+      feedTypeId: nextApplicableTypes.some(type => type.id === form.feedTypeId) ? form.feedTypeId : "",
+      unit: nextApplicableTypes.find(type => type.id === form.feedTypeId)?.unit || nextApplicableTypes[0]?.unit || "bag",
+    }));
   }
 
   function updateDailyDate(date) {
@@ -51,13 +64,13 @@ export default function DailyWorkPage() {
                 const type = feedTypes.find(item => item.id === event.target.value);
                 setFeedUsageForm(form => ({...form,feedTypeId:event.target.value,unit:type?.unit||"bag"}));
               }}>
-                <option value="">Feed type</option>{feedTypes.filter(type => type.status === "ACTIVE").map(type => <option key={type.id} value={type.id}>{type.name} ({type.unit})</option>)}
+                <option value="">Feed type</option>{applicableFeedTypes.map(type => <option key={type.id} value={type.id}>{type.name} ({type.unit})</option>)}
               </select></label>
               <label>Quantity<input required min="0.001" step="0.001" type="number" value={feedUsageForm.quantity} onChange={event => setFeedUsageForm({...feedUsageForm,quantity:event.target.value})}/></label>
               <label className="full">Reason (optional)<input value={feedUsageForm.reason} onChange={event => setFeedUsageForm({...feedUsageForm,reason:event.target.value})} placeholder="e.g. Morning feeding"/></label>
-              <button disabled={saving || !dailyForm.batchId || feedTypes.filter(type => type.status === "ACTIVE").length === 0}>Record feed usage</button>
+              <button disabled={saving || !dailyForm.batchId || applicableFeedTypes.length === 0}>Record feed usage</button>
             </form>
-            {feedTypes.filter(type => type.status === "ACTIVE").length === 0 && <p className="muted">Set up a feed type in Feed & Stock before recording feed usage.</p>}
+            {applicableFeedTypes.length === 0 && <p className="muted">No active feed types are configured for this batch's bird type. Add an applicable feed type in Feed & Stock first.</p>}
           </div>
 
           <div className="subsection">

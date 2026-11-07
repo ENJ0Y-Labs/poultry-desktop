@@ -107,7 +107,7 @@ public class FeedHistoryCsvImportService {
                 LocalDate placement = row.batch.placementDate();
                 if (row.date.isBefore(placement)) row.errors.add("Usage date is before the batch placement date.");
                 if (!"ACTIVE".equals(row.batch.status())) row.errors.add("Feed usage requires an ACTIVE batch.");
-                if (!isApplicable(row.feedType.applicableType(), row.batch.type())) {
+                if (!isApplicable(row.feedType.applicableTypes(), row.batch.type())) {
                     row.errors.add("Feed type is not configured for this batch type.");
                 }
             }
@@ -274,8 +274,8 @@ public class FeedHistoryCsvImportService {
     }
     private String clean(String value) { return value == null || value.isBlank() ? null : value.trim(); }
     private String normalize(String value) { return value == null ? "" : value.trim().toLowerCase(Locale.ROOT); }
-    private boolean isApplicable(String scope, String batchType) {
-        return "BOTH".equals(scope) || scope.equals(batchType);
+    private boolean isApplicable(List<String> applicableTypes, String batchType) {
+        return applicableTypes.contains(batchType);
     }
     private String safeMessage(RuntimeException e) {
         return e.getMessage() == null || e.getMessage().isBlank() ? "Invalid row." : e.getMessage();

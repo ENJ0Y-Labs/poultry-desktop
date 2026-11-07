@@ -72,7 +72,11 @@ Dated additional and transfer-in costs attached to batches.
 
 ### `feed_types`
 
-Farm-scoped feed product definitions, including product name, optional brand, packaging name, optional standard package weight in kilograms, display unit, kilogram conversion, and Layer/Broiler/Turkey applicability. Unknown package weights and conversions remain NULL; never assume a standard bag size. V30 adds the descriptive brand and packaging fields without rewriting historical purchases or usage. Feed types are archived instead of deleted.
+Farm-scoped feed product definitions, including product name, optional brand, packaging name, optional standard package weight in kilograms, display unit, kilogram conversion, and descriptive metadata. Unknown package weights and conversions remain NULL; never assume a standard bag size. V30 adds brand and packaging metadata without rewriting historical purchases or usage. Feed types are archived instead of deleted. The legacy `applicable_type` column remains for compatibility; current applicability is authoritative in `feed_type_applicability`.
+
+### `feed_type_applicability`
+
+One row per supported bird type for each feed definition. A feed type must have at least one applicability row. Supported values are `LAYER`, `BROILER`, and `TURKEY`; any non-empty combination is valid. The V32 migration maps legacy `BOTH` to all three types and maps each legacy single type to itself. Feed applicability is never inferred from a product name.
 
 ### `feed_purchases`
 
@@ -230,7 +234,7 @@ farm
 
 ## Migration history
 
-The repository currently contains V1 through V29, including independent Turkey support and population confidence/adjustments.
+The repository currently contains V1 through V32, including independent Turkey support, population confidence/adjustments, feed opening balances, and multi-type feed applicability.
 
 Broad progression:
 
@@ -245,18 +249,27 @@ Broad progression:
 - V9: health management
 - V10: Layer egg management
 - V11: Broiler production
-- V27: independent Turkey batch, feed applicability, and sales support
-- V28: explicit permanent/temporary house classification and occupancy index
-- V29: estimated/verified population confidence and auditable physical-count adjustments
 - V12: pricing and margins
 - V13: expenses
 - V14: customers and sales
-- V15: inventory
+- V15: inventory and feed usage reasons
 - V16: append-only audit enforcement
 - V17: sessions
 - V18: operational query indexes
 - V19: performance indexes
-- V20: settings management and configurable expense categories\n- V21: optional feed kilogram conversion factors
+- V20: settings management and configurable expense categories
+- V21: optional feed kilogram conversion factors
+- V22: supported start-page values
+- V23: farm water unit label
+- V24: username login
+- V25: transaction reversal records
+- V26: zero egg collections
+- V27: independent Turkey batch, feed applicability, and sales support
+- V28: explicit permanent/temporary house classification and occupancy index
+- V29: estimated/verified population confidence and auditable physical-count adjustments
+- V30: feed brand and packaging metadata
+- V31: append-only feed opening balances
+- V32: normalized multi-type feed applicability
 
 Never edit an applied migration. Add a new version greater than the current highest version for future schema changes.
 

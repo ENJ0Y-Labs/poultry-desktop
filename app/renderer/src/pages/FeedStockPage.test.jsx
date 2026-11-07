@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 // eslint-disable-next-line no-unused-vars
 import FeedStockPage from "./FeedStockPage.jsx";
@@ -16,7 +16,7 @@ const contextValue = {
   feedInventory: [],
   feedTypeForm: {
     name: "", brand: "", packagingName: "", packageWeightKg: "",
-    unit: "bag", kgPerUnit: "", applicableType: "BOTH",
+    unit: "bag", kgPerUnit: "", applicableTypes: ["LAYER", "BROILER", "TURKEY"],
   },
   setFeedTypeForm: vi.fn(),
   setError: vi.fn(),
@@ -56,6 +56,13 @@ describe("FeedStockPage", () => {
     expect(screen.getByLabelText("Package name")).toBeInTheDocument();
     expect(screen.getByLabelText("Package weight in kg (leave blank if unknown)")).toBeInTheDocument();
     expect(screen.getByLabelText("Unit e.g. bag or kg")).toBeInTheDocument();
+    expect(screen.getByRole("checkbox", { name: "Layers" })).toBeInTheDocument();
+    expect(screen.getByRole("checkbox", { name: "Broilers" })).toBeInTheDocument();
+    expect(screen.getByRole("checkbox", { name: "Turkeys" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("checkbox", { name: "Turkeys" }));
+    expect(contextValue.setFeedTypeForm).toHaveBeenCalledWith(expect.objectContaining({
+      applicableTypes: ["LAYER", "BROILER"],
+    }));
     expect(container.textContent).not.toContain("\\n");
   });
 });
