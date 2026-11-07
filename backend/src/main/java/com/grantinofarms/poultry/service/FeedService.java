@@ -75,8 +75,12 @@ public class FeedService {
                     "A feed product with this name and brand already exists.");
         }
         auditRepository.append(farmId, "CREATE", "FEED_TYPE", id, null, null,
-                String.format("{\"name\":\"%s\",\"unit\":\"%s\",\"applicableTypes\":%s,\"kgPerUnit\":%s}",
-                        name, unit, applicableTypesJson(applicableTypes), kgPerUnit == null ? "null" : kgPerUnit.toPlainString()), now);
+                "{\"name\":" + jsonString(name) + ",\"brand\":" + jsonString(brand)
+                        + ",\"packagingName\":" + jsonString(cleanNullable(request.packagingName()))
+                        + ",\"packageWeightKg\":" + (request.packageWeightKg() == null ? "null" : request.packageWeightKg().toPlainString())
+                        + ",\"unit\":" + jsonString(unit) + ",\"applicableTypes\":"
+                        + applicableTypesJson(applicableTypes) + ",\"kgPerUnit\":"
+                        + (kgPerUnit == null ? "null" : kgPerUnit.toPlainString()) + "}", now);
         return repository.findType(id);
     }
 
@@ -174,7 +178,7 @@ public class FeedService {
                 null, String.format("{\"feedTypeId\":\"%s\",\"effectiveDate\":\"%s\",\"quantityMilli\":%d,\"unit\":\"%s\"}",
                         type.id(), request.effectiveDate(), quantityMilli, type.unit()), now);
         return new FeedOpeningBalanceResponse(id, type.id(), type.name(), request.effectiveDate(),
-                quantityMilli, type.unit(), reason, now);
+                quantityMilli, type.unit(), reason, now, type.brand());
     }
 
     public List<FeedOpeningBalanceResponse> openingBalances(String feedTypeId) {
@@ -222,7 +226,7 @@ public class FeedService {
                         type.id(), quantityMilli, request.totalCostMinor()), now);
         return new FeedPurchaseResponse(id, type.id(), type.name(), type.unit(),
                 request.purchaseDate(), quantityMilli, request.totalCostMinor(),
-                quantityMilli, request.totalCostMinor());
+                quantityMilli, request.totalCostMinor(), type.brand());
     }
 
     public List<FeedInventoryResponse> inventory(LocalDate asOf) {
