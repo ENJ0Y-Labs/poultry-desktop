@@ -122,6 +122,7 @@ class FeedManagementIntegrationTest {
         var secondUsage = feedService.use(batch.id(), new FeedUsageRequest(
                 type.id(), LocalDate.of(2026,1,4), new BigDecimal("7"), "kg", "Finish opening stock"));
         assertThat(secondUsage.feedCostMinor()).isNull();
+        assertThat(secondUsage.knownFeedCostMinor()).isEqualTo(20_000L);
 
         var thirdUsage = feedService.use(batch.id(), new FeedUsageRequest(
                 type.id(), LocalDate.of(2026,1,5), new BigDecimal("1"), "kg", "Consume purchased stock"));
@@ -130,10 +131,11 @@ class FeedManagementIntegrationTest {
 
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM feed_purchases", Integer.class)).isEqualTo(1);
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM expenses WHERE category = 'FEED'", Integer.class)).isEqualTo(1);
+        assertThat(feedService.batchCost(batch.id(), LocalDate.of(2026,1,5)).knownFeedCostMinor()).isEqualTo(30_000L);
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM bird_cost_events WHERE batch_id = ? AND event_type = 'ADDITIONAL_COST'",
-                Integer.class, batch.id())).isEqualTo(1);
+                Integer.class, batch.id())).isEqualTo(2);
         assertThat(jdbc.queryForObject("SELECT SUM(amount_minor) FROM bird_cost_events WHERE batch_id = ? AND event_type = 'ADDITIONAL_COST'",
-                Long.class, batch.id())).isEqualTo(10_000L);
+                Long.class, batch.id())).isEqualTo(30_000L);
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM audit_logs WHERE entity_type = 'FEED_OPENING_BALANCE'",
                 Integer.class)).isEqualTo(1);
     }
