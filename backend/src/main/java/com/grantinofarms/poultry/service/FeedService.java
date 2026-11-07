@@ -106,14 +106,11 @@ public class FeedService {
             throw new ApiException(HttpStatus.CONFLICT, "FEED_TYPE_HISTORY_LOCKED",
                     "Unit and bird-type applicability cannot change after purchases or usage exist. Edit the descriptive fields instead.");
         }
-        if ("kg".equalsIgnoreCase(unit) && current.kgPerUnit() != null
-                && current.kgPerUnit().compareTo(BigDecimal.ONE) != 0) {
-            throw new ApiException(HttpStatus.CONFLICT, "FEED_TYPE_CONVERSION_LOCKED",
-                    "A kilogram feed type must retain a conversion factor of exactly 1.");
-        }
+        BigDecimal kgPerUnit = "kg".equalsIgnoreCase(unit) ? BigDecimal.ONE
+                : current.unit().equalsIgnoreCase(unit) ? current.kgPerUnit() : null;
         String now = Instant.now().toString();
         try {
-            repository.updateType(id, farmId, name, unit, scope, cleanNullable(request.brand()),
+            repository.updateType(id, farmId, name, unit, scope, kgPerUnit, cleanNullable(request.brand()),
                     cleanNullable(request.packagingName()), packageWeight, now);
         } catch (org.springframework.dao.DataIntegrityViolationException e) {
             throw new ApiException(HttpStatus.CONFLICT, "DUPLICATE_FEED_TYPE",
