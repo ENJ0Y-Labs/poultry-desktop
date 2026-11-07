@@ -33,7 +33,7 @@ public final class FeedCostCalculator {
                 if (lot.quantityMilli() <= 0 || lot.totalCostMinor() < 0) {
                     throw new IllegalArgumentException("Feed purchase quantity and cost are invalid.");
                 }
-                states.add(new LotState(lot.purchaseDate(), lot.createdAt(),
+                states.add(new LotState(lot.id(), lot.purchaseDate(), lot.createdAt(),
                         lot.quantityMilli(), lot.totalCostMinor()));
             }
         }
@@ -42,12 +42,13 @@ public final class FeedCostCalculator {
                 if (opening.quantityMilli() <= 0) {
                     throw new IllegalArgumentException("Opening feed quantity must be positive.");
                 }
-                states.add(new LotState(opening.effectiveDate(), opening.createdAt(),
+                states.add(new LotState(opening.id(), opening.effectiveDate(), opening.createdAt(),
                         opening.quantityMilli(), null));
             }
         }
         states.sort(Comparator.comparing((LotState lot) -> lot.date)
-                .thenComparing(lot -> lot.createdAt));
+                .thenComparing(lot -> lot.createdAt)
+                .thenComparing(lot -> lot.id));
 
         List<FeedUsageEvent> orderedUsages = usages.stream()
                 .filter(u -> !u.usageDate().isAfter(asOf))
@@ -71,7 +72,7 @@ public final class FeedCostCalculator {
             boolean usageCostUnknown = false;
 
             for (LotState lot : states) {
-                if (!lot.hasQuantity() || remaining == 0) continue;
+                if (!lot.hasQuantity() || remaining == 0 || !lot.availableAt(usage)) continue;
 
                 long take = Math.min(remaining, lot.quantityRemaining);
                 if (lot.costRemaining == null) {
@@ -171,12 +172,14 @@ public final class FeedCostCalculator {
     }
 
     private static final class LotState {
+        private final String id;
         private final LocalDate date;
         private final java.time.Instant createdAt;
         private long quantityRemaining;
         private Long costRemaining;
 
-        private LotState(LocalDate date, java.time.Instant createdAt, long quantity, Long cost) {
+        private LotState(String id, LocalDate date, java.time.Instant createdAt, long quantity, Long cost) {
+            this.id = id;
             this.date = date;
             this.createdAt = createdAt;
             this.quantityRemaining = quantity;
@@ -185,6 +188,13 @@ public final class FeedCostCalculator {
 
         private boolean hasQuantity() {
             return quantityRemaining > 0;
+        }
+
+        private boolean availableAt(FeedUsageEvent usage) {
+            if (date.isBefore(usage.usageDate())) return true;
+            if (date.isAfter(usage.usageDate())) return false;
+            int timestampOrder = createdAt.compareTo(usage.createdAt());
+            return timestampOrder < 0 || (timestampOrder == 0 && id.compareTo(usage.id()) <= 0);
         }
     }
 
