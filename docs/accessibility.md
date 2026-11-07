@@ -66,3 +66,10 @@ This section supersedes any earlier palette decision. Pomas uses deep teal `#1A4
 - `scripts/verify-a11y.mjs` checks approved theme tokens and WCAG 2.2 AA normal-text contrast pairs. Automated token checks do not replace rendered UI review.
 
 Manual pre-launch review remains required at 1366×768 and 1100×650 in Auto, Light, and Dark. Record each check as not run until it is actually performed.
+
+
+## Dashboard attention and severity contrast
+
+Dashboard attention cards are content surfaces, not primary actions. Keep them on the theme's neutral raised panel surface with the primary readable text token; exclude `.attention-item` from global primary-button styling. The warning, critical, and error severity badges each use their own semantic foreground/background token pair, with at least 4.5:1 contrast for normal text in both Light and Dark themes. Hover and keyboard focus may change the card border, but must not turn the card into a gold-filled button.
+
+The automated `scripts/verify-a11y.mjs` check covers dashboard attention text on its card surface and checks that attention cards are excluded from primary-button styling. Manually inspect dashboard warning, critical, and error examples in Light and Dark themes before release; automated token checks do not prove rendered UI behavior.
