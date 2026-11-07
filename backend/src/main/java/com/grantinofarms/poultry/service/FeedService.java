@@ -105,8 +105,8 @@ public class FeedService {
         repository.archiveType(id, now);
         auditRepository.append(repository.farmId(), "ARCHIVE", "FEED_TYPE", id,
                 "Feed type archived",
-                String.format("{\"name\":\"%s\",\"unit\":\"%s\",\"applicableType\":\"%s\",\"status\":\"ACTIVE\"}", type.name(), type.unit(), type.applicableType()),
-                String.format("{\"name\":\"%s\",\"unit\":\"%s\",\"applicableType\":\"%s\",\"status\":\"ARCHIVED\"}", type.name(), type.unit(), type.applicableType()), now);
+                String.format("{\"name\":\"%s\",\"unit\":\"%s\",\"applicableTypes\":%s,\"status\":\"ACTIVE\"}", type.name(), type.unit(), applicableTypesJson(type.applicableTypes())),
+                String.format("{\"name\":\"%s\",\"unit\":\"%s\",\"applicableTypes\":%s,\"status\":\"ARCHIVED\"}", type.name(), type.unit(), applicableTypesJson(type.applicableTypes())), now);
         return new FeedTypeResponse(type.id(), type.name(), type.unit(), type.applicableType(), "ARCHIVED", type.kgPerUnit(), type.brand(), type.packagingName(), type.packageWeightKg(), type.applicableTypes());
     }
 
