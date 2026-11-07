@@ -1,7 +1,10 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
+// eslint-disable-next-line no-unused-vars
 import FeedStockPage from "./FeedStockPage.jsx";
+// eslint-disable-next-line no-unused-vars
 import { FarmManagerContext } from "../components/FarmManagerContext.jsx";
+// eslint-disable-next-line no-unused-vars
 import { NavigationContext } from "../components/NavigationContext.jsx";
 
 const contextValue = {
