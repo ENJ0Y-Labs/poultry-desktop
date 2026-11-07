@@ -7,7 +7,7 @@ Existing feed purchases and usage remain untouched by this migration. The curren
 
 ## Brand-specific product identity and editing
 
-V33 replaces the legacy farm/name uniqueness rule with a brand-aware identity rule: normalized feed name plus normalized brand must be unique within a farm. A blank or NULL brand is one unbranded identity. Name and brand comparisons ignore surrounding whitespace and case. Two different brands may therefore use the same generic feed name without sharing a feed type ID.
+V33 replaces the legacy farm/name uniqueness rule with a brand-aware identity rule: feed name plus brand must be unique within a farm. A blank or NULL brand is one unbranded identity. FeedService trims and normalizes name/brand for duplicate validation. The database's exact unique index preserves legacy records that may differ only by casing rather than silently rewriting or merging them. Two different brands may therefore use the same generic feed name without sharing a feed type ID.
 
 Feed product identity edits update only the existing feed definition row. They must not create a new feed type or rewrite feed purchases, opening balances, feed usage, expenses, FIFO lots, or batch costs. Unit and bird applicability are intentionally not part of this descriptive edit because changing either would reinterpret existing ledger records. Every identity edit is audited with before/after snapshots.
 
