@@ -249,16 +249,10 @@ Broad progression:
 - V9: health management
 - V10: Layer egg management
 - V11: Broiler production
-- V27: independent Turkey batch, feed applicability, and sales support
-- V28: explicit permanent/temporary house classification and occupancy index
-- V29: estimated/verified population confidence and auditable physical-count adjustments
-- V30: feed brand and packaging metadata
-- V31: append-only feed opening balances
-- V32: normalized multi-type feed applicability
 - V12: pricing and margins
 - V13: expenses
 - V14: customers and sales
-- V15: inventory
+- V15: inventory and feed usage reasons
 - V16: append-only audit enforcement
 - V17: sessions
 - V18: operational query indexes
@@ -270,6 +264,12 @@ Broad progression:
 - V24: username login
 - V25: transaction reversal records
 - V26: zero egg collections
+- V27: independent Turkey batch, feed applicability, and sales support
+- V28: explicit permanent/temporary house classification and occupancy index
+- V29: estimated/verified population confidence and auditable physical-count adjustments
+- V30: feed brand and packaging metadata
+- V31: append-only feed opening balances
+- V32: normalized multi-type feed applicability
 
 Never edit an applied migration. Add a new version greater than the current highest version for future schema changes.
 
