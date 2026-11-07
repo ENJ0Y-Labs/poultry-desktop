@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { feedApi } from "../services/api.js";
 
@@ -7,6 +7,7 @@ vi.mock("../services/api.js", () => ({
     openingBalances: vi.fn().mockResolvedValue([]),
     createOpeningBalance: vi.fn().mockResolvedValue({}),
     updateConversion: vi.fn().mockResolvedValue({}),
+    updateType: vi.fn().mockResolvedValue({}),
   },
 }));
 // eslint-disable-next-line no-unused-vars
@@ -103,6 +104,59 @@ describe("FeedStockPage", () => {
       reason: "Physical stock count",
     }));
     await waitFor(() => expect(feedApi.openingBalances).toHaveBeenCalledTimes(2));
+  });
+
+  it("edits brand and package identity without changing the feed type ID", async () => {
+    const type = {
+      id: "feed-a", name: "Grower Mash", brand: "Brand A", packagingName: "25 kg bag",
+      packageWeightKg: 25, unit: "bag", status: "ACTIVE",
+    };
+    const updated = { ...type, brand: "Brand C", packagingName: "50 kg sack", packageWeightKg: null };
+    feedApi.updateType.mockResolvedValue(updated);
+    const context = { ...contextValue, feedTypes: [type] };
+    render(
+      <NavigationContext.Provider value={{ activePage: "feed-stock", activeTab: "feed" }}>
+        <FarmManagerContext.Provider value={context}>
+          <FeedStockPage />
+        </FarmManagerContext.Provider>
+      </NavigationContext.Provider>
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Edit details" }));
+    const form = screen.getByRole("form", { name: "Edit feed product" });
+    fireEvent.change(within(form).getByLabelText("Brand"), { target: { value: "Brand C" } });
+    fireEvent.change(within(form).getByLabelText("Package name"), { target: { value: "50 kg sack" } });
+    fireEvent.change(within(form).getByLabelText("Package weight in kg (leave blank if unknown)"), { target: { value: "" } });
+    fireEvent.click(within(form).getByRole("button", { name: "Save product details" }));
+
+    await waitFor(() => expect(feedApi.updateType).toHaveBeenCalledWith("feed-a", {
+      name: "Grower Mash",
+      brand: "Brand C",
+      packagingName: "50 kg sack",
+      packageWeightKg: null,
+    }));
+    expect(context.setFeedTypes).toHaveBeenCalledWith(expect.any(Function));
+  });
+
+  it("shows brands when selecting feed for a purchase", () => {
+    const context = {
+      ...contextValue,
+      feedTypes: [
+        { id: "feed-a", name: "Grower Mash", brand: "Brand A", unit: "bag", status: "ACTIVE" },
+        { id: "feed-b", name: "Grower Mash", brand: "Brand B", unit: "bag", status: "ACTIVE" },
+      ],
+    };
+    render(
+      <NavigationContext.Provider value={{ activePage: "feed-stock", activeTab: "purchases" }}>
+        <FarmManagerContext.Provider value={context}>
+          <FeedStockPage />
+        </FarmManagerContext.Provider>
+      </NavigationContext.Provider>
+    );
+
+    const select = screen.getByLabelText("Feed type");
+    expect(within(select).getByRole("option", { name: "Grower Mash · Brand A (bag)" })).toBeInTheDocument();
+    expect(within(select).getByRole("option", { name: "Grower Mash · Brand B (bag)" })).toBeInTheDocument();
   });
 
   it("renders package metadata fields without literal escaped newline text", () => {
