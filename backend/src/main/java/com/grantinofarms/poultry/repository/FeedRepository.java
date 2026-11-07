@@ -97,13 +97,14 @@ public class FeedRepository {
     }
 
     public void updateType(String id, String farmId, String name, String unit, String scope,
-                           String brand, String packagingName, java.math.BigDecimal packageWeightKg, String now) {
+                           java.math.BigDecimal kgPerUnit, String brand, String packagingName,
+                           java.math.BigDecimal packageWeightKg, String now) {
         jdbc.update("""
                 UPDATE feed_types
-                SET name = ?, unit = ?, applicable_type = ?, brand = ?, packaging_name = ?,
-                    package_weight_kg = ?, updated_at = ?
+                SET name = ?, unit = ?, applicable_type = ?, kg_per_unit = ?, brand = ?,
+                    packaging_name = ?, package_weight_kg = ?, updated_at = ?
                 WHERE id = ? AND farm_id = ?
-                """, name, unit, scope, brand, packagingName, packageWeightKg, now, id, farmId);
+                """, name, unit, scope, kgPerUnit, brand, packagingName, packageWeightKg, now, id, farmId);
     }
 
     public void updateKgPerUnit(String id, java.math.BigDecimal kgPerUnit, String now) {
