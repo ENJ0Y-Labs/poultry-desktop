@@ -101,7 +101,12 @@ public class FeedService {
                     "A feed product with this name and brand already exists.");
         }
         String now = Instant.now().toString();
-        repository.updateProductIdentity(id, name, brand, packagingName, packageWeightKg, now);
+        try {
+            repository.updateProductIdentity(id, name, brand, packagingName, packageWeightKg, now);
+        } catch (org.springframework.dao.DataIntegrityViolationException e) {
+            throw new ApiException(HttpStatus.CONFLICT, "DUPLICATE_FEED_PRODUCT",
+                    "A feed product with this name and brand already exists.");
+        }
         auditRepository.append(farmId, "UPDATE", "FEED_TYPE", id, "Update feed product identity",
                 feedIdentityJson(type.name(), type.brand(), type.packagingName(), type.packageWeightKg()),
                 feedIdentityJson(name, brand, packagingName, packageWeightKg), now);
