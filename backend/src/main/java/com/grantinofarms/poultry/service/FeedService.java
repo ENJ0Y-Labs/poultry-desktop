@@ -1,5 +1,7 @@
 package com.grantinofarms.poultry.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.grantinofarms.poultry.domain.FeedCostCalculator;
 import com.grantinofarms.poultry.domain.FeedPurchaseLot;
 import com.grantinofarms.poultry.domain.FeedUsageEvent;
@@ -25,13 +27,15 @@ public class FeedService {
     private final BirdPopulationService populationService;
     private final BirdCostService birdCostService;
     private final AuditRepository auditRepository;
+    private final ObjectMapper objectMapper;
 
     public FeedService(FeedRepository repository, BirdPopulationService populationService,
-                       BirdCostService birdCostService, AuditRepository auditRepository) {
+                       BirdCostService birdCostService, AuditRepository auditRepository, ObjectMapper objectMapper) {
         this.repository = repository;
         this.populationService = populationService;
         this.birdCostService = birdCostService;
         this.auditRepository = auditRepository;
+        this.objectMapper = objectMapper;
     }
 
     public List<FeedTypeResponse> types() {
@@ -340,6 +344,14 @@ public class FeedService {
         FeedTypeResponse type = repository.findType(id);
         if (type == null) throw new ApiException(HttpStatus.NOT_FOUND, "FEED_TYPE_NOT_FOUND", "Feed type not found.");
         return type;
+    }
+
+    private String json(Object value) {
+        try {
+            return objectMapper.writeValueAsString(value);
+        } catch (JsonProcessingException e) {
+            throw new IllegalStateException("Unable to serialize audit data", e);
+        }
     }
 
     private String requireBatch(String batchId) {
