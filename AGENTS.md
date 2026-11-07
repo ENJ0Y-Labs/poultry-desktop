@@ -1242,6 +1242,7 @@ And never sacrifice poultry math for dashboard cosmetics.
 - Warning, critical, and error colours must remain semantically distinct from brand colours.
 - All colours must be assigned through semantic CSS tokens. Do not add per-screen hardcoded colour values.
 - Landing, sign-in, and first-run owner-setup screens must use the shared --auth-* semantic tokens for both themes. Keep their theme selector available before authentication; do not introduce fixed page colours in screen selectors.
+- Keep the external theme bootstrap in `app/renderer/public/theme-init.js` referenced from the document head before the renderer module. It must remain compatible with the packaged renderer CSP and must not become an inline script.
 - Preserve Auto, Light, and Dark behavior. Auto follows the operating system colour scheme and updates when the system preference changes.
 - Update `docs/accessibility.md` and `scripts/verify-a11y.mjs` whenever theme tokens or required contrast pairs change. Keep all existing tests; never weaken or delete tests to obtain a pass.
 - The automated checker validates token pairs only. Do not claim full rendered contrast or runtime layout validation without testing the running app at 1366×768 and 1100×650 in Auto, Light, and Dark.
