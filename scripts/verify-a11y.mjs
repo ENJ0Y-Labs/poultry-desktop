@@ -54,6 +54,8 @@ const tokenNames = {
   criticalText: "--a11y-critical-text",
   errorBg: "--a11y-error-bg",
   errorText: "--a11y-error-text",
+  alertSurface: "--pomas-panel-raised",
+  alertText: "--a11y-text",
   actionBg: "--pomas-primary-action-bg",
   actionText: "--pomas-primary-action-text",
   focus: "--pomas-focus-ring",
@@ -73,6 +75,7 @@ for (const theme of themes) {
     ["warning status text", tokens.warningText, tokens.warningBg, 4.5],
     ["critical status text", tokens.criticalText, tokens.criticalBg, 4.5],
     ["error message text", tokens.errorText, tokens.errorBg, 4.5],
+    ["dashboard attention text on alert surface", tokens.alertText, tokens.alertSurface, 4.5],
     ["primary button text", tokens.actionText, tokens.actionBg, 4.5],
   ];
 
@@ -166,5 +169,10 @@ for (const theme of [
     console.log(`PASS ${theme.name}: ${label} ${ratio.toFixed(2)}:1`);
   }
 }
+
+assert.match(css, /button:not\([^\n]*:not\(\.attention-item\)/, "Primary button theme rules must exclude dashboard attention cards");
+assert.match(css, /\.severity\.error\s*\{[^}]*background:\s*var\(--a11y-error-bg\)[^}]*color:\s*var\(--a11y-error-text\)/s, "Error severity must use distinct semantic tokens");
+assert.match(css, /\.attention-item\s*\{[^}]*background:\s*var\(--pomas-panel-raised\)[^}]*color:\s*var\(--a11y-text\)/s, "Attention cards must use a neutral semantic surface and readable text");
+assert.match(css, /\.attention-item-clickable:hover,[\s\S]*?background:\s*var\(--pomas-panel-bg\)/, "Attention hover must remain a neutral surface");
 
 console.log("Accessibility token and minimum-size checks passed. Manual rendered UI review is still required.");
