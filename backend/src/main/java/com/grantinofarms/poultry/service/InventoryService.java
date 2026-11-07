@@ -3,6 +3,7 @@ package com.grantinofarms.poultry.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.grantinofarms.poultry.dto.InventoryItemCreateRequest;
+import com.grantinofarms.poultry.dto.InventoryItemUpdateRequest;
 import com.grantinofarms.poultry.dto.InventoryItemResponse;
 import com.grantinofarms.poultry.dto.InventoryMovementRequest;
 import com.grantinofarms.poultry.dto.InventoryMovementResponse;
