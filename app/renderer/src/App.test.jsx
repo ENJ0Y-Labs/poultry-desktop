@@ -230,6 +230,12 @@ describe("App", () => {
     render(<App />);
 
     expect(await screen.findByRole("heading", { name: "Sign in to Pomas" })).toBeInTheDocument();
+    const themeSelector = screen.getByRole("combobox", { name: "Theme" });
+    expect(themeSelector).toHaveValue("auto");
+    fireEvent.change(themeSelector, { target: { value: "light" } });
+    expect(themeSelector).toHaveValue("light");
+    expect(document.documentElement.dataset.theme).toBe("light");
+    expect(localStorage.getItem("pomas:theme")).toBe("light");
     expect(screen.getByRole("heading", { name: "What's new" })).toBeInTheDocument();
     expect(screen.getByText("POMAS v1.0.3")).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Independent turkey management" })).toBeInTheDocument();
