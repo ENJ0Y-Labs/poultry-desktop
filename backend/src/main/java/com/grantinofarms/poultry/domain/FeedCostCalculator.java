@@ -16,13 +16,38 @@ public final class FeedCostCalculator {
             List<FeedUsageEvent> usages,
             LocalDate asOf
     ) {
+        return calculate(purchases, List.of(), usages, asOf);
+    }
+
+    public static FifoSnapshot calculate(
+            List<FeedPurchaseLot> purchases,
+            List<FeedOpeningStockLot> openingBalances,
+            List<FeedUsageEvent> usages,
+            LocalDate asOf
+    ) {
         if (asOf == null) throw new IllegalArgumentException("asOf date is required.");
 
-        List<FeedPurchaseLot> lots = purchases.stream()
-                .filter(p -> !p.purchaseDate().isAfter(asOf))
-                .sorted(Comparator.comparing(FeedPurchaseLot::purchaseDate)
-                        .thenComparing(FeedPurchaseLot::createdAt))
-                .toList();
+        List<LotState> states = new ArrayList<>();
+        for (FeedPurchaseLot lot : purchases) {
+            if (!lot.purchaseDate().isAfter(asOf)) {
+                if (lot.quantityMilli() <= 0 || lot.totalCostMinor() < 0) {
+                    throw new IllegalArgumentException("Feed purchase quantity and cost are invalid.");
+                }
+                states.add(new LotState(lot.purchaseDate(), lot.createdAt(),
+                        lot.quantityMilli(), lot.totalCostMinor()));
+            }
+        }
+        for (FeedOpeningStockLot opening : openingBalances) {
+            if (!opening.effectiveDate().isAfter(asOf)) {
+                if (opening.quantityMilli() <= 0) {
+                    throw new IllegalArgumentException("Opening feed quantity must be positive.");
+                }
+                states.add(new LotState(opening.effectiveDate(), opening.createdAt(),
+                        opening.quantityMilli(), null));
+            }
+        }
+        states.sort(Comparator.comparing((LotState lot) -> lot.date)
+                .thenComparing(lot -> lot.createdAt));
 
         List<FeedUsageEvent> orderedUsages = usages.stream()
                 .filter(u -> !u.usageDate().isAfter(asOf))
@@ -30,17 +55,10 @@ public final class FeedCostCalculator {
                         .thenComparing(FeedUsageEvent::createdAt))
                 .toList();
 
-        List<LotState> states = new ArrayList<>();
-        for (FeedPurchaseLot lot : lots) {
-            if (lot.quantityMilli() <= 0 || lot.totalCostMinor() < 0) {
-                throw new IllegalArgumentException("Feed purchase quantity and cost are invalid.");
-            }
-            states.add(new LotState(lot));
-        }
-
         Map<String, Long> usageCosts = new LinkedHashMap<>();
         long consumedQuantity = 0L;
-        long consumedCost = 0L;
+        long knownConsumedCost = 0L;
+        boolean consumedCostUnknown = false;
 
         for (FeedUsageEvent usage : orderedUsages) {
             if (usage.quantityMilli() <= 0) {
@@ -48,19 +66,23 @@ public final class FeedCostCalculator {
             }
 
             long remaining = usage.quantityMilli();
-            long usageCost = 0L;
+            long knownUsageCost = 0L;
+            boolean usageCostUnknown = false;
 
             for (LotState lot : states) {
                 if (!lot.hasQuantity() || remaining == 0) continue;
 
                 long take = Math.min(remaining, lot.quantityRemaining);
-                long cost = allocateLotCost(lot.costRemaining, lot.quantityRemaining, take);
+                if (lot.costRemaining == null) {
+                    usageCostUnknown = true;
+                } else {
+                    long cost = allocateLotCost(lot.costRemaining, lot.quantityRemaining, take);
+                    lot.costRemaining = Math.subtractExact(lot.costRemaining, cost);
+                    if (!usageCostUnknown) knownUsageCost = Math.addExact(knownUsageCost, cost);
+                }
 
                 lot.quantityRemaining = Math.subtractExact(lot.quantityRemaining, take);
-                lot.costRemaining = Math.subtractExact(lot.costRemaining, cost);
-
                 remaining = Math.subtractExact(remaining, take);
-                usageCost = Math.addExact(usageCost, cost);
             }
 
             if (remaining > 0) {
@@ -68,18 +90,31 @@ public final class FeedCostCalculator {
             }
 
             consumedQuantity = Math.addExact(consumedQuantity, usage.quantityMilli());
-            consumedCost = Math.addExact(consumedCost, usageCost);
-            usageCosts.put(usage.id(), usageCost);
+            if (usageCostUnknown) {
+                consumedCostUnknown = true;
+                usageCosts.put(usage.id(), null);
+            } else {
+                knownConsumedCost = Math.addExact(knownConsumedCost, knownUsageCost);
+                usageCosts.put(usage.id(), knownUsageCost);
+            }
         }
 
         long remainingQuantity = 0L;
-        long remainingCost = 0L;
+        long knownRemainingCost = 0L;
+        boolean remainingCostUnknown = false;
         for (LotState lot : states) {
             remainingQuantity = Math.addExact(remainingQuantity, lot.quantityRemaining);
-            remainingCost = Math.addExact(remainingCost, lot.costRemaining);
+            if (lot.quantityRemaining > 0) {
+                if (lot.costRemaining == null) remainingCostUnknown = true;
+                else knownRemainingCost = Math.addExact(knownRemainingCost, lot.costRemaining);
+            }
         }
 
-        return new FifoSnapshot(consumedQuantity, consumedCost, remainingQuantity, remainingCost, usageCosts);
+        return new FifoSnapshot(consumedQuantity,
+                consumedCostUnknown ? null : knownConsumedCost,
+                remainingQuantity,
+                remainingCostUnknown ? null : knownRemainingCost,
+                java.util.Collections.unmodifiableMap(usageCosts));
     }
 
     public static long costForUsage(
@@ -87,12 +122,27 @@ public final class FeedCostCalculator {
             List<FeedUsageEvent> existingUsages,
             FeedUsageEvent proposedUsage
     ) {
+        Long cost = costForUsage(purchases, List.of(), existingUsages, proposedUsage);
+        if (cost == null) {
+            throw new IllegalStateException("Opening stock costing requires the opening-balance FIFO overload.");
+        }
+        return cost;
+    }
+
+    public static Long costForUsage(
+            List<FeedPurchaseLot> purchases,
+            List<FeedOpeningStockLot> openingBalances,
+            List<FeedUsageEvent> existingUsages,
+            FeedUsageEvent proposedUsage
+    ) {
         if (proposedUsage == null) throw new IllegalArgumentException("Proposed feed usage is required.");
-        FifoSnapshot before = calculate(purchases, existingUsages, proposedUsage.usageDate());
         List<FeedUsageEvent> withProposed = new ArrayList<>(existingUsages);
         withProposed.add(proposedUsage);
-        FifoSnapshot after = calculate(purchases, withProposed, proposedUsage.usageDate());
-        return Math.subtractExact(after.consumedCostMinor(), before.consumedCostMinor());
+        FifoSnapshot after = calculate(purchases, openingBalances, withProposed, proposedUsage.usageDate());
+        if (!after.usageCostsMinor().containsKey(proposedUsage.id())) {
+            throw new IllegalStateException("Proposed feed usage was not included in FIFO calculation.");
+        }
+        return after.usageCostsMinor().get(proposedUsage.id());
     }
 
     private static long allocateLotCost(long costRemaining, long quantityRemaining, long quantityTaken) {
@@ -104,12 +154,16 @@ public final class FeedCostCalculator {
     }
 
     private static final class LotState {
+        private final LocalDate date;
+        private final java.time.Instant createdAt;
         private long quantityRemaining;
-        private long costRemaining;
+        private Long costRemaining;
 
-        private LotState(FeedPurchaseLot lot) {
-            this.quantityRemaining = lot.quantityMilli();
-            this.costRemaining = lot.totalCostMinor();
+        private LotState(LocalDate date, java.time.Instant createdAt, long quantity, Long cost) {
+            this.date = date;
+            this.createdAt = createdAt;
+            this.quantityRemaining = quantity;
+            this.costRemaining = cost;
         }
 
         private boolean hasQuantity() {
@@ -119,9 +173,9 @@ public final class FeedCostCalculator {
 
     public record FifoSnapshot(
             long consumedQuantityMilli,
-            long consumedCostMinor,
+            Long consumedCostMinor,
             long remainingQuantityMilli,
-            long remainingCostMinor,
+            Long remainingCostMinor,
             Map<String, Long> usageCostsMinor
     ) {}
 }
