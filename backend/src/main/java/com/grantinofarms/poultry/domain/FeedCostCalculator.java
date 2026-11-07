@@ -56,6 +56,7 @@ public final class FeedCostCalculator {
                 .toList();
 
         Map<String, Long> usageCosts = new LinkedHashMap<>();
+        Map<String, Long> usageKnownCosts = new LinkedHashMap<>();
         long consumedQuantity = 0L;
         long knownConsumedCost = 0L;
         boolean consumedCostUnknown = false;
@@ -78,7 +79,7 @@ public final class FeedCostCalculator {
                 } else {
                     long cost = allocateLotCost(lot.costRemaining, lot.quantityRemaining, take);
                     lot.costRemaining = Math.subtractExact(lot.costRemaining, cost);
-                    if (!usageCostUnknown) knownUsageCost = Math.addExact(knownUsageCost, cost);
+                    knownUsageCost = Math.addExact(knownUsageCost, cost);
                 }
 
                 lot.quantityRemaining = Math.subtractExact(lot.quantityRemaining, take);
@@ -90,11 +91,12 @@ public final class FeedCostCalculator {
             }
 
             consumedQuantity = Math.addExact(consumedQuantity, usage.quantityMilli());
+            knownConsumedCost = Math.addExact(knownConsumedCost, knownUsageCost);
+            usageKnownCosts.put(usage.id(), knownUsageCost);
             if (usageCostUnknown) {
                 consumedCostUnknown = true;
                 usageCosts.put(usage.id(), null);
             } else {
-                knownConsumedCost = Math.addExact(knownConsumedCost, knownUsageCost);
                 usageCosts.put(usage.id(), knownUsageCost);
             }
         }
@@ -114,7 +116,10 @@ public final class FeedCostCalculator {
                 consumedCostUnknown ? null : knownConsumedCost,
                 remainingQuantity,
                 remainingCostUnknown ? null : knownRemainingCost,
-                java.util.Collections.unmodifiableMap(usageCosts));
+                knownConsumedCost,
+                knownRemainingCost,
+                java.util.Collections.unmodifiableMap(usageCosts),
+                java.util.Collections.unmodifiableMap(usageKnownCosts));
     }
 
     public static long costForUsage(
@@ -135,6 +140,15 @@ public final class FeedCostCalculator {
             List<FeedUsageEvent> existingUsages,
             FeedUsageEvent proposedUsage
     ) {
+        return costBreakdownForUsage(purchases, openingBalances, existingUsages, proposedUsage).totalCostMinor();
+    }
+
+    public static UsageCost costBreakdownForUsage(
+            List<FeedPurchaseLot> purchases,
+            List<FeedOpeningStockLot> openingBalances,
+            List<FeedUsageEvent> existingUsages,
+            FeedUsageEvent proposedUsage
+    ) {
         if (proposedUsage == null) throw new IllegalArgumentException("Proposed feed usage is required.");
         List<FeedUsageEvent> withProposed = new ArrayList<>(existingUsages);
         withProposed.add(proposedUsage);
@@ -142,8 +156,11 @@ public final class FeedCostCalculator {
         if (!after.usageCostsMinor().containsKey(proposedUsage.id())) {
             throw new IllegalStateException("Proposed feed usage was not included in FIFO calculation.");
         }
-        return after.usageCostsMinor().get(proposedUsage.id());
+        return new UsageCost(after.usageCostsMinor().get(proposedUsage.id()),
+                after.usageKnownCostsMinor().getOrDefault(proposedUsage.id(), 0L));
     }
+
+    public record UsageCost(Long totalCostMinor, long knownCostMinor) {}
 
     private static long allocateLotCost(long costRemaining, long quantityRemaining, long quantityTaken) {
         if (quantityTaken == quantityRemaining) return costRemaining;
@@ -176,6 +193,9 @@ public final class FeedCostCalculator {
             Long consumedCostMinor,
             long remainingQuantityMilli,
             Long remainingCostMinor,
-            Map<String, Long> usageCostsMinor
+            long knownConsumedCostMinor,
+            long knownRemainingCostMinor,
+            Map<String, Long> usageCostsMinor,
+            Map<String, Long> usageKnownCostsMinor
     ) {}
 }
