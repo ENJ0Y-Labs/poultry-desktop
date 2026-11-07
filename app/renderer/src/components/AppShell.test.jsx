@@ -196,7 +196,7 @@ describe("AppShell", () => {
     render(
       <AppShell
         farm={{ name: "Grantino", location: "", currency: "NGN", timezone: "Africa/Lagos" }}
-        appInfo={{ version: "1.0.3", architecture: "x64", isPackaged: true }}
+        appInfo={{ version: "1.0.4", architecture: "x64", isPackaged: true }}
       >
         <section id="dashboard">Dashboard</section>
       </AppShell>
