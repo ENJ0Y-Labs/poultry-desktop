@@ -190,6 +190,7 @@ export default function FeedStockPage() {
             <DataTable caption="Opening stock history" columns={[
               { key: "effectiveDate", label: "Effective date" },
               { key: "feedTypeName", label: "Feed" },
+              { key: "brand", label: "Brand", render: item => item.brand || "—" },
               { key: "quantityMilli", label: "Quantity", render: item => `${feedQuantity(item.quantityMilli)} ${item.unit}` },
               { key: "reason", label: "Reason / source" },
               { key: "valuation", label: "Valuation", render: () => "Unvalued opening stock" },
