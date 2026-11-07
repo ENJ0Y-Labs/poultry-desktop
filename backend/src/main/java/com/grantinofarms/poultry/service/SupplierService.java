@@ -31,6 +31,27 @@ public class SupplierService {
         catch(DataIntegrityViolationException e){throw new ApiException(HttpStatus.CONFLICT,"SUPPLIER_DUPLICATE","A supplier with that name already exists.");}
         SupplierResponse created=suppliers.find(farmId,id);audit.append(farmId,"CREATE","SUPPLIER",id,null,null,json(created),now);return created;
     }
+    @Transactional public SupplierResponse update(String id, SupplierUpdateRequest request) {
+        String farmId = requireFarm();
+        SupplierResponse current = require(farmId, id);
+        if (!"ACTIVE".equals(current.status())) {
+            throw new ApiException(HttpStatus.CONFLICT, "SUPPLIER_ARCHIVED",
+                    "Archived suppliers cannot be edited. Restore the supplier first.");
+        }
+        String now = Instant.now().toString();
+        try {
+            suppliers.update(id, farmId, request.name().trim(), clean(request.phone()),
+                    clean(request.email()), clean(request.address()), clean(request.notes()),
+                    current.status(), now);
+        } catch (DataIntegrityViolationException e) {
+            throw new ApiException(HttpStatus.CONFLICT, "SUPPLIER_DUPLICATE",
+                    "A supplier with that name already exists.");
+        }
+        SupplierResponse updated = suppliers.find(farmId, id);
+        audit.append(farmId, "UPDATE", "SUPPLIER", id, null, json(current), json(updated), now);
+        return updated;
+    }
+
     @Transactional public SupplierResponse archive(String id){
         String farmId=requireFarm();SupplierResponse current=require(farmId,id);
         suppliers.update(id,farmId,current.name(),current.phone(),current.email(),current.address(),current.notes(),"ARCHIVED",Instant.now().toString());
