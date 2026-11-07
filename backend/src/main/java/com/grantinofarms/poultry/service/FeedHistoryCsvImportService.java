@@ -2,6 +2,7 @@ package com.grantinofarms.poultry.service;
 
 import com.grantinofarms.poultry.domain.FeedCostCalculator;
 import com.grantinofarms.poultry.domain.FeedPurchaseLot;
+import com.grantinofarms.poultry.domain.FeedOpeningStockLot;
 import com.grantinofarms.poultry.domain.FeedUsageEvent;
 import com.grantinofarms.poultry.dto.*;
 import com.grantinofarms.poultry.exception.ApiException;
@@ -126,6 +127,7 @@ public class FeedHistoryCsvImportService {
             for (ParsedRow usage : usages) {
                 try {
                     List<FeedPurchaseLot> purchaseLots = new ArrayList<>(feedRepository.findPurchases(entry.getKey(), usage.date));
+                    List<FeedOpeningStockLot> openingLots = new ArrayList<>(feedRepository.findOpeningLots(entry.getKey(), usage.date));
                     List<FeedUsageEvent> usageEvents = new ArrayList<>(feedRepository.findUsages(entry.getKey(), usage.date));
                     for (ParsedRow candidate : parsed) {
                         if (!candidate.feedType.id().equals(entry.getKey()) || candidate.date.isAfter(usage.date)) continue;
@@ -140,7 +142,7 @@ public class FeedHistoryCsvImportService {
                                     candidate.quantityMilli, order));
                         }
                     }
-                    FeedCostCalculator.calculate(purchaseLots, usageEvents, usage.date);
+                    FeedCostCalculator.calculate(purchaseLots, openingLots, usageEvents, usage.date);
                 } catch (IllegalArgumentException | ArithmeticException e) {
                     usage.errors.add("Insufficient dated FIFO stock or invalid feed balance at this usage date.");
                 }
