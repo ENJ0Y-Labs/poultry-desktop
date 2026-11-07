@@ -13,7 +13,7 @@ import DataTable from "../components/DataTable.jsx";
 import MetricHelp from "../components/MetricHelp.jsx";
 
 export default function ReportsPage() {
-  const { formatMoney, formatQuantity, formatPercent, formatKg, formatMetric, formatCount, farm, batches, selectedBatchId, setSelectedBatchId, farmReport, batchReport, reportAsOf, setReportAsOf, loadReport, loadBatchReport, exportCsv, exportPdf } = useContext(FarmManagerContext);
+  const { formatMoney, formatQuantity, formatPercent, formatKg, formatMetric, formatCount, feedQuantity, farm, batches, selectedBatchId, setSelectedBatchId, farmReport, batchReport, reportAsOf, setReportAsOf, loadReport, loadBatchReport, exportCsv, exportPdf } = useContext(FarmManagerContext);
 
   return (
     <PageTemplate className="grid">
@@ -44,10 +44,10 @@ export default function ReportsPage() {
                 { key: "feedTypeName", label: "Feed product" },
                 { key: "brand", label: "Brand", render: item => item.brand || "—" },
                 { key: "packagingName", label: "Package", render: item => item.packagingName || "—" },
-                { key: "purchasedQuantityMilli", label: "Purchased", render: item => `${formatQuantity(item.purchasedQuantityMilli)} ${item.unit}` },
-                { key: "openingQuantityMilli", label: "Opening", render: item => `${formatQuantity(item.openingQuantityMilli)} ${item.unit}` },
-                { key: "consumedQuantityMilli", label: "Used", render: item => `${formatQuantity(item.consumedQuantityMilli)} ${item.unit}` },
-                { key: "remainingQuantityMilli", label: "Remaining", render: item => `${formatQuantity(item.remainingQuantityMilli)} ${item.unit}` },
+                { key: "purchasedQuantityMilli", label: "Purchased", render: item => `${feedQuantity(item.purchasedQuantityMilli)} ${item.unit}` },
+                { key: "openingQuantityMilli", label: "Opening", render: item => `${feedQuantity(item.openingQuantityMilli)} ${item.unit}` },
+                { key: "consumedQuantityMilli", label: "Used", render: item => `${feedQuantity(item.consumedQuantityMilli)} ${item.unit}` },
+                { key: "remainingQuantityMilli", label: "Remaining", render: item => `${feedQuantity(item.remainingQuantityMilli)} ${item.unit}` },
                 { key: "remainingCostMinor", label: "Remaining cost", render: item => item.remainingCostMinor == null ? "Unknown" : formatMoney(item.remainingCostMinor, farm.currency) },
               ]} rows={farmReport.feed || []} emptyMessage="No feed products recorded." />
             </div>
