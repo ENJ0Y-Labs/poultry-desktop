@@ -33,6 +33,7 @@ ALTER TABLE feed_types_new RENAME TO feed_types;
 CREATE INDEX idx_feed_types_farm_status ON feed_types(farm_id, status);
 
 -- Null and blank brand represent the same unbranded product identity.
--- Case and surrounding whitespace do not create accidental duplicate identities.
+-- Keep the database key exact so this migration can preserve legacy rows that
+-- differ only by casing. FeedService trims and normalizes before duplicate checks.
 CREATE UNIQUE INDEX idx_feed_types_product_identity
-    ON feed_types(farm_id, lower(trim(name)), lower(trim(COALESCE(brand, ''))));
+    ON feed_types(farm_id, name, COALESCE(brand, ''));
