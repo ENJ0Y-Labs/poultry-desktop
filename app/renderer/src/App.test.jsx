@@ -231,11 +231,21 @@ describe("App", () => {
 
     expect(await screen.findByRole("heading", { name: "Sign in to Pomas" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "What's new" })).toBeInTheDocument();
-    expect(screen.getByText("POMAS v1.0.3")).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Independent turkey management" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "House and pen classification" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Verified bird counts" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "More detailed feed records" })).toBeInTheDocument();
+    expect(screen.getByText("POMAS v1.0.4")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Egg production in crates" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Flexible bird sales" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Clearer Windows installer" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Theme preference on sign-in" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "More readable dashboard alerts" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Feed product identity and editing" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Opening feed stock" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Editable farm records" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Multiple bird-type feed applicability" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Cleaner text rendering" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Independent turkey management" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "House and pen classification" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Verified bird counts" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "More detailed feed records" })).not.toBeInTheDocument();
     expect(screen.getByText("POMAS · DEVELOPMENT BUILD")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Sign in to your farm/ })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /create account/i })).not.toBeInTheDocument();
