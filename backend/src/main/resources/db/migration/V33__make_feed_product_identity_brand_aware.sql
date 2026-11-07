@@ -1,5 +1,5 @@
--- Replace the legacy name-only uniqueness rule with brand-aware product identity.
--- Preserve feed IDs so purchases, usage, opening stock and applicability remain attached.
+-- Replace the legacy farm/name uniqueness rule with a brand-aware product identity.
+-- Preserve feed IDs and every feed ledger relationship.
 PRAGMA defer_foreign_keys = ON;
 
 CREATE TABLE feed_types_new (
@@ -27,13 +27,30 @@ SELECT
     kg_per_unit, brand, packaging_name, package_weight_kg
 FROM feed_types;
 
+-- Rebuild this newer child table against the replacement parent table.
+-- Other feed ledger tables retain their existing feed_types foreign keys.
+CREATE TABLE feed_type_applicability_new (
+    feed_type_id TEXT NOT NULL,
+    bird_type TEXT NOT NULL CHECK (bird_type IN ('LAYER', 'BROILER', 'TURKEY')),
+    PRIMARY KEY (feed_type_id, bird_type),
+    FOREIGN KEY (feed_type_id) REFERENCES feed_types_new(id) ON DELETE CASCADE
+);
+
+INSERT INTO feed_type_applicability_new (feed_type_id, bird_type)
+SELECT feed_type_id, bird_type FROM feed_type_applicability;
+
+DROP TABLE feed_type_applicability;
 DROP TABLE feed_types;
+
 ALTER TABLE feed_types_new RENAME TO feed_types;
+ALTER TABLE feed_type_applicability_new RENAME TO feed_type_applicability;
 
 CREATE INDEX idx_feed_types_farm_status ON feed_types(farm_id, status);
+CREATE INDEX idx_feed_type_applicability_bird_type
+    ON feed_type_applicability(bird_type, feed_type_id);
 
 -- Null and blank brand represent the same unbranded product identity.
--- Keep the database key exact so this migration can preserve legacy rows that
--- differ only by casing. FeedService trims and normalizes before duplicate checks.
+-- Keep the database key exact so legacy case-variant names are preserved.
+-- FeedService trims and normalizes values before duplicate validation.
 CREATE UNIQUE INDEX idx_feed_types_product_identity
     ON feed_types(farm_id, name, COALESCE(brand, ''));
