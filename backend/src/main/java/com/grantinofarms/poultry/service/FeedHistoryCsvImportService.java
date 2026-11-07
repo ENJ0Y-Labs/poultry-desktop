@@ -46,9 +46,9 @@ public class FeedHistoryCsvImportService {
         List<FeedTypeResponse> feedTypes = feedService.types();
         List<BatchResponse> batchList = batches.list();
         List<SupplierResponse> supplierList = suppliers.list();
-        Map<String, FeedTypeResponse> typesByName = new HashMap<>();
+        Map<String, List<FeedTypeResponse>> typesByName = new HashMap<>();
         for (FeedTypeResponse type : feedTypes) {
-            typesByName.put(normalize(type.name()), type);
+            typesByName.computeIfAbsent(normalize(type.name()), ignored -> new ArrayList<>()).add(type);
         }
         Map<String, BatchResponse> batchesByCode = new HashMap<>();
         for (BatchResponse batch : batchList) {
@@ -226,12 +226,25 @@ public class FeedHistoryCsvImportService {
     }
 
     private ParsedRow parse(String module, Map<String, String> raw, int rowNumber,
-                            Map<String, FeedTypeResponse> types, Map<String, BatchResponse> batches,
+                            Map<String, List<FeedTypeResponse>> types, Map<String, BatchResponse> batches,
                             Map<String, SupplierResponse> suppliers, List<String> errors) {
         String feedTypeName = value(raw, "feed_type_name");
-        FeedTypeResponse type = types.get(normalize(feedTypeName));
-        if (type == null) errors.add("Unknown feed_type_name; use the exact existing feed type name.");
-        else if (!"ACTIVE".equals(type.status())) errors.add("Feed type is archived.");
+        String feedTypeBrand = value(raw, "feed_type_brand");
+        List<FeedTypeResponse> matchingTypes = types.getOrDefault(normalize(feedTypeName), List.of());
+        FeedTypeResponse type = null;
+        if (matchingTypes.isEmpty()) {
+            errors.add("Unknown feed_type_name; use the exact existing feed product name.");
+        } else if (!feedTypeBrand.isBlank()) {
+            type = matchingTypes.stream()
+                    .filter(candidate -> normalize(candidate.brand()).equals(normalize(feedTypeBrand)))
+                    .findFirst().orElse(null);
+            if (type == null) errors.add("No feed product matches this name and feed_type_brand.");
+        } else if (matchingTypes.size() > 1) {
+            errors.add("feed_type_brand is required because this feed name exists under multiple brands.");
+        } else {
+            type = matchingTypes.get(0);
+        }
+        if (type != null && !"ACTIVE".equals(type.status())) errors.add("Feed type is archived.");
 
         LocalDate date = null;
         try { date = LocalDate.parse(value(raw, module.equals("feed-purchases") ? "purchase_date" : "usage_date")); }
