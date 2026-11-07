@@ -29,9 +29,4 @@ public record FeedTypeCreateRequest(
                 null, null, null, null);
     }
 
-    public FeedTypeCreateRequest(String name, String unit, List<String> applicableTypes) {
-        this(name, unit, null,
-                unit != null && unit.trim().equalsIgnoreCase("kg") ? BigDecimal.ONE : null,
-                null, null, null, applicableTypes);
-    }
 }
