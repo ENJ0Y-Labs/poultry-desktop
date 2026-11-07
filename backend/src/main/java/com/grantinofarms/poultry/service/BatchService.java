@@ -3,6 +3,7 @@ package com.grantinofarms.poultry.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.grantinofarms.poultry.dto.BatchCreateRequest;
+import com.grantinofarms.poultry.dto.BatchSetupUpdateRequest;
 import com.grantinofarms.poultry.dto.BatchResponse;
 import com.grantinofarms.poultry.dto.BatchReopenRequest;
 import com.grantinofarms.poultry.exception.ApiException;
@@ -151,7 +152,7 @@ public class BatchService {
             throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_SUPPLIER",
                     "The selected supplier/source does not belong to this farm or is archived.");
         }
-        if (current.originalPurchaseCostMinor() != null
+        if (current.purchaseCostMinor() != null
                 && !java.util.Objects.equals(current.supplierId(), supplierId)) {
             throw new ApiException(HttpStatus.CONFLICT, "BATCH_PURCHASE_SOURCE_LOCKED",
                     "The supplier/source cannot change after an original bird purchase cost has been recorded.");
