@@ -904,4 +904,13 @@ describe("App", () => {
   });
 
 
+  it("displays dashboard egg production as crates using the configured crate size", async () => {
+    mockFarmApis();
+    render(<App />);
+
+    await screen.findByText("Good eggs");
+    expect(screen.getByText("29 crates, 5 eggs")).toBeInTheDocument();
+    expect(screen.queryByText("875")).not.toBeInTheDocument();
+  });
+
 });

@@ -8,6 +8,7 @@ import PageSection from "../components/PageSection.jsx";
 import PageTemplate from "../components/PageTemplate.jsx";
 import { formatAuditAction, formatAuditEntity, formatAuditTimestamp } from "../utils/auditFormatting.js";
 import { attentionTarget } from "../utils/attentionNavigation.js";
+import { formatEggQuantity } from "../utils/eggFormatting.js";
 // eslint-disable-next-line no-unused-vars
 import GettingStartedChecklist from "../components/GettingStartedChecklist.jsx";
 
@@ -37,6 +38,7 @@ export default function DashboardPage() {
     formatMoney,
     formatQuantity,
     formatCount,
+    crateSize,
     farm,
     houses,
     batches,
@@ -177,7 +179,7 @@ export default function DashboardPage() {
                 ["Occupied houses", formatCount(dashboard.occupiedHouses), ""],
                 ["Empty houses", formatCount(dashboard.emptyHouses), ""],
                 ["Mortality", formatCount(dashboard.mortality), "birds"],
-                ["Good eggs", formatCount(dashboard.eggsGood), "eggs"],
+                ["Good eggs", formatEggQuantity(dashboard.eggsGood, crateSize), ""],
                 ["Revenue", formatMoney(dashboard.revenueMinor, farm.currency), ""],
                 ["Expenses", formatMoney(dashboard.expensesMinor, farm.currency), ""],
                 ["Profit", formatMoney(dashboard.profitMinor, farm.currency), ""],
