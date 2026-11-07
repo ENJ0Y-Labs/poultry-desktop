@@ -210,6 +210,7 @@ describe("App", () => {
     await waitFor(() => expect(resolveFarm).toBeTypeOf("function"));
     resolveFarm(farm);
     await waitFor(() => expect(screen.getByRole("heading", { name: "Farm dashboard" })).toBeInTheDocument());
+    expect(screen.getByRole("combobox", { name: "Theme" })).toHaveValue("dark");
   });
 
   it("renders the farm setup screen when no farm exists", async () => {
@@ -316,6 +317,10 @@ describe("App", () => {
     render(<App />);
 
     await screen.findByRole("heading", { name: "Create your owner account" });
+    const setupThemeSelector = screen.getByRole("combobox", { name: "Theme" });
+    expect(setupThemeSelector).toHaveValue("auto");
+    fireEvent.change(setupThemeSelector, { target: { value: "dark" } });
+    expect(document.documentElement.dataset.theme).toBe("dark");
     expect(screen.getByRole("button", { name: "Create account and continue" })).toBeInTheDocument();
     expect(screen.queryByLabelText("Username or email")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Sign in to your farm/ })).not.toBeInTheDocument();
