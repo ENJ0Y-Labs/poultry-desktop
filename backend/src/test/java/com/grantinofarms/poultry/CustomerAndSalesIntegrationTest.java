@@ -140,8 +140,8 @@ class CustomerAndSalesIntegrationTest {
         var common = salesService.list(null, null, "BROILER", LocalDate.of(2026, 1, 13));
         assertThat(common).hasSize(4);
         assertThat(salesService.list(null, customerA.id(), "BROILER", LocalDate.of(2026, 1, 13))).hasSize(3);
-        assertThat(reportService.batch(batch.id(), LocalDate.of(2026, 1, 13)).get("sales"))
-                .asList().hasSize(4);
+        assertThat((List<?>) reportService.batch(batch.id(), LocalDate.of(2026, 1, 13)).get("sales"))
+                .hasSize(4);
         assertThat(((Number) reportService.batch(batch.id(), LocalDate.of(2026, 1, 13))
                 .get("revenueMinor")).longValue()).isEqualTo(3_350_000L);
         assertThat(jdbc.queryForObject("""
