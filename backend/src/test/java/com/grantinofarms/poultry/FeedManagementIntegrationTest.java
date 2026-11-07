@@ -246,6 +246,53 @@ class FeedManagementIntegrationTest {
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM audit_logs WHERE entity_type = 'FEED_PURCHASE'", Integer.class)).isZero();
     }
 
+    @Test
+    void feedApplicabilitySupportsEveryNonEmptyCombinationAndEnforcesEachBirdType() {
+        setupFarm();
+        LocalDate placed = LocalDate.of(2026, 1, 1);
+        var layerHouse = houseService.create(new HouseCreateRequest("Layer House", "LA1", null));
+        var broilerHouse = houseService.create(new HouseCreateRequest("Broiler House", "BR1", null));
+        var turkeyHouse = houseService.create(new HouseCreateRequest("Turkey House", "TU1", null));
+        var layer = batchService.create(new BatchCreateRequest("LAYER", placed, layerHouse.id(), 10, null, 1000L));
+        var broiler = batchService.create(new BatchCreateRequest("BROILER", placed, broilerHouse.id(), 10, null, 1000L));
+        var turkey = batchService.create(new BatchCreateRequest("TURKEY", placed, turkeyHouse.id(), 10, null, 1000L));
+        List<BatchResponse> batches = List.of(layer, broiler, turkey);
+
+        List<List<String>> combinations = List.of(
+                List.of("LAYER"),
+                List.of("BROILER"),
+                List.of("TURKEY"),
+                List.of("LAYER", "BROILER"),
+                List.of("LAYER", "TURKEY"),
+                List.of("BROILER", "TURKEY"),
+                List.of("LAYER", "BROILER", "TURKEY")
+        );
+
+        int index = 0;
+        for (List<String> combination : combinations) {
+            var feedType = feedService.createType(new FeedTypeCreateRequest(
+                    "Combination Feed " + (++index), "kg", combination));
+            assertThat(feedType.applicableTypes()).containsExactlyElementsOf(combination);
+
+            for (BatchResponse batch : batches) {
+                boolean applicable = combination.contains(batch.type());
+                String expected = applicable
+                        ? "Insufficient feed inventory for FIFO consumption."
+                        : "This feed type is not configured for the batch type.";
+                assertThatThrownBy(() -> feedService.use(batch.id(), new FeedUsageRequest(
+                        feedType.id(), placed.plusDays(1), BigDecimal.ONE, "kg", "Applicability test")))
+                        .hasMessage(expected);
+            }
+        }
+
+        var legacyBoth = feedService.createType(new FeedTypeCreateRequest("Legacy Both", "kg", "BOTH"));
+        assertThat(legacyBoth.applicableTypes()).containsExactly("LAYER", "BROILER", "TURKEY");
+
+        assertThatThrownBy(() -> feedService.createType(new FeedTypeCreateRequest(
+                "No Bird Type", "kg", List.of())))
+                .hasMessage("Select at least one supported bird type: LAYER, BROILER, or TURKEY.");
+    }
+
     private void setupFarm() {
         farmService.create(new FarmCreateRequest(
                 "Grantino Farms", "Port Harcourt", "Africa/Lagos", "NGN"));
