@@ -145,7 +145,7 @@ const emptyExpense = {
   category: "OTHER",
 };
 const emptyCustomer = { name: "", phone: "", notes: "" };
-const emptySupplier = { name: "", phone: "", notes: "" };
+const emptySupplier = { name: "", phone: "", email: "", address: "", notes: "" };
 const emptyInventoryItem = { name: "", category: "SUPPLY", unit: "piece", reorderLevel: "" };
 const emptyInventoryMovement = {
   itemId: "", date: todayLocalDate(), movementType: "RECEIVE",
@@ -658,7 +658,7 @@ export default function App() {
     event.preventDefault(); setSaving(true); setError("");
     try {
       const payload = { name: supplierForm.name.trim(), phone: supplierForm.phone.trim() || null,
-        email: null, address: null, notes: supplierForm.notes.trim() || null };
+        email: supplierForm.email.trim() || null, address: supplierForm.address.trim() || null, notes: supplierForm.notes.trim() || null };
       const saved = editingSupplierId
         ? await supplierApi.update(editingSupplierId, payload)
         : await supplierApi.create(payload);
@@ -671,7 +671,7 @@ export default function App() {
 
   function editSupplier(supplier) {
     setEditingSupplierId(supplier.id);
-    setSupplierForm({ name: supplier.name || "", phone: supplier.phone || "", notes: supplier.notes || "" });
+    setSupplierForm({ name: supplier.name || "", phone: supplier.phone || "", email: supplier.email || "", address: supplier.address || "", notes: supplier.notes || "" });
   }
   function cancelSupplierEdit() { setEditingSupplierId(""); setSupplierForm(emptySupplier); }
 
