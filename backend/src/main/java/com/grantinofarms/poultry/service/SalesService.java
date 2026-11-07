@@ -41,9 +41,9 @@ public class SalesService {
         if (customer != null && customerRepository.findById(farmId, customer) == null) {
             throw new ApiException(HttpStatus.NOT_FOUND, "CUSTOMER_NOT_FOUND", "Customer not found.");
         }
-        if (type != null && !"EGG".equals(type) && !"BROILER".equals(type)) {
+        if (type != null && !"EGG".equals(type) && !"BROILER".equals(type) && !"TURKEY".equals(type)) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_SALE_TYPE",
-                    "Sale type must be EGG or BROILER.");
+                    "Sale type must be EGG, BROILER, or TURKEY.");
         }
 
         return repository.findByFarm(farmId, batch, customer, type,
