@@ -12,7 +12,7 @@ import DataTable from "../components/DataTable.jsx";
 const saleTypeLabel = type => type === "EGG" ? "Eggs" : type === "BROILER" ? "Broiler birds" : String(type || "Unknown").toLowerCase().replace(/\b\w/g, letter => letter.toUpperCase());
 
 export default function SalesMoneyPage() {
-  const { formatMoney, farm, batches, expenseForm, setExpenseForm, expenses, expenseBatchFilter, setExpenseBatchFilter, customers, customerForm, setCustomerForm, sales, saving, expenseCategories, loadExpenses, saveCustomer, saveExpense } = useContext(FarmManagerContext);
+  const { formatMoney, farm, batches, expenseForm, setExpenseForm, expenses, expenseBatchFilter, setExpenseBatchFilter, customers, customerForm, setCustomerForm, editingCustomerId, editCustomer, cancelCustomerEdit, sales, saving, expenseCategories, loadExpenses, saveCustomer, saveExpense } = useContext(FarmManagerContext);
 
   return (
     <PageTemplate className="grid">
@@ -25,11 +25,12 @@ export default function SalesMoneyPage() {
             <label className="field"><span>Customer name</span><input required value={customerForm.name} onChange={e=>setCustomerForm({...customerForm,name:e.target.value})}/></label>
             <label className="field"><span>Phone</span><input value={customerForm.phone} onChange={e=>setCustomerForm({...customerForm,phone:e.target.value})}/></label>
             <label className="field"><span>Notes</span><input value={customerForm.notes} onChange={e=>setCustomerForm({...customerForm,notes:e.target.value})}/></label>
-            <button disabled={saving}>Add customer</button>
+            <button disabled={saving}>{editingCustomerId ? "Save customer" : "Add customer"}</button>{editingCustomerId && <button type="button" className="secondary-button" onClick={cancelCustomerEdit}>Cancel</button>}
           </form>
           <DataTable caption="Customers" columns={[
               { key: "name", label: "Name" }, { key: "phone", label: "Phone", render: row => row.phone || "—" },
               { key: "notes", label: "Notes", render: row => row.notes || "—" },
+              { key: "action", label: "Action", render: row => <button type="button" className="secondary-button" onClick={() => editCustomer(row)}>Edit</button> },
             ]} rows={customers} emptyMessage="No customers yet." />
         </section></PageSection>
 
