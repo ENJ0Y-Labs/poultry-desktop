@@ -7,6 +7,6 @@ public record BatchFeedCostResponse(
         LocalDate asOf,
         int currentBirds,
         long consumedQuantityMilli,
-        long feedCostMinor,
+        Long feedCostMinor,
         Long feedCostPerBirdMinor
 ) {}
