@@ -4,7 +4,7 @@
 
 Pomas supports dark and light themes. The accessibility overrides are loaded after the main stylesheet and use dedicated semantic color tokens for important text, rather than relying on legacy palette aliases that also represent backgrounds.
 
-The repeatable build check in `scripts/verify-a11y.mjs` computes WCAG relative-luminance contrast ratios from the actual literal foreground/background tokens used by the accessibility stylesheet. It checks primary, secondary, tertiary, shortcut, and accent-navigation text in both themes. It also checks minimum font sizes for primary navigation, form labels, table headers, metric labels, keyboard shortcuts, and the status bar.
+The repeatable build check in `scripts/verify-a11y.mjs` computes WCAG relative-luminance contrast ratios from the actual literal foreground/background tokens used by the accessibility stylesheet and renderer theme tokens. It checks primary, secondary, tertiary, shortcut, and accent-navigation text in both themes, plus landing-page story text, feature and note surfaces, accent text, sign-in actions, and the authentication focus indicator. It also checks minimum font sizes for primary navigation, form labels, table headers, metric labels, keyboard shortcuts, and the status bar.
 
 ## Text-size policy
 
