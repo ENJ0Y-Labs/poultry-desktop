@@ -162,6 +162,8 @@ export default function FeedStockPage() {
         <form className="form-grid" onSubmit={saveSupplier}>
           <label>Supplier name<input required maxLength="120" value={supplierForm.name} onChange={event=>setSupplierForm({...supplierForm,name:event.target.value})}/></label>
           <label>Phone<input maxLength="40" value={supplierForm.phone} onChange={event=>setSupplierForm({...supplierForm,phone:event.target.value})}/></label>
+          <label>Email<input type="email" maxLength="160" value={supplierForm.email} onChange={event=>setSupplierForm({...supplierForm,email:event.target.value})}/></label>
+          <label>Address<input maxLength="240" value={supplierForm.address} onChange={event=>setSupplierForm({...supplierForm,address:event.target.value})}/></label>
           <label className="full">Notes<input value={supplierForm.notes} onChange={event=>setSupplierForm({...supplierForm,notes:event.target.value})}/></label>
           <button disabled={saving}>{editingSupplierId ? "Save supplier" : "Add supplier"}</button>{editingSupplierId && <button type="button" className="secondary-button" onClick={cancelSupplierEdit}>Cancel</button>}
         </form>
