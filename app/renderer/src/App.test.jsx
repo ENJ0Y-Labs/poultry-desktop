@@ -804,8 +804,8 @@ describe("App", () => {
   it("routes dashboard quick actions to validated forms with the last-used batch context", async () => {
     mockFarmApis({ currentBatches: batches });
     vi.mocked(feedApi.listTypes).mockResolvedValue([
-      { id: "feed-layer", name: "Layer mash", unit: "bag", applicableType: "LAYER", status: "ACTIVE" },
-      { id: "feed-broiler", name: "Broiler starter", unit: "bag", applicableType: "BROILER", status: "ACTIVE" },
+      { id: "feed-layer", name: "Layer mash", unit: "bag", applicableType: "LAYER", applicableTypes: ["LAYER"], status: "ACTIVE" },
+      { id: "feed-broiler", name: "Broiler starter", unit: "bag", applicableType: "BROILER", applicableTypes: ["BROILER"], status: "ACTIVE" },
     ]);
     render(<App />);
     await screen.findByRole("heading", { name: "Farm dashboard" });
