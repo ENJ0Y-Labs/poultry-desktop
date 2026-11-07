@@ -263,7 +263,13 @@ Broad progression:
 - V17: sessions
 - V18: operational query indexes
 - V19: performance indexes
-- V20: settings management and configurable expense categories\n- V21: optional feed kilogram conversion factors
+- V20: settings management and configurable expense categories
+- V21: optional feed kilogram conversion factors
+- V22: supported start-page values
+- V23: farm water unit label
+- V24: username login
+- V25: transaction reversal records
+- V26: zero egg collections
 
 Never edit an applied migration. Add a new version greater than the current highest version for future schema changes.
 
