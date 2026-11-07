@@ -76,6 +76,26 @@ public class FeedRepository {
         }
     }
 
+    public boolean productIdentityExists(String farmId, String name, String brand, String excludingId) {
+        Integer count = jdbc.queryForObject("""
+                SELECT COUNT(*) FROM feed_types
+                WHERE farm_id = ?
+                  AND lower(trim(name)) = lower(trim(?))
+                  AND lower(trim(COALESCE(brand, ''))) = lower(trim(COALESCE(?, '')))
+                  AND (? IS NULL OR id <> ?)
+                """, Integer.class, farmId, name, brand, excludingId, excludingId);
+        return count != null && count > 0;
+    }
+
+    public void updateProductIdentity(String id, String name, String brand, String packagingName,
+                                      java.math.BigDecimal packageWeightKg, String now) {
+        jdbc.update("""
+                UPDATE feed_types
+                SET name = ?, brand = ?, packaging_name = ?, package_weight_kg = ?, updated_at = ?
+                WHERE id = ?
+                """, name, brand, packagingName, packageWeightKg, now, id);
+    }
+
     public List<String> findApplicableTypes(String feedTypeId) {
         return jdbc.query("SELECT bird_type FROM feed_type_applicability WHERE feed_type_id = ? ORDER BY CASE bird_type WHEN 'LAYER' THEN 1 WHEN 'BROILER' THEN 2 WHEN 'TURKEY' THEN 3 END",
                 (rs, n) -> rs.getString("bird_type"), feedTypeId);
