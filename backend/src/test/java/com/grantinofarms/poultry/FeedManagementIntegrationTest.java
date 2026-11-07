@@ -94,6 +94,12 @@ class FeedManagementIntegrationTest {
                 brandA.id(), null, LocalDate.of(2026,1,1), new BigDecimal("10"), "bag", 100_000L));
         var purchaseB = feedService.purchase(new FeedPurchaseRequest(
                 brandB.id(), null, LocalDate.of(2026,1,1), new BigDecimal("20"), "bag", 400_000L));
+        assertThat(purchaseA.brand()).isEqualTo("Brand A");
+        var openingType = feedService.createType(new FeedTypeCreateRequest(
+                "Layer Mash", "bag", "LAYER", null, "Brand C", "bag", null));
+        var opening = feedService.createOpeningBalance(new FeedOpeningBalanceRequest(
+                openingType.id(), LocalDate.of(2026,1,1), new BigDecimal("1"), "bag", "Brand C opening count"));
+        assertThat(opening.brand()).isEqualTo("Brand C");
         feedService.use(batch.id(), new FeedUsageRequest(
                 brandA.id(), LocalDate.of(2026,1,2), new BigDecimal("2"), "bag", "Brand A usage"));
 
