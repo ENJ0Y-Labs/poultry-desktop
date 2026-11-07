@@ -1132,6 +1132,30 @@ export default function App() {
     } catch (err) { setError(displayApiError(err)); }
   }
 
+  function editBatchSetup(batch) {
+    setEditingBatchId(batch.id);
+    setBatchSetupForm({ houseId: batch.houseId || "", supplierId: batch.supplierId || "" });
+  }
+
+  function cancelBatchSetup() {
+    setEditingBatchId("");
+    setBatchSetupForm({ houseId: "", supplierId: "" });
+  }
+
+  async function saveBatchSetup(event) {
+    event.preventDefault(); setSaving(true); setError("");
+    try {
+      const updated = await batchApi.updateSetup(editingBatchId, {
+        houseId: batchSetupForm.houseId,
+        supplierId: batchSetupForm.supplierId || null,
+      });
+      setBatches(current => current.map(batch => batch.id === updated.id ? updated : batch));
+      cancelBatchSetup();
+      await loadDashboard();
+      if (selectedBatchId === updated.id) await loadBatchDashboard(updated.id);
+    } catch (err) { setError(displayApiError(err)); } finally { setSaving(false); }
+  }
+
   async function markBatchSold(id) {
     setSaving(true); setError("");
     try {
