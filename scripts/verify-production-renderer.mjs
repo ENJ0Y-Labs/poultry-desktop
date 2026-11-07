@@ -57,7 +57,7 @@ assert.ok(
   statSync(themeBootstrapPath).isFile(),
   "Production renderer must include the pre-paint theme bootstrap.",
 );
-const themeBootstrapTag = html.match(/<script\\b(?=[^>]*src=["'][^"']*theme-init\\.js["'])[^>]*><\\/script>/i)?.[0];
+const themeBootstrapTag = html.match(/<script\b(?=[^>]*src=["'][^"']*theme-init\.js["'])[^>]*><\/script>/i)?.[0];
 assert.ok(themeBootstrapTag, "Production HTML must reference the pre-paint theme bootstrap.");
 const headEnd = html.indexOf("</head>");
 assert.ok(
