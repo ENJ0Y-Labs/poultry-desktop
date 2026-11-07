@@ -92,7 +92,8 @@ public class FeedRepository {
         Integer count = jdbc.queryForObject("""
                 SELECT (SELECT COUNT(*) FROM feed_purchases WHERE feed_type_id = ?)
                      + (SELECT COUNT(*) FROM feed_usage WHERE feed_type_id = ?)
-                """, Integer.class, id, id);
+                     + (SELECT COUNT(*) FROM feed_opening_balances WHERE feed_type_id = ?)
+                """, Integer.class, id, id, id);
         return count != null && count > 0;
     }
 
