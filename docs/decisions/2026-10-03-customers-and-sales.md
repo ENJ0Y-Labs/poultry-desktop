@@ -18,7 +18,7 @@ Walk-in names are matched case-insensitively within the active farm before a cus
 
 The common ledger uses:
 - `CRATE` for Layer egg sales, preserving the exact crate quantity
-- `BIRD` for Broiler sales
+- `BIRD` for Broiler and Turkey sales
 
 The common ledger is for shared commercial history and future reporting. It does not perform egg inventory, broiler population, cost, pricing, or SOLD calculations.
 

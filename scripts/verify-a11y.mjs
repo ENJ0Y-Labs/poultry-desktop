@@ -54,6 +54,8 @@ const tokenNames = {
   criticalText: "--a11y-critical-text",
   errorBg: "--a11y-error-bg",
   errorText: "--a11y-error-text",
+  alertSurface: "--pomas-panel-raised",
+  alertText: "--a11y-text",
   actionBg: "--pomas-primary-action-bg",
   actionText: "--pomas-primary-action-text",
   focus: "--pomas-focus-ring",
@@ -73,6 +75,7 @@ for (const theme of themes) {
     ["warning status text", tokens.warningText, tokens.warningBg, 4.5],
     ["critical status text", tokens.criticalText, tokens.criticalBg, 4.5],
     ["error message text", tokens.errorText, tokens.errorBg, 4.5],
+    ["dashboard attention text on alert surface", tokens.alertText, tokens.alertSurface, 4.5],
     ["primary button text", tokens.actionText, tokens.actionBg, 4.5],
   ];
 
@@ -115,5 +118,61 @@ for (const [selector, minimum] of [
   assert.ok(size && Number(size[1]) >= minimum, `${selector} must be at least ${minimum}px`);
   console.log(`PASS font size: ${selector} ${size[1]}px`);
 }
+
+
+const rendererCss = readFileSync(resolve("app/renderer/src/styles.css"), "utf8");
+
+function rendererThemeBlock(selector) {
+  const brandStart = rendererCss.indexOf("/* Pomas brand system: semantic overrides");
+  const start = rendererCss.indexOf(selector, brandStart);
+  const end = rendererCss.indexOf("\n}", start);
+  assert.ok(start >= 0 && end > start, `Missing renderer theme block: ${selector}`);
+  return rendererCss.slice(start, end);
+}
+
+const authTokenNames = {
+  storySurface: "--auth-story-background",
+  storyText: "--auth-story-text",
+  storyMuted: "--auth-story-muted",
+  featureSurface: "--auth-feature-background",
+  noteSurface: "--auth-note-background",
+  accent: "--auth-accent",
+  buttonSurface: "--auth-button-background",
+  buttonText: "--auth-button-text",
+  focus: "--auth-focus-ring",
+  panelSurface: "--bg",
+};
+
+for (const theme of [
+  { name: "dark", selector: ":root {" },
+  { name: "light", selector: ':root[data-theme="light"] {' },
+]) {
+  const block = rendererThemeBlock(theme.selector);
+  const tokens = Object.fromEntries(
+    Object.entries(authTokenNames).map(([key, token]) => [key, readToken(block, token)])
+  );
+  const checks = [
+    ["landing primary text on story surface", tokens.storyText, tokens.storySurface, 4.5],
+    ["landing secondary text on story surface", tokens.storyMuted, tokens.storySurface, 4.5],
+    ["feature title on feature surface", tokens.storyText, tokens.featureSurface, 4.5],
+    ["feature description on feature surface", tokens.storyMuted, tokens.featureSurface, 4.5],
+    ["local-data note text on note surface", tokens.storyText, tokens.noteSurface, 4.5],
+    ["landing accent text on story surface", tokens.accent, tokens.storySurface, 4.5],
+    ["sign-in eyebrow on form surface", tokens.accent, tokens.panelSurface, 4.5],
+    ["primary auth button text", tokens.buttonText, tokens.buttonSurface, 4.5],
+    ["auth focus indicator on form surface", tokens.focus, tokens.panelSurface, 3],
+  ];
+
+  for (const [label, foreground, background, minimum] of checks) {
+    const ratio = contrast(foreground, background);
+    assert.ok(ratio >= minimum, `${theme.name} theme: ${label} contrast ${ratio.toFixed(2)}:1 is below ${minimum}:1`);
+    console.log(`PASS ${theme.name}: ${label} ${ratio.toFixed(2)}:1`);
+  }
+}
+
+assert.match(css, /button:not\([^\n]*:not\(\.attention-item\)/, "Primary button theme rules must exclude dashboard attention cards");
+assert.match(css, /\.severity\.error\s*\{[^}]*background:\s*var\(--a11y-error-bg\)[^}]*color:\s*var\(--a11y-error-text\)/s, "Error severity must use distinct semantic tokens");
+assert.match(css, /\.attention-item\s*\{[^}]*background:\s*var\(--pomas-panel-raised\)[^}]*color:\s*var\(--a11y-text\)/s, "Attention cards must use a neutral semantic surface and readable text");
+assert.match(css, /\.attention-item-clickable:hover,[\s\S]*?background:\s*var\(--pomas-panel-bg\)/, "Attention hover must remain a neutral surface");
 
 console.log("Accessibility token and minimum-size checks passed. Manual rendered UI review is still required.");

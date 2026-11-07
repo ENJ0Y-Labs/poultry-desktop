@@ -123,3 +123,17 @@ The top-level page components live under `app/renderer/src/pages/`. Shared form 
 - Theme preferences are stored under `pomas:theme`; existing `grantino:theme` preferences are read as a migration fallback.
 - Keep theme changes CSS-only; do not introduce CDN fonts, external assets, or network dependencies into the offline desktop renderer.
 \n\n## Account sign-out and responsive sidebar\n\n- Settings → App, appearance & account includes a visible Sign out action for the current authenticated session.\n- Sign out calls the existing local auth logout endpoint and returns to the sign-in screen; failures stay visible and do not pretend the session ended.\n- The sidebar collapse/expand button remains available at narrow widths. Expanded mode shows labels and farm context; collapsed mode shows the compact icon rail. The preference persists locally and does not change the current route.\n- Verify sign out, failed sign out, and sidebar collapse/expand at desktop and narrow window sizes.\n
+
+## JSX literal escape regression
+
+- Feed & Stock → Feed types must render the package metadata fields as normal adjacent form controls. Do not place literal `\\n` text between JSX elements; use actual JSX whitespace/structure and CSS layout.
+- Fix hard-coded markup artifacts at their source. Do not sanitize arbitrary form values or strip legitimate backslashes entered by farm operators.
+- Vitest renders the feed form and verifies the package fields are present without visible literal backslash-n text. Keep the inline form responsive through its existing layout styles and preserve labels for accessible control names.
+
+
+## Feed applicability controls
+
+- Feed type creation uses independent Layers, Broilers, and Turkeys checkboxes. At least one must be selected.
+- Daily Work feed usage options are filtered to active feed types whose `applicableTypes` contains the selected batch type. Changing the batch clears a previously selected feed type if it is no longer applicable.
+- The backend remains authoritative and rejects incompatible feed usage even if a client submits a forged or stale selection.
+- Farm feed inventory report rows include each feed type's applicability set.

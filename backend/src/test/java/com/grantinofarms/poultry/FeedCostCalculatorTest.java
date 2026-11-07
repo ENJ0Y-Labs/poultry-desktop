@@ -2,6 +2,7 @@ package com.grantinofarms.poultry;
 
 import com.grantinofarms.poultry.domain.FeedCostCalculator;
 import com.grantinofarms.poultry.domain.FeedPurchaseLot;
+import com.grantinofarms.poultry.domain.FeedOpeningStockLot;
 import com.grantinofarms.poultry.domain.FeedUsageEvent;
 import org.junit.jupiter.api.Test;
 
@@ -53,6 +54,67 @@ class FeedCostCalculatorTest {
         assertThat(result.consumedCostMinor()).isEqualTo(100);
         assertThat(result.remainingQuantityMilli()).isZero();
         assertThat(result.remainingCostMinor()).isZero();
+    }
+
+    @Test
+    void openingStockIsUnvaluedAndParticipatesInFifoBeforeLaterPurchases() {
+        var opening = new FeedOpeningStockLot("o1", "f1", LocalDate.of(2026,1,1), 10_000, T1);
+        var purchase = new FeedPurchaseLot("p1", "f1", LocalDate.of(2026,1,2), 10_000, 100_000, T2);
+        var usage = new FeedUsageEvent("u1", "b1", "f1", LocalDate.of(2026,1,3), 5_000, T2);
+
+        var result = FeedCostCalculator.calculate(
+                List.of(purchase), List.of(opening), List.of(usage), LocalDate.of(2026,1,3));
+
+        assertThat(result.consumedQuantityMilli()).isEqualTo(5_000);
+        assertThat(result.usageCostsMinor()).containsEntry("u1", null);
+        assertThat(result.consumedCostMinor()).isNull();
+        assertThat(result.remainingQuantityMilli()).isEqualTo(15_000);
+        assertThat(result.remainingCostMinor()).isNull();
+    }
+
+    @Test
+    void purchaseCostBecomesKnownAfterAllEarlierOpeningStockHasBeenConsumed() {
+        var opening = new FeedOpeningStockLot("o1", "f1", LocalDate.of(2026,1,1), 5_000, T1);
+        var purchase = new FeedPurchaseLot("p1", "f1", LocalDate.of(2026,1,2), 10_000, 100_000, T2);
+        var mixedUsage = new FeedUsageEvent("u1", "b1", "f1", LocalDate.of(2026,1,3), 7_000, T2);
+
+        var result = FeedCostCalculator.calculate(
+                List.of(purchase), List.of(opening), List.of(mixedUsage), LocalDate.of(2026,1,3));
+
+        assertThat(result.usageCostsMinor()).containsEntry("u1", null);
+        assertThat(result.usageKnownCostsMinor()).containsEntry("u1", 20_000L);
+        assertThat(result.consumedCostMinor()).isNull();
+        assertThat(result.knownConsumedCostMinor()).isEqualTo(20_000L);
+        assertThat(result.remainingQuantityMilli()).isEqualTo(8_000);
+        assertThat(result.remainingCostMinor()).isEqualTo(80_000L);
+    }
+
+    @Test
+    void sameDayFifoUsesCreationTimestampAndFutureLotsCannotFundEarlierUsage() {
+        var sameDayOpening = new FeedOpeningStockLot(
+                "o1", "f1", LocalDate.of(2026,1,2), 10_000, T1);
+        var sameDayUsage = new FeedUsageEvent(
+                "u1", "b1", "f1", LocalDate.of(2026,1,2), 5_000, T2);
+
+        var available = FeedCostCalculator.calculate(
+                List.of(), List.of(sameDayOpening), List.of(sameDayUsage), LocalDate.of(2026,1,2));
+        assertThat(available.usageCostsMinor()).containsEntry("u1", null);
+
+        var laterPurchase = new FeedPurchaseLot(
+                "p2", "f1", LocalDate.of(2026,1,3), 10_000, 100_000, T2);
+        var earlierUsage = new FeedUsageEvent(
+                "u2", "b1", "f1", LocalDate.of(2026,1,2), 1_000, T1);
+        assertThatThrownBy(() -> FeedCostCalculator.calculate(
+                List.of(laterPurchase), List.of(), List.of(earlierUsage), LocalDate.of(2026,1,3)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Insufficient feed inventory for FIFO consumption.");
+
+        var laterSameDayPurchase = new FeedPurchaseLot(
+                "p3", "f1", LocalDate.of(2026,1,2), 10_000, 100_000, T2);
+        assertThatThrownBy(() -> FeedCostCalculator.calculate(
+                List.of(laterSameDayPurchase), List.of(), List.of(earlierUsage), LocalDate.of(2026,1,2)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Insufficient feed inventory for FIFO consumption.");
     }
 
     @Test

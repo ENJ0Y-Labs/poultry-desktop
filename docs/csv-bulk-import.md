@@ -78,8 +78,8 @@ Feed history imports are separate modules and must be previewed before confirmat
 
 | Module | Template version | Fields | Notes |
 |---|---|---|---|
-| Historical feed purchases | 1.0 | `feed_type_name, supplier_name, purchase_date, quantity, unit, total_cost_naira` | `supplier_name` is optional. Purchase cost is entered in naira with at most two decimal places and converted by the backend to integer kobo. |
-| Historical feed usage | 1.0 | `feed_type_name, batch_code, usage_date, quantity, unit, reason` | `reason` is optional; batch code must resolve to an existing active batch. |
+| Historical feed purchases | 1.0 | `feed_type_name, feed_type_brand, supplier_name, purchase_date, quantity, unit, total_cost_naira` | `feed_type_brand` and `supplier_name` are optional only when the feed name resolves to one product. If a feed name exists under multiple brands, provide the exact brand. Purchase cost is entered in naira with at most two decimal places and converted by the backend to integer kobo. |
+| Historical feed usage | 1.0 | `feed_type_name, feed_type_brand, batch_code, usage_date, quantity, unit, reason` | `feed_type_brand` is optional only when the feed name resolves to one product. If a feed name exists under multiple brands, provide the exact brand. `reason` is optional; batch code must resolve to an existing active batch. |
 
 Use the exact configured feed type name and, when supplied, the exact active supplier name. The current feed-type and supplier models do not expose dedicated stable codes, so the template must not pretend that they do. Batch usage uses the existing human-readable batch code. Internal database IDs are not accepted in the CSV.
 

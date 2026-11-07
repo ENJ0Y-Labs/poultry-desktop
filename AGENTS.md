@@ -22,13 +22,13 @@ A boring screen with correct poultry numbers beats a beautiful dashboard showing
 
 **Current stage: 17 — Independent Turkey support.**
 
-Stage 8 feed management is implemented. Stage 9 daily farm operations is implemented. Stage 10 health management is implemented. Stage 11 added Layer-only egg production, egg inventory, cracked-egg history, configurable crate conversion, and egg sales. Stage 12 adds Broiler-only weight records, growth calculations, backend-owned FCR, bird sales, and automatic SOLD lifecycle locking. Stage 13 adds cost-based Broiler pricing, configurable target margin, working/latest margin, and audited below-target sale confirmation. Stage 14 adds a simple farm/batch expense ledger. Stage 15 adds reusable customers and a common sales ledger while preserving Layer egg and Broiler bird sale behavior. Stage 16 adds a transaction-based inventory system for drugs, vaccines, and farm supplies, while the existing feed subsystem remains authoritative for feed stock and FIFO costing. Feed definitions may include brand, package name, and confirmed package weight in kilograms; unknown weights must remain unset. Feed quantities continue to use the existing precision-safe FIFO ledger; do not infer package weights or applicability from product names.
+Stage 8 feed management is implemented. Stage 9 daily farm operations is implemented. Stage 10 health management is implemented. Stage 11 added Layer-only egg production, egg inventory, cracked-egg history, configurable crate conversion, and egg sales. Stage 12 adds Broiler-only weight records, growth calculations, backend-owned FCR, bird sales, and automatic SOLD lifecycle locking. Stage 13 adds cost-based Broiler pricing, configurable target margin, working/latest margin, and audited below-target sale confirmation. Stage 14 adds a simple farm/batch expense ledger. Stage 15 adds reusable customers and a common sales ledger while preserving Layer egg and Broiler bird sale behavior. Stage 16 adds a transaction-based inventory system for drugs, vaccines, and farm supplies, while the existing feed subsystem remains authoritative for feed stock and FIFO costing. Feed definitions may include brand, package name, and confirmed package weight in kilograms; unknown weights must remain unset. Feed product identity is the normalized feed name plus normalized brand within a farm, so the same name under different brands is allowed while duplicate name/brand pairs are rejected. Identity edits update the existing feed type ID and must not rewrite purchases, opening stock, usage, expenses, FIFO history, unit, or applicability. Historical feed CSV rows must include feed_type_brand when the name is ambiguous. Feed quantities continue to use the existing precision-safe FIFO ledger; do not infer package weights or applicability from product names.
 
 Do not build later-stage features unless the owner explicitly changes the stage.
 
 ### Branding
 
-The product is branded **Pomas** (egg-and-M logo). The root `package.json` version is the authoritative desktop application release version. Electron exposes `app.getVersion()` and the actual `process.arch` to the renderer through the narrow preload IPC bridge; do not hardcode release versions in UI components. Windows packages explicitly target x64 and use `POMAS-v<version>-Setup-x64.exe`. Keep the backend Maven artifact version independent from the desktop release version. Packaged Windows metadata uses the existing `Grantino Farms` product identity. Logo sources: `build/icon.ico` and `build/icon.png` (installer/executable), `app/assets/icon.png` (window icon), `app/renderer/src/assets/pomas-logo.png` (sidebar mark).
+The product is branded **Pomas** (egg-and-M logo). The root `package.json` version is the authoritative desktop application release version. Electron exposes `app.getVersion()` and the actual `process.arch` through the narrow preload IPC bridge; architecture is runtime metadata only and must never be rendered as product/version text. Do not hardcode release versions in UI components. Windows packages explicitly target x64 and use `POMAS-v<version>-Setup-x64.exe`. Keep the backend Maven artifact version independent from the desktop release version. Packaged Windows metadata uses the existing `Grantino Farms` product identity. Logo sources: `build/icon.ico` and `build/icon.png` (installer/executable), `app/assets/icon.png` (window icon), `app/renderer/src/assets/pomas-logo.png` (sidebar mark).
 
 The installer ID (`appId`), repository name, Java packages, and database file name are intentionally unchanged. Packaged builds pin Electron's `userData` to the folder `%APPDATA%/Poultry Farm Manager` (see `app/main/main.js`) so installs created before the rename keep finding their data. Do not remove that pin without a data-migration plan.
 
@@ -1172,7 +1172,7 @@ These decisions are intentional and should not be changed casually:
 - Broiler terminal lifecycle state is SOLD when all birds are sold.
 - Reopening requires an audited reason.
 - Feed purchases are inventory and expense at purchase time; later batch consumption is allocation, not a second expense.
-- Feed types are configurable and declare a unit plus applicable flock type.
+- Feed types are configurable and declare a unit plus a non-empty set of applicable bird types.
 - Feed quantities use integer thousandths of the configured unit.
 - FIFO feed consumption preserves each purchase lot's original cost.
 - Feed usage cost is added once to the batch's attributable bird-cost pool.
@@ -1240,7 +1240,10 @@ And never sacrifice poultry math for dashboard cosmetics.
 - Dark mode uses black `#000000` and near-black `#0A0A0A` surfaces, off-white body text, and gold accents. Teal is limited to fills and borders that do not carry text; never use teal text on black.
 - Primary buttons use white text on teal in light mode and black text on gold in dark mode.
 - Warning, critical, and error colours must remain semantically distinct from brand colours.
+- Dashboard attention cards are content surfaces, not primary actions: exclude `.attention-item` from global primary-button styling, use neutral semantic panel/text tokens, and keep warning, critical, and error severity badges on distinct contrast-safe token pairs.
 - All colours must be assigned through semantic CSS tokens. Do not add per-screen hardcoded colour values.
+- Landing, sign-in, and first-run owner-setup screens must use the shared --auth-* semantic tokens for both themes. Keep their theme selector available before authentication; do not introduce fixed page colours in screen selectors.
+- Keep the external theme bootstrap in `app/renderer/public/theme-init.js` referenced from the document head before the renderer module. It must remain compatible with the packaged renderer CSP and must not become an inline script.
 - Preserve Auto, Light, and Dark behavior. Auto follows the operating system colour scheme and updates when the system preference changes.
 - Update `docs/accessibility.md` and `scripts/verify-a11y.mjs` whenever theme tokens or required contrast pairs change. Keep all existing tests; never weaken or delete tests to obtain a pass.
 - The automated checker validates token pairs only. Do not claim full rendered contrast or runtime layout validation without testing the running app at 1366×768 and 1100×650 in Auto, Light, and Dark.
@@ -1345,3 +1348,25 @@ Validate the renderer with the backend available, during startup, and with the b
 - Read the label from farm settings for water-entry forms and farm/batch report views and exports. Do not hard-code `units` or `litres` in a water-specific display.
 - Water unit setting changes must be audited with both the prior and updated settings snapshots so the change is traceable.
 - Keep the migration forward-only. Migration tests must start from a pre-label database containing existing water records and assert the label default plus unchanged numeric capacity/count values.
+
+
+## JSX text and line breaks
+
+- Never paste the two-character escape sequence `\\n` between JSX elements to represent visual spacing or a line break. JSX renders it as literal text. Put each element on its own JSX line and use semantic grouping, CSS `gap`, or an explicit layout wrapper for spacing.
+- When reviewing escaped text, distinguish source-code formatting from user-entered values. Fix only unintended hard-coded UI escape sequences; never globally strip or normalize backslashes in user-provided names, notes, reasons, or other stored text.
+- Add a renderer regression test for any reported literal escape sequence so the affected screen is checked as rendered DOM text.
+
+
+## Multi-type feed applicability
+
+- Feed applicability is a non-empty set of `LAYER`, `BROILER`, and `TURKEY`; every non-empty combination is supported.
+- Persist the set in `feed_type_applicability`. The legacy `feed_types.applicable_type` field is compatibility metadata only and must not drive business rules.
+- V32 maps legacy `BOTH` to all three supported types and maps each legacy single type to its matching one. Never infer applicability from feed/product names.
+- Validate applicability in FeedService, historical feed CSV preview/import, and batch feed usage. The renderer shows independent checkboxes and filters Daily Work options to active feeds compatible with the selected batch.
+- Do not modify feed purchases, feed opening balances, feed usage, FIFO allocation, or expenses while migrating applicability. Add backend coverage for every one-, two-, and three-type combination and a migration test that preserves feed history.
+
+## Opening feed stock and FIFO valuation
+
+Opening feed stock is stored in the existing `feed_opening_balances` table. Do not create a duplicate feed ledger or a purchase, supplier, invoice, or expense for opening stock. Opening balances enter the same FIFO sequence as purchased lots, ordered by effective date and then creation timestamp. Opening lots are unvalued: never assign zero or estimated cost. If a usage consumes any unvalued opening quantity, its total feed cost is unknown (`null`). Preserve and allocate the known cost portion consumed from purchased lots to the batch bird-cost pool, exposing it as `knownFeedCostMinor`; never invent cost for the unvalued portion. A usage consuming only opening stock has no known purchased-feed cost and creates no bird additional-cost event. Remaining or consumed inventory cost, batch feed cost, and per-bird feed cost must remain unknown whenever their included quantities contain unvalued stock. Render unknown as “Unknown”, never as currency zero.
+
+An opening balance may be dated before a later purchase, but cannot be dated before the latest existing usage or latest opening-balance entry for the same feed type. This prevents retroactive changes to FIFO allocations. Preserve the existing purchase rule that an actual purchase creates exactly one feed expense. See `docs/decisions/2026-10-02-feed-management.md`.

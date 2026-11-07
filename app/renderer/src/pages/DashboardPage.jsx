@@ -8,6 +8,7 @@ import PageSection from "../components/PageSection.jsx";
 import PageTemplate from "../components/PageTemplate.jsx";
 import { formatAuditAction, formatAuditEntity, formatAuditTimestamp } from "../utils/auditFormatting.js";
 import { attentionTarget } from "../utils/attentionNavigation.js";
+import { formatEggQuantity } from "../utils/eggFormatting.js";
 // eslint-disable-next-line no-unused-vars
 import GettingStartedChecklist from "../components/GettingStartedChecklist.jsx";
 
@@ -37,6 +38,7 @@ export default function DashboardPage() {
     formatMoney,
     formatQuantity,
     formatCount,
+    crateSize,
     farm,
     houses,
     batches,
@@ -177,7 +179,7 @@ export default function DashboardPage() {
                 ["Occupied houses", formatCount(dashboard.occupiedHouses), ""],
                 ["Empty houses", formatCount(dashboard.emptyHouses), ""],
                 ["Mortality", formatCount(dashboard.mortality), "birds"],
-                ["Good eggs", formatCount(dashboard.eggsGood), "eggs"],
+                ["Good eggs", formatEggQuantity(dashboard.eggsGood, crateSize), ""],
                 ["Revenue", formatMoney(dashboard.revenueMinor, farm.currency), ""],
                 ["Expenses", formatMoney(dashboard.expensesMinor, farm.currency), ""],
                 ["Profit", formatMoney(dashboard.profitMinor, farm.currency), ""],
@@ -197,8 +199,8 @@ export default function DashboardPage() {
               <div className="subsection dashboard-feed-panel"><h3>Feed</h3><div className="dashboard-list">
                 <div><span>Feed types</span><strong>{dashboard.feedSummary?.typeCount ?? 0}</strong></div>
                 <div><span>Stock remaining</span><strong>{formatQuantity(dashboard.feedSummary?.remainingQuantityMilli)}</strong></div>
-                <div><span>Stock value</span><strong>{formatMoney(dashboard.feedSummary?.remainingCostMinor, farm.currency)}</strong></div>
-                <div><span>Consumed cost</span><strong>{formatMoney(dashboard.feedSummary?.consumedCostMinor, farm.currency)}</strong></div>
+                <div><span>Stock value</span><strong>{dashboard.feedSummary?.remainingCostMinor == null ? "Unknown" : formatMoney(dashboard.feedSummary.remainingCostMinor, farm.currency)}</strong></div>
+                <div><span>Consumed cost</span><strong>{dashboard.feedSummary?.consumedCostMinor == null ? "Unknown" : formatMoney(dashboard.feedSummary.consumedCostMinor, farm.currency)}</strong></div>
               </div></div>
               <div className="subsection dashboard-attention-panel"><h3>Attention</h3>
                 {attention.length === 0 ? <p className="muted">Nothing currently requires attention.</p> :

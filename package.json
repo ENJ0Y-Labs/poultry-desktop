@@ -1,6 +1,6 @@
 {
   "name": "poultry-desktop",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "private": true,
   "description": "Pomas: local-first poultry farm management desktop application.",
   "main": "dist/main/main.js",

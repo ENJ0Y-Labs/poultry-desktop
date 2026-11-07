@@ -4,6 +4,7 @@ import com.grantinofarms.poultry.dto.*;
 import com.grantinofarms.poultry.service.BatchService;
 import com.grantinofarms.poultry.service.FarmService;
 import com.grantinofarms.poultry.service.FeedService;
+import com.grantinofarms.poultry.service.DashboardService;
 import com.grantinofarms.poultry.service.FeedHistoryCsvImportService;
 import com.grantinofarms.poultry.service.HouseService;
 import org.junit.jupiter.api.Test;
@@ -29,6 +30,7 @@ class FeedManagementIntegrationTest {
     @Autowired HouseService houseService;
     @Autowired BatchService batchService;
     @Autowired FeedService feedService;
+    @Autowired DashboardService dashboardService;
     @Autowired FeedHistoryCsvImportService feedHistoryImport;
     @Autowired JdbcTemplate jdbc;
 
@@ -69,6 +71,94 @@ class FeedManagementIntegrationTest {
 
 
     @Test
+    void sameFeedNameCanBeRegisteredForDifferentBrandsAndEditedWithoutSplittingHistory() {
+        setupFarm();
+        var house = houseService.create(new HouseCreateRequest("Brand Identity House", "BIH1", null));
+        var batch = batchService.create(new BatchCreateRequest(
+                "BROILER", LocalDate.of(2026,1,1), house.id(), 100, null, 1_000_000L));
+
+        var brandA = feedService.createType(new FeedTypeCreateRequest(
+                "Grower Mash", "bag", "BROILER", new BigDecimal("25"),
+                "Brand A", "25 kg bag", new BigDecimal("25")));
+        var brandB = feedService.createType(new FeedTypeCreateRequest(
+                "Grower Mash", "bag", "BROILER", new BigDecimal("25"),
+                "Brand B", "20 kg bag", new BigDecimal("20")));
+
+        assertThat(brandA.id()).isNotEqualTo(brandB.id());
+        assertThatThrownBy(() -> feedService.createType(new FeedTypeCreateRequest(
+                " grower mash ", "bag", "BROILER", new BigDecimal("25"),
+                " brand a ", "25 kg bag", new BigDecimal("25"))))
+                .hasMessage("A feed product with this name and brand already exists.");
+
+        var purchaseA = feedService.purchase(new FeedPurchaseRequest(
+                brandA.id(), null, LocalDate.of(2026,1,1), new BigDecimal("10"), "bag", 100_000L));
+        var purchaseB = feedService.purchase(new FeedPurchaseRequest(
+                brandB.id(), null, LocalDate.of(2026,1,1), new BigDecimal("20"), "bag", 400_000L));
+        assertThat(purchaseA.brand()).isEqualTo("Brand A");
+        var openingType = feedService.createType(new FeedTypeCreateRequest(
+                "Layer Mash", "bag", "LAYER", null, "Brand C", "bag", null));
+        var opening = feedService.createOpeningBalance(new FeedOpeningBalanceRequest(
+                openingType.id(), LocalDate.of(2026,1,1), new BigDecimal("1"), "bag", "Brand C opening count"));
+        assertThat(opening.brand()).isEqualTo("Brand C");
+        feedService.use(batch.id(), new FeedUsageRequest(
+                brandA.id(), LocalDate.of(2026,1,2), new BigDecimal("2"), "bag", "Brand A usage"));
+
+        var updated = feedService.updateProductIdentity(brandA.id(), new FeedTypeUpdateRequest(
+                "Grower Mash", "Brand C", "40 kg sack", null));
+
+        assertThat(updated.id()).isEqualTo(brandA.id());
+        assertThat(updated.brand()).isEqualTo("Brand C");
+        assertThat(updated.packagingName()).isEqualTo("40 kg sack");
+        assertThat(updated.packageWeightKg()).isNull();
+        assertThat(jdbc.queryForObject("SELECT feed_type_id FROM feed_purchases WHERE id = ?",
+                String.class, purchaseA.id())).isEqualTo(brandA.id());
+        assertThat(jdbc.queryForObject("SELECT feed_type_id FROM feed_purchases WHERE id = ?",
+                String.class, purchaseB.id())).isEqualTo(brandB.id());
+        assertThat(jdbc.queryForObject("SELECT feed_type_id FROM feed_usage WHERE batch_id = ?",
+                String.class, batch.id())).isEqualTo(brandA.id());
+
+        var inventory = feedService.inventory(LocalDate.of(2026,1,2));
+        var inventoryA = inventory.stream().filter(item -> item.feedTypeId().equals(brandA.id())).findFirst().orElseThrow();
+        var inventoryB = inventory.stream().filter(item -> item.feedTypeId().equals(brandB.id())).findFirst().orElseThrow();
+        assertThat(inventoryA.brand()).isEqualTo("Brand C");
+        assertThat(inventoryA.packageWeightKg()).isNull();
+        assertThat(inventoryA.remainingQuantityMilli()).isEqualTo(8_000L);
+        assertThat(inventoryA.remainingCostMinor()).isEqualTo(80_000L);
+        assertThat(inventoryB.brand()).isEqualTo("Brand B");
+        assertThat(inventoryB.remainingQuantityMilli()).isEqualTo(20_000L);
+        assertThat(inventoryB.remainingCostMinor()).isEqualTo(400_000L);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM audit_logs WHERE entity_type = 'FEED_TYPE' AND entity_id = ? AND action = 'UPDATE'",
+                Integer.class, brandA.id())).isEqualTo(1);
+    }
+
+    @Test
+    void feedCsvRequiresBrandWhenFeedNameIsAmbiguous() {
+        setupFarm();
+        feedService.createType(new FeedTypeCreateRequest(
+                "Starter Mash", "kg", "BROILER", BigDecimal.ONE, "Brand A", null, null));
+        var brandB = feedService.createType(new FeedTypeCreateRequest(
+                "Starter Mash", "kg", "BROILER", BigDecimal.ONE, "Brand B", null, null));
+
+        var withoutBrand = new CsvImportRequest("feed-purchases", List.of(Map.of(
+                "feed_type_name", "Starter Mash", "purchase_date", "2026-01-01",
+                "quantity", "2", "unit", "kg", "total_cost_naira", "100")));
+        var withBrand = new CsvImportRequest("feed-purchases", List.of(Map.of(
+                "feed_type_name", "Starter Mash", "feed_type_brand", "Brand B",
+                "purchase_date", "2026-01-01", "quantity", "2", "unit", "kg",
+                "total_cost_naira", "100")));
+
+        var ambiguousPreview = feedHistoryImport.preview(withoutBrand);
+        var brandPreview = feedHistoryImport.preview(withBrand);
+        assertThat(ambiguousPreview.get("valid")).isEqualTo(false);
+        assertThat(brandPreview.get("valid")).isEqualTo(true);
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> previewRows = (List<Map<String, Object>>) brandPreview.get("rows");
+        assertThat(previewRows).hasSize(1);
+        assertThat(previewRows.get(0).get("feedTypeId")).isEqualTo(brandB.id());
+        assertThat(previewRows.get(0).get("feedTypeBrand")).isEqualTo("Brand B");
+    }
+
+    @Test
     void openingFeedStockIsAuditedWithoutCreatingPurchaseOrExpense() {
         setupFarm();
         var type = feedService.createType(new FeedTypeCreateRequest("Hybrid Layer Mash", "bag", "LAYER"));
@@ -80,6 +170,80 @@ class FeedManagementIntegrationTest {
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM feed_purchases", Integer.class)).isZero();
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM expenses WHERE category = 'FEED'", Integer.class)).isZero();
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM audit_logs WHERE entity_type = 'FEED_OPENING_BALANCE'", Integer.class)).isEqualTo(1);
+    }
+
+    @Test
+    void openingStockIsIncludedInInventoryAndConsumedBeforeLaterPurchasedFeedWithoutExpense() {
+        setupFarm();
+        var house = houseService.create(new HouseCreateRequest("Opening Stock House", "OSH1", null));
+        var batch = batchService.create(new BatchCreateRequest(
+                "LAYER", LocalDate.of(2026,1,1), house.id(), 100, null, 1_000_000L));
+        var type = feedService.createType(new FeedTypeCreateRequest("Opening Layer Mash", "kg", "LAYER"));
+
+        feedService.createOpeningBalance(new FeedOpeningBalanceRequest(
+                type.id(), LocalDate.of(2026,1,1), new BigDecimal("10"), "kg", "Existing farm stock"));
+        var openingOnly = feedService.inventory(LocalDate.of(2026,1,1)).get(0);
+        assertThat(openingOnly.openingQuantityMilli()).isEqualTo(10_000L);
+        assertThat(openingOnly.purchasedQuantityMilli()).isZero();
+        assertThat(openingOnly.remainingQuantityMilli()).isEqualTo(10_000L);
+        assertThat(openingOnly.remainingCostMinor()).isNull();
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM expenses WHERE category = 'FEED'", Integer.class)).isZero();
+
+        feedService.purchase(new FeedPurchaseRequest(
+                type.id(), null, LocalDate.of(2026,1,2), new BigDecimal("10"), "kg", 100_000L));
+        var firstUsage = feedService.use(batch.id(), new FeedUsageRequest(
+                type.id(), LocalDate.of(2026,1,3), new BigDecimal("5"), "kg", "Use opening stock first"));
+
+        assertThat(firstUsage.feedCostMinor()).isNull();
+        var afterOpeningConsumption = feedService.inventory(LocalDate.of(2026,1,3)).get(0);
+        assertThat(afterOpeningConsumption.openingQuantityMilli()).isEqualTo(10_000L);
+        assertThat(afterOpeningConsumption.purchasedQuantityMilli()).isEqualTo(10_000L);
+        assertThat(afterOpeningConsumption.consumedQuantityMilli()).isEqualTo(5_000L);
+        assertThat(afterOpeningConsumption.remainingQuantityMilli()).isEqualTo(15_000L);
+        assertThat(afterOpeningConsumption.remainingCostMinor()).isNull();
+        @SuppressWarnings("unchecked")
+        Map<String, Object> feedSummary = (Map<String, Object>) dashboardService
+                .farm(LocalDate.of(2026,1,3)).get("feedSummary");
+        assertThat(feedSummary.get("remainingCostMinor")).isNull();
+        assertThat(feedSummary.get("consumedCostMinor")).isNull();
+
+        var secondUsage = feedService.use(batch.id(), new FeedUsageRequest(
+                type.id(), LocalDate.of(2026,1,4), new BigDecimal("7"), "kg", "Finish opening stock"));
+        assertThat(secondUsage.feedCostMinor()).isNull();
+        assertThat(secondUsage.knownFeedCostMinor()).isEqualTo(20_000L);
+
+        var thirdUsage = feedService.use(batch.id(), new FeedUsageRequest(
+                type.id(), LocalDate.of(2026,1,5), new BigDecimal("1"), "kg", "Consume purchased stock"));
+        assertThat(thirdUsage.feedCostMinor()).isEqualTo(10_000L);
+        assertThat(feedService.batchCost(batch.id(), LocalDate.of(2026,1,5)).feedCostMinor()).isNull();
+
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM feed_purchases", Integer.class)).isEqualTo(1);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM expenses WHERE category = 'FEED'", Integer.class)).isEqualTo(1);
+        assertThat(feedService.batchCost(batch.id(), LocalDate.of(2026,1,5)).knownFeedCostMinor()).isEqualTo(30_000L);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM bird_cost_events WHERE batch_id = ? AND event_type = 'ADDITIONAL_COST'",
+                Integer.class, batch.id())).isEqualTo(2);
+        assertThat(jdbc.queryForObject("SELECT SUM(amount_minor) FROM bird_cost_events WHERE batch_id = ? AND event_type = 'ADDITIONAL_COST'",
+                Long.class, batch.id())).isEqualTo(30_000L);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM audit_logs WHERE entity_type = 'FEED_OPENING_BALANCE'",
+                Integer.class)).isEqualTo(1);
+    }
+
+    @Test
+    void openingStockCannotBeBackdatedBeforeExistingUsage() {
+        setupFarm();
+        var house = houseService.create(new HouseCreateRequest("Chronology House", "CH1", null));
+        var batch = batchService.create(new BatchCreateRequest(
+                "BROILER", LocalDate.of(2026,1,1), house.id(), 100, null, 1_000_000L));
+        var type = feedService.createType(new FeedTypeCreateRequest("Chronology Feed", "kg", "BROILER"));
+        feedService.createOpeningBalance(new FeedOpeningBalanceRequest(
+                type.id(), LocalDate.of(2026,1,1), new BigDecimal("10"), "kg", "Initial stock"));
+        feedService.use(batch.id(), new FeedUsageRequest(
+                type.id(), LocalDate.of(2026,1,3), new BigDecimal("1"), "kg", "Recorded usage"));
+
+        assertThatThrownBy(() -> feedService.createOpeningBalance(new FeedOpeningBalanceRequest(
+                type.id(), LocalDate.of(2026,1,2), new BigDecimal("2"), "kg", "Backdated correction")))
+                .hasMessage("Opening stock cannot be backdated before existing feed usage for this feed type.");
+        assertThat(feedService.openingBalances(type.id())).hasSize(1);
     }
 
     @Test
@@ -206,6 +370,28 @@ class FeedManagementIntegrationTest {
     }
 
     @Test
+    void historicalFeedUsageImportCanConsumeExistingOpeningStock() {
+        setupFarm();
+        var house = houseService.create(new HouseCreateRequest("Opening Import House", "OIH1", null));
+        var batch = batchService.create(new BatchCreateRequest(
+                "BROILER", LocalDate.of(2026,1,1), house.id(), 100, null, 1_000_000L));
+        var type = feedService.createType(new FeedTypeCreateRequest("Opening Import Feed", "kg", "BROILER"));
+        feedService.createOpeningBalance(new FeedOpeningBalanceRequest(
+                type.id(), LocalDate.of(2026,1,1), new BigDecimal("10"), "kg", "Stock on hand"));
+
+        var request = new CsvImportRequest("feed-usage", List.of(
+                Map.of("feed_type_name", "Opening Import Feed", "batch_code", batch.code(),
+                        "usage_date", "2026-01-02", "quantity", "4", "unit", "kg", "reason", "Historical usage")));
+        var preview = feedHistoryImport.preview(request);
+        assertThat(preview.get("valid")).isEqualTo(true);
+
+        var imported = feedHistoryImport.importRecords(request);
+        assertThat(imported.get("importedUsage")).isEqualTo(1);
+        assertThat(feedService.batchCost(batch.id(), LocalDate.of(2026,1,2)).feedCostMinor()).isNull();
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM expenses WHERE category = 'FEED'", Integer.class)).isZero();
+    }
+
+    @Test
     void feedUsagePreviewRejectsConsumptionWithoutDatedStock() {
         setupFarm();
         var house = houseService.create(new HouseCreateRequest("No Stock House", "NSH1", null));
@@ -244,6 +430,84 @@ class FeedManagementIntegrationTest {
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM feed_purchases", Integer.class)).isZero();
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM expenses WHERE category = 'FEED'", Integer.class)).isZero();
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM audit_logs WHERE entity_type = 'FEED_PURCHASE'", Integer.class)).isZero();
+    }
+
+    @Test
+    void feedApplicabilitySupportsEveryNonEmptyCombinationAndEnforcesEachBirdType() {
+        setupFarm();
+        LocalDate placed = LocalDate.of(2026, 1, 1);
+        var layerHouse = houseService.create(new HouseCreateRequest("Layer House", "LA1", null));
+        var broilerHouse = houseService.create(new HouseCreateRequest("Broiler House", "BR1", null));
+        var turkeyHouse = houseService.create(new HouseCreateRequest("Turkey House", "TU1", null));
+        var layer = batchService.create(new BatchCreateRequest("LAYER", placed, layerHouse.id(), 10, null, 1000L));
+        var broiler = batchService.create(new BatchCreateRequest("BROILER", placed, broilerHouse.id(), 10, null, 1000L));
+        var turkey = batchService.create(new BatchCreateRequest("TURKEY", placed, turkeyHouse.id(), 10, null, 1000L));
+        List<BatchResponse> batches = List.of(layer, broiler, turkey);
+
+        List<List<String>> combinations = List.of(
+                List.of("LAYER"),
+                List.of("BROILER"),
+                List.of("TURKEY"),
+                List.of("LAYER", "BROILER"),
+                List.of("LAYER", "TURKEY"),
+                List.of("BROILER", "TURKEY"),
+                List.of("LAYER", "BROILER", "TURKEY")
+        );
+
+        int index = 0;
+        for (List<String> combination : combinations) {
+            var feedType = feedService.createType(new FeedTypeCreateRequest(
+                    "Combination Feed " + (++index), "kg", null, BigDecimal.ONE,
+                    null, null, null, combination));
+            assertThat(feedType.applicableTypes()).containsExactlyElementsOf(combination);
+
+            for (BatchResponse batch : batches) {
+                boolean applicable = combination.contains(batch.type());
+                String expected = applicable
+                        ? "Insufficient feed inventory for FIFO consumption."
+                        : "This feed type is not configured for the batch type.";
+                assertThatThrownBy(() -> feedService.use(batch.id(), new FeedUsageRequest(
+                        feedType.id(), placed.plusDays(1), BigDecimal.ONE, "kg", "Applicability test")))
+                        .hasMessage(expected);
+            }
+        }
+
+        var legacyBoth = feedService.createType(new FeedTypeCreateRequest("Legacy Both", "kg", "BOTH"));
+        assertThat(legacyBoth.applicableTypes()).containsExactly("LAYER", "BROILER", "TURKEY");
+
+        assertThatThrownBy(() -> feedService.createType(new FeedTypeCreateRequest(
+                "No Bird Type", "kg", null, BigDecimal.ONE, null, null, null, List.of())))
+                .hasMessage("Select at least one supported bird type: LAYER, BROILER, or TURKEY.");
+    }
+
+    @Test
+    void feedHistoryImportUsesTheSameMultiTypeApplicabilitySetAsManualUsage() {
+        setupFarm();
+        LocalDate placed = LocalDate.of(2026, 1, 1);
+        var layerHouse = houseService.create(new HouseCreateRequest("Import Layer House", "IL1", null));
+        var broilerHouse = houseService.create(new HouseCreateRequest("Import Broiler House", "IB1", null));
+        var turkeyHouse = houseService.create(new HouseCreateRequest("Import Turkey House", "IT1", null));
+        var layer = batchService.create(new BatchCreateRequest("LAYER", placed, layerHouse.id(), 10, null, 1000L));
+        var broiler = batchService.create(new BatchCreateRequest("BROILER", placed, broilerHouse.id(), 10, null, 1000L));
+        var turkey = batchService.create(new BatchCreateRequest("TURKEY", placed, turkeyHouse.id(), 10, null, 1000L));
+        var feedType = feedService.createType(new FeedTypeCreateRequest(
+                "Layer and Turkey Feed", "kg", null, BigDecimal.ONE, null, null, null,
+                List.of("LAYER", "TURKEY")));
+        feedService.purchase(new FeedPurchaseRequest(feedType.id(), null, placed,
+                BigDecimal.TEN, "kg", 100_000L));
+
+        var valid = feedHistoryImport.preview(new CsvImportRequest("feed-usage", List.of(
+                Map.of("feed_type_name", "Layer and Turkey Feed", "batch_code", turkey.code(),
+                        "usage_date", "2026-01-02", "quantity", "1", "unit", "kg", "reason", "Turkey feeding"))));
+        var invalid = feedHistoryImport.preview(new CsvImportRequest("feed-usage", List.of(
+                Map.of("feed_type_name", "Layer and Turkey Feed", "batch_code", broiler.code(),
+                        "usage_date", "2026-01-02", "quantity", "1", "unit", "kg", "reason", "Invalid broiler feeding"))));
+
+        assertThat(valid.get("valid")).isEqualTo(true);
+        assertThat(invalid.get("valid")).isEqualTo(false);
+        assertThat(invalid.get("rejected")).isEqualTo(1);
+        assertThat(layer.type()).isEqualTo("LAYER");
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM feed_usage", Integer.class)).isZero();
     }
 
     private void setupFarm() {

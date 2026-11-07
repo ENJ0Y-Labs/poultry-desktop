@@ -7,6 +7,14 @@ public record BatchFeedCostResponse(
         LocalDate asOf,
         int currentBirds,
         long consumedQuantityMilli,
-        long feedCostMinor,
-        Long feedCostPerBirdMinor
-) {}
+        Long feedCostMinor,
+        Long feedCostPerBirdMinor,
+        long knownFeedCostMinor
+) {
+    public BatchFeedCostResponse(String batchId, LocalDate asOf, int currentBirds,
+                                 long consumedQuantityMilli, Long feedCostMinor,
+                                 Long feedCostPerBirdMinor) {
+        this(batchId, asOf, currentBirds, consumedQuantityMilli, feedCostMinor,
+                feedCostPerBirdMinor, feedCostMinor == null ? 0L : feedCostMinor);
+    }
+}

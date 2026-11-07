@@ -4,7 +4,7 @@
 
 Pomas supports dark and light themes. The accessibility overrides are loaded after the main stylesheet and use dedicated semantic color tokens for important text, rather than relying on legacy palette aliases that also represent backgrounds.
 
-The repeatable build check in `scripts/verify-a11y.mjs` computes WCAG relative-luminance contrast ratios from the actual literal foreground/background tokens used by the accessibility stylesheet. It checks primary, secondary, tertiary, shortcut, and accent-navigation text in both themes. It also checks minimum font sizes for primary navigation, form labels, table headers, metric labels, keyboard shortcuts, and the status bar.
+The repeatable build check in `scripts/verify-a11y.mjs` computes WCAG relative-luminance contrast ratios from the actual literal foreground/background tokens used by the accessibility stylesheet and renderer theme tokens. It checks primary, secondary, tertiary, shortcut, and accent-navigation text in both themes, plus landing-page story text, feature and note surfaces, accent text, sign-in actions, and the authentication focus indicator. It also checks minimum font sizes for primary navigation, form labels, table headers, metric labels, keyboard shortcuts, and the status bar.
 
 ## Text-size policy
 
@@ -60,7 +60,16 @@ This section supersedes any earlier palette decision. Pomas uses deep teal `#1A4
 - Primary buttons use white text on teal in light mode and black text on gold in dark mode.
 - Warning, critical, and error colours remain semantically distinct from the brand palette.
 - Use semantic CSS tokens for colour roles. Do not add per-screen hardcoded colour values.
+- Landing, sign-in, and first-run owner-setup screens use the shared --auth-* token family. Verify the story panel, release highlights, form controls, focus states, and primary action in Light and Dark. Keep the Theme selector available before authentication.
+- The external `theme-init.js` script runs in the document head before the renderer module and styles, preventing a saved Light/Dark preference from flashing the default theme. `scripts/verify-production-renderer.mjs` checks that the bootstrap is included and ordered before the renderer entry.
 - Preserve Auto, Light, and Dark preferences. Auto follows the operating system colour scheme.
 - `scripts/verify-a11y.mjs` checks approved theme tokens and WCAG 2.2 AA normal-text contrast pairs. Automated token checks do not replace rendered UI review.
 
 Manual pre-launch review remains required at 1366×768 and 1100×650 in Auto, Light, and Dark. Record each check as not run until it is actually performed.
+
+
+## Dashboard attention and severity contrast
+
+Dashboard attention cards are content surfaces, not primary actions. Keep them on the theme's neutral raised panel surface with the primary readable text token; exclude `.attention-item` from global primary-button styling. The warning, critical, and error severity badges each use their own semantic foreground/background token pair, with at least 4.5:1 contrast for normal text in both Light and Dark themes. Hover and keyboard focus may change the card border, but must not turn the card into a gold-filled button.
+
+The automated `scripts/verify-a11y.mjs` check covers dashboard attention text on its card surface and checks that attention cards are excluded from primary-button styling. Manually inspect dashboard warning, critical, and error examples in Light and Dark themes before release; automated token checks do not prove rendered UI behavior.

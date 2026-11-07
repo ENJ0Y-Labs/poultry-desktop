@@ -230,6 +230,12 @@ describe("App", () => {
     render(<App />);
 
     expect(await screen.findByRole("heading", { name: "Sign in to Pomas" })).toBeInTheDocument();
+    const themeSelector = screen.getByRole("combobox", { name: "Theme" });
+    expect(themeSelector).toHaveValue("auto");
+    fireEvent.change(themeSelector, { target: { value: "light" } });
+    expect(themeSelector).toHaveValue("light");
+    expect(document.documentElement.dataset.theme).toBe("light");
+    expect(localStorage.getItem("pomas:theme")).toBe("light");
     expect(screen.getByRole("heading", { name: "What's new" })).toBeInTheDocument();
     expect(screen.getByText("POMAS v1.0.4")).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Egg production in crates" })).toBeInTheDocument();
@@ -320,6 +326,10 @@ describe("App", () => {
     render(<App />);
 
     await screen.findByRole("heading", { name: "Create your owner account" });
+    const setupThemeSelector = screen.getByRole("combobox", { name: "Theme" });
+    expect(setupThemeSelector).toHaveValue("auto");
+    fireEvent.change(setupThemeSelector, { target: { value: "dark" } });
+    expect(document.documentElement.dataset.theme).toBe("dark");
     expect(screen.getByRole("button", { name: "Create account and continue" })).toBeInTheDocument();
     expect(screen.queryByLabelText("Username or email")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Sign in to your farm/ })).not.toBeInTheDocument();
@@ -330,6 +340,7 @@ describe("App", () => {
     fireEvent.click(screen.getByRole("button", { name: "Create account and continue" }));
 
     await waitFor(() => expect(screen.getByRole("heading", { name: "Farm dashboard" })).toBeInTheDocument());
+    expect(screen.getByRole("combobox", { name: "Theme" })).toHaveValue("dark");
     expect(setup).toHaveBeenCalledWith({
       username: "farm-owner",
       email: "owner@example.com",
@@ -803,8 +814,8 @@ describe("App", () => {
   it("routes dashboard quick actions to validated forms with the last-used batch context", async () => {
     mockFarmApis({ currentBatches: batches });
     vi.mocked(feedApi.listTypes).mockResolvedValue([
-      { id: "feed-layer", name: "Layer mash", unit: "bag", applicableType: "LAYER", status: "ACTIVE" },
-      { id: "feed-broiler", name: "Broiler starter", unit: "bag", applicableType: "BROILER", status: "ACTIVE" },
+      { id: "feed-layer", name: "Layer mash", unit: "bag", applicableType: "LAYER", applicableTypes: ["LAYER"], status: "ACTIVE" },
+      { id: "feed-broiler", name: "Broiler starter", unit: "bag", applicableType: "BROILER", applicableTypes: ["BROILER"], status: "ACTIVE" },
     ]);
     render(<App />);
     await screen.findByRole("heading", { name: "Farm dashboard" });
@@ -902,5 +913,14 @@ describe("App", () => {
     expect(screen.queryByRole("heading", { name: "Finish setting up your farm" })).not.toBeInTheDocument();
   });
 
+
+  it("displays dashboard egg production as crates using the configured crate size", async () => {
+    mockFarmApis();
+    render(<App />);
+
+    await screen.findByText("Good eggs");
+    expect(screen.getByText("29 crates, 5 eggs")).toBeInTheDocument();
+    expect(screen.queryByText("875")).not.toBeInTheDocument();
+  });
 
 });

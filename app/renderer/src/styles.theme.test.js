@@ -36,11 +36,49 @@ describe("navigation theme tokens", () => {
     }
   });
 
+  it("defines theme-aware tokens for landing, sign-in, and first-run screens", () => {
+    const brandTokensStart = stylesheet.indexOf("/* Pomas brand system: semantic overrides");
+    const darkStart = stylesheet.indexOf(":root {", brandTokensStart);
+    const darkEnd = stylesheet.indexOf("\n}", darkStart);
+    const lightStart = stylesheet.indexOf(':root[data-theme="light"] {', darkEnd);
+    const lightEnd = stylesheet.indexOf("\n}", lightStart);
+    const darkTheme = stylesheet.slice(darkStart, darkEnd);
+    const lightTheme = stylesheet.slice(lightStart, lightEnd);
+
+    for (const token of [
+      "--auth-story-background", "--auth-story-text", "--auth-story-muted",
+      "--auth-story-border", "--auth-feature-background", "--auth-accent",
+      "--auth-button-background", "--auth-button-text", "--auth-focus-ring"
+    ]) {
+      expect(darkTheme, "missing dark/default value for " + token).toContain(token);
+      expect(lightTheme, "missing light value for " + token).toContain(token);
+    }
+    expect(stylesheet).toContain("background:var(--auth-story-background)");
+    expect(stylesheet).toContain("background:var(--auth-button-background)");
+  });
+
   it("uses semantic theme tokens for activity selection, tabs, hover, and focus", () => {
     expect(stylesheet).toMatch(/\.activity-button\.active\s*\{[^}]*background:\s*var\(--ide-activity-active-bg\)/);
     expect(stylesheet).toMatch(/\.activity-button:focus-visible\s*\{[^}]*outline:\s*2px solid var\(--ide-focus-ring\)/);
     expect(stylesheet).toMatch(/\.page-tabs\s*\{[^}]*border:\s*1px solid var\(--border\);[^}]*background:\s*var\(--ide-tab-bg\)/);
     expect(stylesheet).toMatch(/\.page-tab:hover\s*\{[^}]*color:\s*var\(--text\);[^}]*background:\s*var\(--ide-tab-hover-bg\)/);
     expect(stylesheet).toMatch(/\.page-tab\.active\s*\{[^}]*border-color:\s*var\(--ide-tab-active-border\);[^}]*background:\s*var\(--ide-tab-active-bg\)/);
+  });
+});
+
+
+describe("dashboard attention theme contrast", () => {
+  it("keeps alert cards on semantic surfaces instead of inheriting primary-button gold", () => {
+    const accessibility = readFileSync(
+      resolve(process.cwd(), "app/renderer/src/accessibility.css"),
+      "utf8"
+    );
+
+    expect(accessibility).toMatch(/button:not\([^\n]*:not\(\.attention-item\)/);
+    expect(accessibility).toMatch(/\.attention-item\s*\{[^}]*background:\s*var\(--pomas-panel-raised\)[^}]*color:\s*var\(--a11y-text\)/s);
+    expect(accessibility).toMatch(/\.attention-item-clickable:hover,[\s\S]*?background:\s*var\(--pomas-panel-bg\)/);
+    expect(accessibility).toMatch(/\.severity\.warning\s*\{[^}]*background:\s*var\(--a11y-warning-bg\)[^}]*color:\s*var\(--a11y-warning-text\)/s);
+    expect(accessibility).toMatch(/\.severity\.critical\s*\{[^}]*background:\s*var\(--a11y-critical-bg\)[^}]*color:\s*var\(--a11y-critical-text\)/s);
+    expect(accessibility).toMatch(/\.severity\.error\s*\{[^}]*background:\s*var\(--a11y-error-bg\)[^}]*color:\s*var\(--a11y-error-text\)/s);
   });
 });

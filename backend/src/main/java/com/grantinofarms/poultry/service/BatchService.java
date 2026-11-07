@@ -180,7 +180,7 @@ public class BatchService {
         int currentBirds = birdPopulationService.get(current.id(), LocalDate.now()).currentBirds();
         if (currentBirds != 0) {
             throw new ApiException(HttpStatus.CONFLICT, "BATCH_NOT_EMPTY",
-                    "A BROILER batch can only be marked SOLD when all birds have been sold.");
+                    "A BROILER or TURKEY batch can only be marked SOLD when its calculated population reaches zero.");
         }
 
         String now = Instant.now().toString();

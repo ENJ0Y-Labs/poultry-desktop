@@ -5,6 +5,7 @@ import { initializeTheme } from "./utils/theme.js";
 import "./styles.css";
 import "./accessibility.css";
 
-// Apply the saved/system theme before React mounts to avoid a first-render flash.
+// index.html runs the external theme bootstrap in <head> before styles and the renderer module.
+// Initialize the live system-preference listener and desktop bridge before React mounts.
 initializeTheme();
 ReactDOM.createRoot(document.getElementById("root")).render(<React.StrictMode><App/></React.StrictMode>);

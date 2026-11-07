@@ -74,8 +74,10 @@ Used by Electron during startup.
 ## Feed
 
 - GET `/feed/types`
-- POST `/feed/types`
-- PUT `/feed/types/{id}/conversion` (body: `kgPerUnit`, positive number or `null` when unknown)\n- POST `/feed/types/{id}/archive`
+- POST `/feed/types` accepts `applicableTypes`, a non-empty array containing any combination of `LAYER`, `BROILER`, and `TURKEY`. The response returns the same set. The legacy `applicableType` field remains accepted for older clients; legacy `BOTH` migrates to all three bird types. Feed identity is the normalized name plus normalized brand within a farm; different brands may share a name, but duplicate name/brand pairs return HTTP 409.
+- PUT `/feed/types/{id}` updates product name, brand, package name and confirmed package weight on the existing feed type ID. It does not change unit or bird applicability and does not rewrite linked purchases, opening stock, usage or FIFO history. Leave unknown package weight as `null`.
+- PUT `/feed/types/{id}/conversion` (body: `kgPerUnit`, positive number or `null` when unknown)
+- POST `/feed/types/{id}/archive`
 - POST `/feed/purchases`
 - GET `/feed/inventory`
 - POST `/feed/batches/{id}/usage`
@@ -98,13 +100,19 @@ Used by Electron during startup.
 - GET `/batches/{id}/eggs/sales`
 - GET `/batches/{id}/eggs/inventory`
 
-## Broilers
+## Meat-bird production and sales
+
+The existing `/broiler/` route namespace is shared by BROILER and TURKEY batches. Weight and bird-sale operations accept either type and reject LAYER batches.
 
 - POST `/batches/{id}/broiler/weights`
 - GET `/batches/{id}/broiler/weights`
 - GET `/batches/{id}/broiler/growth`
 - POST `/batches/{id}/broiler/sales`
 - GET `/batches/{id}/broiler/sales`
+
+Bird sales are separate append-only transactions. Each request records its business date, positive whole-bird quantity, positive price per bird, named customer, and calculated total. A sale may be partial; the batch remains ACTIVE while its calculated population is above zero and transitions to SOLD only when that population reaches zero. Quantities greater than the available population are rejected within the same transaction, so population events, type-specific sales, common sales, customer creation, pricing history, and audit records roll back together on failure.
+
+The common `GET /sales` ledger accepts the optional `saleType` filter values `EGG`, `BROILER`, and `TURKEY`.
 
 ## Suppliers and customers
 
