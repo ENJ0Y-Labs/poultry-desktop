@@ -692,6 +692,7 @@ export default function App() {
       setCustomers(current => (editingCustomerId
         ? current.map(item => item.id === saved.id ? saved : item)
         : [...current, saved]).sort((a, b) => a.name.localeCompare(b.name)));
+      await loadSales();
       setCustomerForm(emptyCustomer); setEditingCustomerId("");
     } catch (err) { setError(displayApiError(err)); } finally { setSaving(false); }
   }
@@ -716,6 +717,7 @@ export default function App() {
         : [...current, saved]).sort((a, b) => a.name.localeCompare(b.name)));
       setInventoryItemForm(emptyInventoryItem); setEditingInventoryItemId("");
       if (!editingInventoryItemId) setInventoryMovementForm(form => ({ ...form, itemId: saved.id }));
+      await loadDashboard();
     } catch (err) { setError(displayApiError(err)); } finally { setSaving(false); }
   }
 
@@ -842,6 +844,8 @@ export default function App() {
         ? current.map(item => item.id === saved.id ? saved : item)
         : [...current, saved]).sort((a, b) => a.name.localeCompare(b.name)));
       setFeedTypeForm(emptyFeedType); setEditingFeedTypeId("");
+      setFeedInventory(await feedApi.inventory());
+      await loadDashboard();
     } catch (err) { setError(displayApiError(err)); } finally { setSaving(false); }
   }
 
