@@ -223,7 +223,9 @@ class CustomerAndSalesIntegrationTest {
         assertThat(batchService.get(turkey.id()).status()).isEqualTo("SOLD");
         assertThat(salesService.list(null, customer.id(), "TURKEY", LocalDate.of(2026, 1, 11))).hasSize(2);
 
-        var layer = setupLayer();
+        var layerHouse = houseService.create(new HouseCreateRequest("Layer House", "LH1", null));
+        var layer = batchService.create(new BatchCreateRequest(
+                "LAYER", LocalDate.of(2026, 1, 1), layerHouse.id(), 100, null, 1_000_000L));
         assertThatThrownBy(() -> broilerService.addSale(layer.id(), new BirdSaleRequest(
                 LocalDate.of(2026, 1, 10), 1, 25_000L, "Layer buyer")))
                 .hasMessageContaining("only available for BROILER or TURKEY batches");
