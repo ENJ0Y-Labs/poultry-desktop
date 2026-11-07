@@ -74,8 +74,10 @@ Used by Electron during startup.
 ## Feed
 
 - GET `/feed/types`
-- POST `/feed/types`
-- PUT `/feed/types/{id}/conversion` (body: `kgPerUnit`, positive number or `null` when unknown)\n- POST `/feed/types/{id}/archive`
+- POST `/feed/types` accepts `applicableTypes`, a non-empty array containing any combination of `LAYER`, `BROILER`, and `TURKEY`. The response returns the same set. The legacy `applicableType` field remains accepted for older clients; legacy `BOTH` migrates to all three bird types. Feed identity is the normalized name plus normalized brand within a farm; different brands may share a name, but duplicate name/brand pairs return HTTP 409.
+- PUT `/feed/types/{id}` updates product name, brand, package name and confirmed package weight on the existing feed type ID. It does not change unit or bird applicability and does not rewrite linked purchases, opening stock, usage or FIFO history. Leave unknown package weight as `null`.
+- PUT `/feed/types/{id}/conversion` (body: `kgPerUnit`, positive number or `null` when unknown)
+- POST `/feed/types/{id}/archive`
 - POST `/feed/purchases`
 - GET `/feed/inventory`
 - POST `/feed/batches/{id}/usage`

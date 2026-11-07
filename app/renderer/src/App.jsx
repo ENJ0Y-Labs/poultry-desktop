@@ -4,6 +4,7 @@ import { todayLocalDate, getLastBatchId, rememberLastBatchId } from "./utils/far
 import { parseNairaToKobo } from "./utils/moneyInput.js";
 import { formatMoney } from "./utils/money.js";
 import { appVersionLabel } from "./utils/appInfo.js";
+import { getThemePreference, setThemePreference } from "./utils/theme.js";
 import { parseAttentionContext } from "./utils/attentionNavigation.js";
 // eslint-disable-next-line no-unused-vars
 import AppShell from "./components/AppShell.jsx";
@@ -83,7 +84,7 @@ const emptyCost = {
   amountMinor: "",
   reason: "",
 };
-const emptyFeedType = { name: "", brand: "", unit: "bag", packagingName: "bag", packageWeightKg: "", applicableType: "BOTH", kgPerUnit: "" };
+const emptyFeedType = { name: "", brand: "", unit: "bag", packagingName: "bag", packageWeightKg: "", applicableTypes: ["LAYER", "BROILER", "TURKEY"], kgPerUnit: "" };
 const emptyFeedPurchase = {
   feedTypeId: "",
   supplierId: "",
@@ -153,6 +154,7 @@ const emptyInventoryMovement = {
 };
 
 export default function App() {
+  const [themePreference, setThemePreferenceState] = useState(getThemePreference);
   const [farm, setFarm] = useState(null);
   const [farmForm, setFarmForm] = useState(emptyFarm);
   const [houses, setHouses] = useState([]);
@@ -251,6 +253,11 @@ export default function App() {
       .catch(() => {});
     return () => { active = false; };
   }, []);
+
+  function changeAuthTheme(event) {
+    const nextTheme = setThemePreference(event.target.value);
+    setThemePreferenceState(nextTheme);
+  }
 
   async function load({ showLoading = true, preserveForms = false } = {}) {
     if (showLoading) setLoading(true);
@@ -832,20 +839,16 @@ export default function App() {
   }
 
   async function createFeedType(event) {
-    event.preventDefault(); setSaving(true); setError("");
+    event.preventDefault();
+    if (!feedTypeForm.applicableTypes?.length) {
+      setError("Select at least one applicable bird type.");
+      return;
+    }
+    setSaving(true); setError("");
     try {
-      const payload = { ...feedTypeForm, kgPerUnit: feedTypeForm.kgPerUnit === "" ? null : Number(feedTypeForm.kgPerUnit),
-        packageWeightKg: feedTypeForm.packageWeightKg === "" ? null : Number(feedTypeForm.packageWeightKg) };
-      const saved = editingFeedTypeId ? await feedApi.updateType(editingFeedTypeId, {
-        name: payload.name, unit: payload.unit, applicableType: payload.applicableType, brand: payload.brand,
-        packagingName: payload.packagingName, packageWeightKg: payload.packageWeightKg
-      }) : await feedApi.createType(payload);
-      setFeedTypes(current => (editingFeedTypeId
-        ? current.map(item => item.id === saved.id ? saved : item)
-        : [...current, saved]).sort((a, b) => a.name.localeCompare(b.name)));
-      setFeedTypeForm(emptyFeedType); setEditingFeedTypeId("");
-      setFeedInventory(await feedApi.inventory());
-      await loadDashboard();
+      const created = await feedApi.createType({ ...feedTypeForm, kgPerUnit: feedTypeForm.kgPerUnit === "" ? null : Number(feedTypeForm.kgPerUnit), packageWeightKg: feedTypeForm.packageWeightKg === "" ? null : Number(feedTypeForm.packageWeightKg) });
+      setFeedTypes(current => [...current, created].sort((a, b) => a.name.localeCompare(b.name) || (a.brand || "").localeCompare(b.brand || "")));
+      setFeedTypeForm(emptyFeedType);
     } catch (err) { setError(displayApiError(err)); } finally { setSaving(false); }
   }
 
@@ -1283,7 +1286,14 @@ export default function App() {
       </section>
 
       <section className="auth-panel" aria-labelledby="auth-form-title">
-        <div className="auth-panel-topline"><span className="auth-lock" aria-hidden="true">▣</span><span>LOCAL WORKSPACE ACCESS</span></div>
+        <div className="auth-panel-topline">
+          <span className="auth-panel-access"><span className="auth-lock" aria-hidden="true">▣</span>LOCAL WORKSPACE ACCESS</span>
+          <label className="auth-theme-control">Theme
+            <select aria-label="Theme" value={themePreference} onChange={changeAuthTheme}>
+              <option value="auto">System</option><option value="light">Teal Light</option><option value="dark">Dark (Gold)</option>
+            </select>
+          </label>
+        </div>
         <div className="auth-card">
           <div className="auth-mobile-brand"><img className="auth-brand-mark" src={pomasLogo} alt="Pomas logo" /><strong>Pomas</strong></div>
           <div className="auth-form-heading">

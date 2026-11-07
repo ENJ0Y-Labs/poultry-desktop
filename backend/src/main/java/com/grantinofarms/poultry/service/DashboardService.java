@@ -160,8 +160,10 @@ public class DashboardService {
 
     private Map<String,Object> feedSummary(LocalDate date) {
         var rows = feed.inventory(date);
-        long remainingCost = rows.stream().mapToLong(r -> r.remainingCostMinor()).sum();
-        long consumedCost = rows.stream().mapToLong(r -> r.consumedCostMinor()).sum();
+        Long remainingCost = rows.stream().anyMatch(r -> r.remainingCostMinor() == null)
+                ? null : rows.stream().mapToLong(r -> r.remainingCostMinor()).sum();
+        Long consumedCost = rows.stream().anyMatch(r -> r.consumedCostMinor() == null)
+                ? null : rows.stream().mapToLong(r -> r.consumedCostMinor()).sum();
         long remainingQuantityMilli = rows.stream().mapToLong(r -> r.remainingQuantityMilli()).sum();
         Map<String,Object> summary = new LinkedHashMap<>();
         summary.put("typeCount", rows.size());

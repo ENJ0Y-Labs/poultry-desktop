@@ -25,6 +25,18 @@ describe("theme preference", () => {
     expect(document.documentElement.dataset.theme).toBe("dark");
   });
 
+  it("updates the applied theme when Auto follows a system preference change", () => {
+    const media = { matches: false, addEventListener: vi.fn(), removeEventListener: vi.fn() };
+    vi.stubGlobal("matchMedia", vi.fn(() => media));
+
+    initializeTheme();
+    expect(document.documentElement.dataset.theme).toBe("dark");
+    const onChange = media.addEventListener.mock.calls[0][1];
+    media.matches = true;
+    onChange();
+    expect(document.documentElement.dataset.theme).toBe("light");
+  });
+
   it("rejects invalid preferences and ignores invalid stored values", () => {
     localStorage.setItem("pomas:theme", "sepia");
     expect(getThemePreference()).toBe("auto");

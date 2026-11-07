@@ -129,7 +129,7 @@ public class DailyOperationsRepository {
 
     public List<DailyFeedUsageResponse> findFeedUsage(String batchId, LocalDate date) {
         return jdbc.query("""
-                SELECT u.feed_type_id, t.name, t.unit, u.usage_date, u.quantity_milli
+                SELECT u.feed_type_id, t.name, t.brand, t.unit, u.usage_date, u.quantity_milli
                 FROM feed_usage u
                 JOIN feed_types t ON t.id = u.feed_type_id
                 WHERE u.batch_id = ? AND u.usage_date = ?
@@ -143,7 +143,8 @@ public class DailyOperationsRepository {
                             rs.getString("unit"),
                             LocalDate.parse(rs.getString("usage_date")),
                             milli,
-                            BigDecimal.valueOf(milli, 3)
+                            BigDecimal.valueOf(milli, 3),
+                            rs.getString("brand")
                     );
                 },
                 batchId, date.toString()

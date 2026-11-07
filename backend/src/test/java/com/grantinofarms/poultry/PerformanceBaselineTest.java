@@ -170,7 +170,7 @@ class PerformanceBaselineTest {
                             unit,total_cost_minor,created_at)
                         VALUES(?,?,?,?,?,?,?,?)
                         """, uuid(), farmId, feedTypes[i], date.toString(),
-                        65_000_000L, "kg", 32_500_000L, now);
+                        70_000_000L, "kg", 32_500_000L, now);
             }
         }
 

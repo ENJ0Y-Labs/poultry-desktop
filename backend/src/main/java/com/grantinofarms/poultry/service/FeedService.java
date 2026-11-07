@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.grantinofarms.poultry.domain.FeedCostCalculator;
 import com.grantinofarms.poultry.domain.FeedPurchaseLot;
+import com.grantinofarms.poultry.domain.FeedOpeningStockLot;
 import com.grantinofarms.poultry.domain.FeedUsageEvent;
 import com.grantinofarms.poultry.dto.*;
 import com.grantinofarms.poultry.exception.ApiException;
@@ -44,9 +45,11 @@ public class FeedService {
 
     @Transactional
     public FeedTypeResponse createType(FeedTypeCreateRequest request) {
-        String scope = normalizeScope(request.applicableType());
+        List<String> applicableTypes = normalizeApplicableTypes(request);
+        String scope = legacyScope(applicableTypes);
         String unit = clean(request.unit());
         String name = clean(request.name());
+        String brand = cleanNullable(request.brand());
         BigDecimal kgPerUnit = request.kgPerUnit();
         if (request.packageWeightKg() != null && request.packageWeightKg().signum() <= 0) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_PACKAGE_WEIGHT", "Package weight must be greater than zero, or left blank when unknown.");
@@ -63,21 +66,54 @@ public class FeedService {
             kgPerUnit = BigDecimal.ONE;
         }
         String farmId = repository.farmId();
-        if (!List.of("LAYER", "BROILER", "TURKEY", "BOTH").contains(scope)) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_FEED_SCOPE",
-                    "Feed type must apply to LAYER, BROILER, TURKEY, or BOTH.");
+        if (repository.productIdentityExists(farmId, name, brand, null)) {
+            throw new ApiException(HttpStatus.CONFLICT, "DUPLICATE_FEED_PRODUCT",
+                    "A feed product with this name and brand already exists.");
         }
         String id = UUID.randomUUID().toString();
         String now = Instant.now().toString();
         try {
-            repository.insertType(id, farmId, name, unit, scope, kgPerUnit, cleanNullable(request.brand()), cleanNullable(request.packagingName()), request.packageWeightKg(), now);
+            repository.insertType(id, farmId, name, unit, scope, kgPerUnit, brand, cleanNullable(request.packagingName()), request.packageWeightKg(), applicableTypes, now);
         } catch (org.springframework.dao.DataIntegrityViolationException e) {
-            throw new ApiException(HttpStatus.CONFLICT, "DUPLICATE_FEED_TYPE",
-                    "A feed type with this name already exists.");
+            throw new ApiException(HttpStatus.CONFLICT, "DUPLICATE_FEED_PRODUCT",
+                    "A feed product with this name and brand already exists.");
         }
         auditRepository.append(farmId, "CREATE", "FEED_TYPE", id, null, null,
-                String.format("{\"name\":\"%s\",\"unit\":\"%s\",\"applicableType\":\"%s\",\"kgPerUnit\":%s}",
-                        name, unit, scope, kgPerUnit == null ? "null" : kgPerUnit.toPlainString()), now);
+                "{\"name\":" + jsonString(name) + ",\"brand\":" + jsonString(brand)
+                        + ",\"packagingName\":" + jsonString(cleanNullable(request.packagingName()))
+                        + ",\"packageWeightKg\":" + (request.packageWeightKg() == null ? "null" : request.packageWeightKg().toPlainString())
+                        + ",\"unit\":" + jsonString(unit) + ",\"applicableTypes\":"
+                        + applicableTypesJson(applicableTypes) + ",\"kgPerUnit\":"
+                        + (kgPerUnit == null ? "null" : kgPerUnit.toPlainString()) + "}", now);
+        return repository.findType(id);
+    }
+
+    @Transactional
+    public FeedTypeResponse updateProductIdentity(String id, FeedTypeUpdateRequest request) {
+        FeedTypeResponse type = requireType(id);
+        String name = clean(request.name());
+        String brand = cleanNullable(request.brand());
+        String packagingName = cleanNullable(request.packagingName());
+        BigDecimal packageWeightKg = request.packageWeightKg();
+        if (packageWeightKg != null && packageWeightKg.signum() <= 0) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_PACKAGE_WEIGHT",
+                    "Package weight must be greater than zero, or left blank when unknown.");
+        }
+        String farmId = repository.farmId();
+        if (repository.productIdentityExists(farmId, name, brand, id)) {
+            throw new ApiException(HttpStatus.CONFLICT, "DUPLICATE_FEED_PRODUCT",
+                    "A feed product with this name and brand already exists.");
+        }
+        String now = Instant.now().toString();
+        try {
+            repository.updateProductIdentity(id, name, brand, packagingName, packageWeightKg, now);
+        } catch (org.springframework.dao.DataIntegrityViolationException e) {
+            throw new ApiException(HttpStatus.CONFLICT, "DUPLICATE_FEED_PRODUCT",
+                    "A feed product with this name and brand already exists.");
+        }
+        auditRepository.append(farmId, "UPDATE", "FEED_TYPE", id, "Update feed product identity",
+                feedIdentityJson(type.name(), type.brand(), type.packagingName(), type.packageWeightKg()),
+                feedIdentityJson(name, brand, packagingName, packageWeightKg), now);
         return repository.findType(id);
     }
 
@@ -153,9 +189,9 @@ public class FeedService {
         repository.archiveType(id, now);
         auditRepository.append(repository.farmId(), "ARCHIVE", "FEED_TYPE", id,
                 "Feed type archived",
-                String.format("{\"name\":\"%s\",\"unit\":\"%s\",\"applicableType\":\"%s\",\"status\":\"ACTIVE\"}", type.name(), type.unit(), type.applicableType()),
-                String.format("{\"name\":\"%s\",\"unit\":\"%s\",\"applicableType\":\"%s\",\"status\":\"ARCHIVED\"}", type.name(), type.unit(), type.applicableType()), now);
-        return new FeedTypeResponse(type.id(), type.name(), type.unit(), type.applicableType(), "ARCHIVED", type.kgPerUnit(), type.brand(), type.packagingName(), type.packageWeightKg());
+                String.format("{\"name\":\"%s\",\"unit\":\"%s\",\"applicableTypes\":%s,\"status\":\"ACTIVE\"}", type.name(), type.unit(), applicableTypesJson(type.applicableTypes())),
+                String.format("{\"name\":\"%s\",\"unit\":\"%s\",\"applicableTypes\":%s,\"status\":\"ARCHIVED\"}", type.name(), type.unit(), applicableTypesJson(type.applicableTypes())), now);
+        return new FeedTypeResponse(type.id(), type.name(), type.unit(), type.applicableType(), "ARCHIVED", type.kgPerUnit(), type.brand(), type.packagingName(), type.packageWeightKg(), type.applicableTypes());
     }
 
     @Transactional
@@ -171,6 +207,17 @@ public class FeedService {
         if (!type.unit().equalsIgnoreCase(clean(request.unit()))) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_FEED_UNIT", "Opening balance unit must match the feed type unit.");
         }
+        LocalDate latestUsage = repository.latestUsageDate(type.id());
+        if (latestUsage != null && request.effectiveDate().isBefore(latestUsage)) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_FEED_OPENING_DATE",
+                    "Opening stock cannot be backdated before existing feed usage for this feed type.");
+        }
+        LocalDate latestOpening = repository.latestOpeningBalanceDate(type.id());
+        if (latestOpening != null && request.effectiveDate().isBefore(latestOpening)) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_FEED_OPENING_DATE",
+                    "Opening stock cannot be backdated before the latest opening-stock entry for this feed type.");
+        }
+
         long quantityMilli = toMilli(request.quantity());
         String id = UUID.randomUUID().toString();
         String now = Instant.now().toString();
@@ -181,7 +228,7 @@ public class FeedService {
                 null, String.format("{\"feedTypeId\":\"%s\",\"effectiveDate\":\"%s\",\"quantityMilli\":%d,\"unit\":\"%s\"}",
                         type.id(), request.effectiveDate(), quantityMilli, type.unit()), now);
         return new FeedOpeningBalanceResponse(id, type.id(), type.name(), request.effectiveDate(),
-                quantityMilli, type.unit(), reason, now);
+                quantityMilli, type.unit(), reason, now, type.brand());
     }
 
     public List<FeedOpeningBalanceResponse> openingBalances(String feedTypeId) {
@@ -222,14 +269,17 @@ public class FeedService {
         String now = Instant.now().toString();
         repository.insertPurchase(id, farmId, type.id(), cleanNullable(request.supplierId()),
                 request.purchaseDate(), quantityMilli, type.unit(), request.totalCostMinor(), now);
+        String productLabel = type.brand() == null || type.brand().isBlank()
+                ? type.name() : type.name() + " (" + type.brand() + ")";
         repository.insertExpense(UUID.randomUUID().toString(), farmId, request.totalCostMinor(),
-                request.purchaseDate(), id, "Feed purchase: " + type.name(), now);
+                request.purchaseDate(), id, "Feed purchase: " + productLabel, now);
         auditRepository.append(farmId, "CREATE", "FEED_PURCHASE", id, null, null,
-                String.format("{\"feedTypeId\":\"%s\",\"quantityMilli\":%d,\"totalCostMinor\":%d}",
-                        type.id(), quantityMilli, request.totalCostMinor()), now);
+                "{\"feedTypeId\":" + jsonString(type.id()) + ",\"feedTypeName\":" + jsonString(type.name())
+                        + ",\"feedTypeBrand\":" + jsonString(type.brand()) + ",\"quantityMilli\":" + quantityMilli
+                        + ",\"totalCostMinor\":" + request.totalCostMinor() + "}", now);
         return new FeedPurchaseResponse(id, type.id(), type.name(), type.unit(),
                 request.purchaseDate(), quantityMilli, request.totalCostMinor(),
-                quantityMilli, request.totalCostMinor());
+                quantityMilli, request.totalCostMinor(), type.brand());
     }
 
     public List<FeedInventoryResponse> inventory(LocalDate asOf) {
@@ -237,12 +287,14 @@ public class FeedService {
         List<FeedInventoryResponse> result = new ArrayList<>();
         for (FeedTypeResponse type : types()) {
             List<FeedPurchaseLot> purchases = repository.findPurchases(type.id(), effective);
+            List<FeedOpeningStockLot> openingLots = repository.findOpeningLots(type.id(), effective);
             List<FeedUsageEvent> usages = repository.findUsages(type.id(), effective);
-            FeedCostCalculator.FifoSnapshot snapshot = FeedCostCalculator.calculate(purchases, usages, effective);
+            FeedCostCalculator.FifoSnapshot snapshot = FeedCostCalculator.calculate(purchases, openingLots, usages, effective);
             long purchased = purchases.stream().mapToLong(FeedPurchaseLot::quantityMilli).reduce(0L, Math::addExact);
-            result.add(new FeedInventoryResponse(type.id(), type.name(), type.unit(), purchased,
+            long opening = openingLots.stream().mapToLong(FeedOpeningStockLot::quantityMilli).reduce(0L, Math::addExact);
+            result.add(new FeedInventoryResponse(type.id(), type.name(), type.unit(), purchased, opening,
                     snapshot.consumedQuantityMilli(), snapshot.remainingQuantityMilli(),
-                    snapshot.remainingCostMinor(), snapshot.consumedCostMinor()));
+                    snapshot.remainingCostMinor(), snapshot.consumedCostMinor(), type.applicableTypes(), type.brand(), type.packagingName(), type.packageWeightKg()));
         }
         return result;
     }
@@ -261,7 +313,7 @@ public class FeedService {
             throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_FEED_TYPE",
                     "Feed type does not belong to the batch farm.");
         }
-        if (!isApplicable(type.applicableType(), batchType)) {
+        if (!isApplicable(type.applicableTypes(), batchType)) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "FEED_TYPE_NOT_APPLICABLE",
                     "This feed type is not configured for the batch type.");
         }
@@ -285,13 +337,16 @@ public class FeedService {
                 UUID.randomUUID().toString(), batchId, type.id(), request.usageDate(), quantityMilli, Instant.now()
         );
         List<FeedPurchaseLot> purchases = repository.findPurchases(type.id(), request.usageDate());
+        List<FeedOpeningStockLot> openingLots = repository.findOpeningLots(type.id(), request.usageDate());
         List<FeedUsageEvent> existingUsages = repository.findUsages(type.id(), request.usageDate());
-        long feedCost;
+        FeedCostCalculator.UsageCost usageCost;
         try {
-            feedCost = FeedCostCalculator.costForUsage(purchases, existingUsages, proposed);
+            usageCost = FeedCostCalculator.costBreakdownForUsage(purchases, openingLots, existingUsages, proposed);
         } catch (IllegalArgumentException e) {
             throw new ApiException(HttpStatus.CONFLICT, "INSUFFICIENT_FEED", e.getMessage());
         }
+        Long feedCost = usageCost.totalCostMinor();
+        long knownFeedCost = usageCost.knownCostMinor();
 
         String reason = request.reason() == null || request.reason().isBlank()
                 ? "Production feed usage"
@@ -299,17 +354,17 @@ public class FeedService {
 
         repository.insertUsage(proposed.id(), batchId, type.id(), request.usageDate(),
                 quantityMilli, reason, proposed.createdAt().toString());
-        if (feedCost > 0) {
+        if (knownFeedCost > 0) {
             birdCostService.addAdditionalCost(batchId,
-                    new BirdAdditionalCostRequest(request.usageDate(), feedCost, "Feed usage: " + type.name()));
+                    new BirdAdditionalCostRequest(request.usageDate(), knownFeedCost, "Feed usage: " + type.name()));
         }
 
         auditRepository.append(farmId, "CREATE", "FEED_USAGE", proposed.id(), null, null,
-                String.format("{\"batchId\":\"%s\",\"feedTypeId\":\"%s\",\"quantityMilli\":%d,\"feedCostMinor\":%d,\"reason\":\"%s\"}",
-                        batchId, type.id(), quantityMilli, feedCost, reason), proposed.createdAt().toString());
+                String.format("{\"batchId\":\"%s\",\"feedTypeId\":\"%s\",\"quantityMilli\":%d,\"feedCostMinor\":%s,\"knownFeedCostMinor\":%d,\"reason\":\"%s\"}",
+                        batchId, type.id(), quantityMilli, feedCost == null ? "null" : feedCost.toString(), knownFeedCost, reason), proposed.createdAt().toString());
 
         return new FeedUsageResponse(proposed.id(), batchId, type.id(), type.name(), type.unit(),
-                request.usageDate(), quantityMilli, feedCost);
+                request.usageDate(), quantityMilli, feedCost, knownFeedCost);
     }
 
     public BatchFeedCostResponse batchCost(String batchId, LocalDate asOf) {
@@ -317,24 +372,30 @@ public class FeedService {
         LocalDate effective = asOf == null ? LocalDate.now() : asOf;
         List<FeedUsageEvent> usages = repository.findBatchUsages(batchId, effective);
         long totalQuantity = 0L;
-        long totalCost = 0L;
+        long knownTotalCost = 0L;
+        boolean totalCostUnknown = false;
         List<String> feedTypeIds = usages.stream().map(FeedUsageEvent::feedTypeId).distinct().toList();
 
         for (String feedTypeId : feedTypeIds) {
             List<FeedPurchaseLot> purchases = repository.findPurchases(feedTypeId, effective);
+            List<FeedOpeningStockLot> openingLots = repository.findOpeningLots(feedTypeId, effective);
             List<FeedUsageEvent> allUsages = repository.findUsages(feedTypeId, effective);
-            FeedCostCalculator.FifoSnapshot snapshot = FeedCostCalculator.calculate(purchases, allUsages, effective);
+            FeedCostCalculator.FifoSnapshot snapshot = FeedCostCalculator.calculate(purchases, openingLots, allUsages, effective);
             for (FeedUsageEvent usage : usages) {
                 if (feedTypeId.equals(usage.feedTypeId())) {
                     totalQuantity = Math.addExact(totalQuantity, usage.quantityMilli());
-                    totalCost = Math.addExact(totalCost, snapshot.usageCostsMinor().getOrDefault(usage.id(), 0L));
+                    if (snapshot.usageCostsMinor().get(usage.id()) == null) totalCostUnknown = true;
+                    knownTotalCost = Math.addExact(knownTotalCost,
+                            snapshot.usageKnownCostsMinor().getOrDefault(usage.id(), 0L));
                 }
             }
         }
 
         int currentBirds = populationService.get(batchId, effective).currentBirds();
-        Long perBird = totalQuantity > 0 && currentBirds > 0 ? totalCost / currentBirds : null;
-        return new BatchFeedCostResponse(batchId, effective, currentBirds, totalQuantity, totalCost, perBird);
+        Long totalCost = totalCostUnknown ? null : knownTotalCost;
+        Long perBird = totalQuantity > 0 && currentBirds > 0 && totalCost != null ? totalCost / currentBirds : null;
+        return new BatchFeedCostResponse(batchId, effective, currentBirds, totalQuantity,
+                totalCost, perBird, knownTotalCost);
     }
 
     private FeedTypeResponse requireType(String id) {
@@ -368,8 +429,40 @@ public class FeedService {
         }
     }
 
-    private boolean isApplicable(String scope, String batchType) {
-        return "BOTH".equals(scope) || scope.equals(batchType);
+    private boolean isApplicable(List<String> applicableTypes, String batchType) {
+        return applicableTypes.contains(batchType);
+    }
+
+    private List<String> normalizeApplicableTypes(FeedTypeCreateRequest request) {
+        List<String> requested;
+        if (request.applicableTypes() != null) {
+            requested = request.applicableTypes().stream()
+                    .filter(value -> value != null)
+                    .map(this::normalizeScope)
+                    .distinct()
+                    .toList();
+        } else {
+            String legacy = normalizeScope(request.applicableType());
+            requested = "BOTH".equals(legacy)
+                    ? List.of("LAYER", "BROILER", "TURKEY")
+                    : List.of(legacy);
+        }
+        List<String> supported = List.of("LAYER", "BROILER", "TURKEY");
+        if (requested.isEmpty() || requested.stream().anyMatch(type -> !supported.contains(type))) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_FEED_SCOPE",
+                    "Select at least one supported bird type: LAYER, BROILER, or TURKEY.");
+        }
+        return supported.stream().filter(requested::contains).toList();
+    }
+
+    private String legacyScope(List<String> applicableTypes) {
+        return applicableTypes.size() == 3 ? "BOTH"
+                : applicableTypes.size() == 1 ? applicableTypes.get(0) : "BOTH";
+    }
+
+    private String applicableTypesJson(List<String> applicableTypes) {
+        return "[" + applicableTypes.stream().map(type -> "\"" + type + "\"")
+                .collect(java.util.stream.Collectors.joining(",")) + "]";
     }
 
     private String normalizeScope(String value) {
@@ -378,6 +471,18 @@ public class FeedService {
 
     private String clean(String value) {
         return value == null ? null : value.trim();
+    }
+
+    private String feedIdentityJson(String name, String brand, String packagingName, BigDecimal packageWeightKg) {
+        return "{\"name\":" + jsonString(name) + ",\"brand\":" + jsonString(brand)
+                + ",\"packagingName\":" + jsonString(packagingName)
+                + ",\"packageWeightKg\":" + (packageWeightKg == null ? "null" : packageWeightKg.toPlainString()) + "}";
+    }
+
+    private String jsonString(String value) {
+        if (value == null) return "null";
+        return "\"" + value.replace("\\", "\\\\").replace("\"", "\\\"")
+                .replace("\n", "\\n").replace("\r", "\\r") + "\"";
     }
 
     private String cleanNullable(String value) {

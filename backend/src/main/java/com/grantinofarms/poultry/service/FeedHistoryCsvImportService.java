@@ -2,6 +2,7 @@ package com.grantinofarms.poultry.service;
 
 import com.grantinofarms.poultry.domain.FeedCostCalculator;
 import com.grantinofarms.poultry.domain.FeedPurchaseLot;
+import com.grantinofarms.poultry.domain.FeedOpeningStockLot;
 import com.grantinofarms.poultry.domain.FeedUsageEvent;
 import com.grantinofarms.poultry.dto.*;
 import com.grantinofarms.poultry.exception.ApiException;
@@ -45,9 +46,9 @@ public class FeedHistoryCsvImportService {
         List<FeedTypeResponse> feedTypes = feedService.types();
         List<BatchResponse> batchList = batches.list();
         List<SupplierResponse> supplierList = suppliers.list();
-        Map<String, FeedTypeResponse> typesByName = new HashMap<>();
+        Map<String, List<FeedTypeResponse>> typesByName = new HashMap<>();
         for (FeedTypeResponse type : feedTypes) {
-            typesByName.put(normalize(type.name()), type);
+            typesByName.computeIfAbsent(normalize(type.name()), ignored -> new ArrayList<>()).add(type);
         }
         Map<String, BatchResponse> batchesByCode = new HashMap<>();
         for (BatchResponse batch : batchList) {
@@ -107,7 +108,7 @@ public class FeedHistoryCsvImportService {
                 LocalDate placement = row.batch.placementDate();
                 if (row.date.isBefore(placement)) row.errors.add("Usage date is before the batch placement date.");
                 if (!"ACTIVE".equals(row.batch.status())) row.errors.add("Feed usage requires an ACTIVE batch.");
-                if (!isApplicable(row.feedType.applicableType(), row.batch.type())) {
+                if (!isApplicable(row.feedType.applicableTypes(), row.batch.type())) {
                     row.errors.add("Feed type is not configured for this batch type.");
                 }
             }
@@ -116,6 +117,7 @@ public class FeedHistoryCsvImportService {
         // Simulate each historical usage date independently. The calculator receives only
         // purchases and usage dated on or before that date, so a future purchase cannot fund
         // an earlier consumption event.
+        Instant previewOrderBase = Instant.now();
         Map<String, List<ParsedRow>> byType = new HashMap<>();
         for (ParsedRow row : parsed) {
             if (row.module.equals("feed-usage")) byType.computeIfAbsent(row.feedType.id(), ignored -> new ArrayList<>()).add(row);
@@ -126,10 +128,13 @@ public class FeedHistoryCsvImportService {
             for (ParsedRow usage : usages) {
                 try {
                     List<FeedPurchaseLot> purchaseLots = new ArrayList<>(feedRepository.findPurchases(entry.getKey(), usage.date));
+                    List<FeedOpeningStockLot> openingLots = new ArrayList<>(feedRepository.findOpeningLots(entry.getKey(), usage.date));
                     List<FeedUsageEvent> usageEvents = new ArrayList<>(feedRepository.findUsages(entry.getKey(), usage.date));
                     for (ParsedRow candidate : parsed) {
                         if (!candidate.feedType.id().equals(entry.getKey()) || candidate.date.isAfter(usage.date)) continue;
-                        Instant order = Instant.parse("2000-01-01T00:00:00Z").plusSeconds(candidate.rowNumber);
+                        long orderOffset = candidate.module.equals("feed-purchases")
+                                ? candidate.rowNumber : 1_000_000L + candidate.rowNumber;
+                        Instant order = previewOrderBase.plusSeconds(orderOffset);
                         if (candidate.module.equals("feed-purchases")) {
                             purchaseLots.add(new FeedPurchaseLot("import-purchase-" + candidate.rowNumber,
                                     candidate.feedType.id(), candidate.date, candidate.quantityMilli,
@@ -140,7 +145,7 @@ public class FeedHistoryCsvImportService {
                                     candidate.quantityMilli, order));
                         }
                     }
-                    FeedCostCalculator.calculate(purchaseLots, usageEvents, usage.date);
+                    FeedCostCalculator.calculate(purchaseLots, openingLots, usageEvents, usage.date);
                 } catch (IllegalArgumentException | ArithmeticException e) {
                     usage.errors.add("Insufficient dated FIFO stock or invalid feed balance at this usage date.");
                 }
@@ -176,8 +181,8 @@ public class FeedHistoryCsvImportService {
         List<FeedTypeResponse> types = feedService.types();
         List<BatchResponse> batchList = batches.list();
         List<SupplierResponse> supplierList = suppliers.list();
-        Map<String, FeedTypeResponse> typesByName = new HashMap<>();
-        types.forEach(t -> typesByName.put(normalize(t.name()), t));
+        Map<String, List<FeedTypeResponse>> typesByName = new HashMap<>();
+        types.forEach(t -> typesByName.computeIfAbsent(normalize(t.name()), ignored -> new ArrayList<>()).add(t));
         Map<String, BatchResponse> batchesByCode = new HashMap<>();
         batchList.forEach(b -> batchesByCode.put(normalize(b.code()), b));
         Map<String, SupplierResponse> suppliersByName = new HashMap<>();
@@ -221,12 +226,25 @@ public class FeedHistoryCsvImportService {
     }
 
     private ParsedRow parse(String module, Map<String, String> raw, int rowNumber,
-                            Map<String, FeedTypeResponse> types, Map<String, BatchResponse> batches,
+                            Map<String, List<FeedTypeResponse>> types, Map<String, BatchResponse> batches,
                             Map<String, SupplierResponse> suppliers, List<String> errors) {
         String feedTypeName = value(raw, "feed_type_name");
-        FeedTypeResponse type = types.get(normalize(feedTypeName));
-        if (type == null) errors.add("Unknown feed_type_name; use the exact existing feed type name.");
-        else if (!"ACTIVE".equals(type.status())) errors.add("Feed type is archived.");
+        String feedTypeBrand = value(raw, "feed_type_brand");
+        List<FeedTypeResponse> matchingTypes = types.getOrDefault(normalize(feedTypeName), List.of());
+        FeedTypeResponse type = null;
+        if (matchingTypes.isEmpty()) {
+            errors.add("Unknown feed_type_name; use the exact existing feed product name.");
+        } else if (!feedTypeBrand.isBlank()) {
+            type = matchingTypes.stream()
+                    .filter(candidate -> normalize(candidate.brand()).equals(normalize(feedTypeBrand)))
+                    .findFirst().orElse(null);
+            if (type == null) errors.add("No feed product matches this name and feed_type_brand.");
+        } else if (matchingTypes.size() > 1) {
+            errors.add("feed_type_brand is required because this feed name exists under multiple brands.");
+        } else {
+            type = matchingTypes.get(0);
+        }
+        if (type != null && !"ACTIVE".equals(type.status())) errors.add("Feed type is archived.");
 
         LocalDate date = null;
         try { date = LocalDate.parse(value(raw, module.equals("feed-purchases") ? "purchase_date" : "usage_date")); }
@@ -274,8 +292,8 @@ public class FeedHistoryCsvImportService {
     }
     private String clean(String value) { return value == null || value.isBlank() ? null : value.trim(); }
     private String normalize(String value) { return value == null ? "" : value.trim().toLowerCase(Locale.ROOT); }
-    private boolean isApplicable(String scope, String batchType) {
-        return "BOTH".equals(scope) || scope.equals(batchType);
+    private boolean isApplicable(List<String> applicableTypes, String batchType) {
+        return applicableTypes.contains(batchType);
     }
     private String safeMessage(RuntimeException e) {
         return e.getMessage() == null || e.getMessage().isBlank() ? "Invalid row." : e.getMessage();
@@ -317,8 +335,17 @@ public class FeedHistoryCsvImportService {
                     : repository.usageExists(batch.id(), feedType.id(), date, quantityMilli, reason);
         }
         Map<String, Object> toResult(int row, List<String> errors) {
-            return Map.of("rowNumber", row, "valid", errors.isEmpty(), "duplicate", duplicate,
-                    "errors", List.copyOf(errors));
+            Map<String, Object> result = new LinkedHashMap<>();
+            result.put("rowNumber", row);
+            result.put("valid", errors.isEmpty());
+            result.put("duplicate", duplicate);
+            result.put("errors", List.copyOf(errors));
+            if (feedType != null) {
+                result.put("feedTypeId", feedType.id());
+                result.put("feedTypeName", feedType.name());
+                result.put("feedTypeBrand", feedType.brand());
+            }
+            return result;
         }
     }
 }
