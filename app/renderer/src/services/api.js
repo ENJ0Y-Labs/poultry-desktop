@@ -173,6 +173,7 @@ export const feedApi = {
   listTypes: () => request("/feed/types"),
   createType: (data) => request("/feed/types", { method: "POST", body: JSON.stringify(data) }),
   updateType: (id, data) => request("/feed/types/" + id, { method: "PUT", body: JSON.stringify(data) }),
+  updateConversion: (id, kgPerUnit) => request("/feed/types/" + id + "/conversion", { method: "PUT", body: JSON.stringify({ kgPerUnit }) }),
   archiveType: (id) => request("/feed/types/" + id + "/archive", { method: "POST" }),
   purchase: (data) => request("/feed/purchases", { method: "POST", body: JSON.stringify(data) }),
   inventory: (asOf) => request("/feed/inventory" + (asOf ? "?asOf=" + asOf : "")),
