@@ -14,6 +14,40 @@ export default function FeedStockPage() {
     feedTypeId: "", effectiveDate: "", quantity: "", reason: "",
   });
   const [openingBalances, setOpeningBalances] = useState([]);
+  const [editingFeedType, setEditingFeedType] = useState(null);
+
+  function feedProductLabel(type) {
+    const brand = type.brand ? ` · ${type.brand}` : "";
+    return `${type.name}${brand} (${type.unit})`;
+  }
+
+  async function saveFeedProduct(event) {
+    event.preventDefault();
+    if (!editingFeedType) return;
+    const packageWeightKg = editingFeedType.packageWeightKg.trim() === ""
+      ? null : Number(editingFeedType.packageWeightKg);
+    if (packageWeightKg !== null && (!Number.isFinite(packageWeightKg) || packageWeightKg <= 0)) {
+      setError("Package weight must be greater than zero, or left blank when unknown.");
+      return;
+    }
+    setSaving(true);
+    setError("");
+    try {
+      const updated = await feedApi.updateType(editingFeedType.id, {
+        name: editingFeedType.name.trim(),
+        brand: editingFeedType.brand.trim() || null,
+        packagingName: editingFeedType.packagingName.trim() || null,
+        packageWeightKg,
+      });
+      setFeedTypes(current => current.map(item => item.id === updated.id ? updated : item)
+        .sort((a, b) => a.name.localeCompare(b.name) || (a.brand || "").localeCompare(b.brand || "")));
+      setEditingFeedType(null);
+    } catch (error) {
+      setError(error.message || "Could not update feed product details.");
+    } finally {
+      setSaving(false);
+    }
+  }
 
   useEffect(() => {
     let active = true;
@@ -87,6 +121,7 @@ export default function FeedStockPage() {
           <div className="section-head"><h2>Feed management</h2><p className="muted">Purchases create inventory and one expense. Usage consumes FIFO stock and adds its cost to the batch once. FCR converts feed usage to kilograms using each feed type’s configured kg-per-unit factor. Leave unknown units unset until the farm confirms the package weight.</p></div>
           <div className="subsection">
             <h3>Feed types</h3>
+            <p className="muted">A feed product is identified by its feed name and brand. The same feed name can be registered under different brands. Editing product details keeps its existing purchases, opening stock, usage and FIFO history attached to the same record.</p>
             <form className="inline-form" onSubmit={createFeedType}>
               <label className="field"><span>Name e.g. Starter</span><input required value={feedTypeForm.name} onChange={e=>setFeedTypeForm({...feedTypeForm,name:e.target.value})}/></label>
               <label className="field"><span>Brand (optional)</span><input value={feedTypeForm.brand} onChange={e=>setFeedTypeForm({...feedTypeForm,brand:e.target.value})}/></label>
@@ -118,11 +153,24 @@ export default function FeedStockPage() {
               </fieldset>
               <button disabled={saving || !(feedTypeForm.applicableTypes || []).length}>Add feed type</button>
             </form>
+            {editingFeedType && <form className="inline-form" aria-label="Edit feed product" onSubmit={saveFeedProduct}>
+              <h4>Edit feed product</h4>
+              <label className="field"><span>Product name</span><input required value={editingFeedType.name} onChange={event => setEditingFeedType({ ...editingFeedType, name: event.target.value })}/></label>
+              <label className="field"><span>Brand</span><input value={editingFeedType.brand} onChange={event => setEditingFeedType({ ...editingFeedType, brand: event.target.value })}/></label>
+              <label className="field"><span>Package name</span><input value={editingFeedType.packagingName} onChange={event => setEditingFeedType({ ...editingFeedType, packagingName: event.target.value })}/></label>
+              <label className="field"><span>Package weight in kg (leave blank if unknown)</span><input type="number" min="0.001" step="0.001" value={editingFeedType.packageWeightKg} onChange={event => setEditingFeedType({ ...editingFeedType, packageWeightKg: event.target.value })}/></label>
+              <button disabled={saving || !editingFeedType.name.trim()}>Save product details</button>
+              <button type="button" className="secondary" disabled={saving} onClick={() => setEditingFeedType(null)}>Cancel</button>
+            </form>}
             <DataTable caption="Feed types and unit conversions" columns={[
               { key: "name", label: "Product" }, { key: "brand", label: "Brand", render: type => type.brand || "—" }, { key: "packagingName", label: "Package", render: type => type.packagingName || "—" }, { key: "packageWeightKg", label: "Package weight", render: type => type.packageWeightKg == null ? "Unknown" : `${type.packageWeightKg} kg` }, { key: "unit", label: "Unit" }, { key: "applicableTypes", label: "For", render: type => (type.applicableTypes || []).map(value => ({ LAYER: "Layers", BROILER: "Broilers", TURKEY: "Turkeys" }[value] || value)).join(", ") || "—" },
               { key: "kgPerUnit", label: "Kg per unit", render: type => type.kgPerUnit == null ? "Unknown" : `${type.kgPerUnit} kg` },
               { key: "conversion", label: "Conversion setup", render: type => type.status === "ACTIVE" ? <form className="inline-form" onSubmit={event => saveConversion(event, type)}><label className="field"><span>Kg per {type.unit}</span><input name="kgPerUnit" aria-label={`Kilograms per ${type.unit} for ${type.name}`} type="number" min="0.001" step="0.001" defaultValue={type.kgPerUnit ?? ""} placeholder="Unknown" disabled={type.unit.trim().toLowerCase() === "kg"} /></label><button disabled={saving || type.unit.trim().toLowerCase() === "kg"}>Save conversion</button></form> : "Archived" },
               { key: "status", label: "Status" },
+              { key: "actions", label: "Actions", render: type => <button type="button" className="secondary" disabled={saving} onClick={() => setEditingFeedType({
+                id: type.id, name: type.name, brand: type.brand || "", packagingName: type.packagingName || "",
+                packageWeightKg: type.packageWeightKg == null ? "" : String(type.packageWeightKg),
+              })}>Edit details</button> },
             ]} rows={feedTypes} emptyMessage="No feed types yet." />
           </div>
 
@@ -132,7 +180,7 @@ export default function FeedStockPage() {
             <form className="inline-form" onSubmit={recordOpeningStock}>
               <label className="field"><span>Feed type</span><select required value={openingStockForm.feedTypeId} onChange={event => setOpeningStockForm({ ...openingStockForm, feedTypeId: event.target.value })}>
                 <option value="">Select feed type</option>
-                {feedTypes.filter(type => type.status === "ACTIVE").map(type => <option key={type.id} value={type.id}>{type.name} ({type.unit})</option>)}
+                {feedTypes.filter(type => type.status === "ACTIVE").map(type => <option key={type.id} value={type.id}>{feedProductLabel(type)}</option>)}
               </select></label>
               <label className="field"><span>Effective date</span><input required type="date" value={openingStockForm.effectiveDate} onChange={event => setOpeningStockForm({ ...openingStockForm, effectiveDate: event.target.value })}/></label>
               <label className="field"><span>Quantity</span><input required min="0.001" step="0.001" type="number" value={openingStockForm.quantity} onChange={event => setOpeningStockForm({ ...openingStockForm, quantity: event.target.value })}/></label>
@@ -154,6 +202,8 @@ export default function FeedStockPage() {
             <h3>Feed inventory</h3>
             <DataTable caption="Feed inventory" columns={[
               { key: "feedTypeName", label: "Feed" },
+              { key: "brand", label: "Brand", render: item => item.brand || "—" },
+              { key: "packagingName", label: "Package", render: item => item.packagingName || "—" },
               { key: "purchasedQuantityMilli", label: "Purchased", render: item => `${feedQuantity(item.purchasedQuantityMilli)} ${item.unit}` },
               { key: "openingQuantityMilli", label: "Opening stock", render: item => `${feedQuantity(item.openingQuantityMilli)} ${item.unit}` },
               { key: "consumedQuantityMilli", label: "Used", render: item => `${feedQuantity(item.consumedQuantityMilli)} ${item.unit}` },
@@ -238,7 +288,7 @@ export default function FeedStockPage() {
                 const type=feedTypes.find(item=>item.id===e.target.value);
                 setFeedPurchaseForm({...feedPurchaseForm,feedTypeId:e.target.value,unit:type?.unit||"bag"});
               }}>
-                <option value="">Feed type</option>{feedTypes.filter(t=>t.status==="ACTIVE").map(t=><option key={t.id} value={t.id}>{t.name} ({t.unit})</option>)}
+                <option value="">Feed type</option>{feedTypes.filter(t=>t.status==="ACTIVE").map(t=><option key={t.id} value={t.id}>{feedProductLabel(t)}</option>)}
               </select></label>
               <label className="field"><span>Purchase date</span><input required type="date" value={feedPurchaseForm.purchaseDate} onChange={e=>setFeedPurchaseForm({...feedPurchaseForm,purchaseDate:e.target.value})}/></label>
               <label className="field"><span>Quantity</span><input required min="0.001" step="0.001" type="number" value={feedPurchaseForm.quantity} onChange={e=>setFeedPurchaseForm({...feedPurchaseForm,quantity:e.target.value})}/></label>
