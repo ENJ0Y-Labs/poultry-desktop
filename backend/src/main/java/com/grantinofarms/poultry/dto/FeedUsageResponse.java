@@ -10,5 +10,5 @@ public record FeedUsageResponse(
         String unit,
         LocalDate usageDate,
         long quantityMilli,
-        long feedCostMinor
+        Long feedCostMinor
 ) {}
