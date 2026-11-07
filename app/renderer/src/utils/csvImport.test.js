@@ -86,6 +86,8 @@ describe("historical feed templates", () => {
     expect(CSV_TEMPLATES["feed-usage"].headers).toEqual([
       "feed_type_name", "feed_type_brand", "batch_code", "usage_date", "quantity", "unit", "reason",
     ]);
+    expect(CSV_TEMPLATES["feed-purchases"].required).not.toContain("feed_type_brand");
+    expect(CSV_TEMPLATES["feed-usage"].required).not.toContain("feed_type_brand");
     const result = await inspectCsvFile(csvFile(
       "feed_type_name,feed_type_brand,supplier_name,purchase_date,quantity,unit,total_cost_naira\nStarter,, ,2026-01-01,2.5,bag,1600.25\n",
     ), "feed-purchases");
