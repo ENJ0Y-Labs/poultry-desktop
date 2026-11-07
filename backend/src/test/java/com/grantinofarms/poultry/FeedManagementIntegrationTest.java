@@ -83,6 +83,71 @@ class FeedManagementIntegrationTest {
     }
 
     @Test
+    void openingStockIsIncludedInInventoryAndConsumedBeforeLaterPurchasedFeedWithoutExpense() {
+        setupFarm();
+        var house = houseService.create(new HouseCreateRequest("Opening Stock House", "OSH1", null));
+        var batch = batchService.create(new BatchCreateRequest(
+                "LAYER", LocalDate.of(2026,1,1), house.id(), 100, null, 1_000_000L));
+        var type = feedService.createType(new FeedTypeCreateRequest("Opening Layer Mash", "kg", "LAYER"));
+
+        feedService.createOpeningBalance(new FeedOpeningBalanceRequest(
+                type.id(), LocalDate.of(2026,1,1), new BigDecimal("10"), "kg", "Existing farm stock"));
+        var openingOnly = feedService.inventory(LocalDate.of(2026,1,1)).get(0);
+        assertThat(openingOnly.openingQuantityMilli()).isEqualTo(10_000L);
+        assertThat(openingOnly.purchasedQuantityMilli()).isZero();
+        assertThat(openingOnly.remainingQuantityMilli()).isEqualTo(10_000L);
+        assertThat(openingOnly.remainingCostMinor()).isNull();
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM expenses WHERE category = 'FEED'", Integer.class)).isZero();
+
+        feedService.purchase(new FeedPurchaseRequest(
+                type.id(), null, LocalDate.of(2026,1,2), new BigDecimal("10"), "kg", 100_000L));
+        var firstUsage = feedService.use(batch.id(), new FeedUsageRequest(
+                type.id(), LocalDate.of(2026,1,3), new BigDecimal("5"), "kg", "Use opening stock first"));
+
+        assertThat(firstUsage.feedCostMinor()).isNull();
+        var afterOpeningConsumption = feedService.inventory(LocalDate.of(2026,1,3)).get(0);
+        assertThat(afterOpeningConsumption.openingQuantityMilli()).isEqualTo(10_000L);
+        assertThat(afterOpeningConsumption.purchasedQuantityMilli()).isEqualTo(10_000L);
+        assertThat(afterOpeningConsumption.consumedQuantityMilli()).isEqualTo(5_000L);
+        assertThat(afterOpeningConsumption.remainingQuantityMilli()).isEqualTo(15_000L);
+        assertThat(afterOpeningConsumption.remainingCostMinor()).isNull();
+
+        var secondUsage = feedService.use(batch.id(), new FeedUsageRequest(
+                type.id(), LocalDate.of(2026,1,4), new BigDecimal("7"), "kg", "Finish opening stock"));
+        assertThat(secondUsage.feedCostMinor()).isNull();
+
+        var thirdUsage = feedService.use(batch.id(), new FeedUsageRequest(
+                type.id(), LocalDate.of(2026,1,5), new BigDecimal("1"), "kg", "Consume purchased stock"));
+        assertThat(thirdUsage.feedCostMinor()).isEqualTo(10_000L);
+        assertThat(feedService.batchCost(batch.id(), LocalDate.of(2026,1,5)).feedCostMinor()).isNull();
+
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM feed_purchases", Integer.class)).isEqualTo(1);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM expenses WHERE category = 'FEED'", Integer.class)).isEqualTo(1);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM bird_cost_events WHERE batch_id = ? AND event_type = 'ADDITIONAL_COST'",
+                Integer.class, batch.id())).isZero();
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM audit_logs WHERE entity_type = 'FEED_OPENING_BALANCE'",
+                Integer.class)).isEqualTo(1);
+    }
+
+    @Test
+    void openingStockCannotBeBackdatedBeforeExistingUsage() {
+        setupFarm();
+        var house = houseService.create(new HouseCreateRequest("Chronology House", "CH1", null));
+        var batch = batchService.create(new BatchCreateRequest(
+                "BROILER", LocalDate.of(2026,1,1), house.id(), 100, null, 1_000_000L));
+        var type = feedService.createType(new FeedTypeCreateRequest("Chronology Feed", "kg", "BROILER"));
+        feedService.createOpeningBalance(new FeedOpeningBalanceRequest(
+                type.id(), LocalDate.of(2026,1,1), new BigDecimal("10"), "kg", "Initial stock"));
+        feedService.use(batch.id(), new FeedUsageRequest(
+                type.id(), LocalDate.of(2026,1,3), new BigDecimal("1"), "kg", "Recorded usage"));
+
+        assertThatThrownBy(() -> feedService.createOpeningBalance(new FeedOpeningBalanceRequest(
+                type.id(), LocalDate.of(2026,1,2), new BigDecimal("2"), "kg", "Backdated correction")))
+                .hasMessage("Opening stock cannot be backdated before existing feed usage for this feed type.");
+        assertThat(feedService.openingBalances(type.id())).hasSize(1);
+    }
+
+    @Test
     void purchaseCreatesInventoryAndOneExpense() {
         setupFarm();
         var type = feedService.createType(new FeedTypeCreateRequest("Starter", "bag", "BROILER"));
