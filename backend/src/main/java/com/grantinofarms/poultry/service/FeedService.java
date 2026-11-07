@@ -40,7 +40,8 @@ public class FeedService {
 
     @Transactional
     public FeedTypeResponse createType(FeedTypeCreateRequest request) {
-        String scope = normalizeScope(request.applicableType());
+        List<String> applicableTypes = normalizeApplicableTypes(request);
+        String scope = legacyScope(applicableTypes);
         String unit = clean(request.unit());
         String name = clean(request.name());
         BigDecimal kgPerUnit = request.kgPerUnit();
@@ -59,21 +60,17 @@ public class FeedService {
             kgPerUnit = BigDecimal.ONE;
         }
         String farmId = repository.farmId();
-        if (!List.of("LAYER", "BROILER", "TURKEY", "BOTH").contains(scope)) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_FEED_SCOPE",
-                    "Feed type must apply to LAYER, BROILER, TURKEY, or BOTH.");
-        }
         String id = UUID.randomUUID().toString();
         String now = Instant.now().toString();
         try {
-            repository.insertType(id, farmId, name, unit, scope, kgPerUnit, cleanNullable(request.brand()), cleanNullable(request.packagingName()), request.packageWeightKg(), now);
+            repository.insertType(id, farmId, name, unit, scope, kgPerUnit, cleanNullable(request.brand()), cleanNullable(request.packagingName()), request.packageWeightKg(), applicableTypes, now);
         } catch (org.springframework.dao.DataIntegrityViolationException e) {
             throw new ApiException(HttpStatus.CONFLICT, "DUPLICATE_FEED_TYPE",
                     "A feed type with this name already exists.");
         }
         auditRepository.append(farmId, "CREATE", "FEED_TYPE", id, null, null,
-                String.format("{\"name\":\"%s\",\"unit\":\"%s\",\"applicableType\":\"%s\",\"kgPerUnit\":%s}",
-                        name, unit, scope, kgPerUnit == null ? "null" : kgPerUnit.toPlainString()), now);
+                String.format("{\"name\":\"%s\",\"unit\":\"%s\",\"applicableTypes\":%s,\"kgPerUnit\":%s}",
+                        name, unit, applicableTypesJson(applicableTypes), kgPerUnit == null ? "null" : kgPerUnit.toPlainString()), now);
         return repository.findType(id);
     }
 
@@ -110,7 +107,7 @@ public class FeedService {
                 "Feed type archived",
                 String.format("{\"name\":\"%s\",\"unit\":\"%s\",\"applicableType\":\"%s\",\"status\":\"ACTIVE\"}", type.name(), type.unit(), type.applicableType()),
                 String.format("{\"name\":\"%s\",\"unit\":\"%s\",\"applicableType\":\"%s\",\"status\":\"ARCHIVED\"}", type.name(), type.unit(), type.applicableType()), now);
-        return new FeedTypeResponse(type.id(), type.name(), type.unit(), type.applicableType(), "ARCHIVED", type.kgPerUnit(), type.brand(), type.packagingName(), type.packageWeightKg());
+        return new FeedTypeResponse(type.id(), type.name(), type.unit(), type.applicableType(), "ARCHIVED", type.kgPerUnit(), type.brand(), type.packagingName(), type.packageWeightKg(), type.applicableTypes());
     }
 
     @Transactional
@@ -197,7 +194,7 @@ public class FeedService {
             long purchased = purchases.stream().mapToLong(FeedPurchaseLot::quantityMilli).reduce(0L, Math::addExact);
             result.add(new FeedInventoryResponse(type.id(), type.name(), type.unit(), purchased,
                     snapshot.consumedQuantityMilli(), snapshot.remainingQuantityMilli(),
-                    snapshot.remainingCostMinor(), snapshot.consumedCostMinor()));
+                    snapshot.remainingCostMinor(), snapshot.consumedCostMinor(), type.applicableTypes()));
         }
         return result;
     }
@@ -216,7 +213,7 @@ public class FeedService {
             throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_FEED_TYPE",
                     "Feed type does not belong to the batch farm.");
         }
-        if (!isApplicable(type.applicableType(), batchType)) {
+        if (!isApplicable(type.applicableTypes(), batchType)) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "FEED_TYPE_NOT_APPLICABLE",
                     "This feed type is not configured for the batch type.");
         }
@@ -315,8 +312,40 @@ public class FeedService {
         }
     }
 
-    private boolean isApplicable(String scope, String batchType) {
-        return "BOTH".equals(scope) || scope.equals(batchType);
+    private boolean isApplicable(List<String> applicableTypes, String batchType) {
+        return applicableTypes.contains(batchType);
+    }
+
+    private List<String> normalizeApplicableTypes(FeedTypeCreateRequest request) {
+        List<String> requested;
+        if (request.applicableTypes() != null) {
+            requested = request.applicableTypes().stream()
+                    .filter(value -> value != null)
+                    .map(this::normalizeScope)
+                    .distinct()
+                    .toList();
+        } else {
+            String legacy = normalizeScope(request.applicableType());
+            requested = "BOTH".equals(legacy)
+                    ? List.of("LAYER", "BROILER", "TURKEY")
+                    : List.of(legacy);
+        }
+        List<String> supported = List.of("LAYER", "BROILER", "TURKEY");
+        if (requested.isEmpty() || requested.stream().anyMatch(type -> !supported.contains(type))) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_FEED_SCOPE",
+                    "Select at least one supported bird type: LAYER, BROILER, or TURKEY.");
+        }
+        return supported.stream().filter(requested::contains).toList();
+    }
+
+    private String legacyScope(List<String> applicableTypes) {
+        return applicableTypes.size() == 3 ? "BOTH"
+                : applicableTypes.size() == 1 ? applicableTypes.get(0) : "BOTH";
+    }
+
+    private String applicableTypesJson(List<String> applicableTypes) {
+        return "[" + applicableTypes.stream().map(type -> "\\\"" + type + "\\\"")
+                .collect(java.util.stream.Collectors.joining(",")) + "]";
     }
 
     private String normalizeScope(String value) {
