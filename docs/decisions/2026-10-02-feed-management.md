@@ -4,7 +4,7 @@
 
 Feed costing uses FIFO, first in first out.
 
-Each feed type has a configurable name, unit, and applicable flock type: LAYER, BROILER, or BOTH.
+Each feed type has a configurable name, unit, and a non-empty set of applicable bird types: any combination of LAYER, BROILER, and TURKEY. The set is stored in `feed_type_applicability`; do not infer it from product names. Legacy `BOTH` definitions map to all three supported types.
 
 Feed purchase facts preserve the original purchase quantity, unit, purchase date, supplier reference, and total cost. Inventory is derived from purchases minus recorded usage.
 
@@ -53,3 +53,10 @@ and:
 `purchased cost = consumed cost + remaining cost`
 
 These invariants are covered by calculation and integration tests.
+
+
+## Multi-type applicability update — 2026-11-07
+
+Feed applicability is a set, not a single selected bird type. The V32 forward-only migration creates `feed_type_applicability` and maps legacy `BOTH` to LAYER, BROILER, and TURKEY. Existing single-type definitions retain their one matching type. The migration does not rebuild or rewrite feed purchases, opening balances, usage, FIFO allocations, or expenses.
+
+The API accepts and returns `applicableTypes`. A legacy `applicableType` request remains accepted for older clients during transition. The backend validates the set on creation, rejects an empty or unsupported set, enforces it again when recording usage, and applies the same rule during historical feed CSV preview/import. Daily Work lists only active feed types applicable to the selected batch. Farm feed inventory reports include the applicability set.
