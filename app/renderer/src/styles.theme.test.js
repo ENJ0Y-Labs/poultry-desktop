@@ -36,6 +36,18 @@ describe("navigation theme tokens", () => {
     }
   });
 
+  it("defines theme-aware tokens for landing, sign-in, and first-run screens", () => {
+    const darkTheme = stylesheet.match(/:root\\s*\\{([^}]*)\\}/)?.[1] ?? "";
+    const lightTheme = stylesheet.match(/:root\\[data-theme="light"\\]\\s*\\{([^}]*)\\}/g)?.join("\\n") ?? "";
+    for (const token of ["--auth-story-background", "--auth-story-text", "--auth-story-muted", "--auth-story-border", "--auth-feature-background", "--auth-accent", "--auth-button-background", "--auth-button-text", "--auth-focus-ring"]) {
+      expect(darkTheme, `missing dark/default value for ${token}`).toContain(token);
+      expect(lightTheme, `missing light value for ${token}`).toContain(token);
+    }
+    expect(stylesheet).toContain(".auth-story {");
+    expect(stylesheet).toContain("background:var(--auth-story-background)");
+    expect(stylesheet).toContain("background:var(--auth-button-background)");
+  });
+
   it("uses semantic theme tokens for activity selection, tabs, hover, and focus", () => {
     expect(stylesheet).toMatch(/\.activity-button\.active\s*\{[^}]*background:\s*var\(--ide-activity-active-bg\)/);
     expect(stylesheet).toMatch(/\.activity-button:focus-visible\s*\{[^}]*outline:\s*2px solid var\(--ide-focus-ring\)/);
