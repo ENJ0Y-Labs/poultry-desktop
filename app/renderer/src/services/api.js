@@ -172,6 +172,7 @@ export const feedApi = {
   listTypes: () => request("/feed/types"),
   createType: (data) => request("/feed/types", { method: "POST", body: JSON.stringify(data) }),
   archiveType: (id) => request("/feed/types/" + id + "/archive", { method: "POST" }),
+  updateConversion: (id, kgPerUnit) => request("/feed/types/" + id + "/conversion", { method: "PUT", body: JSON.stringify({ kgPerUnit }) }),
   openingBalances: (feedTypeId) => request("/feed/types/" + feedTypeId + "/opening-balances"),
   createOpeningBalance: (data) => request("/feed/opening-balances", { method: "POST", body: JSON.stringify(data) }),
   purchase: (data) => request("/feed/purchases", { method: "POST", body: JSON.stringify(data) }),
