@@ -189,13 +189,14 @@ Each feed type has an optional `kg_per_unit` conversion factor. Feed consumed in
 
 ## Meat-bird sales and revenue
 
-Broiler population reduction from a sale is represented by a SOLD population event.
+Broiler and Turkey population reductions are recorded as separate SOLD population events, one for each bird-sale transaction.
 
 ```
 sale revenue = quantity × price per bird
+current birds = initial birds - mortality - culling - sold + transfers in - transfers out + physical-count adjustments
 ```
 
-When the calculated current population reaches zero, an active Broiler or Turkey batch transitions to SOLD and ordinary production/population writes are locked.
+A partial sale reduces calculated population but does not change the batch status while any birds remain. Multiple sales retain independent dates, quantities, unit prices, customers, totals, common-ledger rows, and audit records. The active Broiler or Turkey batch transitions to SOLD only when its calculated current population reaches zero. An attempted sale above the population available on its business date is rejected atomically; the population event, type-specific sale, common-ledger row, customer creation, pricing/margin writes, and audit history must not be partially committed. LAYER batches are not eligible for bird sales.
 
 ## Pricing and margins
 
