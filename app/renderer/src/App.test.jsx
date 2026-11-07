@@ -210,7 +210,6 @@ describe("App", () => {
     await waitFor(() => expect(resolveFarm).toBeTypeOf("function"));
     resolveFarm(farm);
     await waitFor(() => expect(screen.getByRole("heading", { name: "Farm dashboard" })).toBeInTheDocument());
-    expect(screen.getByRole("combobox", { name: "Theme" })).toHaveValue("dark");
   });
 
   it("renders the farm setup screen when no farm exists", async () => {
@@ -331,6 +330,7 @@ describe("App", () => {
     fireEvent.click(screen.getByRole("button", { name: "Create account and continue" }));
 
     await waitFor(() => expect(screen.getByRole("heading", { name: "Farm dashboard" })).toBeInTheDocument());
+    expect(screen.getByRole("combobox", { name: "Theme" })).toHaveValue("dark");
     expect(setup).toHaveBeenCalledWith({
       username: "farm-owner",
       email: "owner@example.com",
