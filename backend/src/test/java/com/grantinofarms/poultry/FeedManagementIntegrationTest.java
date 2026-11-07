@@ -136,7 +136,7 @@ class FeedManagementIntegrationTest {
         setupFarm();
         feedService.createType(new FeedTypeCreateRequest(
                 "Starter Mash", "kg", "BROILER", BigDecimal.ONE, "Brand A", null, null));
-        feedService.createType(new FeedTypeCreateRequest(
+        var brandB = feedService.createType(new FeedTypeCreateRequest(
                 "Starter Mash", "kg", "BROILER", BigDecimal.ONE, "Brand B", null, null));
 
         var withoutBrand = new CsvImportRequest("feed-purchases", List.of(Map.of(
@@ -151,6 +151,11 @@ class FeedManagementIntegrationTest {
         var brandPreview = feedHistoryImport.preview(withBrand);
         assertThat(ambiguousPreview.get("valid")).isEqualTo(false);
         assertThat(brandPreview.get("valid")).isEqualTo(true);
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> previewRows = (List<Map<String, Object>>) brandPreview.get("rows");
+        assertThat(previewRows).hasSize(1);
+        assertThat(previewRows.get(0).get("feedTypeId")).isEqualTo(brandB.id());
+        assertThat(previewRows.get(0).get("feedTypeBrand")).isEqualTo("Brand B");
     }
 
     @Test
