@@ -1348,3 +1348,10 @@ Validate the renderer with the backend available, during startup, and with the b
 - Read the label from farm settings for water-entry forms and farm/batch report views and exports. Do not hard-code `units` or `litres` in a water-specific display.
 - Water unit setting changes must be audited with both the prior and updated settings snapshots so the change is traceable.
 - Keep the migration forward-only. Migration tests must start from a pre-label database containing existing water records and assert the label default plus unchanged numeric capacity/count values.
+
+
+## JSX text and line breaks
+
+- Never paste the two-character escape sequence `\\n` between JSX elements to represent visual spacing or a line break. JSX renders it as literal text. Put each element on its own JSX line and use semantic grouping, CSS `gap`, or an explicit layout wrapper for spacing.
+- When reviewing escaped text, distinguish source-code formatting from user-entered values. Fix only unintended hard-coded UI escape sequences; never globally strip or normalize backslashes in user-provided names, notes, reasons, or other stored text.
+- Add a renderer regression test for any reported literal escape sequence so the affected screen is checked as rendered DOM text.
