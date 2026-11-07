@@ -294,6 +294,36 @@ class FeedManagementIntegrationTest {
                 .hasMessage("Select at least one supported bird type: LAYER, BROILER, or TURKEY.");
     }
 
+    @Test
+    void feedHistoryImportUsesTheSameMultiTypeApplicabilitySetAsManualUsage() {
+        setupFarm();
+        LocalDate placed = LocalDate.of(2026, 1, 1);
+        var layerHouse = houseService.create(new HouseCreateRequest("Import Layer House", "IL1", null));
+        var broilerHouse = houseService.create(new HouseCreateRequest("Import Broiler House", "IB1", null));
+        var turkeyHouse = houseService.create(new HouseCreateRequest("Import Turkey House", "IT1", null));
+        var layer = batchService.create(new BatchCreateRequest("LAYER", placed, layerHouse.id(), 10, null, 1000L));
+        var broiler = batchService.create(new BatchCreateRequest("BROILER", placed, broilerHouse.id(), 10, null, 1000L));
+        var turkey = batchService.create(new BatchCreateRequest("TURKEY", placed, turkeyHouse.id(), 10, null, 1000L));
+        var feedType = feedService.createType(new FeedTypeCreateRequest(
+                "Layer and Turkey Feed", "kg", null, BigDecimal.ONE, null, null, null,
+                List.of("LAYER", "TURKEY")));
+        feedService.purchase(new FeedPurchaseRequest(feedType.id(), null, placed,
+                BigDecimal.TEN, "kg", 100_000L));
+
+        var valid = feedHistoryImport.preview(new CsvImportRequest("feed-usage", List.of(
+                Map.of("feed_type_name", "Layer and Turkey Feed", "batch_code", turkey.code(),
+                        "usage_date", "2026-01-02", "quantity", "1", "unit", "kg", "reason", "Turkey feeding"))));
+        var invalid = feedHistoryImport.preview(new CsvImportRequest("feed-usage", List.of(
+                Map.of("feed_type_name", "Layer and Turkey Feed", "batch_code", broiler.code(),
+                        "usage_date", "2026-01-02", "quantity", "1", "unit", "kg", "reason", "Invalid broiler feeding"))));
+
+        assertThat(valid.get("valid")).isEqualTo(true);
+        assertThat(invalid.get("valid")).isEqualTo(false);
+        assertThat(invalid.get("rejected")).isEqualTo(1);
+        assertThat(layer.type()).isEqualTo("LAYER");
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM feed_usage", Integer.class)).isZero();
+    }
+
     private void setupFarm() {
         farmService.create(new FarmCreateRequest(
                 "Grantino Farms", "Port Harcourt", "Africa/Lagos", "NGN"));
