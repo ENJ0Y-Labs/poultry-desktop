@@ -193,8 +193,7 @@ public final class FeedCostCalculator {
         private boolean availableAt(FeedUsageEvent usage) {
             if (date.isBefore(usage.usageDate())) return true;
             if (date.isAfter(usage.usageDate())) return false;
-            int timestampOrder = createdAt.compareTo(usage.createdAt());
-            return timestampOrder < 0 || (timestampOrder == 0 && id.compareTo(usage.id()) <= 0);
+            return !createdAt.isAfter(usage.createdAt());
         }
     }
 
