@@ -84,7 +84,7 @@ const emptyCost = {
   amountMinor: "",
   reason: "",
 };
-const emptyFeedType = { name: "", brand: "", unit: "bag", packagingName: "bag", packageWeightKg: "", applicableType: "BOTH", kgPerUnit: "" };
+const emptyFeedType = { name: "", brand: "", unit: "bag", packagingName: "bag", packageWeightKg: "", applicableTypes: ["LAYER", "BROILER", "TURKEY"], kgPerUnit: "" };
 const emptyFeedPurchase = {
   feedTypeId: "",
   supplierId: "",
@@ -808,7 +808,12 @@ export default function App() {
   }
 
   async function createFeedType(event) {
-    event.preventDefault(); setSaving(true); setError("");
+    event.preventDefault();
+    if (!feedTypeForm.applicableTypes?.length) {
+      setError("Select at least one applicable bird type.");
+      return;
+    }
+    setSaving(true); setError("");
     try {
       const created = await feedApi.createType({ ...feedTypeForm, kgPerUnit: feedTypeForm.kgPerUnit === "" ? null : Number(feedTypeForm.kgPerUnit), packageWeightKg: feedTypeForm.packageWeightKg === "" ? null : Number(feedTypeForm.packageWeightKg) });
       setFeedTypes(current => [...current, created].sort((a, b) => a.name.localeCompare(b.name)));
