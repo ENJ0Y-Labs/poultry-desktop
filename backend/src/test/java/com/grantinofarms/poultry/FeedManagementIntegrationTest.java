@@ -280,6 +280,28 @@ class FeedManagementIntegrationTest {
     }
 
     @Test
+    void historicalFeedUsageImportCanConsumeExistingOpeningStock() {
+        setupFarm();
+        var house = houseService.create(new HouseCreateRequest("Opening Import House", "OIH1", null));
+        var batch = batchService.create(new BatchCreateRequest(
+                "BROILER", LocalDate.of(2026,1,1), house.id(), 100, null, 1_000_000L));
+        var type = feedService.createType(new FeedTypeCreateRequest("Opening Import Feed", "kg", "BROILER"));
+        feedService.createOpeningBalance(new FeedOpeningBalanceRequest(
+                type.id(), LocalDate.of(2026,1,1), new BigDecimal("10"), "kg", "Stock on hand"));
+
+        var request = new CsvImportRequest("feed-usage", List.of(
+                Map.of("feed_type_name", "Opening Import Feed", "batch_code", batch.code(),
+                        "usage_date", "2026-01-02", "quantity", "4", "unit", "kg", "reason", "Historical usage")));
+        var preview = feedHistoryImport.preview(request);
+        assertThat(preview.get("valid")).isEqualTo(true);
+
+        var imported = feedHistoryImport.importRecords(request);
+        assertThat(imported.get("importedUsage")).isEqualTo(1);
+        assertThat(feedService.batchCost(batch.id(), LocalDate.of(2026,1,2)).feedCostMinor()).isNull();
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM expenses WHERE category = 'FEED'", Integer.class)).isZero();
+    }
+
+    @Test
     void feedUsagePreviewRejectsConsumptionWithoutDatedStock() {
         setupFarm();
         var house = houseService.create(new HouseCreateRequest("No Stock House", "NSH1", null));
