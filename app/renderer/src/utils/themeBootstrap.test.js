@@ -61,10 +61,10 @@ describe("pre-paint theme bootstrap", () => {
     });
   });
 
-  it("falls back to Dark Auto when local storage is unavailable", () => {
+  it("keeps Auto and follows the system when local storage is unavailable", () => {
     expect(runBootstrap({ storageThrows: true, prefersLight: true })).toEqual({
       themePreference: "auto",
-      theme: "dark",
+      theme: "light",
     });
   });
 });
