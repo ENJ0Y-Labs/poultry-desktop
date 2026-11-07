@@ -52,6 +52,17 @@ assert.deepEqual(
 );
 
 const html = readFileSync(htmlPath, "utf8");
+const themeBootstrapPath = join(rendererDir, "theme-init.js");
+assert.ok(
+  statSync(themeBootstrapPath).isFile(),
+  "Production renderer must include the pre-paint theme bootstrap.",
+);
+assert.ok(
+  html.indexOf('src="/theme-init.js"') >= 0 &&
+    html.indexOf('src="/theme-init.js"') < html.indexOf('<script type="module"'),
+  "The theme bootstrap must load in the document head before the renderer module.",
+);
+
 assert.doesNotMatch(
   html,
   /<script[^>]+src=["']\/src\/main\.jsx["']/i,
