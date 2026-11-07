@@ -43,7 +43,9 @@ npm run package
 npm run installer:verify
 ```
 
-The installer is written to `release/POMAS-v<version>-Setup-x64.exe` (for example, `release/POMAS-v1.0.3-Setup-x64.exe`). The filename version and architecture are generated from `package.json` and the explicit Windows x64 target. The Windows executable metadata uses the `Pomas` product name and `Grantino Farms` company identity. The package command prepares the bundled Java runtime, builds and verifies the renderer, packages the Spring Boot backend, checks production inputs, and runs Electron Builder.
+The installer is written to `release/POMAS-v<version>-Setup-x64.exe` (for example, `release/POMAS-v1.0.3-Setup-x64.exe`). The filename version and architecture are generated from `package.json` and the explicit Windows x64 target. The Windows executable metadata uses the `Pomas` product name and `Grantino Farms` company identity.
+
+The `x64` architecture marker belongs only in the installer artifact filename. Keep the Pomas product name, application version labels, window title, and all renderer screens free of architecture suffixes. Electron may retain the actual architecture in its internal runtime metadata; do not display it as product/version text. The package command prepares the bundled Java runtime, builds and verifies the renderer, packages the Spring Boot backend, checks production inputs, and runs Electron Builder.
 
 ## 2. Prepare the release
 
