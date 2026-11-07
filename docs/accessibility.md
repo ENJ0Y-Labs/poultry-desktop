@@ -60,6 +60,7 @@ This section supersedes any earlier palette decision. Pomas uses deep teal `#1A4
 - Primary buttons use white text on teal in light mode and black text on gold in dark mode.
 - Warning, critical, and error colours remain semantically distinct from the brand palette.
 - Use semantic CSS tokens for colour roles. Do not add per-screen hardcoded colour values.
+- Landing, sign-in, and first-run owner-setup screens use the shared --auth-* token family. Verify the story panel, release highlights, form controls, focus states, and primary action in Light and Dark. Keep the Theme selector available before authentication.
 - Preserve Auto, Light, and Dark preferences. Auto follows the operating system colour scheme.
 - `scripts/verify-a11y.mjs` checks approved theme tokens and WCAG 2.2 AA normal-text contrast pairs. Automated token checks do not replace rendered UI review.
 
