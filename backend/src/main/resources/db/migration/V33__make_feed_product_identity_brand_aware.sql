@@ -27,23 +27,32 @@ SELECT
     kg_per_unit, brand, packaging_name, package_weight_kg
 FROM feed_types;
 
--- Rebuild this newer child table against the replacement parent table.
--- Other feed ledger tables retain their existing feed_types foreign keys.
-CREATE TABLE feed_type_applicability_new (
+-- Preserve applicability rows as data while the referenced parent table is replaced.
+-- Recreate the real foreign key only after feed_types has its final name.
+CREATE TABLE feed_type_applicability_copy (
     feed_type_id TEXT NOT NULL,
-    bird_type TEXT NOT NULL CHECK (bird_type IN ('LAYER', 'BROILER', 'TURKEY')),
-    PRIMARY KEY (feed_type_id, bird_type),
-    FOREIGN KEY (feed_type_id) REFERENCES feed_types_new(id) ON DELETE CASCADE
+    bird_type TEXT NOT NULL
 );
 
-INSERT INTO feed_type_applicability_new (feed_type_id, bird_type)
+INSERT INTO feed_type_applicability_copy (feed_type_id, bird_type)
 SELECT feed_type_id, bird_type FROM feed_type_applicability;
 
 DROP TABLE feed_type_applicability;
 DROP TABLE feed_types;
 
 ALTER TABLE feed_types_new RENAME TO feed_types;
-ALTER TABLE feed_type_applicability_new RENAME TO feed_type_applicability;
+
+CREATE TABLE feed_type_applicability (
+    feed_type_id TEXT NOT NULL,
+    bird_type TEXT NOT NULL CHECK (bird_type IN ('LAYER', 'BROILER', 'TURKEY')),
+    PRIMARY KEY (feed_type_id, bird_type),
+    FOREIGN KEY (feed_type_id) REFERENCES feed_types(id) ON DELETE CASCADE
+);
+
+INSERT INTO feed_type_applicability (feed_type_id, bird_type)
+SELECT feed_type_id, bird_type FROM feed_type_applicability_copy;
+
+DROP TABLE feed_type_applicability_copy;
 
 CREATE INDEX idx_feed_types_farm_status ON feed_types(farm_id, status);
 CREATE INDEX idx_feed_type_applicability_bird_type
