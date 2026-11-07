@@ -103,6 +103,10 @@ public class FeedService {
         if (!farmId.equals(repository.typeFarmId(id))) {
             throw new ApiException(HttpStatus.NOT_FOUND, "FEED_TYPE_NOT_FOUND", "Feed type not found.");
         }
+        if (!"ACTIVE".equals(type.status())) {
+            throw new ApiException(HttpStatus.CONFLICT, "FEED_TYPE_NOT_ACTIVE",
+                    "Archived feed types cannot be edited.");
+        }
         if (repository.productIdentityExists(farmId, name, brand, id)) {
             throw new ApiException(HttpStatus.CONFLICT, "DUPLICATE_FEED_PRODUCT",
                     "A feed product with this name and brand already exists.");
