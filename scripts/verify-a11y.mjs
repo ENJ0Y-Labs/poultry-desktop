@@ -122,7 +122,7 @@ const rendererCss = readFileSync(resolve("app/renderer/src/styles.css"), "utf8")
 function rendererThemeBlock(selector) {
   const brandStart = rendererCss.indexOf("/* Pomas brand system: semantic overrides");
   const start = rendererCss.indexOf(selector, brandStart);
-  const end = rendererCss.indexOf("\\n}", start);
+  const end = rendererCss.indexOf("\n}", start);
   assert.ok(start >= 0 && end > start, `Missing renderer theme block: ${selector}`);
   return rendererCss.slice(start, end);
 }
