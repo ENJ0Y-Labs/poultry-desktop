@@ -253,12 +253,14 @@ public class FeedService {
         List<FeedPurchaseLot> purchases = repository.findPurchases(type.id(), request.usageDate());
         List<FeedOpeningStockLot> openingLots = repository.findOpeningLots(type.id(), request.usageDate());
         List<FeedUsageEvent> existingUsages = repository.findUsages(type.id(), request.usageDate());
-        Long feedCost;
+        FeedCostCalculator.UsageCost usageCost;
         try {
-            feedCost = FeedCostCalculator.costForUsage(purchases, openingLots, existingUsages, proposed);
+            usageCost = FeedCostCalculator.costBreakdownForUsage(purchases, openingLots, existingUsages, proposed);
         } catch (IllegalArgumentException e) {
             throw new ApiException(HttpStatus.CONFLICT, "INSUFFICIENT_FEED", e.getMessage());
         }
+        Long feedCost = usageCost.totalCostMinor();
+        long knownFeedCost = usageCost.knownCostMinor();
 
         String reason = request.reason() == null || request.reason().isBlank()
                 ? "Production feed usage"
@@ -266,17 +268,17 @@ public class FeedService {
 
         repository.insertUsage(proposed.id(), batchId, type.id(), request.usageDate(),
                 quantityMilli, reason, proposed.createdAt().toString());
-        if (feedCost != null && feedCost > 0) {
+        if (knownFeedCost > 0) {
             birdCostService.addAdditionalCost(batchId,
-                    new BirdAdditionalCostRequest(request.usageDate(), feedCost, "Feed usage: " + type.name()));
+                    new BirdAdditionalCostRequest(request.usageDate(), knownFeedCost, "Feed usage: " + type.name()));
         }
 
         auditRepository.append(farmId, "CREATE", "FEED_USAGE", proposed.id(), null, null,
-                String.format("{\"batchId\":\"%s\",\"feedTypeId\":\"%s\",\"quantityMilli\":%d,\"feedCostMinor\":%s,\"reason\":\"%s\"}",
-                        batchId, type.id(), quantityMilli, feedCost == null ? "null" : feedCost.toString(), reason), proposed.createdAt().toString());
+                String.format("{\"batchId\":\"%s\",\"feedTypeId\":\"%s\",\"quantityMilli\":%d,\"feedCostMinor\":%s,\"knownFeedCostMinor\":%d,\"reason\":\"%s\"}",
+                        batchId, type.id(), quantityMilli, feedCost == null ? "null" : feedCost.toString(), knownFeedCost, reason), proposed.createdAt().toString());
 
         return new FeedUsageResponse(proposed.id(), batchId, type.id(), type.name(), type.unit(),
-                request.usageDate(), quantityMilli, feedCost);
+                request.usageDate(), quantityMilli, feedCost, knownFeedCost);
     }
 
     public BatchFeedCostResponse batchCost(String batchId, LocalDate asOf) {
@@ -296,9 +298,9 @@ public class FeedService {
             for (FeedUsageEvent usage : usages) {
                 if (feedTypeId.equals(usage.feedTypeId())) {
                     totalQuantity = Math.addExact(totalQuantity, usage.quantityMilli());
-                    Long usageCost = snapshot.usageCostsMinor().get(usage.id());
-                    if (usageCost == null) totalCostUnknown = true;
-                    else if (!totalCostUnknown) knownTotalCost = Math.addExact(knownTotalCost, usageCost);
+                    if (snapshot.usageCostsMinor().get(usage.id()) == null) totalCostUnknown = true;
+                    knownTotalCost = Math.addExact(knownTotalCost,
+                            snapshot.usageKnownCostsMinor().getOrDefault(usage.id(), 0L));
                 }
             }
         }
@@ -306,7 +308,8 @@ public class FeedService {
         int currentBirds = populationService.get(batchId, effective).currentBirds();
         Long totalCost = totalCostUnknown ? null : knownTotalCost;
         Long perBird = totalQuantity > 0 && currentBirds > 0 && totalCost != null ? totalCost / currentBirds : null;
-        return new BatchFeedCostResponse(batchId, effective, currentBirds, totalQuantity, totalCost, perBird);
+        return new BatchFeedCostResponse(batchId, effective, currentBirds, totalQuantity,
+                totalCost, perBird, knownTotalCost);
     }
 
     private FeedTypeResponse requireType(String id) {
