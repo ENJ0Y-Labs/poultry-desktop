@@ -71,6 +71,94 @@ class FeedManagementIntegrationTest {
 
 
     @Test
+    void sameFeedNameCanBeRegisteredForDifferentBrandsAndEditedWithoutSplittingHistory() {
+        setupFarm();
+        var house = houseService.create(new HouseCreateRequest("Brand Identity House", "BIH1", null));
+        var batch = batchService.create(new BatchCreateRequest(
+                "BROILER", LocalDate.of(2026,1,1), house.id(), 100, null, 1_000_000L));
+
+        var brandA = feedService.createType(new FeedTypeCreateRequest(
+                "Grower Mash", "bag", "BROILER", new BigDecimal("25"),
+                "Brand A", "25 kg bag", new BigDecimal("25")));
+        var brandB = feedService.createType(new FeedTypeCreateRequest(
+                "Grower Mash", "bag", "BROILER", new BigDecimal("25"),
+                "Brand B", "20 kg bag", new BigDecimal("20")));
+
+        assertThat(brandA.id()).isNotEqualTo(brandB.id());
+        assertThatThrownBy(() -> feedService.createType(new FeedTypeCreateRequest(
+                " grower mash ", "bag", "BROILER", new BigDecimal("25"),
+                " brand a ", "25 kg bag", new BigDecimal("25"))))
+                .hasMessage("A feed product with this name and brand already exists.");
+
+        var purchaseA = feedService.purchase(new FeedPurchaseRequest(
+                brandA.id(), null, LocalDate.of(2026,1,1), new BigDecimal("10"), "bag", 100_000L));
+        var purchaseB = feedService.purchase(new FeedPurchaseRequest(
+                brandB.id(), null, LocalDate.of(2026,1,1), new BigDecimal("20"), "bag", 400_000L));
+        assertThat(purchaseA.brand()).isEqualTo("Brand A");
+        var openingType = feedService.createType(new FeedTypeCreateRequest(
+                "Layer Mash", "bag", "LAYER", null, "Brand C", "bag", null));
+        var opening = feedService.createOpeningBalance(new FeedOpeningBalanceRequest(
+                openingType.id(), LocalDate.of(2026,1,1), new BigDecimal("1"), "bag", "Brand C opening count"));
+        assertThat(opening.brand()).isEqualTo("Brand C");
+        feedService.use(batch.id(), new FeedUsageRequest(
+                brandA.id(), LocalDate.of(2026,1,2), new BigDecimal("2"), "bag", "Brand A usage"));
+
+        var updated = feedService.updateProductIdentity(brandA.id(), new FeedTypeUpdateRequest(
+                "Grower Mash", "Brand C", "40 kg sack", null));
+
+        assertThat(updated.id()).isEqualTo(brandA.id());
+        assertThat(updated.brand()).isEqualTo("Brand C");
+        assertThat(updated.packagingName()).isEqualTo("40 kg sack");
+        assertThat(updated.packageWeightKg()).isNull();
+        assertThat(jdbc.queryForObject("SELECT feed_type_id FROM feed_purchases WHERE id = ?",
+                String.class, purchaseA.id())).isEqualTo(brandA.id());
+        assertThat(jdbc.queryForObject("SELECT feed_type_id FROM feed_purchases WHERE id = ?",
+                String.class, purchaseB.id())).isEqualTo(brandB.id());
+        assertThat(jdbc.queryForObject("SELECT feed_type_id FROM feed_usage WHERE batch_id = ?",
+                String.class, batch.id())).isEqualTo(brandA.id());
+
+        var inventory = feedService.inventory(LocalDate.of(2026,1,2));
+        var inventoryA = inventory.stream().filter(item -> item.feedTypeId().equals(brandA.id())).findFirst().orElseThrow();
+        var inventoryB = inventory.stream().filter(item -> item.feedTypeId().equals(brandB.id())).findFirst().orElseThrow();
+        assertThat(inventoryA.brand()).isEqualTo("Brand C");
+        assertThat(inventoryA.packageWeightKg()).isNull();
+        assertThat(inventoryA.remainingQuantityMilli()).isEqualTo(8_000L);
+        assertThat(inventoryA.remainingCostMinor()).isEqualTo(80_000L);
+        assertThat(inventoryB.brand()).isEqualTo("Brand B");
+        assertThat(inventoryB.remainingQuantityMilli()).isEqualTo(20_000L);
+        assertThat(inventoryB.remainingCostMinor()).isEqualTo(400_000L);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM audit_logs WHERE entity_type = 'FEED_TYPE' AND entity_id = ? AND action = 'UPDATE'",
+                Integer.class, brandA.id())).isEqualTo(1);
+    }
+
+    @Test
+    void feedCsvRequiresBrandWhenFeedNameIsAmbiguous() {
+        setupFarm();
+        feedService.createType(new FeedTypeCreateRequest(
+                "Starter Mash", "kg", "BROILER", BigDecimal.ONE, "Brand A", null, null));
+        var brandB = feedService.createType(new FeedTypeCreateRequest(
+                "Starter Mash", "kg", "BROILER", BigDecimal.ONE, "Brand B", null, null));
+
+        var withoutBrand = new CsvImportRequest("feed-purchases", List.of(Map.of(
+                "feed_type_name", "Starter Mash", "purchase_date", "2026-01-01",
+                "quantity", "2", "unit", "kg", "total_cost_naira", "100")));
+        var withBrand = new CsvImportRequest("feed-purchases", List.of(Map.of(
+                "feed_type_name", "Starter Mash", "feed_type_brand", "Brand B",
+                "purchase_date", "2026-01-01", "quantity", "2", "unit", "kg",
+                "total_cost_naira", "100")));
+
+        var ambiguousPreview = feedHistoryImport.preview(withoutBrand);
+        var brandPreview = feedHistoryImport.preview(withBrand);
+        assertThat(ambiguousPreview.get("valid")).isEqualTo(false);
+        assertThat(brandPreview.get("valid")).isEqualTo(true);
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> previewRows = (List<Map<String, Object>>) brandPreview.get("rows");
+        assertThat(previewRows).hasSize(1);
+        assertThat(previewRows.get(0).get("feedTypeId")).isEqualTo(brandB.id());
+        assertThat(previewRows.get(0).get("feedTypeBrand")).isEqualTo("Brand B");
+    }
+
+    @Test
     void openingFeedStockIsAuditedWithoutCreatingPurchaseOrExpense() {
         setupFarm();
         var type = feedService.createType(new FeedTypeCreateRequest("Hybrid Layer Mash", "bag", "LAYER"));

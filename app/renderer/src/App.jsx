@@ -816,7 +816,7 @@ export default function App() {
     setSaving(true); setError("");
     try {
       const created = await feedApi.createType({ ...feedTypeForm, kgPerUnit: feedTypeForm.kgPerUnit === "" ? null : Number(feedTypeForm.kgPerUnit), packageWeightKg: feedTypeForm.packageWeightKg === "" ? null : Number(feedTypeForm.packageWeightKg) });
-      setFeedTypes(current => [...current, created].sort((a, b) => a.name.localeCompare(b.name)));
+      setFeedTypes(current => [...current, created].sort((a, b) => a.name.localeCompare(b.name) || (a.brand || "").localeCompare(b.brand || "")));
       setFeedTypeForm(emptyFeedType);
     } catch (err) { setError(displayApiError(err)); } finally { setSaving(false); }
   }

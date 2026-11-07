@@ -30,15 +30,15 @@ export const CSV_TEMPLATES = {
   },
   "feed-purchases": {
     label: "Historical Feed Purchases", version: "1.0",
-    headers: ["feed_type_name", "supplier_name", "purchase_date", "quantity", "unit", "total_cost_naira"],
+    headers: ["feed_type_name", "feed_type_brand", "supplier_name", "purchase_date", "quantity", "unit", "total_cost_naira"],
     required: ["feed_type_name", "purchase_date", "quantity", "unit", "total_cost_naira"],
-    example: ["Broiler Starter", "Example Feed Supplier", "2026-01-02", "10", "bag", "125000.00"],
+    example: ["Broiler Starter", "Example Brand", "Example Feed Supplier", "2026-01-02", "10", "bag", "125000.00"],
   },
   "feed-usage": {
     label: "Historical Feed Usage", version: "1.0",
-    headers: ["feed_type_name", "batch_code", "usage_date", "quantity", "unit", "reason"],
+    headers: ["feed_type_name", "feed_type_brand", "batch_code", "usage_date", "quantity", "unit", "reason"],
     required: ["feed_type_name", "batch_code", "usage_date", "quantity", "unit"],
-    example: ["Broiler Starter", "B-2026-001", "2026-01-03", "2.5", "bag", "Daily feeding"],
+    example: ["Broiler Starter", "Example Brand", "B-2026-001", "2026-01-03", "2.5", "bag", "Daily feeding"],
   },
   "egg-collections": {
     label: "Layer Egg Collections", version: "1.0",

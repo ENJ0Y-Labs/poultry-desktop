@@ -9,5 +9,11 @@ public record DailyFeedUsageResponse(
         String unit,
         LocalDate date,
         long quantityMilli,
-        BigDecimal quantity
-) {}
+        BigDecimal quantity,
+        String brand
+) {
+    public DailyFeedUsageResponse(String feedTypeId, String feedTypeName, String unit, LocalDate date,
+                                  long quantityMilli, BigDecimal quantity) {
+        this(feedTypeId, feedTypeName, unit, date, quantityMilli, quantity, null);
+    }
+}

@@ -22,7 +22,7 @@ public class FeedRepository {
     public List<FeedTypeResponse> findTypes(String farmId) {
         List<FeedTypeResponse> rows = jdbc.query("""
                 SELECT id, name, unit, applicable_type, status, kg_per_unit, brand, packaging_name, package_weight_kg
-                FROM feed_types WHERE farm_id = ? ORDER BY name
+                FROM feed_types WHERE farm_id = ? ORDER BY name, COALESCE(brand, '')
                 """,
                 (rs, n) -> new FeedTypeResponse(
                         rs.getString("id"), rs.getString("name"), rs.getString("unit"),
@@ -76,6 +76,26 @@ public class FeedRepository {
         }
     }
 
+    public boolean productIdentityExists(String farmId, String name, String brand, String excludingId) {
+        Integer count = jdbc.queryForObject("""
+                SELECT COUNT(*) FROM feed_types
+                WHERE farm_id = ?
+                  AND lower(trim(name)) = lower(trim(?))
+                  AND lower(trim(COALESCE(brand, ''))) = lower(trim(COALESCE(?, '')))
+                  AND (? IS NULL OR id <> ?)
+                """, Integer.class, farmId, name, brand, excludingId, excludingId);
+        return count != null && count > 0;
+    }
+
+    public void updateProductIdentity(String id, String name, String brand, String packagingName,
+                                      java.math.BigDecimal packageWeightKg, String now) {
+        jdbc.update("""
+                UPDATE feed_types
+                SET name = ?, brand = ?, packaging_name = ?, package_weight_kg = ?, updated_at = ?
+                WHERE id = ?
+                """, name, brand, packagingName, packageWeightKg, now, id);
+    }
+
     public List<String> findApplicableTypes(String feedTypeId) {
         return jdbc.query("SELECT bird_type FROM feed_type_applicability WHERE feed_type_id = ? ORDER BY CASE bird_type WHEN 'LAYER' THEN 1 WHEN 'BROILER' THEN 2 WHEN 'TURKEY' THEN 3 END",
                 (rs, n) -> rs.getString("bird_type"), feedTypeId);
@@ -93,7 +113,7 @@ public class FeedRepository {
 
     public List<com.grantinofarms.poultry.dto.FeedOpeningBalanceResponse> findOpeningBalances(String feedTypeId) {
         return jdbc.query("""
-                SELECT b.id, b.feed_type_id, t.name AS feed_type_name, b.effective_date,
+                SELECT b.id, b.feed_type_id, t.name AS feed_type_name, t.brand, b.effective_date,
                        b.quantity_milli, b.unit, b.reason, b.created_at
                 FROM feed_opening_balances b
                 JOIN feed_types t ON t.id = b.feed_type_id
@@ -102,7 +122,7 @@ public class FeedRepository {
                 """, (rs, n) -> new com.grantinofarms.poultry.dto.FeedOpeningBalanceResponse(
                 rs.getString("id"), rs.getString("feed_type_id"), rs.getString("feed_type_name"),
                 LocalDate.parse(rs.getString("effective_date")), rs.getLong("quantity_milli"),
-                rs.getString("unit"), rs.getString("reason"), rs.getString("created_at")
+                rs.getString("unit"), rs.getString("reason"), rs.getString("created_at"), rs.getString("brand")
         ), feedTypeId);
     }
 

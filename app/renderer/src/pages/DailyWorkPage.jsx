@@ -64,7 +64,7 @@ export default function DailyWorkPage() {
                 const type = feedTypes.find(item => item.id === event.target.value);
                 setFeedUsageForm(form => ({...form,feedTypeId:event.target.value,unit:type?.unit||"bag"}));
               }}>
-                <option value="">Feed type</option>{applicableFeedTypes.map(type => <option key={type.id} value={type.id}>{type.name} ({type.unit})</option>)}
+                <option value="">Feed type</option>{applicableFeedTypes.map(type => <option key={type.id} value={type.id}>{type.name}{type.brand ? ` · ${type.brand}` : ""} ({type.unit})</option>)}
               </select></label>
               <label>Quantity<input required min="0.001" step="0.001" type="number" value={feedUsageForm.quantity} onChange={event => setFeedUsageForm({...feedUsageForm,quantity:event.target.value})}/></label>
               <label className="full">Reason (optional)<input value={feedUsageForm.reason} onChange={event => setFeedUsageForm({...feedUsageForm,reason:event.target.value})} placeholder="e.g. Morning feeding"/></label>
@@ -81,7 +81,7 @@ export default function DailyWorkPage() {
                   { key: "water", label: "Water" }, { key: "notes", label: "Notes" },
                 ]} rows={[{ id: "daily-activity", birds: dailyRecord.birds, mortality: dailyRecord.mortality, culling: dailyRecord.culling, water: `${dailyRecord.totalWaterUnits} ${waterUnitLabel || "litres"}`, notes: dailyRecord.notes || "—" }]} />
               <h4>Feed recorded</h4>
-              {dailyRecord.feed?.length ? <ul>{dailyRecord.feed.map((entry, index) => <li key={entry.id || entry.usageId || index}>{entry.feedTypeName || entry.feedName || "Feed"}: {feedQuantity(entry.quantityMilli ?? entry.quantityUsedMilli ?? 0)} {entry.unit || ""}</li>)}</ul> : <p className="muted">No feed usage recorded for this date.</p>}
+              {dailyRecord.feed?.length ? <ul>{dailyRecord.feed.map((entry, index) => <li key={entry.id || entry.usageId || index}>{entry.feedTypeName || entry.feedName || "Feed"}{entry.brand ? ` · ${entry.brand}` : ""}: {feedQuantity(entry.quantityMilli ?? entry.quantityUsedMilli ?? 0)} {entry.unit || ""}</li>)}</ul> : <p className="muted">No feed usage recorded for this date.</p>}
             </> : <p className="muted">No saved daily record for this batch and date yet. Record feed usage or save daily notes to begin.</p>}
           </div>
         </section>

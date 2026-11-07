@@ -72,7 +72,7 @@ Dated additional and transfer-in costs attached to batches.
 
 ### `feed_types`
 
-Farm-scoped feed product definitions, including product name, optional brand, packaging name, optional standard package weight in kilograms, display unit, kilogram conversion, and descriptive metadata. Unknown package weights and conversions remain NULL; never assume a standard bag size. V30 adds brand and packaging metadata without rewriting historical purchases or usage. Feed types are archived instead of deleted. The legacy `applicable_type` column remains for compatibility; current applicability is authoritative in `feed_type_applicability`.
+Farm-scoped feed product definitions, including product name, optional brand, packaging name, optional standard package weight in kilograms, display unit, kilogram conversion, and descriptive metadata. Unknown package weights and conversions remain NULL; never assume a standard bag size. V30 adds brand and packaging metadata without rewriting historical purchases or usage. V33 makes feed name plus brand the unique product identity within a farm; the same feed name can exist under different brands, while blank/NULL brand is one unbranded identity. FeedService trims and normalizes values before duplicate validation; the database index remains exact to preserve legacy case-variant rows. Editing descriptive identity fields preserves the feed type ID and all linked purchases, opening stock, usage, expenses, and FIFO history. Feed types are archived instead of deleted. The legacy `applicable_type` column remains for compatibility; current applicability is authoritative in `feed_type_applicability`.
 
 ### `feed_type_applicability`
 
@@ -268,6 +268,7 @@ Broad progression:
 - V28: explicit permanent/temporary house classification and occupancy index
 - V29: estimated/verified population confidence and auditable physical-count adjustments
 - V30: feed brand and packaging metadata
+- V33: brand-aware feed product identity, preserving existing feed type IDs and linked history
 - V31: append-only feed opening balances
 - V32: normalized multi-type feed applicability
 
