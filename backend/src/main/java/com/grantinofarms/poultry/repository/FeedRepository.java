@@ -1,6 +1,7 @@
 package com.grantinofarms.poultry.repository;
 
 import com.grantinofarms.poultry.domain.FeedPurchaseLot;
+import com.grantinofarms.poultry.domain.FeedOpeningStockLot;
 import com.grantinofarms.poultry.domain.FeedUsageEvent;
 import com.grantinofarms.poultry.dto.FeedTypeResponse;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -103,6 +104,27 @@ public class FeedRepository {
                 LocalDate.parse(rs.getString("effective_date")), rs.getLong("quantity_milli"),
                 rs.getString("unit"), rs.getString("reason"), rs.getString("created_at")
         ), feedTypeId);
+    }
+
+    public List<FeedOpeningStockLot> findOpeningLots(String feedTypeId, LocalDate asOf) {
+        return jdbc.query("""
+                SELECT id, feed_type_id, effective_date, quantity_milli, created_at
+                FROM feed_opening_balances
+                WHERE feed_type_id = ? AND effective_date <= ?
+                ORDER BY effective_date ASC, created_at ASC
+                """,
+                (rs, n) -> new FeedOpeningStockLot(
+                        rs.getString("id"), rs.getString("feed_type_id"),
+                        LocalDate.parse(rs.getString("effective_date")),
+                        rs.getLong("quantity_milli"), Instant.parse(rs.getString("created_at"))
+                ), feedTypeId, asOf.toString());
+    }
+
+    public LocalDate latestOpeningBalanceDate(String feedTypeId) {
+        List<String> dates = jdbc.query(
+                "SELECT effective_date FROM feed_opening_balances WHERE feed_type_id = ? ORDER BY effective_date DESC, created_at DESC LIMIT 1",
+                (rs, n) -> rs.getString("effective_date"), feedTypeId);
+        return dates.isEmpty() ? null : LocalDate.parse(dates.get(0));
     }
 
     public void updateKgPerUnit(String id, java.math.BigDecimal kgPerUnit, String now) {

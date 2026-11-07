@@ -1,5 +1,14 @@
-import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { feedApi } from "../services/api.js";
+
+vi.mock("../services/api.js", () => ({
+  feedApi: {
+    openingBalances: vi.fn().mockResolvedValue([]),
+    createOpeningBalance: vi.fn().mockResolvedValue({}),
+    updateConversion: vi.fn().mockResolvedValue({}),
+  },
+}));
 // eslint-disable-next-line no-unused-vars
 import FeedStockPage from "./FeedStockPage.jsx";
 // eslint-disable-next-line no-unused-vars
@@ -44,6 +53,58 @@ const contextValue = {
 };
 
 describe("FeedStockPage", () => {
+  beforeEach(() => vi.clearAllMocks());
+  it("exposes opening stock entry without purchase or supplier fields", async () => {
+    const context = {
+      ...contextValue,
+      feedTypes: [{ id: "feed-1", name: "Layer Mash", unit: "kg", status: "ACTIVE" }],
+    };
+    render(
+      <NavigationContext.Provider value={{ activePage: "feed-stock", activeTab: "feed" }}>
+        <FarmManagerContext.Provider value={context}>
+          <FeedStockPage />
+        </FarmManagerContext.Provider>
+      </NavigationContext.Provider>
+    );
+
+    expect(screen.getByRole("heading", { name: "Add opening stock" })).toBeInTheDocument();
+    expect(screen.getByLabelText("Effective date")).toBeInTheDocument();
+    expect(screen.getByLabelText("Reason / source")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Record opening stock" })).toBeDisabled();
+    expect(screen.getByText(/does not create a supplier, purchase, invoice, or feed expense/i)).toBeInTheDocument();
+    await waitFor(() => expect(feedApi.openingBalances).toHaveBeenCalledWith("feed-1"));
+  });
+
+  it("submits opening stock with the feed type unit and refreshes its history", async () => {
+    feedApi.openingBalances.mockResolvedValue([]);
+    const context = {
+      ...contextValue,
+      feedTypes: [{ id: "feed-1", name: "Layer Mash", unit: "kg", status: "ACTIVE" }],
+    };
+    render(
+      <NavigationContext.Provider value={{ activePage: "feed-stock", activeTab: "feed" }}>
+        <FarmManagerContext.Provider value={context}>
+          <FeedStockPage />
+        </FarmManagerContext.Provider>
+      </NavigationContext.Provider>
+    );
+
+    fireEvent.change(screen.getAllByLabelText("Feed type")[0], { target: { value: "feed-1" } });
+    fireEvent.change(screen.getByLabelText("Effective date"), { target: { value: "2026-11-01" } });
+    fireEvent.change(screen.getAllByLabelText("Quantity")[0], { target: { value: "25.5" } });
+    fireEvent.change(screen.getByLabelText("Reason / source"), { target: { value: "Physical stock count" } });
+    fireEvent.click(screen.getByRole("button", { name: "Record opening stock" }));
+
+    await waitFor(() => expect(feedApi.createOpeningBalance).toHaveBeenCalledWith({
+      feedTypeId: "feed-1",
+      effectiveDate: "2026-11-01",
+      quantity: 25.5,
+      unit: "kg",
+      reason: "Physical stock count",
+    }));
+    await waitFor(() => expect(feedApi.openingBalances).toHaveBeenCalledTimes(2));
+  });
+
   it("renders package metadata fields without literal escaped newline text", () => {
     const { container } = render(
       <NavigationContext.Provider value={{ activePage: "feed-stock", activeTab: "feed" }}>
