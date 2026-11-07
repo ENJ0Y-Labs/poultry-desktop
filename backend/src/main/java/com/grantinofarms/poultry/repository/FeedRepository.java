@@ -19,16 +19,16 @@ public class FeedRepository {
     }
 
     public List<FeedTypeResponse> findTypes(String farmId) {
-        return jdbc.query("""
+        List<FeedTypeResponse> rows = jdbc.query("""
                 SELECT id, name, unit, applicable_type, status, kg_per_unit, brand, packaging_name, package_weight_kg
                 FROM feed_types WHERE farm_id = ? ORDER BY name
                 """,
                 (rs, n) -> new FeedTypeResponse(
                         rs.getString("id"), rs.getString("name"), rs.getString("unit"),
                         rs.getString("applicable_type"), rs.getString("status"), rs.getBigDecimal("kg_per_unit"),
-                        rs.getString("brand"), rs.getString("packaging_name"), rs.getBigDecimal("package_weight_kg"),
-                        findApplicableTypes(rs.getString("id"))
+                        rs.getString("brand"), rs.getString("packaging_name"), rs.getBigDecimal("package_weight_kg")
                 ), farmId);
+        return rows.stream().map(this::withApplicability).toList();
     }
 
     public FeedTypeResponse findType(String id) {
@@ -39,10 +39,15 @@ public class FeedRepository {
                 (rs, n) -> new FeedTypeResponse(
                         rs.getString("id"), rs.getString("name"), rs.getString("unit"),
                         rs.getString("applicable_type"), rs.getString("status"), rs.getBigDecimal("kg_per_unit"),
-                        rs.getString("brand"), rs.getString("packaging_name"), rs.getBigDecimal("package_weight_kg"),
-                        findApplicableTypes(rs.getString("id"))
+                        rs.getString("brand"), rs.getString("packaging_name"), rs.getBigDecimal("package_weight_kg")
                 ), id);
-        return rows.isEmpty() ? null : rows.get(0);
+        return rows.isEmpty() ? null : withApplicability(rows.get(0));
+    }
+
+    private FeedTypeResponse withApplicability(FeedTypeResponse type) {
+        return new FeedTypeResponse(type.id(), type.name(), type.unit(), type.applicableType(), type.status(),
+                type.kgPerUnit(), type.brand(), type.packagingName(), type.packageWeightKg(),
+                findApplicableTypes(type.id()));
     }
 
     public String typeFarmId(String id) {
