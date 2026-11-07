@@ -91,8 +91,8 @@ class FeedApplicabilityMigrationTest {
             }
             try (PreparedStatement usage = connection.prepareStatement("""
                     INSERT INTO feed_usage
-                    (id, batch_id, feed_type_id, usage_date, quantity_milli, created_at)
-                    VALUES ('usage-1', ?, ?, '2026-11-02', 1000, ?)
+                    (id, batch_id, feed_type_id, usage_date, quantity_milli, reason, created_at)
+                    VALUES ('usage-1', ?, ?, '2026-11-02', 1000, 'migration history', ?)
                     """)) {
                 usage.setString(1, batchId);
                 usage.setString(2, bothId);
@@ -114,14 +114,15 @@ class FeedApplicabilityMigrationTest {
 
         try (Connection connection = DriverManager.getConnection(databaseUrl)) {
             try (ResultSet result = connection.createStatement().executeQuery("""
-                    SELECT p.quantity_milli, p.total_cost_minor, u.quantity_milli
+                    SELECT p.quantity_milli AS purchase_quantity_milli,
+                           p.total_cost_minor, u.quantity_milli AS usage_quantity_milli
                     FROM feed_purchases p JOIN feed_usage u ON u.feed_type_id = p.feed_type_id
                     WHERE p.id = 'purchase-1' AND u.id = 'usage-1'
                     """)) {
                 assertThat(result.next()).isTrue();
-                assertThat(result.getLong("quantity_milli")).isEqualTo(5000);
+                assertThat(result.getLong("purchase_quantity_milli")).isEqualTo(5000);
                 assertThat(result.getLong("total_cost_minor")).isEqualTo(50000);
-                assertThat(result.getLong(3)).isEqualTo(1000);
+                assertThat(result.getLong("usage_quantity_milli")).isEqualTo(1000);
                 assertThat(result.next()).isFalse();
             }
         }
