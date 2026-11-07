@@ -1240,6 +1240,7 @@ And never sacrifice poultry math for dashboard cosmetics.
 - Dark mode uses black `#000000` and near-black `#0A0A0A` surfaces, off-white body text, and gold accents. Teal is limited to fills and borders that do not carry text; never use teal text on black.
 - Primary buttons use white text on teal in light mode and black text on gold in dark mode.
 - Warning, critical, and error colours must remain semantically distinct from brand colours.
+- Dashboard attention cards are content surfaces, not primary actions: exclude `.attention-item` from global primary-button styling, use neutral semantic panel/text tokens, and keep warning, critical, and error severity badges on distinct contrast-safe token pairs.
 - All colours must be assigned through semantic CSS tokens. Do not add per-screen hardcoded colour values.
 - Landing, sign-in, and first-run owner-setup screens must use the shared --auth-* semantic tokens for both themes. Keep their theme selector available before authentication; do not introduce fixed page colours in screen selectors.
 - Keep the external theme bootstrap in `app/renderer/public/theme-init.js` referenced from the document head before the renderer module. It must remain compatible with the packaged renderer CSP and must not become an inline script.

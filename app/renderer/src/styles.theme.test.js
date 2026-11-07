@@ -65,3 +65,20 @@ describe("navigation theme tokens", () => {
     expect(stylesheet).toMatch(/\.page-tab\.active\s*\{[^}]*border-color:\s*var\(--ide-tab-active-border\);[^}]*background:\s*var\(--ide-tab-active-bg\)/);
   });
 });
+
+
+describe("dashboard attention theme contrast", () => {
+  it("keeps alert cards on semantic surfaces instead of inheriting primary-button gold", () => {
+    const accessibility = readFileSync(
+      resolve(process.cwd(), "app/renderer/src/accessibility.css"),
+      "utf8"
+    );
+
+    expect(accessibility).toMatch(/button:not\([^\n]*:not\(\.attention-item\)/);
+    expect(accessibility).toMatch(/\.attention-item\s*\{[^}]*background:\s*var\(--pomas-panel-raised\)[^}]*color:\s*var\(--a11y-text\)/s);
+    expect(accessibility).toMatch(/\.attention-item-clickable:hover,[\s\S]*?background:\s*var\(--pomas-panel-bg\)/);
+    expect(accessibility).toMatch(/\.severity\.warning\s*\{[^}]*background:\s*var\(--a11y-warning-bg\)[^}]*color:\s*var\(--a11y-warning-text\)/s);
+    expect(accessibility).toMatch(/\.severity\.critical\s*\{[^}]*background:\s*var\(--a11y-critical-bg\)[^}]*color:\s*var\(--a11y-critical-text\)/s);
+    expect(accessibility).toMatch(/\.severity\.error\s*\{[^}]*background:\s*var\(--a11y-error-bg\)[^}]*color:\s*var\(--a11y-error-text\)/s);
+  });
+});
