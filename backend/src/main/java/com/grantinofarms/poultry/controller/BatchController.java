@@ -1,6 +1,7 @@
 package com.grantinofarms.poultry.controller;
 
 import com.grantinofarms.poultry.dto.BatchCreateRequest;
+import com.grantinofarms.poultry.dto.BatchSetupUpdateRequest;
 import com.grantinofarms.poultry.dto.BatchReopenRequest;
 import com.grantinofarms.poultry.service.BatchService;
 import jakarta.validation.Valid;
@@ -33,6 +34,11 @@ public class BatchController {
     ResponseEntity<?> create(@Valid @RequestBody BatchCreateRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(Map.of("ok", true, "data", service.create(request)));
+    }
+
+    @PutMapping("/{id}/setup")
+    ResponseEntity<?> updateSetup(@PathVariable String id, @Valid @RequestBody BatchSetupUpdateRequest request) {
+        return ResponseEntity.ok(Map.of("ok", true, "data", service.updateSetup(id, request)));
     }
 
     @PostMapping("/{id}/sold")
