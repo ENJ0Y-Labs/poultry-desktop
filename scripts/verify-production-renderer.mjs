@@ -57,10 +57,12 @@ assert.ok(
   statSync(themeBootstrapPath).isFile(),
   "Production renderer must include the pre-paint theme bootstrap.",
 );
+const themeBootstrapTag = html.match(/<script\\b(?=[^>]*src=["'][^"']*theme-init\\.js["'])[^>]*><\\/script>/i)?.[0];
+assert.ok(themeBootstrapTag, "Production HTML must reference the pre-paint theme bootstrap.");
+const headEnd = html.indexOf("</head>");
 assert.ok(
-  html.indexOf('src="/theme-init.js"') >= 0 &&
-    html.indexOf('src="/theme-init.js"') < html.indexOf('<script type="module"'),
-  "The theme bootstrap must load in the document head before the renderer module.",
+  headEnd >= 0 && html.indexOf(themeBootstrapTag) < headEnd,
+  "The theme bootstrap must execute from the document head before the first paint.",
 );
 
 assert.doesNotMatch(
