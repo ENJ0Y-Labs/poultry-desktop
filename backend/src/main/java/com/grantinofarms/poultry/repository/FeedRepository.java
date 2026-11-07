@@ -22,7 +22,7 @@ public class FeedRepository {
     public List<FeedTypeResponse> findTypes(String farmId) {
         List<FeedTypeResponse> rows = jdbc.query("""
                 SELECT id, name, unit, applicable_type, status, kg_per_unit, brand, packaging_name, package_weight_kg
-                FROM feed_types WHERE farm_id = ? ORDER BY name
+                FROM feed_types WHERE farm_id = ? ORDER BY name, COALESCE(brand, '')
                 """,
                 (rs, n) -> new FeedTypeResponse(
                         rs.getString("id"), rs.getString("name"), rs.getString("unit"),
