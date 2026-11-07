@@ -4,6 +4,7 @@ import com.grantinofarms.poultry.dto.*;
 import com.grantinofarms.poultry.service.BatchService;
 import com.grantinofarms.poultry.service.FarmService;
 import com.grantinofarms.poultry.service.FeedService;
+import com.grantinofarms.poultry.service.DashboardService;
 import com.grantinofarms.poultry.service.FeedHistoryCsvImportService;
 import com.grantinofarms.poultry.service.HouseService;
 import org.junit.jupiter.api.Test;
@@ -29,6 +30,7 @@ class FeedManagementIntegrationTest {
     @Autowired HouseService houseService;
     @Autowired BatchService batchService;
     @Autowired FeedService feedService;
+    @Autowired DashboardService dashboardService;
     @Autowired FeedHistoryCsvImportService feedHistoryImport;
     @Autowired JdbcTemplate jdbc;
 
@@ -111,6 +113,11 @@ class FeedManagementIntegrationTest {
         assertThat(afterOpeningConsumption.consumedQuantityMilli()).isEqualTo(5_000L);
         assertThat(afterOpeningConsumption.remainingQuantityMilli()).isEqualTo(15_000L);
         assertThat(afterOpeningConsumption.remainingCostMinor()).isNull();
+        @SuppressWarnings("unchecked")
+        Map<String, Object> feedSummary = (Map<String, Object>) dashboardService
+                .farm(LocalDate.of(2026,1,3)).get("feedSummary");
+        assertThat(feedSummary.get("remainingCostMinor")).isNull();
+        assertThat(feedSummary.get("consumedCostMinor")).isNull();
 
         var secondUsage = feedService.use(batch.id(), new FeedUsageRequest(
                 type.id(), LocalDate.of(2026,1,4), new BigDecimal("7"), "kg", "Finish opening stock"));
