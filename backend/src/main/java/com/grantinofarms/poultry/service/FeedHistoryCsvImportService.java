@@ -181,8 +181,8 @@ public class FeedHistoryCsvImportService {
         List<FeedTypeResponse> types = feedService.types();
         List<BatchResponse> batchList = batches.list();
         List<SupplierResponse> supplierList = suppliers.list();
-        Map<String, FeedTypeResponse> typesByName = new HashMap<>();
-        types.forEach(t -> typesByName.put(normalize(t.name()), t));
+        Map<String, List<FeedTypeResponse>> typesByName = new HashMap<>();
+        types.forEach(t -> typesByName.computeIfAbsent(normalize(t.name()), ignored -> new ArrayList<>()).add(t));
         Map<String, BatchResponse> batchesByCode = new HashMap<>();
         batchList.forEach(b -> batchesByCode.put(normalize(b.code()), b));
         Map<String, SupplierResponse> suppliersByName = new HashMap<>();
