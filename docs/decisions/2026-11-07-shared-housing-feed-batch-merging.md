@@ -95,7 +95,7 @@ The migration series on the implementation branch must continue after V33; never
 5. **Feed attribution:** add measured, estimated, and unallocated allocation records; implement audited later allocation without replaying FIFO or duplicate cost.
 6. **Batch merge:** add merge operation/lineage, source lifecycle handling, merge-specific bird-cost carry-forward, and compatible-species validation.
 7. **Shared operations and reporting:** add house/shared attribution where semantics are fully defined, then update dashboards, reports, exports, and attention items.
-8. **Release hardening:** run all existing and new tests, migration/upgrade tests from v1.0.3, frontend lint/tests/build, backend verify, and packaging verification. Update the authoritative package version to 1.1.0 only at this final release phase.
+8. **Release hardening:** run all existing and new tests, migration/upgrade tests from v1.0.4, frontend lint/tests/build, backend verify, and packaging verification. Update the authoritative package version to 1.1.0 only at this final release phase.
 
 Each phase is a reviewable commit or pull request. The implementation must document changed files, business rules, tests, exact mock-data steps, and evidence for population totals, FIFO stock/cost reconciliation, and data preservation.
 
@@ -127,5 +127,5 @@ Use disposable mock data only:
 6. Record estimated allocation and confirm its method and estimated status appear in reports.
 7. Reject a turkey-to-broiler merge. Merge two compatible broiler batches and verify source lineage, cost carry-forward, historical access, and no double-counted birds.
 8. Record a shared-house mortality event and verify population is reduced exactly once without arbitrary source-batch attribution.
-9. Upgrade a disposable v1.0.3 database and verify existing farm records, feed stock, FIFO costing, backups, and audit history.
+9. Upgrade a disposable v1.0.4 database and verify existing farm records, feed stock, FIFO costing, backups, and audit history.
 

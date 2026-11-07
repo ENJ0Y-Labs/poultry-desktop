@@ -1242,7 +1242,7 @@ export default function App() {
 
           <section className="auth-whats-new" aria-labelledby="auth-whats-new-title">
             <div className="auth-whats-new-heading">
-              <p className="auth-whats-new-kicker">POMAS v1.0.3</p>
+              <p className="auth-whats-new-kicker">POMAS v1.0.4</p>
               <h2 id="auth-whats-new-title">What's new</h2>
               <p>More control over flock records, clearer farm visibility, and safer ways to manage your data.</p>
             </div>
