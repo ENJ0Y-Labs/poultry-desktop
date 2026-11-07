@@ -22,7 +22,7 @@ if (!existsSync(releaseDir)) {
 } else {
   const expectedInstaller = `POMAS-v${packageJson.version}-Setup-x64.exe`;
   const installerPath = join(releaseDir, expectedInstaller);
-  const installers = readdirSync(releaseDir).filter(file => /^POMAS-v.+-Setup-x64\\.exe$/i.test(file));
+  const installers = readdirSync(releaseDir).filter(file => /^POMAS-v.+-Setup-x64\.exe$/i.test(file));
 
   requireSetting(installers.includes(expectedInstaller), `expected release/${expectedInstaller}.`);
   if (existsSync(installerPath)) {
@@ -32,7 +32,7 @@ if (!existsSync(releaseDir)) {
 }
 
 const nsis = packageJson.build?.nsis ?? {};
-requireSetting(/^\\d+\\.\\d+\\.\\d+(?:-[0-9A-Za-z.-]+)?$/.test(packageJson.version), "package version must be a valid release version.");
+requireSetting(/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(packageJson.version), "package version must be a valid release version.");
 requireSetting(packageJson.build?.productName === "Pomas", "the packaged product name must remain Pomas without an architecture suffix.");
 requireSetting(packageJson.author?.name === "Grantino Farms", "Windows product metadata must use the approved Grantino Farms identity via package author metadata.");
 requireSetting(packageJson.build?.artifactName === "POMAS-v${version}-Setup-${arch}.${ext}", "installer artifact name must include product, version, setup type, and architecture only in the filename.");
@@ -54,7 +54,7 @@ if (existsSync(installerScriptPath)) {
   requireSetting(installerScript.includes("!macro customWelcomePage"), "NSIS must register the maintenance page.");
   requireSetting(installerScript.includes('Page custom PomasMaintenancePage'), "NSIS must show the Pomas maintenance page.");
   requireSetting(installerScript.includes("!ifndef BUILD_UNINSTALLER"), "the installer-only maintenance page must not be compiled into the uninstaller.");
-  requireSetting(/!ifndef BUILD_UNINSTALLER\\s+Var PomasExistingInstall\\s+!endif/.test(installerScript), "the maintenance-state variable must not be compiled into the uninstaller.");
+  requireSetting(/!ifndef BUILD_UNINSTALLER\s+Var PomasExistingInstall\s+!endif/.test(installerScript), "the maintenance-state variable must not be compiled into the uninstaller.");
   requireSetting(installerScript.includes('Modify the existing Pomas installation'), "the only maintenance action must be Modify.");
   requireSetting(installerScript.includes("StrCpy $INSTDIR"), "maintenance mode must retain the detected installation directory.");
   requireSetting(installerScript.includes("farm database, settings, and backups"), "the maintenance page must explain that farm data is preserved.");
