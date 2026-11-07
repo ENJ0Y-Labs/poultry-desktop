@@ -61,6 +61,7 @@ This section supersedes any earlier palette decision. Pomas uses deep teal `#1A4
 - Warning, critical, and error colours remain semantically distinct from the brand palette.
 - Use semantic CSS tokens for colour roles. Do not add per-screen hardcoded colour values.
 - Landing, sign-in, and first-run owner-setup screens use the shared --auth-* token family. Verify the story panel, release highlights, form controls, focus states, and primary action in Light and Dark. Keep the Theme selector available before authentication.
+- The external `theme-init.js` script runs in the document head before the renderer module and styles, preventing a saved Light/Dark preference from flashing the default theme. `scripts/verify-production-renderer.mjs` checks that the bootstrap is included and ordered before the renderer entry.
 - Preserve Auto, Light, and Dark preferences. Auto follows the operating system colour scheme.
 - `scripts/verify-a11y.mjs` checks approved theme tokens and WCAG 2.2 AA normal-text contrast pairs. Automated token checks do not replace rendered UI review.
 
