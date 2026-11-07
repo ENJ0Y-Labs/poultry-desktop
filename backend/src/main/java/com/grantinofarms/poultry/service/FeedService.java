@@ -224,11 +224,14 @@ public class FeedService {
         String now = Instant.now().toString();
         repository.insertPurchase(id, farmId, type.id(), cleanNullable(request.supplierId()),
                 request.purchaseDate(), quantityMilli, type.unit(), request.totalCostMinor(), now);
+        String productLabel = type.brand() == null || type.brand().isBlank()
+                ? type.name() : type.name() + " (" + type.brand() + ")";
         repository.insertExpense(UUID.randomUUID().toString(), farmId, request.totalCostMinor(),
-                request.purchaseDate(), id, "Feed purchase: " + type.name(), now);
+                request.purchaseDate(), id, "Feed purchase: " + productLabel, now);
         auditRepository.append(farmId, "CREATE", "FEED_PURCHASE", id, null, null,
-                String.format("{\"feedTypeId\":\"%s\",\"quantityMilli\":%d,\"totalCostMinor\":%d}",
-                        type.id(), quantityMilli, request.totalCostMinor()), now);
+                "{\"feedTypeId\":" + jsonString(type.id()) + ",\"feedTypeName\":" + jsonString(type.name())
+                        + ",\"feedTypeBrand\":" + jsonString(type.brand()) + ",\"quantityMilli\":" + quantityMilli
+                        + ",\"totalCostMinor\":" + request.totalCostMinor() + "}", now);
         return new FeedPurchaseResponse(id, type.id(), type.name(), type.unit(),
                 request.purchaseDate(), quantityMilli, request.totalCostMinor(),
                 quantityMilli, request.totalCostMinor(), type.brand());
