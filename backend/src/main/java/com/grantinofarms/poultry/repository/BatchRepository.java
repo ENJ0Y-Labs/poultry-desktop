@@ -74,6 +74,14 @@ public class BatchRepository {
                 initialBirdCount, purchaseCostMinor, now, now, populationCountStatus);
     }
 
+    public void updateSetup(String id, String farmId, String houseId, String supplierId, String now) {
+        jdbc.update("""
+                UPDATE batches
+                SET house_id = ?, supplier_id = ?, updated_at = ?
+                WHERE id = ? AND farm_id = ? AND status = 'ACTIVE'
+                """, houseId, supplierId, now, id, farmId);
+    }
+
     public void updatePopulationCountStatus(String id, String status, String now) {
         jdbc.update("UPDATE batches SET population_count_status=?, updated_at=? WHERE id=?", status, now, id);
     }
