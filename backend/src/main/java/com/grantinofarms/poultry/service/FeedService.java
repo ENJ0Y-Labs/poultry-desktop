@@ -344,7 +344,7 @@ public class FeedService {
     }
 
     private String applicableTypesJson(List<String> applicableTypes) {
-        return "[" + applicableTypes.stream().map(type -> "\\\"" + type + "\\\"")
+        return "[" + applicableTypes.stream().map(type -> "\"" + type + "\"")
                 .collect(java.util.stream.Collectors.joining(",")) + "]";
     }
 
