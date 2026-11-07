@@ -2,6 +2,7 @@ package com.grantinofarms.poultry.service;
 
 import com.grantinofarms.poultry.domain.FeedCostCalculator;
 import com.grantinofarms.poultry.domain.FeedPurchaseLot;
+import com.grantinofarms.poultry.domain.FeedOpeningStockLot;
 import com.grantinofarms.poultry.domain.FeedUsageEvent;
 import com.grantinofarms.poultry.dto.*;
 import com.grantinofarms.poultry.exception.ApiException;
@@ -123,6 +124,17 @@ public class FeedService {
         if (!type.unit().equalsIgnoreCase(clean(request.unit()))) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_FEED_UNIT", "Opening balance unit must match the feed type unit.");
         }
+        LocalDate latestUsage = repository.latestUsageDate(type.id());
+        if (latestUsage != null && request.effectiveDate().isBefore(latestUsage)) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_FEED_OPENING_DATE",
+                    "Opening stock cannot be backdated before existing feed usage for this feed type.");
+        }
+        LocalDate latestOpening = repository.latestOpeningBalanceDate(type.id());
+        if (latestOpening != null && request.effectiveDate().isBefore(latestOpening)) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_FEED_OPENING_DATE",
+                    "Opening stock cannot be backdated before the latest opening-stock entry for this feed type.");
+        }
+
         long quantityMilli = toMilli(request.quantity());
         String id = UUID.randomUUID().toString();
         String now = Instant.now().toString();
@@ -189,10 +201,12 @@ public class FeedService {
         List<FeedInventoryResponse> result = new ArrayList<>();
         for (FeedTypeResponse type : types()) {
             List<FeedPurchaseLot> purchases = repository.findPurchases(type.id(), effective);
+            List<FeedOpeningStockLot> openingLots = repository.findOpeningLots(type.id(), effective);
             List<FeedUsageEvent> usages = repository.findUsages(type.id(), effective);
-            FeedCostCalculator.FifoSnapshot snapshot = FeedCostCalculator.calculate(purchases, usages, effective);
+            FeedCostCalculator.FifoSnapshot snapshot = FeedCostCalculator.calculate(purchases, openingLots, usages, effective);
             long purchased = purchases.stream().mapToLong(FeedPurchaseLot::quantityMilli).reduce(0L, Math::addExact);
-            result.add(new FeedInventoryResponse(type.id(), type.name(), type.unit(), purchased,
+            long opening = openingLots.stream().mapToLong(FeedOpeningStockLot::quantityMilli).reduce(0L, Math::addExact);
+            result.add(new FeedInventoryResponse(type.id(), type.name(), type.unit(), purchased, opening,
                     snapshot.consumedQuantityMilli(), snapshot.remainingQuantityMilli(),
                     snapshot.remainingCostMinor(), snapshot.consumedCostMinor(), type.applicableTypes()));
         }
@@ -237,10 +251,11 @@ public class FeedService {
                 UUID.randomUUID().toString(), batchId, type.id(), request.usageDate(), quantityMilli, Instant.now()
         );
         List<FeedPurchaseLot> purchases = repository.findPurchases(type.id(), request.usageDate());
+        List<FeedOpeningStockLot> openingLots = repository.findOpeningLots(type.id(), request.usageDate());
         List<FeedUsageEvent> existingUsages = repository.findUsages(type.id(), request.usageDate());
-        long feedCost;
+        Long feedCost;
         try {
-            feedCost = FeedCostCalculator.costForUsage(purchases, existingUsages, proposed);
+            feedCost = FeedCostCalculator.costForUsage(purchases, openingLots, existingUsages, proposed);
         } catch (IllegalArgumentException e) {
             throw new ApiException(HttpStatus.CONFLICT, "INSUFFICIENT_FEED", e.getMessage());
         }
@@ -251,14 +266,14 @@ public class FeedService {
 
         repository.insertUsage(proposed.id(), batchId, type.id(), request.usageDate(),
                 quantityMilli, reason, proposed.createdAt().toString());
-        if (feedCost > 0) {
+        if (feedCost != null && feedCost > 0) {
             birdCostService.addAdditionalCost(batchId,
                     new BirdAdditionalCostRequest(request.usageDate(), feedCost, "Feed usage: " + type.name()));
         }
 
         auditRepository.append(farmId, "CREATE", "FEED_USAGE", proposed.id(), null, null,
-                String.format("{\"batchId\":\"%s\",\"feedTypeId\":\"%s\",\"quantityMilli\":%d,\"feedCostMinor\":%d,\"reason\":\"%s\"}",
-                        batchId, type.id(), quantityMilli, feedCost, reason), proposed.createdAt().toString());
+                String.format("{\"batchId\":\"%s\",\"feedTypeId\":\"%s\",\"quantityMilli\":%d,\"feedCostMinor\":%s,\"reason\":\"%s\"}",
+                        batchId, type.id(), quantityMilli, feedCost == null ? "null" : feedCost.toString(), reason), proposed.createdAt().toString());
 
         return new FeedUsageResponse(proposed.id(), batchId, type.id(), type.name(), type.unit(),
                 request.usageDate(), quantityMilli, feedCost);
@@ -269,23 +284,28 @@ public class FeedService {
         LocalDate effective = asOf == null ? LocalDate.now() : asOf;
         List<FeedUsageEvent> usages = repository.findBatchUsages(batchId, effective);
         long totalQuantity = 0L;
-        long totalCost = 0L;
+        long knownTotalCost = 0L;
+        boolean totalCostUnknown = false;
         List<String> feedTypeIds = usages.stream().map(FeedUsageEvent::feedTypeId).distinct().toList();
 
         for (String feedTypeId : feedTypeIds) {
             List<FeedPurchaseLot> purchases = repository.findPurchases(feedTypeId, effective);
+            List<FeedOpeningStockLot> openingLots = repository.findOpeningLots(feedTypeId, effective);
             List<FeedUsageEvent> allUsages = repository.findUsages(feedTypeId, effective);
-            FeedCostCalculator.FifoSnapshot snapshot = FeedCostCalculator.calculate(purchases, allUsages, effective);
+            FeedCostCalculator.FifoSnapshot snapshot = FeedCostCalculator.calculate(purchases, openingLots, allUsages, effective);
             for (FeedUsageEvent usage : usages) {
                 if (feedTypeId.equals(usage.feedTypeId())) {
                     totalQuantity = Math.addExact(totalQuantity, usage.quantityMilli());
-                    totalCost = Math.addExact(totalCost, snapshot.usageCostsMinor().getOrDefault(usage.id(), 0L));
+                    Long usageCost = snapshot.usageCostsMinor().get(usage.id());
+                    if (usageCost == null) totalCostUnknown = true;
+                    else if (!totalCostUnknown) knownTotalCost = Math.addExact(knownTotalCost, usageCost);
                 }
             }
         }
 
         int currentBirds = populationService.get(batchId, effective).currentBirds();
-        Long perBird = totalQuantity > 0 && currentBirds > 0 ? totalCost / currentBirds : null;
+        Long totalCost = totalCostUnknown ? null : knownTotalCost;
+        Long perBird = totalQuantity > 0 && currentBirds > 0 && totalCost != null ? totalCost / currentBirds : null;
         return new BatchFeedCostResponse(batchId, effective, currentBirds, totalQuantity, totalCost, perBird);
     }
 
