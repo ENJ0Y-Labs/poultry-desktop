@@ -142,6 +142,11 @@ kbd {
   color: var(--a11y-critical-text);
 }
 
+.severity.error {
+  background: var(--a11y-error-bg);
+  color: var(--a11y-error-text);
+}
+
 .error {
   background: var(--a11y-error-bg);
   color: var(--a11y-error-text);
@@ -267,11 +272,11 @@ button:focus-visible {
 }
 
 /* Primary actions use teal with white text; gold remains an accent, not body text. */
-button:not(.secondary):not(.danger):not(.nav-item):not(.page-tab):not(.activity-button) {
+button:not(.secondary):not(.danger):not(.nav-item):not(.page-tab):not(.activity-button):not(.attention-item) {
   background: var(--brand-teal);
   color: #ffffff;
 }
-button:not(.secondary):not(.danger):not(.nav-item):not(.page-tab):not(.activity-button):hover:not(:disabled) {
+button:not(.secondary):not(.danger):not(.nav-item):not(.page-tab):not(.activity-button):not(.attention-item):hover:not(:disabled) {
   background: #246779;
   color: #ffffff;
 }
@@ -389,15 +394,15 @@ button:focus-visible {
   color: var(--brand-teal);
   background: var(--a11y-nav-active-bg);
 }
-button:not(.secondary):not(.danger):not(.nav-item):not(.page-tab):not(.activity-button) {
+button:not(.secondary):not(.danger):not(.nav-item):not(.page-tab):not(.activity-button):not(.attention-item) {
   background: var(--pomas-primary-action-bg);
   color: var(--pomas-primary-action-text);
 }
-button:not(.secondary):not(.danger):not(.nav-item):not(.page-tab):not(.activity-button):hover:not(:disabled) {
+button:not(.secondary):not(.danger):not(.nav-item):not(.page-tab):not(.activity-button):not(.attention-item):hover:not(:disabled) {
   background: var(--pomas-primary-action-hover);
   color: var(--pomas-primary-action-text);
 }
-:root[data-theme="light"] button:not(.secondary):not(.danger):not(.nav-item):not(.page-tab):not(.activity-button) {
+:root[data-theme="light"] button:not(.secondary):not(.danger):not(.nav-item):not(.page-tab):not(.activity-button):not(.attention-item) {
   background: var(--pomas-primary-action-bg);
   color: var(--pomas-primary-action-text);
 }
@@ -568,4 +573,18 @@ input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-
 :root[data-theme="light"] .activity-table-container,
 :root[data-theme="light"] .data-table th {
   color: var(--a11y-text);
+}
+
+
+/* Dashboard attention cards are content surfaces, never primary actions. */
+.attention-item {
+  background: var(--pomas-panel-raised);
+  color: var(--a11y-text);
+  border-color: var(--pomas-border);
+}
+
+.attention-item-clickable:hover,
+.attention-item-clickable:focus-visible {
+  background: var(--pomas-panel-bg);
+  border-color: var(--pomas-focus-ring);
 }
