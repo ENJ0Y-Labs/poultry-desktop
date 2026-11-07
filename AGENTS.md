@@ -1355,3 +1355,12 @@ Validate the renderer with the backend available, during startup, and with the b
 - Never paste the two-character escape sequence `\\n` between JSX elements to represent visual spacing or a line break. JSX renders it as literal text. Put each element on its own JSX line and use semantic grouping, CSS `gap`, or an explicit layout wrapper for spacing.
 - When reviewing escaped text, distinguish source-code formatting from user-entered values. Fix only unintended hard-coded UI escape sequences; never globally strip or normalize backslashes in user-provided names, notes, reasons, or other stored text.
 - Add a renderer regression test for any reported literal escape sequence so the affected screen is checked as rendered DOM text.
+
+
+## Multi-type feed applicability
+
+- Feed applicability is a non-empty set of `LAYER`, `BROILER`, and `TURKEY`; every non-empty combination is supported.
+- Persist the set in `feed_type_applicability`. The legacy `feed_types.applicable_type` field is compatibility metadata only and must not drive business rules.
+- V32 maps legacy `BOTH` to all three supported types and maps each legacy single type to its matching one. Never infer applicability from feed/product names.
+- Validate applicability in FeedService, historical feed CSV preview/import, and batch feed usage. The renderer shows independent checkboxes and filters Daily Work options to active feeds compatible with the selected batch.
+- Do not modify feed purchases, feed opening balances, feed usage, FIFO allocation, or expenses while migrating applicability. Add backend coverage for every one-, two-, and three-type combination and a migration test that preserves feed history.
