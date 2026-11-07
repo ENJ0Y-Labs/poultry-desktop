@@ -271,7 +271,8 @@ class FeedManagementIntegrationTest {
         int index = 0;
         for (List<String> combination : combinations) {
             var feedType = feedService.createType(new FeedTypeCreateRequest(
-                    "Combination Feed " + (++index), "kg", combination));
+                    "Combination Feed " + (++index), "kg", null, BigDecimal.ONE,
+                    null, null, null, combination));
             assertThat(feedType.applicableTypes()).containsExactlyElementsOf(combination);
 
             for (BatchResponse batch : batches) {
@@ -289,7 +290,7 @@ class FeedManagementIntegrationTest {
         assertThat(legacyBoth.applicableTypes()).containsExactly("LAYER", "BROILER", "TURKEY");
 
         assertThatThrownBy(() -> feedService.createType(new FeedTypeCreateRequest(
-                "No Bird Type", "kg", List.of())))
+                "No Bird Type", "kg", null, BigDecimal.ONE, null, null, null, List.of())))
                 .hasMessage("Select at least one supported bird type: LAYER, BROILER, or TURKEY.");
     }
 
