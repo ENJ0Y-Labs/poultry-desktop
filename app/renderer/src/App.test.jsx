@@ -893,4 +893,14 @@ describe("App", () => {
   });
 
 
+  it("displays dashboard egg production as crates using the configured crate size", async () => {
+    mockFarmApis();
+    render(<App />);
+
+    await waitFor(() => expect(screen.getByRole("heading", { name: "Farm dashboard" })).toBeInTheDocument());
+    expect(screen.getByText("Good eggs")).toBeInTheDocument();
+    expect(screen.getByText("29 crates, 5 eggs")).toBeInTheDocument();
+    expect(screen.queryByText("875")).not.toBeInTheDocument();
+  });
+
 });
