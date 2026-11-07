@@ -14,6 +14,11 @@ public record FeedTypeCreateRequest(
         BigDecimal packageWeightKg,
         List<String> applicableTypes
 ) {
+    public FeedTypeCreateRequest(String name, String unit, String applicableType, BigDecimal kgPerUnit,
+                                 String brand, String packagingName, BigDecimal packageWeightKg) {
+        this(name, unit, applicableType, kgPerUnit, brand, packagingName, packageWeightKg, null);
+    }
+
     public FeedTypeCreateRequest(String name, String unit, String applicableType, BigDecimal kgPerUnit) {
         this(name, unit, applicableType, kgPerUnit, null, null, null, null);
     }
