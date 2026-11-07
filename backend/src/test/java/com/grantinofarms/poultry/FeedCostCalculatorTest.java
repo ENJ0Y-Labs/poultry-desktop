@@ -90,6 +90,34 @@ class FeedCostCalculatorTest {
     }
 
     @Test
+    void sameDayFifoUsesCreationTimestampAndFutureLotsCannotFundEarlierUsage() {
+        var sameDayOpening = new FeedOpeningStockLot(
+                "o1", "f1", LocalDate.of(2026,1,2), 10_000, T1);
+        var sameDayUsage = new FeedUsageEvent(
+                "u1", "b1", "f1", LocalDate.of(2026,1,2), 5_000, T2);
+
+        var available = FeedCostCalculator.calculate(
+                List.of(), List.of(sameDayOpening), List.of(sameDayUsage), LocalDate.of(2026,1,2));
+        assertThat(available.usageCostsMinor()).containsEntry("u1", null);
+
+        var laterPurchase = new FeedPurchaseLot(
+                "p2", "f1", LocalDate.of(2026,1,3), 10_000, 100_000, T2);
+        var earlierUsage = new FeedUsageEvent(
+                "u2", "b1", "f1", LocalDate.of(2026,1,2), 1_000, T1);
+        assertThatThrownBy(() -> FeedCostCalculator.calculate(
+                List.of(laterPurchase), List.of(), List.of(earlierUsage), LocalDate.of(2026,1,3)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Insufficient feed inventory for FIFO consumption.");
+
+        var laterSameDayPurchase = new FeedPurchaseLot(
+                "p3", "f1", LocalDate.of(2026,1,2), 10_000, 100_000, T2);
+        assertThatThrownBy(() -> FeedCostCalculator.calculate(
+                List.of(laterSameDayPurchase), List.of(), List.of(earlierUsage), LocalDate.of(2026,1,2)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Insufficient feed inventory for FIFO consumption.");
+    }
+
+    @Test
     void insufficientInventoryIsRejected() {
         var purchase = new FeedPurchaseLot("p1", "f1", LocalDate.of(2026,1,1), 10_000, 100_000, T1);
         var usage = new FeedUsageEvent("u1", "b1", "f1", LocalDate.of(2026,1,2), 10_001, T2);
