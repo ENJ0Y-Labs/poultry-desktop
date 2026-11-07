@@ -116,4 +116,55 @@ for (const [selector, minimum] of [
   console.log(`PASS font size: ${selector} ${size[1]}px`);
 }
 
+
+const rendererCss = readFileSync(resolve("app/renderer/src/styles.css"), "utf8");
+
+function rendererThemeBlock(selector) {
+  const brandStart = rendererCss.indexOf("/* Pomas brand system: semantic overrides");
+  const start = rendererCss.indexOf(selector, brandStart);
+  const end = rendererCss.indexOf("\n}", start);
+  assert.ok(start >= 0 && end > start, `Missing renderer theme block: ${selector}`);
+  return rendererCss.slice(start, end);
+}
+
+const authTokenNames = {
+  storySurface: "--auth-story-background",
+  storyText: "--auth-story-text",
+  storyMuted: "--auth-story-muted",
+  featureSurface: "--auth-feature-background",
+  noteSurface: "--auth-note-background",
+  accent: "--auth-accent",
+  buttonSurface: "--auth-button-background",
+  buttonText: "--auth-button-text",
+  focus: "--auth-focus-ring",
+  panelSurface: "--bg",
+};
+
+for (const theme of [
+  { name: "dark", selector: ":root {" },
+  { name: "light", selector: ':root[data-theme="light"] {' },
+]) {
+  const block = rendererThemeBlock(theme.selector);
+  const tokens = Object.fromEntries(
+    Object.entries(authTokenNames).map(([key, token]) => [key, readToken(block, token)])
+  );
+  const checks = [
+    ["landing primary text on story surface", tokens.storyText, tokens.storySurface, 4.5],
+    ["landing secondary text on story surface", tokens.storyMuted, tokens.storySurface, 4.5],
+    ["feature title on feature surface", tokens.storyText, tokens.featureSurface, 4.5],
+    ["feature description on feature surface", tokens.storyMuted, tokens.featureSurface, 4.5],
+    ["local-data note text on note surface", tokens.storyText, tokens.noteSurface, 4.5],
+    ["landing accent text on story surface", tokens.accent, tokens.storySurface, 4.5],
+    ["sign-in eyebrow on form surface", tokens.accent, tokens.panelSurface, 4.5],
+    ["primary auth button text", tokens.buttonText, tokens.buttonSurface, 4.5],
+    ["auth focus indicator on form surface", tokens.focus, tokens.panelSurface, 3],
+  ];
+
+  for (const [label, foreground, background, minimum] of checks) {
+    const ratio = contrast(foreground, background);
+    assert.ok(ratio >= minimum, `${theme.name} theme: ${label} contrast ${ratio.toFixed(2)}:1 is below ${minimum}:1`);
+    console.log(`PASS ${theme.name}: ${label} ${ratio.toFixed(2)}:1`);
+  }
+}
+
 console.log("Accessibility token and minimum-size checks passed. Manual rendered UI review is still required.");

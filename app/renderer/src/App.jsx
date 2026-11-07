@@ -4,6 +4,7 @@ import { todayLocalDate, getLastBatchId, rememberLastBatchId } from "./utils/far
 import { parseNairaToKobo } from "./utils/moneyInput.js";
 import { formatMoney } from "./utils/money.js";
 import { appVersionLabel } from "./utils/appInfo.js";
+import { getThemePreference, setThemePreference } from "./utils/theme.js";
 import { parseAttentionContext } from "./utils/attentionNavigation.js";
 // eslint-disable-next-line no-unused-vars
 import AppShell from "./components/AppShell.jsx";
@@ -153,6 +154,7 @@ const emptyInventoryMovement = {
 };
 
 export default function App() {
+  const [themePreference, setThemePreferenceState] = useState(getThemePreference);
   const [farm, setFarm] = useState(null);
   const [farmForm, setFarmForm] = useState(emptyFarm);
   const [houses, setHouses] = useState([]);
@@ -245,6 +247,11 @@ export default function App() {
       .catch(() => {});
     return () => { active = false; };
   }, []);
+
+  function changeAuthTheme(event) {
+    const nextTheme = setThemePreference(event.target.value);
+    setThemePreferenceState(nextTheme);
+  }
 
   async function load({ showLoading = true, preserveForms = false } = {}) {
     if (showLoading) setLoading(true);
@@ -1211,7 +1218,14 @@ export default function App() {
       </section>
 
       <section className="auth-panel" aria-labelledby="auth-form-title">
-        <div className="auth-panel-topline"><span className="auth-lock" aria-hidden="true">▣</span><span>LOCAL WORKSPACE ACCESS</span></div>
+        <div className="auth-panel-topline">
+          <span className="auth-panel-access"><span className="auth-lock" aria-hidden="true">▣</span>LOCAL WORKSPACE ACCESS</span>
+          <label className="auth-theme-control">Theme
+            <select aria-label="Theme" value={themePreference} onChange={changeAuthTheme}>
+              <option value="auto">System</option><option value="light">Teal Light</option><option value="dark">Dark (Gold)</option>
+            </select>
+          </label>
+        </div>
         <div className="auth-card">
           <div className="auth-mobile-brand"><img className="auth-brand-mark" src={pomasLogo} alt="Pomas logo" /><strong>Pomas</strong></div>
           <div className="auth-form-heading">
