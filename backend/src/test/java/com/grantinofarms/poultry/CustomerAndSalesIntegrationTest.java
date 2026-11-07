@@ -13,6 +13,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @SpringBootTest(properties = {
         "spring.datasource.url=jdbc:sqlite:file:customer-sales-test?mode=memory&cache=shared"
@@ -26,6 +27,8 @@ class CustomerAndSalesIntegrationTest {
     @Autowired EggManagementService eggService;
     @Autowired BroilerProductionService broilerService;
     @Autowired SalesService salesService;
+    @Autowired BirdPopulationService populationService;
+    @Autowired ReportService reportService;
     @Autowired JdbcTemplate jdbc;
 
     @Test
@@ -104,6 +107,129 @@ class CustomerAndSalesIntegrationTest {
     }
 
     @Test
+    void partialAndMultipleBirdSalesKeepBatchActiveUntilTheFinalBirdAndReconcileReports() {
+        var batch = setupBroiler();
+        var customerA = customerService.create(new CustomerCreateRequest("Buyer A", null, null));
+        var customerB = customerService.create(new CustomerCreateRequest("Buyer B", null, null));
+
+        var first = broilerService.addSale(batch.id(), new BirdSaleRequest(
+                LocalDate.of(2026, 1, 10), 5, 25_000L, customerA.name(), false, customerA.id()));
+        assertThat(first.totalAmountMinor()).isEqualTo(125_000L);
+        assertThat(batchService.get(batch.id()).status()).isEqualTo("ACTIVE");
+        assertThat(populationService.get(batch.id(), LocalDate.of(2026, 1, 10)).currentBirds()).isEqualTo(95);
+
+        var second = broilerService.addSale(batch.id(), new BirdSaleRequest(
+                LocalDate.of(2026, 1, 11), 20, 30_000L, customerB.name(), false, customerB.id()));
+        assertThat(second.totalAmountMinor()).isEqualTo(600_000L);
+        assertThat(batchService.get(batch.id()).status()).isEqualTo("ACTIVE");
+        assertThat(populationService.get(batch.id(), LocalDate.of(2026, 1, 11)).currentBirds()).isEqualTo(75);
+
+        var third = broilerService.addSale(batch.id(), new BirdSaleRequest(
+                LocalDate.of(2026, 1, 12), 74, 35_000L, customerA.name(), false, customerA.id()));
+        assertThat(third.totalAmountMinor()).isEqualTo(2_590_000L);
+        assertThat(batchService.get(batch.id()).status()).isEqualTo("ACTIVE");
+        assertThat(populationService.get(batch.id(), LocalDate.of(2026, 1, 12)).currentBirds()).isEqualTo(1);
+
+        var finalSale = broilerService.addSale(batch.id(), new BirdSaleRequest(
+                LocalDate.of(2026, 1, 13), 1, 35_000L, customerA.name(), false, customerA.id()));
+        assertThat(finalSale.totalAmountMinor()).isEqualTo(35_000L);
+        assertThat(batchService.get(batch.id()).status()).isEqualTo("SOLD");
+        assertThat(populationService.get(batch.id(), LocalDate.of(2026, 1, 13)).currentBirds()).isZero();
+        assertThat(batchService.get(batch.id()).initialBirdCount()).isEqualTo(100);
+
+        var common = salesService.list(null, null, "BROILER", LocalDate.of(2026, 1, 13));
+        assertThat(common).hasSize(4);
+        assertThat(salesService.list(null, customerA.id(), "BROILER", LocalDate.of(2026, 1, 13))).hasSize(3);
+        assertThat(reportService.batch(batch.id(), LocalDate.of(2026, 1, 13)).get("sales"))
+                .asList().hasSize(4);
+        assertThat(((Number) reportService.batch(batch.id(), LocalDate.of(2026, 1, 13))
+                .get("revenueMinor")).longValue()).isEqualTo(3_350_000L);
+        assertThat(jdbc.queryForObject("""
+                SELECT COUNT(*) FROM audit_logs
+                WHERE entity_type = 'BIRD_SALE' AND entity_id IN (
+                    SELECT id FROM bird_sales WHERE batch_id = ?
+                )
+                """, Integer.class, batch.id())).isEqualTo(4);
+    }
+
+    @Test
+    void rejectsOversellingWithoutChangingPopulationOrAnySaleLedger() {
+        var batch = setupBroiler();
+        var firstCustomer = customerService.create(new CustomerCreateRequest("Valid Buyer", null, null));
+        broilerService.addSale(batch.id(), new BirdSaleRequest(
+                LocalDate.of(2026, 1, 10), 95, 25_000L,
+                firstCustomer.name(), false, firstCustomer.id()));
+
+        assertThatThrownBy(() -> broilerService.addSale(batch.id(), new BirdSaleRequest(
+                LocalDate.of(2026, 1, 11), 6, 25_000L, "Rejected Buyer")))
+                .isInstanceOf(RuntimeException.class);
+
+        assertThat(batchService.get(batch.id()).status()).isEqualTo("ACTIVE");
+        assertThat(populationService.get(batch.id(), LocalDate.of(2026, 1, 11)).currentBirds()).isEqualTo(5);
+        assertThat(batchService.get(batch.id()).initialBirdCount()).isEqualTo(100);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM bird_sales WHERE batch_id = ?",
+                Integer.class, batch.id())).isEqualTo(1);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM sales WHERE batch_id = ?",
+                Integer.class, batch.id())).isEqualTo(1);
+        assertThat(jdbc.queryForObject("""
+                SELECT COUNT(*) FROM bird_population_events
+                WHERE batch_id = ? AND event_type = 'SOLD'
+                """, Integer.class, batch.id())).isEqualTo(1);
+        assertThat(customerService.list()).hasSize(1);
+    }
+
+    @Test
+    void rollsBackCustomerPopulationTypeSpecificSaleCommonSaleAndAuditTogether() {
+        var batch = setupBroiler();
+        jdbc.execute("""
+                CREATE TRIGGER reject_bird_sale_audit
+                BEFORE INSERT ON audit_logs
+                WHEN NEW.entity_type = 'BIRD_SALE'
+                BEGIN
+                    SELECT RAISE(ABORT, 'forced bird-sale audit failure');
+                END
+                """);
+
+        assertThatThrownBy(() -> broilerService.addSale(batch.id(), new BirdSaleRequest(
+                LocalDate.of(2026, 1, 10), 10, 25_000L, "Rollback Buyer")))
+                .isInstanceOf(RuntimeException.class);
+
+        assertThat(batchService.get(batch.id()).status()).isEqualTo("ACTIVE");
+        assertThat(populationService.get(batch.id(), LocalDate.of(2026, 1, 10)).currentBirds()).isEqualTo(100);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM bird_sales WHERE batch_id = ?",
+                Integer.class, batch.id())).isZero();
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM sales WHERE batch_id = ?",
+                Integer.class, batch.id())).isZero();
+        assertThat(jdbc.queryForObject("""
+                SELECT COUNT(*) FROM bird_population_events
+                WHERE batch_id = ? AND event_type = 'SOLD'
+                """, Integer.class, batch.id())).isZero();
+        assertThat(customerService.list()).isEmpty();
+    }
+
+    @Test
+    void turkeySalesSupportPartialAndFinalSalesAndLayerBirdSalesAreRejected() {
+        var turkey = setupTurkey();
+        var customer = customerService.create(new CustomerCreateRequest("Turkey Buyer", null, null));
+
+        broilerService.addSale(turkey.id(), new BirdSaleRequest(
+                LocalDate.of(2026, 1, 10), 3, 40_000L, customer.name(), false, customer.id()));
+        assertThat(batchService.get(turkey.id()).status()).isEqualTo("ACTIVE");
+        assertThat(populationService.get(turkey.id(), LocalDate.of(2026, 1, 10)).currentBirds()).isEqualTo(7);
+        assertThat(salesService.list(null, customer.id(), "TURKEY", LocalDate.of(2026, 1, 10))).hasSize(1);
+
+        broilerService.addSale(turkey.id(), new BirdSaleRequest(
+                LocalDate.of(2026, 1, 11), 7, 40_000L, customer.name(), false, customer.id()));
+        assertThat(batchService.get(turkey.id()).status()).isEqualTo("SOLD");
+        assertThat(salesService.list(null, customer.id(), "TURKEY", LocalDate.of(2026, 1, 11))).hasSize(2);
+
+        var layer = setupLayer();
+        assertThatThrownBy(() -> broilerService.addSale(layer.id(), new BirdSaleRequest(
+                LocalDate.of(2026, 1, 10), 1, 25_000L, "Layer buyer")))
+                .hasMessageContaining("only available for BROILER or TURKEY batches");
+    }
+
+    @Test
     void historicalSalesAreBackfilledIntoCommonLedger() {
         setupFarm();
         var house = houseService.create(new HouseCreateRequest("Layer House", "LH1", null));
@@ -153,6 +279,13 @@ class CustomerAndSalesIntegrationTest {
         var house = houseService.create(new HouseCreateRequest("Broiler House", "BH1", null));
         return batchService.create(new BatchCreateRequest(
                 "BROILER", LocalDate.of(2026, 1, 1), house.id(), 100, null, 1_000_000L));
+    }
+
+    private BatchResponse setupTurkey() {
+        setupFarm();
+        var house = houseService.create(new HouseCreateRequest("Turkey House", "TH1", null));
+        return batchService.create(new BatchCreateRequest(
+                "TURKEY", LocalDate.of(2026, 1, 1), house.id(), 10, null, 100_000L));
     }
 
     private void setupFarm() {
