@@ -1244,29 +1244,38 @@ export default function App() {
             <div className="auth-whats-new-heading">
               <p className="auth-whats-new-kicker">POMAS v1.0.4</p>
               <h2 id="auth-whats-new-title">What's new</h2>
-              <p>More control over flock records, clearer farm visibility, and safer ways to manage your data.</p>
+              <p>More flexible egg and bird sales, better feed and stock controls, and a clearer experience across the farm workspace.</p>
             </div>
             <div className="auth-whats-new-grid">
               <article className="auth-whats-new-item">
-                <span>01</span><div><h3>Independent turkey management</h3><p>Track turkey batches, populations, growth, sales, and reporting separately from broilers.</p></div>
+                <span>01</span><div><h3>Egg production in crates</h3><p>See dashboard egg totals as crates and remaining eggs, using your farm's configured crate size.</p></div>
               </article>
               <article className="auth-whats-new-item">
-                <span>02</span><div><h3>House and pen classification</h3><p>Classify housing as permanent or temporary, with occupancy visibility on the farm dashboard.</p></div>
+                <span>02</span><div><h3>Flexible bird sales</h3><p>Record partial or individual bird sales without having to close the entire batch.</p></div>
               </article>
               <article className="auth-whats-new-item">
-                <span>03</span><div><h3>Verified bird counts</h3><p>Distinguish estimated populations from physical counts. Record dated, reasoned adjustments with an audit trail.</p></div>
+                <span>03</span><div><h3>Clearer Windows installer</h3><p>The Windows installer filename now identifies the x64 architecture clearly.</p></div>
               </article>
               <article className="auth-whats-new-item">
-                <span>04</span><div><h3>More detailed feed records</h3><p>Capture feed brand, package name, confirmed package weight, and unit conversions without guessing unknown weights.</p></div>
+                <span>04</span><div><h3>Theme preference on sign-in</h3><p>Your Light or Dark theme preference now applies to the landing and sign-in screens.</p></div>
               </article>
               <article className="auth-whats-new-item">
-                <span>05</span><div><h3>Data import and reporting</h3><p>Preview and validate supported CSV history before import, and review expanded farm and batch reports.</p></div>
+                <span>05</span><div><h3>More readable dashboard alerts</h3><p>Improved text contrast makes alerts on gold warning backgrounds easier to read.</p></div>
               </article>
               <article className="auth-whats-new-item">
-                <span>06</span><div><h3>A more guided workflow</h3><p>Use the interactive tour, first-run setup guidance, dashboard quick actions, and clearer attention links.</p></div>
+                <span>06</span><div><h3>Feed product identity and editing</h3><p>Manage brand-specific feed product details and edit feed products more clearly.</p></div>
               </article>
               <article className="auth-whats-new-item">
-                <span>07</span><div><h3>Safer desktop upgrades</h3><p>Improved Windows installer maintenance and verification help preserve existing farm records during upgrades.</p></div>
+                <span>07</span><div><h3>Opening feed stock</h3><p>Enter existing feed stock even when it did not come from a recorded purchase.</p></div>
+              </article>
+              <article className="auth-whats-new-item">
+                <span>08</span><div><h3>Editable farm records</h3><p>Correct supported farm master records after creation instead of having to recreate them.</p></div>
+              </article>
+              <article className="auth-whats-new-item">
+                <span>09</span><div><h3>Multiple bird-type feed applicability</h3><p>Select more than one applicable bird type for a feed product using checkboxes.</p></div>
+              </article>
+              <article className="auth-whats-new-item">
+                <span>10</span><div><h3>Cleaner text rendering</h3><p>Literal escape sequences now display as normal text in the interface.</p></div>
               </article>
             </div>
           </section>
