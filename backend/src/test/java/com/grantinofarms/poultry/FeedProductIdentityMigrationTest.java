@@ -11,6 +11,7 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -92,6 +93,10 @@ class FeedProductIdentityMigrationTest {
                 .migrate();
 
         try (Connection connection = DriverManager.getConnection(databaseUrl)) {
+            try (Statement statement = connection.createStatement();
+                 ResultSet foreignKeys = statement.executeQuery("PRAGMA foreign_key_check")) {
+                assertThat(foreignKeys.next()).isFalse();
+            }
             try (PreparedStatement existing = connection.prepareStatement("""
                     SELECT f.id, f.brand, f.packaging_name, f.package_weight_kg,
                            p.feed_type_id AS purchase_type, o.feed_type_id AS opening_type,
