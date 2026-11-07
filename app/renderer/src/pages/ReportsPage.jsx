@@ -8,6 +8,7 @@ import { reportApi, productionTrendApi } from "../services/api.js";
 // eslint-disable-next-line no-unused-vars
 import ProductionTrendChart from "../components/ProductionTrendChart.jsx";
 import { rememberLastBatchId } from "../utils/farmUx.js";
+// eslint-disable-next-line no-unused-vars -- JSX component usage is not detected by the core rule
 import DataTable from "../components/DataTable.jsx";
 // eslint-disable-next-line no-unused-vars
 import MetricHelp from "../components/MetricHelp.jsx";
