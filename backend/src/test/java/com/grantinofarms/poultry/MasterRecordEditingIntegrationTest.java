@@ -126,6 +126,18 @@ class MasterRecordEditingIntegrationTest {
                 .hasMessageContaining("Only active batches");
     }
 
+    @Test
+    void houseWithAnActiveBatchCannotBeArchived() {
+        setupFarm();
+        var house = houseService.create(new HouseCreateRequest("Occupied House", "H001", null));
+        batchService.create(new BatchCreateRequest(
+                "LAYER", LocalDate.of(2026, 11, 1), house.id(), 50, null, false, null));
+
+        assertThatThrownBy(() -> houseService.update(house.id(), new HouseUpdateRequest(
+                "Occupied House", "H001", null, "ARCHIVED", "PERMANENT")))
+                .hasMessageContaining("assigned to an active batch cannot be archived");
+    }
+
     private void setupFarm() {
         farmService.create(new FarmCreateRequest(
                 "Grantino Farms", "Port Harcourt", "Africa/Lagos", "NGN"));
