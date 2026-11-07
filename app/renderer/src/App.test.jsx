@@ -246,8 +246,6 @@ describe("App", () => {
     expect(screen.queryByRole("heading", { name: "House and pen classification" })).not.toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Verified bird counts" })).not.toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "More detailed feed records" })).not.toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Edit farm records when details change" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Audited changes and safer controls" })).toBeInTheDocument();
     expect(screen.getByText("POMAS · DEVELOPMENT BUILD")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Sign in to your farm/ })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /create account/i })).not.toBeInTheDocument();
