@@ -16,7 +16,7 @@ const contextValue = {
   feedInventory: [],
   feedTypeForm: {
     name: "", brand: "", packagingName: "", packageWeightKg: "",
-    unit: "bag", kgPerUnit: "", applicableType: "BOTH",
+    unit: "bag", kgPerUnit: "", applicableTypes: ["LAYER", "BROILER", "TURKEY"],
   },
   setFeedTypeForm: vi.fn(),
   setError: vi.fn(),
@@ -56,6 +56,9 @@ describe("FeedStockPage", () => {
     expect(screen.getByLabelText("Package name")).toBeInTheDocument();
     expect(screen.getByLabelText("Package weight in kg (leave blank if unknown)")).toBeInTheDocument();
     expect(screen.getByLabelText("Unit e.g. bag or kg")).toBeInTheDocument();
+    expect(screen.getByRole("checkbox", { name: "Layers" })).toBeInTheDocument();
+    expect(screen.getByRole("checkbox", { name: "Broilers" })).toBeInTheDocument();
+    expect(screen.getByRole("checkbox", { name: "Turkeys" })).toBeInTheDocument();
     expect(container.textContent).not.toContain("\\n");
   });
 });
