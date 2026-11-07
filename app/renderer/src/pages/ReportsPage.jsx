@@ -8,6 +8,7 @@ import { reportApi, productionTrendApi } from "../services/api.js";
 // eslint-disable-next-line no-unused-vars
 import ProductionTrendChart from "../components/ProductionTrendChart.jsx";
 import { rememberLastBatchId } from "../utils/farmUx.js";
+import DataTable from "../components/DataTable.jsx";
 // eslint-disable-next-line no-unused-vars
 import MetricHelp from "../components/MetricHelp.jsx";
 
@@ -37,6 +38,19 @@ export default function ReportsPage() {
               ].map(([label,value]) => <div className="metric-card" key={label}><span>{label}</span><strong>{value ?? "—"}</strong></div>)}
             </div>
             <p className="muted">As of {farmReport.asOf}. Water quantities use the farm display label: {farmReport.waterUnitLabel || "litres"}. All report metrics are assembled from the same calculation services used by the dashboards.</p>
+            <div className="subsection">
+              <h3>Feed inventory by product</h3>
+              <DataTable caption="Feed inventory by product" columns={[
+                { key: "feedTypeName", label: "Feed product" },
+                { key: "brand", label: "Brand", render: item => item.brand || "—" },
+                { key: "packagingName", label: "Package", render: item => item.packagingName || "—" },
+                { key: "purchasedQuantityMilli", label: "Purchased", render: item => `${formatQuantity(item.purchasedQuantityMilli)} ${item.unit}` },
+                { key: "openingQuantityMilli", label: "Opening", render: item => `${formatQuantity(item.openingQuantityMilli)} ${item.unit}` },
+                { key: "consumedQuantityMilli", label: "Used", render: item => `${formatQuantity(item.consumedQuantityMilli)} ${item.unit}` },
+                { key: "remainingQuantityMilli", label: "Remaining", render: item => `${formatQuantity(item.remainingQuantityMilli)} ${item.unit}` },
+                { key: "remainingCostMinor", label: "Remaining cost", render: item => item.remainingCostMinor == null ? "Unknown" : formatMoney(item.remainingCostMinor, farm.currency) },
+              ]} rows={farmReport.feed || []} emptyMessage="No feed products recorded." />
+            </div>
           </> : <p className="muted">Report is loading…</p>}
         </section></PageSection>
 
