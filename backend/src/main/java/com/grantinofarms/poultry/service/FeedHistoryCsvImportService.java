@@ -117,6 +117,7 @@ public class FeedHistoryCsvImportService {
         // Simulate each historical usage date independently. The calculator receives only
         // purchases and usage dated on or before that date, so a future purchase cannot fund
         // an earlier consumption event.
+        Instant previewOrderBase = Instant.now().plusSeconds(1);
         Map<String, List<ParsedRow>> byType = new HashMap<>();
         for (ParsedRow row : parsed) {
             if (row.module.equals("feed-usage")) byType.computeIfAbsent(row.feedType.id(), ignored -> new ArrayList<>()).add(row);
@@ -131,7 +132,9 @@ public class FeedHistoryCsvImportService {
                     List<FeedUsageEvent> usageEvents = new ArrayList<>(feedRepository.findUsages(entry.getKey(), usage.date));
                     for (ParsedRow candidate : parsed) {
                         if (!candidate.feedType.id().equals(entry.getKey()) || candidate.date.isAfter(usage.date)) continue;
-                        Instant order = Instant.parse("2000-01-01T00:00:00Z").plusSeconds(candidate.rowNumber);
+                        long orderOffset = candidate.module.equals("feed-purchases")
+                                ? candidate.rowNumber : 1_000_000L + candidate.rowNumber;
+                        Instant order = previewOrderBase.plusSeconds(orderOffset);
                         if (candidate.module.equals("feed-purchases")) {
                             purchaseLots.add(new FeedPurchaseLot("import-purchase-" + candidate.rowNumber,
                                     candidate.feedType.id(), candidate.date, candidate.quantityMilli,
