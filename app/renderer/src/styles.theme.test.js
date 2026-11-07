@@ -37,9 +37,10 @@ describe("navigation theme tokens", () => {
   });
 
   it("defines theme-aware tokens for landing, sign-in, and first-run screens", () => {
-    const darkStart = stylesheet.indexOf(":root {");
+    const brandTokensStart = stylesheet.indexOf("/* Pomas brand system: semantic overrides");
+    const darkStart = stylesheet.indexOf(":root {", brandTokensStart);
     const darkEnd = stylesheet.indexOf("\n}", darkStart);
-    const lightStart = stylesheet.indexOf(':root[data-theme="light"] {');
+    const lightStart = stylesheet.indexOf(':root[data-theme="light"] {', darkEnd);
     const lightEnd = stylesheet.indexOf("\n}", lightStart);
     const darkTheme = stylesheet.slice(darkStart, darkEnd);
     const lightTheme = stylesheet.slice(lightStart, lightEnd);
