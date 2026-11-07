@@ -58,6 +58,7 @@ export default function ReportsPage() {
                 ["Current birds", batchReport.population?.currentBirds],
                 ["Mortality", batchReport.mortality],
                 ["Feed", formatQuantity(batchReport.feed?.totalQuantityMilli)],
+                ["Feed cost", batchReport.feed?.feedCostMinor == null ? "Unknown" : formatMoney(batchReport.feed.feedCostMinor, farm.currency)],
                 ["Costs", formatMoney(batchReport.costs?.expensesMinor, farm.currency)],
                 ["Revenue", formatMoney(batchReport.revenueMinor, farm.currency)],
                 ["Profit", formatMoney(batchReport.profitMinor, farm.currency)],
