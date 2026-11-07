@@ -64,7 +64,7 @@ export default function DailyWorkPage() {
                 const type = feedTypes.find(item => item.id === event.target.value);
                 setFeedUsageForm(form => ({...form,feedTypeId:event.target.value,unit:type?.unit||"bag"}));
               }}>
-                <option value="">Feed type</option>{applicableFeedTypes.map(type => <option key={type.id} value={type.id}>{type.name} ({type.unit})</option>)}
+                <option value="">Feed type</option>{applicableFeedTypes.map(type => <option key={type.id} value={type.id}>{type.name}{type.brand ? ` · ${type.brand}` : ""} ({type.unit})</option>)}
               </select></label>
               <label>Quantity<input required min="0.001" step="0.001" type="number" value={feedUsageForm.quantity} onChange={event => setFeedUsageForm({...feedUsageForm,quantity:event.target.value})}/></label>
               <label className="full">Reason (optional)<input value={feedUsageForm.reason} onChange={event => setFeedUsageForm({...feedUsageForm,reason:event.target.value})} placeholder="e.g. Morning feeding"/></label>
