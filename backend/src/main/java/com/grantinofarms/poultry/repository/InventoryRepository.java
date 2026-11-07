@@ -85,6 +85,22 @@ public class InventoryRepository {
                 """, (rs, n) -> mapItem(rs), id, farmId).stream().findFirst().orElse(null);
     }
 
+    public boolean hasMovements(String id, String farmId) {
+        Integer count = jdbc.queryForObject(
+                "SELECT COUNT(*) FROM inventory_movements WHERE inventory_item_id = ? AND farm_id = ?",
+                Integer.class, id, farmId);
+        return count != null && count > 0;
+    }
+
+    public void updateItem(String id, String farmId, String name, String category,
+                           String unit, BigDecimal reorderLevel, String now) {
+        jdbc.update("""
+                UPDATE inventory_items
+                SET name = ?, category = ?, unit = ?, reorder_level = ?, updated_at = ?
+                WHERE id = ? AND farm_id = ? AND status = 'ACTIVE'
+                """, name, category, unit, reorderLevel, now, id, farmId);
+    }
+
     public void archiveItem(String id, String farmId, String now) {
         jdbc.update("""
                 UPDATE inventory_items
