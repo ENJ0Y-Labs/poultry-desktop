@@ -76,13 +76,15 @@ class FeedCostCalculatorTest {
     void purchaseCostBecomesKnownAfterAllEarlierOpeningStockHasBeenConsumed() {
         var opening = new FeedOpeningStockLot("o1", "f1", LocalDate.of(2026,1,1), 5_000, T1);
         var purchase = new FeedPurchaseLot("p1", "f1", LocalDate.of(2026,1,2), 10_000, 100_000, T2);
-        var openingUsage = new FeedUsageEvent("u1", "b1", "f1", LocalDate.of(2026,1,3), 5_000, T2);
-        var purchasedUsage = new FeedUsageEvent("u2", "b1", "f1", LocalDate.of(2026,1,4), 2_000, T2);
+        var mixedUsage = new FeedUsageEvent("u1", "b1", "f1", LocalDate.of(2026,1,3), 7_000, T2);
 
         var result = FeedCostCalculator.calculate(
-                List.of(purchase), List.of(opening), List.of(openingUsage, purchasedUsage), LocalDate.of(2026,1,4));
+                List.of(purchase), List.of(opening), List.of(mixedUsage), LocalDate.of(2026,1,3));
 
-        assertThat(result.usageCostsMinor()).containsEntry("u1", null).containsEntry("u2", 20_000L);
+        assertThat(result.usageCostsMinor()).containsEntry("u1", null);
+        assertThat(result.usageKnownCostsMinor()).containsEntry("u1", 20_000L);
+        assertThat(result.consumedCostMinor()).isNull();
+        assertThat(result.knownConsumedCostMinor()).isEqualTo(20_000L);
         assertThat(result.remainingQuantityMilli()).isEqualTo(8_000);
         assertThat(result.remainingCostMinor()).isEqualTo(80_000L);
     }
