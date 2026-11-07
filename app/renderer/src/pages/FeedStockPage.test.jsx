@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { feedApi } from "../services/api.js";
 
 vi.mock("../services/api.js", () => ({
@@ -53,6 +53,7 @@ const contextValue = {
 };
 
 describe("FeedStockPage", () => {
+  beforeEach(() => vi.clearAllMocks());
   it("exposes opening stock entry without purchase or supplier fields", async () => {
     const context = {
       ...contextValue,
@@ -88,9 +89,9 @@ describe("FeedStockPage", () => {
       </NavigationContext.Provider>
     );
 
-    fireEvent.change(screen.getByLabelText("Feed type"), { target: { value: "feed-1" } });
+    fireEvent.change(screen.getAllByLabelText("Feed type")[0], { target: { value: "feed-1" } });
     fireEvent.change(screen.getByLabelText("Effective date"), { target: { value: "2026-11-01" } });
-    fireEvent.change(screen.getByLabelText("Quantity"), { target: { value: "25.5" } });
+    fireEvent.change(screen.getAllByLabelText("Quantity")[0], { target: { value: "25.5" } });
     fireEvent.change(screen.getByLabelText("Reason / source"), { target: { value: "Physical stock count" } });
     fireEvent.click(screen.getByRole("button", { name: "Record opening stock" }));
 
