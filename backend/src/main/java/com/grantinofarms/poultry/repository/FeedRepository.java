@@ -88,6 +88,26 @@ public class FeedRepository {
         ), feedTypeId);
     }
 
+    public boolean hasPurchasesOrUsage(String id) {
+        Integer count = jdbc.queryForObject("""
+                SELECT (SELECT COUNT(*) FROM feed_purchases WHERE feed_type_id = ?)
+                     + (SELECT COUNT(*) FROM feed_usage WHERE feed_type_id = ?)
+                     + (SELECT COUNT(*) FROM feed_opening_balances WHERE feed_type_id = ?)
+                """, Integer.class, id, id, id);
+        return count != null && count > 0;
+    }
+
+    public void updateType(String id, String farmId, String name, String unit, String scope,
+                           java.math.BigDecimal kgPerUnit, String brand, String packagingName,
+                           java.math.BigDecimal packageWeightKg, String now) {
+        jdbc.update("""
+                UPDATE feed_types
+                SET name = ?, unit = ?, applicable_type = ?, kg_per_unit = ?, brand = ?,
+                    packaging_name = ?, package_weight_kg = ?, updated_at = ?
+                WHERE id = ? AND farm_id = ?
+                """, name, unit, scope, kgPerUnit, brand, packagingName, packageWeightKg, now, id, farmId);
+    }
+
     public void updateKgPerUnit(String id, java.math.BigDecimal kgPerUnit, String now) {
         jdbc.update("UPDATE feed_types SET kg_per_unit = ?, updated_at = ? WHERE id = ?", kgPerUnit, now, id);
     }

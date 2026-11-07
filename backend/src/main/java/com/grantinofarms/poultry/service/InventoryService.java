@@ -1,6 +1,9 @@
 package com.grantinofarms.poultry.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.grantinofarms.poultry.dto.InventoryItemCreateRequest;
+import com.grantinofarms.poultry.dto.InventoryItemUpdateRequest;
 import com.grantinofarms.poultry.dto.InventoryItemResponse;
 import com.grantinofarms.poultry.dto.InventoryMovementRequest;
 import com.grantinofarms.poultry.dto.InventoryMovementResponse;
@@ -28,12 +31,14 @@ public class InventoryService {
     private final InventoryRepository repository;
     private final BatchRepository batchRepository;
     private final AuditRepository auditRepository;
+    private final ObjectMapper objectMapper;
 
     public InventoryService(InventoryRepository repository, BatchRepository batchRepository,
-                            AuditRepository auditRepository) {
+                            AuditRepository auditRepository, ObjectMapper objectMapper) {
         this.repository = repository;
         this.batchRepository = batchRepository;
         this.auditRepository = auditRepository;
+        this.objectMapper = objectMapper;
     }
 
     public List<InventoryItemResponse> listItems() {
@@ -66,6 +71,41 @@ public class InventoryService {
                 String.format("{\"name\":\"%s\",\"category\":\"%s\",\"unit\":\"%s\"}",
                         name, category, unit), now);
         return repository.findItem(id, farmId);
+    }
+
+    @Transactional
+    public InventoryItemResponse updateItem(String id, InventoryItemUpdateRequest request) {
+        String farmId = repository.farmId();
+        InventoryItemResponse current = repository.findItem(id, farmId);
+        if (current == null) {
+            throw new ApiException(HttpStatus.NOT_FOUND, "INVENTORY_ITEM_NOT_FOUND", "Inventory item not found.");
+        }
+        if (!"ACTIVE".equals(current.status())) {
+            throw new ApiException(HttpStatus.CONFLICT, "INVENTORY_ITEM_ARCHIVED",
+                    "Archived inventory items cannot be edited.");
+        }
+        String unit = clean(request.unit());
+        if (!current.unit().equals(unit) && repository.hasMovements(id, farmId)) {
+            throw new ApiException(HttpStatus.CONFLICT, "INVENTORY_UNIT_HISTORY_LOCKED",
+                    "The unit cannot change after stock movements exist because historical quantities use the original unit.");
+        }
+        String category = normalize(request.category());
+        if (!CATEGORIES.contains(category)) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_INVENTORY_CATEGORY",
+                    "Inventory category must be DRUG, VACCINE, or SUPPLY.");
+        }
+        BigDecimal reorder = normalizeReorderLevel(request.reorderLevel() == null ? BigDecimal.ZERO : request.reorderLevel());
+        String now = Instant.now().toString();
+        try {
+            repository.updateItem(id, farmId, clean(request.name()), category, unit, reorder, now);
+        } catch (DataIntegrityViolationException e) {
+            throw new ApiException(HttpStatus.CONFLICT, "DUPLICATE_INVENTORY_ITEM",
+                    "An inventory item with this name already exists.");
+        }
+        InventoryItemResponse updated = repository.findItem(id, farmId);
+        auditRepository.append(farmId, "UPDATE", "INVENTORY_ITEM", id, null,
+                json(current), json(updated), now);
+        return updated;
     }
 
     @Transactional
@@ -153,6 +193,14 @@ public class InventoryService {
                     "Inventory reorder level cannot be negative.");
         }
         return quantity.stripTrailingZeros();
+    }
+
+    private String json(Object value) {
+        try {
+            return objectMapper.writeValueAsString(value);
+        } catch (JsonProcessingException e) {
+            throw new IllegalStateException("Unable to serialize audit data", e);
+        }
     }
 
     private String normalize(String value) {
