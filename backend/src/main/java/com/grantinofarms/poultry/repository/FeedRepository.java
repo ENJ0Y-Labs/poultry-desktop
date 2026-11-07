@@ -26,7 +26,8 @@ public class FeedRepository {
                 (rs, n) -> new FeedTypeResponse(
                         rs.getString("id"), rs.getString("name"), rs.getString("unit"),
                         rs.getString("applicable_type"), rs.getString("status"), rs.getBigDecimal("kg_per_unit"),
-                        rs.getString("brand"), rs.getString("packaging_name"), rs.getBigDecimal("package_weight_kg")
+                        rs.getString("brand"), rs.getString("packaging_name"), rs.getBigDecimal("package_weight_kg"),
+                        findApplicableTypes(rs.getString("id"))
                 ), farmId);
     }
 
@@ -38,7 +39,8 @@ public class FeedRepository {
                 (rs, n) -> new FeedTypeResponse(
                         rs.getString("id"), rs.getString("name"), rs.getString("unit"),
                         rs.getString("applicable_type"), rs.getString("status"), rs.getBigDecimal("kg_per_unit"),
-                        rs.getString("brand"), rs.getString("packaging_name"), rs.getBigDecimal("package_weight_kg")
+                        rs.getString("brand"), rs.getString("packaging_name"), rs.getBigDecimal("package_weight_kg"),
+                        findApplicableTypes(rs.getString("id"))
                 ), id);
         return rows.isEmpty() ? null : rows.get(0);
     }
@@ -55,12 +57,22 @@ public class FeedRepository {
         return jdbc.queryForObject("SELECT applicable_type FROM feed_types WHERE id = ?", String.class, id);
     }
 
-    public void insertType(String id, String farmId, String name, String unit, String scope, java.math.BigDecimal kgPerUnit, String brand, String packagingName, java.math.BigDecimal packageWeightKg, String now) {
+    public void insertType(String id, String farmId, String name, String unit, String legacyScope,
+                           java.math.BigDecimal kgPerUnit, String brand, String packagingName,
+                           java.math.BigDecimal packageWeightKg, List<String> applicableTypes, String now) {
         jdbc.update("""
                 INSERT INTO feed_types
                     (id, farm_id, name, unit, applicable_type, status, kg_per_unit, brand, packaging_name, package_weight_kg, created_at, updated_at)
                 VALUES (?, ?, ?, ?, ?, 'ACTIVE', ?, ?, ?, ?, ?, ?)
-                """, id, farmId, name, unit, scope, kgPerUnit, brand, packagingName, packageWeightKg, now, now);
+                """, id, farmId, name, unit, legacyScope, kgPerUnit, brand, packagingName, packageWeightKg, now, now);
+        for (String birdType : applicableTypes) {
+            jdbc.update("INSERT INTO feed_type_applicability (feed_type_id, bird_type) VALUES (?, ?)", id, birdType);
+        }
+    }
+
+    public List<String> findApplicableTypes(String feedTypeId) {
+        return jdbc.query("SELECT bird_type FROM feed_type_applicability WHERE feed_type_id = ? ORDER BY CASE bird_type WHEN 'LAYER' THEN 1 WHEN 'BROILER' THEN 2 WHEN 'TURKEY' THEN 3 END",
+                (rs, n) -> rs.getString("bird_type"), feedTypeId);
     }
 
 
