@@ -124,7 +124,9 @@ class FeedManagementIntegrationTest {
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM feed_purchases", Integer.class)).isEqualTo(1);
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM expenses WHERE category = 'FEED'", Integer.class)).isEqualTo(1);
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM bird_cost_events WHERE batch_id = ? AND event_type = 'ADDITIONAL_COST'",
-                Integer.class, batch.id())).isZero();
+                Integer.class, batch.id())).isEqualTo(1);
+        assertThat(jdbc.queryForObject("SELECT SUM(amount_minor) FROM bird_cost_events WHERE batch_id = ? AND event_type = 'ADDITIONAL_COST'",
+                Long.class, batch.id())).isEqualTo(10_000L);
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM audit_logs WHERE entity_type = 'FEED_OPENING_BALANCE'",
                 Integer.class)).isEqualTo(1);
     }
