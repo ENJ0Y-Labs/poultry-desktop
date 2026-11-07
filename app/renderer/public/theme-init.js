@@ -1,13 +1,20 @@
 (() => {
   const root = document.documentElement;
+  let saved = null;
   try {
-    const saved = localStorage.getItem("pomas:theme") || localStorage.getItem("grantino:theme");
-    const preference = ["auto", "light", "dark"].includes(saved) ? saved : "auto";
-    const systemPrefersLight = window.matchMedia?.("(prefers-color-scheme: light)").matches === true;
-    root.dataset.themePreference = preference;
-    root.dataset.theme = preference === "auto" ? (systemPrefersLight ? "light" : "dark") : preference;
+    saved = localStorage.getItem("pomas:theme") || localStorage.getItem("grantino:theme");
   } catch {
-    root.dataset.themePreference = "auto";
-    root.dataset.theme = "dark";
+    // Auto remains available when browser storage is blocked.
   }
+
+  const preference = ["auto", "light", "dark"].includes(saved) ? saved : "auto";
+  let systemPrefersLight = false;
+  try {
+    systemPrefersLight = window.matchMedia?.("(prefers-color-scheme: light)").matches === true;
+  } catch {
+    // Use the safe Dark fallback if the system preference cannot be read.
+  }
+
+  root.dataset.themePreference = preference;
+  root.dataset.theme = preference === "auto" ? (systemPrefersLight ? "light" : "dark") : preference;
 })();
