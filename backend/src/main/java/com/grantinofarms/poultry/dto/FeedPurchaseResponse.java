@@ -11,5 +11,13 @@ public record FeedPurchaseResponse(
         long quantityMilli,
         long totalCostMinor,
         long remainingQuantityMilli,
-        long remainingCostMinor
-) {}
+        long remainingCostMinor,
+        String brand
+) {
+    public FeedPurchaseResponse(String id, String feedTypeId, String feedTypeName, String unit,
+                                LocalDate purchaseDate, long quantityMilli, long totalCostMinor,
+                                long remainingQuantityMilli, long remainingCostMinor) {
+        this(id, feedTypeId, feedTypeName, unit, purchaseDate, quantityMilli, totalCostMinor,
+                remainingQuantityMilli, remainingCostMinor, null);
+    }
+}
