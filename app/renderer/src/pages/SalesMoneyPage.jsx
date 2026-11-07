@@ -9,10 +9,10 @@ import EmptyState from "../components/EmptyState.jsx";
 // eslint-disable-next-line no-unused-vars
 import DataTable from "../components/DataTable.jsx";
 
-const saleTypeLabel = type => type === "EGG" ? "Eggs" : type === "BROILER" ? "Broiler birds" : String(type || "Unknown").toLowerCase().replace(/\b\w/g, letter => letter.toUpperCase());
+const saleTypeLabel = type => type === "EGG" ? "Eggs" : type === "BROILER" ? "Broiler birds" : type === "TURKEY" ? "Turkey birds" : String(type || "Unknown").toLowerCase().replace(/\b\w/g, letter => letter.toUpperCase());
 
 export default function SalesMoneyPage() {
-  const { formatMoney, farm, batches, expenseForm, setExpenseForm, expenses, expenseBatchFilter, setExpenseBatchFilter, customers, customerForm, setCustomerForm, sales, saving, expenseCategories, loadExpenses, saveCustomer, saveExpense } = useContext(FarmManagerContext);
+  const { formatMoney, farm, batches, expenseForm, setExpenseForm, expenses, expenseBatchFilter, setExpenseBatchFilter, customers, customerForm, setCustomerForm, editingCustomerId, editCustomer, cancelCustomerEdit, sales, saving, expenseCategories, loadExpenses, saveCustomer, saveExpense } = useContext(FarmManagerContext);
 
   return (
     <PageTemplate className="grid">
@@ -25,18 +25,19 @@ export default function SalesMoneyPage() {
             <label className="field"><span>Customer name</span><input required value={customerForm.name} onChange={e=>setCustomerForm({...customerForm,name:e.target.value})}/></label>
             <label className="field"><span>Phone</span><input value={customerForm.phone} onChange={e=>setCustomerForm({...customerForm,phone:e.target.value})}/></label>
             <label className="field"><span>Notes</span><input value={customerForm.notes} onChange={e=>setCustomerForm({...customerForm,notes:e.target.value})}/></label>
-            <button disabled={saving}>Add customer</button>
+            <button disabled={saving}>{editingCustomerId ? "Save customer" : "Add customer"}</button>{editingCustomerId && <button type="button" className="secondary-button" onClick={cancelCustomerEdit}>Cancel</button>}
           </form>
           <DataTable caption="Customers" columns={[
               { key: "name", label: "Name" }, { key: "phone", label: "Phone", render: row => row.phone || "—" },
               { key: "notes", label: "Notes", render: row => row.notes || "—" },
+              { key: "action", label: "Action", render: row => <button type="button" className="secondary-button" onClick={() => editCustomer(row)}>Edit</button> },
             ]} rows={customers} emptyMessage="No customers yet." />
         </section></PageSection>
 
       <PageSection page="sales-money" tab="sales"><section id="sales" className="card full">
           <div className="section-head">
             <h2>Sales</h2>
-            <p className="muted">Common commercial ledger for Layer egg and Broiler bird sales. Type-specific rules remain in their production modules.</p>
+            <p className="muted">Common commercial ledger for Layer egg, Broiler bird, and Turkey bird sales. Type-specific rules remain in their production modules.</p>
           </div>
           <div className="subsection">
             <DataTable caption="Sales ledger" columns={[
@@ -45,7 +46,7 @@ export default function SalesMoneyPage() {
                 { key: "quantity", label: "Quantity", render: row => row.quantity?.toString() }, { key: "unit", label: "Unit" },
                 { key: "unitPriceMinor", label: "Unit price", render: row => formatMoney(row.unitPriceMinor, farm.currency) },
                 { key: "totalAmountMinor", label: "Total", render: row => formatMoney(row.totalAmountMinor, farm.currency) },
-              ]} rows={sales} emptyMessage="No sales recorded yet. Record an egg or bird sale in Production to see it here." />
+              ]} rows={sales} emptyMessage="No sales recorded yet. Record an egg or meat-bird sale in Production to see it here." />
           </div>
         </section></PageSection>
 

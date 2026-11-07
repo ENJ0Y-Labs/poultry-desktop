@@ -33,6 +33,13 @@ public class HouseRepository {
                 """, (rs, rowNum) -> map(rs), id).stream().findFirst().orElse(null);
     }
 
+    public boolean hasActiveBatches(String houseId, String farmId) {
+        Integer count = jdbc.queryForObject(
+                "SELECT COUNT(*) FROM batches WHERE house_id = ? AND farm_id = ? AND status = 'ACTIVE'",
+                Integer.class, houseId, farmId);
+        return count != null && count > 0;
+    }
+
     public void update(String id, String farmId, String name, String code, String notes, String status, String houseType, String now) {
         jdbc.update("""
                 UPDATE houses SET name = ?, code = ?, notes = ?, status = ?, house_type = ?, updated_at = ?

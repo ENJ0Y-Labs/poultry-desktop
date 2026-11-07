@@ -3,6 +3,7 @@ package com.grantinofarms.poultry.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.grantinofarms.poultry.dto.BatchCreateRequest;
+import com.grantinofarms.poultry.dto.BatchSetupUpdateRequest;
 import com.grantinofarms.poultry.dto.BatchResponse;
 import com.grantinofarms.poultry.dto.BatchReopenRequest;
 import com.grantinofarms.poultry.exception.ApiException;
@@ -135,6 +136,36 @@ public class BatchService {
     }
 
     @Transactional
+    public BatchResponse updateSetup(String id, BatchSetupUpdateRequest request) {
+        BatchResponse current = get(id);
+        if (!"ACTIVE".equals(current.status())) {
+            throw new ApiException(HttpStatus.CONFLICT, "BATCH_SETUP_LOCKED",
+                    "Only active batches can have setup references edited.");
+        }
+        String farmId = current.farmId();
+        if (!batchRepository.houseBelongsToFarm(request.houseId(), farmId)) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_HOUSE",
+                    "The selected house/pen does not belong to this farm or is archived.");
+        }
+        String supplierId = clean(request.supplierId());
+        if (supplierId != null && !batchRepository.supplierBelongsToFarm(supplierId, farmId)) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_SUPPLIER",
+                    "The selected supplier/source does not belong to this farm or is archived.");
+        }
+        if (current.purchaseCostMinor() != null
+                && !java.util.Objects.equals(current.supplierId(), supplierId)) {
+            throw new ApiException(HttpStatus.CONFLICT, "BATCH_PURCHASE_SOURCE_LOCKED",
+                    "The supplier/source cannot change after an original bird purchase cost has been recorded.");
+        }
+        String now = Instant.now().toString();
+        batchRepository.updateSetup(id, farmId, request.houseId(), supplierId, now);
+        BatchResponse updated = batchRepository.findById(id);
+        auditRepository.append(farmId, "UPDATE", "BATCH", id, null,
+                json(current), json(updated), now);
+        return updated;
+    }
+
+    @Transactional
     public BatchResponse markSold(String id) {
         BatchResponse current = get(id);
         if (!List.of("BROILER", "TURKEY").contains(current.type())) {
@@ -149,7 +180,7 @@ public class BatchService {
         int currentBirds = birdPopulationService.get(current.id(), LocalDate.now()).currentBirds();
         if (currentBirds != 0) {
             throw new ApiException(HttpStatus.CONFLICT, "BATCH_NOT_EMPTY",
-                    "A BROILER batch can only be marked SOLD when all birds have been sold.");
+                    "A BROILER or TURKEY batch can only be marked SOLD when its calculated population reaches zero.");
         }
 
         String now = Instant.now().toString();

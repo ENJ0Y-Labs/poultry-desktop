@@ -164,6 +164,7 @@ export const batchApi = {
   list: () => request("/batches"),
   get: (id) => request("/batches/" + id),
   create: (data) => request("/batches", { method: "POST", body: JSON.stringify(data) }),
+  updateSetup: (id, data) => request("/batches/" + id + "/setup", { method: "PUT", body: JSON.stringify(data) }),
   markSold: (id) => request("/batches/" + id + "/sold", { method: "POST" }),
   reopen: (id, reason) => request("/batches/" + id + "/reopen", { method: "POST", body: JSON.stringify({ reason }) }),
 };
@@ -241,6 +242,7 @@ export const expenseApi = {
 export const inventoryApi = {
   listItems: () => request("/inventory/items"),
   createItem: (data) => request("/inventory/items", { method: "POST", body: JSON.stringify(data) }),
+  updateItem: (id, data) => request("/inventory/items/" + id, { method: "PUT", body: JSON.stringify(data) }),
   archiveItem: (id) => request("/inventory/items/" + id + "/archive", { method: "POST" }),
   listMovements: (itemId, asOf) => {
     const query = new URLSearchParams();
@@ -254,6 +256,7 @@ export const inventoryApi = {
 export const supplierApi = {
   list: () => request("/suppliers"),
   create: (data) => request("/suppliers", { method: "POST", body: JSON.stringify(data) }),
+  update: (id, data) => request("/suppliers/" + id, { method: "PUT", body: JSON.stringify(data) }),
   archive: (id) => request("/suppliers/" + id + "/archive", { method: "POST" }),
 };
 

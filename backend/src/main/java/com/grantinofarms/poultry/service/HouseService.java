@@ -65,6 +65,12 @@ public class HouseService {
             throw new ApiException(HttpStatus.NOT_FOUND, "HOUSE_NOT_FOUND", "House/pen not found.");
         }
 
+        if ("ACTIVE".equals(current.status()) && "ARCHIVED".equals(request.status())
+                && houseRepository.hasActiveBatches(id, farmId)) {
+            throw new ApiException(HttpStatus.CONFLICT, "HOUSE_HAS_ACTIVE_BATCHES",
+                    "A house/pen assigned to an active batch cannot be archived.");
+        }
+
         String now = Instant.now().toString();
         try {
             houseRepository.update(id, farmId, request.name().trim(), request.code().trim().toUpperCase(),

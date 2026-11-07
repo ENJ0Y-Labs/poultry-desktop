@@ -1,5 +1,7 @@
 package com.grantinofarms.poultry.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.grantinofarms.poultry.domain.FeedCostCalculator;
 import com.grantinofarms.poultry.domain.FeedPurchaseLot;
 import com.grantinofarms.poultry.domain.FeedOpeningStockLot;
@@ -26,13 +28,15 @@ public class FeedService {
     private final BirdPopulationService populationService;
     private final BirdCostService birdCostService;
     private final AuditRepository auditRepository;
+    private final ObjectMapper objectMapper;
 
     public FeedService(FeedRepository repository, BirdPopulationService populationService,
-                       BirdCostService birdCostService, AuditRepository auditRepository) {
+                       BirdCostService birdCostService, AuditRepository auditRepository, ObjectMapper objectMapper) {
         this.repository = repository;
         this.populationService = populationService;
         this.birdCostService = birdCostService;
         this.auditRepository = auditRepository;
+        this.objectMapper = objectMapper;
     }
 
     public List<FeedTypeResponse> types() {
@@ -96,6 +100,13 @@ public class FeedService {
                     "Package weight must be greater than zero, or left blank when unknown.");
         }
         String farmId = repository.farmId();
+        if (!farmId.equals(repository.typeFarmId(id))) {
+            throw new ApiException(HttpStatus.NOT_FOUND, "FEED_TYPE_NOT_FOUND", "Feed type not found.");
+        }
+        if (!"ACTIVE".equals(type.status())) {
+            throw new ApiException(HttpStatus.CONFLICT, "FEED_TYPE_NOT_ACTIVE",
+                    "Archived feed types cannot be edited.");
+        }
         if (repository.productIdentityExists(farmId, name, brand, id)) {
             throw new ApiException(HttpStatus.CONFLICT, "DUPLICATE_FEED_PRODUCT",
                     "A feed product with this name and brand already exists.");
@@ -111,6 +122,16 @@ public class FeedService {
                 feedIdentityJson(type.name(), type.brand(), type.packagingName(), type.packageWeightKg()),
                 feedIdentityJson(name, brand, packagingName, packageWeightKg), now);
         return repository.findType(id);
+    }
+
+    /**
+     * Backward-compatible service alias. Feed type edits now change descriptive
+     * product identity only; unit and bird applicability are immutable here.
+     * Conversion changes use updateConversion().
+     */
+    @Transactional
+    public FeedTypeResponse updateType(String id, FeedTypeUpdateRequest request) {
+        return updateProductIdentity(id, request);
     }
 
     @Transactional
@@ -357,6 +378,14 @@ public class FeedService {
         FeedTypeResponse type = repository.findType(id);
         if (type == null) throw new ApiException(HttpStatus.NOT_FOUND, "FEED_TYPE_NOT_FOUND", "Feed type not found.");
         return type;
+    }
+
+    private String json(Object value) {
+        try {
+            return objectMapper.writeValueAsString(value);
+        } catch (JsonProcessingException e) {
+            throw new IllegalStateException("Unable to serialize audit data", e);
+        }
     }
 
     private String requireBatch(String batchId) {

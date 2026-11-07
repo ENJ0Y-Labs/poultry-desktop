@@ -146,7 +146,7 @@ const emptyExpense = {
   category: "OTHER",
 };
 const emptyCustomer = { name: "", phone: "", notes: "" };
-const emptySupplier = { name: "", phone: "", notes: "" };
+const emptySupplier = { name: "", phone: "", email: "", address: "", notes: "" };
 const emptyInventoryItem = { name: "", category: "SUPPLY", unit: "piece", reorderLevel: "" };
 const emptyInventoryMovement = {
   itemId: "", date: todayLocalDate(), movementType: "RECEIVE",
@@ -160,10 +160,13 @@ export default function App() {
   const [houses, setHouses] = useState([]);
   const [batches, setBatches] = useState([]);
   const [batchForm, setBatchForm] = useState(emptyBatch);
+  const [editingBatchId, setEditingBatchId] = useState("");
+  const [batchSetupForm, setBatchSetupForm] = useState({ houseId: "", supplierId: "" });
   const [costForm, setCostForm] = useState(emptyCost);
   const [feedTypes, setFeedTypes] = useState([]);
   const [feedInventory, setFeedInventory] = useState([]);
   const [feedTypeForm, setFeedTypeForm] = useState(emptyFeedType);
+  const [editingFeedTypeId, setEditingFeedTypeId] = useState("");
   const [feedPurchaseForm, setFeedPurchaseForm] = useState(emptyFeedPurchase);
   const [feedUsageForm, setFeedUsageForm] = useState(emptyFeedUsage);
   const [dailyForm, setDailyForm] = useState(emptyDaily);
@@ -184,13 +187,16 @@ export default function App() {
   const [expenseBatchFilter, setExpenseBatchFilter] = useState("");
   const [inventoryItems, setInventoryItems] = useState([]);
   const [inventoryItemForm, setInventoryItemForm] = useState(emptyInventoryItem);
+  const [editingInventoryItemId, setEditingInventoryItemId] = useState("");
   const [inventoryMovementForm, setInventoryMovementForm] = useState(emptyInventoryMovement);
   const [inventoryMovements, setInventoryMovements] = useState([]);
   const [customers, setCustomers] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
   const [supplierForm, setSupplierForm] = useState(emptySupplier);
+  const [editingSupplierId, setEditingSupplierId] = useState("");
   const [settingsReady, setSettingsReady] = useState(false);
   const [customerForm, setCustomerForm] = useState(emptyCustomer);
+  const [editingCustomerId, setEditingCustomerId] = useState("");
   const [sales, setSales] = useState([]);
   const [eggBatchId, setEggBatchId] = useState("");
   const [broilerBatchId, setBroilerBatchId] = useState("");
@@ -658,15 +664,23 @@ export default function App() {
   async function saveSupplier(event) {
     event.preventDefault(); setSaving(true); setError("");
     try {
-      const created = await supplierApi.create({
-        name: supplierForm.name.trim(),
-        phone: supplierForm.phone.trim() || null,
-        notes: supplierForm.notes.trim() || null,
-      });
-      setSuppliers(current => [...current, created].sort((a, b) => a.name.localeCompare(b.name)));
-      setSupplierForm(emptySupplier);
+      const payload = { name: supplierForm.name.trim(), phone: supplierForm.phone.trim() || null,
+        email: supplierForm.email.trim() || null, address: supplierForm.address.trim() || null, notes: supplierForm.notes.trim() || null };
+      const saved = editingSupplierId
+        ? await supplierApi.update(editingSupplierId, payload)
+        : await supplierApi.create(payload);
+      setSuppliers(current => (editingSupplierId
+        ? current.map(item => item.id === saved.id ? saved : item)
+        : [...current, saved]).sort((a, b) => a.name.localeCompare(b.name)));
+      setSupplierForm(emptySupplier); setEditingSupplierId("");
     } catch (err) { setError(displayApiError(err)); } finally { setSaving(false); }
   }
+
+  function editSupplier(supplier) {
+    setEditingSupplierId(supplier.id);
+    setSupplierForm({ name: supplier.name || "", phone: supplier.phone || "", email: supplier.email || "", address: supplier.address || "", notes: supplier.notes || "" });
+  }
+  function cancelSupplierEdit() { setEditingSupplierId(""); setSupplierForm(emptySupplier); }
 
   async function archiveSupplier(id) {
     setSaving(true); setError("");
@@ -677,31 +691,48 @@ export default function App() {
   async function saveCustomer(event) {
     event.preventDefault(); setSaving(true); setError("");
     try {
-      const created = await customerApi.create({
-        name: customerForm.name.trim(),
-        phone: customerForm.phone.trim() || null,
-        notes: customerForm.notes.trim() || null,
-      });
-      setCustomers(current => [...current, created].sort((a, b) => a.name.localeCompare(b.name)));
-      setCustomerForm(emptyCustomer);
+      const payload = { name: customerForm.name.trim(), phone: customerForm.phone.trim() || null,
+        notes: customerForm.notes.trim() || null };
+      const saved = editingCustomerId
+        ? await customerApi.update(editingCustomerId, payload)
+        : await customerApi.create(payload);
+      setCustomers(current => (editingCustomerId
+        ? current.map(item => item.id === saved.id ? saved : item)
+        : [...current, saved]).sort((a, b) => a.name.localeCompare(b.name)));
+      await loadSales();
+      setCustomerForm(emptyCustomer); setEditingCustomerId("");
     } catch (err) { setError(displayApiError(err)); } finally { setSaving(false); }
   }
+
+  function editCustomer(customer) {
+    setEditingCustomerId(customer.id);
+    setCustomerForm({ name: customer.name || "", phone: customer.phone || "", notes: customer.notes || "" });
+  }
+  function cancelCustomerEdit() { setEditingCustomerId(""); setCustomerForm(emptyCustomer); }
 
 
   async function saveInventoryItem(event) {
     event.preventDefault(); setSaving(true); setError("");
     try {
-      const created = await inventoryApi.createItem({
-        name: inventoryItemForm.name.trim(),
-        category: inventoryItemForm.category,
-        unit: inventoryItemForm.unit.trim(),
-        reorderLevel: inventoryItemForm.reorderLevel === "" ? 0 : Number(inventoryItemForm.reorderLevel),
-      });
-      setInventoryItems(current => [...current, created].sort((a, b) => a.name.localeCompare(b.name)));
-      setInventoryItemForm(emptyInventoryItem);
-      setInventoryMovementForm(form => ({ ...form, itemId: created.id }));
+      const payload = { name: inventoryItemForm.name.trim(), category: inventoryItemForm.category,
+        unit: inventoryItemForm.unit.trim(), reorderLevel: inventoryItemForm.reorderLevel === "" ? 0 : Number(inventoryItemForm.reorderLevel) };
+      const saved = editingInventoryItemId
+        ? await inventoryApi.updateItem(editingInventoryItemId, payload)
+        : await inventoryApi.createItem(payload);
+      setInventoryItems(current => (editingInventoryItemId
+        ? current.map(item => item.id === saved.id ? saved : item)
+        : [...current, saved]).sort((a, b) => a.name.localeCompare(b.name)));
+      setInventoryItemForm(emptyInventoryItem); setEditingInventoryItemId("");
+      if (!editingInventoryItemId) setInventoryMovementForm(form => ({ ...form, itemId: saved.id }));
+      await loadDashboard();
     } catch (err) { setError(displayApiError(err)); } finally { setSaving(false); }
   }
+
+  function editInventoryItem(item) {
+    setEditingInventoryItemId(item.id);
+    setInventoryItemForm({ name: item.name, category: item.category, unit: item.unit, reorderLevel: String(item.reorderLevel ?? 0) });
+  }
+  function cancelInventoryItemEdit() { setEditingInventoryItemId(""); setInventoryItemForm(emptyInventoryItem); }
 
   async function loadInventoryMovements(itemId = inventoryMovementForm.itemId) {
     if (!itemId) { setInventoryMovements([]); return; }
@@ -820,6 +851,14 @@ export default function App() {
       setFeedTypeForm(emptyFeedType);
     } catch (err) { setError(displayApiError(err)); } finally { setSaving(false); }
   }
+
+  function editFeedType(type) {
+    setEditingFeedTypeId(type.id);
+    setFeedTypeForm({ name: type.name || "", brand: type.brand || "", unit: type.unit || "bag",
+      packagingName: type.packagingName || "", packageWeightKg: type.packageWeightKg == null ? "" : String(type.packageWeightKg),
+      applicableType: type.applicableType || "BOTH", kgPerUnit: type.kgPerUnit == null ? "" : String(type.kgPerUnit) });
+  }
+  function cancelFeedTypeEdit() { setEditingFeedTypeId(""); setFeedTypeForm(emptyFeedType); }
 
   async function purchaseFeed(event) {
     event.preventDefault(); setSaving(true); setError("");
@@ -1100,6 +1139,30 @@ export default function App() {
     } catch (err) { setError(displayApiError(err)); }
   }
 
+  function editBatchSetup(batch) {
+    setEditingBatchId(batch.id);
+    setBatchSetupForm({ houseId: batch.houseId || "", supplierId: batch.supplierId || "" });
+  }
+
+  function cancelBatchSetup() {
+    setEditingBatchId("");
+    setBatchSetupForm({ houseId: "", supplierId: "" });
+  }
+
+  async function saveBatchSetup(event) {
+    event.preventDefault(); setSaving(true); setError("");
+    try {
+      const updated = await batchApi.updateSetup(editingBatchId, {
+        houseId: batchSetupForm.houseId,
+        supplierId: batchSetupForm.supplierId || null,
+      });
+      setBatches(current => current.map(batch => batch.id === updated.id ? updated : batch));
+      cancelBatchSetup();
+      await loadDashboard();
+      if (selectedBatchId === updated.id) await loadBatchDashboard(updated.id);
+    } catch (err) { setError(displayApiError(err)); } finally { setSaving(false); }
+  }
+
   async function markBatchSold(id) {
     setSaving(true); setError("");
     try {
@@ -1308,7 +1371,7 @@ export default function App() {
     </main>
   );
 
-  const pageModel = { signOut, dailyRecordLoading, suppliers, supplierForm, setSupplierForm, saveSupplier, archiveSupplier, formatMoney, formatQuantity, formatPercent, formatKg, formatMetric, formatCount, displayApiError, emptyWeight, emptyBirdSale, emptyPricing, emptyFarm, emptyHouse, emptyBatch, emptyCost, emptyFeedType, emptyFeedPurchase, emptyFeedUsage, emptyDaily, emptyPopulationEvent, emptyHealth, emptyDrug, emptyVaccination, emptyExpense, emptyCustomer, emptyInventoryItem, emptyInventoryMovement, farm, setFarm, farmForm, setFarmForm, houses, setHouses, batches, setBatches, batchForm, setBatchForm, costForm, setCostForm, feedTypes, setFeedTypes, feedInventory, setFeedInventory, feedTypeForm, setFeedTypeForm, feedPurchaseForm, setFeedPurchaseForm, feedUsageForm, setFeedUsageForm, dailyForm, setDailyForm, dailyRecord, setDailyRecord, mortalityForm, setMortalityForm, cullingForm, setCullingForm, healthForm, setHealthForm, drugForm, setDrugForm, vaccinationForm, setVaccinationForm, healthRecords, setHealthRecords, drugRecords, setDrugRecords, vaccinationRecords, setVaccinationRecords, expenseForm, setExpenseForm, expenses, setExpenses, expenseBatchFilter, setExpenseBatchFilter, inventoryItems, setInventoryItems, inventoryItemForm, setInventoryItemForm, inventoryMovementForm, setInventoryMovementForm, inventoryMovements, setInventoryMovements, customers, setCustomers, customerForm, setCustomerForm, sales, setSales, eggBatchId, setEggBatchId, broilerBatchId, setBroilerBatchId, broilerGrowth, setBroilerGrowth, broilerWeights, setBroilerWeights, broilerSales, setBroilerSales, weightForm, setWeightForm, birdSaleForm, setBirdSaleForm, pricingSettings, setPricingSettings, pricing, setPricing, pricingForm, setPricingForm, eggInventory, setEggInventory, eggCollections, setEggCollections, eggSales, setEggSales, eggCollectionForm, setEggCollectionForm, eggSaleForm, setEggSaleForm, houseForm, setHouseForm, crateSize, setCrateSize, defaultWater, setDefaultWater, waterSizes, setWaterSizes, waterUnitLabel, setWaterUnitLabel, loading, setLoading, saving, setSaving, error, setError, dashboard, setDashboard, attention, setAttention, auditRows, setAuditRows, expenseCategories, setExpenseCategories, expenseCategoryForm, setExpenseCategoryForm, account, setAccount, accountForm, setAccountForm, applicationSettings, setApplicationSettings, backupSettings, setBackupSettings, selectedBatchId, setSelectedBatchId, batchDashboard, setBatchDashboard, farmReport, setFarmReport, batchReport, setBatchReport, reportAsOf, setReportAsOf, load, loadReport, loadBatchReport, exportCsv, exportPdf, loadBatchDashboard, loadDashboard, submitFarm, saveFarm, createExpenseCategory, archiveExpenseCategory, saveAccount, saveApplicationSettings, chooseBackupSettingsDirectory, saveBackupSettings, createBackup, restoreBackup, saveSettings, loadExpenses, loadSales, saveCustomer, saveInventoryItem, loadInventoryMovements, saveInventoryMovement, saveExpense, createBatch, addBirdCost, createFeedType, purchaseFeed, useFeed, feedQuantity, parseWaterEntries, saveDailyRecord, recordPopulationEvent, loadPricingForBatch, savePricingSettings, loadBroilerForBatch, saveWeight, saveBirdSale, loadEggsForBatch, saveEggCollection, saveEggSale, saveHealth, saveDrug, saveVaccination, loadHealthForBatch, markBatchSold, reopenBatch, addHouse: saveHouse, editHouse, editingHouseId, cancelHouseEdit, populationAdjustmentForm, setPopulationAdjustmentForm, populationAdjustments, savePopulationAdjustment, markPopulationEstimated };
+  const pageModel = { signOut, dailyRecordLoading, suppliers, supplierForm, setSupplierForm, saveSupplier, archiveSupplier, editingSupplierId, editSupplier, cancelSupplierEdit, editingCustomerId, editCustomer, cancelCustomerEdit, editingInventoryItemId, editInventoryItem, cancelInventoryItemEdit, editingFeedTypeId, editFeedType, cancelFeedTypeEdit, editingBatchId, setEditingBatchId, batchSetupForm, setBatchSetupForm, saveBatchSetup, editBatchSetup, cancelBatchSetup, formatMoney, formatQuantity, formatPercent, formatKg, formatMetric, formatCount, displayApiError, emptyWeight, emptyBirdSale, emptyPricing, emptyFarm, emptyHouse, emptyBatch, emptyCost, emptyFeedType, emptyFeedPurchase, emptyFeedUsage, emptyDaily, emptyPopulationEvent, emptyHealth, emptyDrug, emptyVaccination, emptyExpense, emptyCustomer, emptyInventoryItem, emptyInventoryMovement, farm, setFarm, farmForm, setFarmForm, houses, setHouses, batches, setBatches, batchForm, setBatchForm, costForm, setCostForm, feedTypes, setFeedTypes, feedInventory, setFeedInventory, feedTypeForm, setFeedTypeForm, feedPurchaseForm, setFeedPurchaseForm, feedUsageForm, setFeedUsageForm, dailyForm, setDailyForm, dailyRecord, setDailyRecord, mortalityForm, setMortalityForm, cullingForm, setCullingForm, healthForm, setHealthForm, drugForm, setDrugForm, vaccinationForm, setVaccinationForm, healthRecords, setHealthRecords, drugRecords, setDrugRecords, vaccinationRecords, setVaccinationRecords, expenseForm, setExpenseForm, expenses, setExpenses, expenseBatchFilter, setExpenseBatchFilter, inventoryItems, setInventoryItems, inventoryItemForm, setInventoryItemForm, inventoryMovementForm, setInventoryMovementForm, inventoryMovements, setInventoryMovements, customers, setCustomers, customerForm, setCustomerForm, sales, setSales, eggBatchId, setEggBatchId, broilerBatchId, setBroilerBatchId, broilerGrowth, setBroilerGrowth, broilerWeights, setBroilerWeights, broilerSales, setBroilerSales, weightForm, setWeightForm, birdSaleForm, setBirdSaleForm, pricingSettings, setPricingSettings, pricing, setPricing, pricingForm, setPricingForm, eggInventory, setEggInventory, eggCollections, setEggCollections, eggSales, setEggSales, eggCollectionForm, setEggCollectionForm, eggSaleForm, setEggSaleForm, houseForm, setHouseForm, crateSize, setCrateSize, defaultWater, setDefaultWater, waterSizes, setWaterSizes, waterUnitLabel, setWaterUnitLabel, loading, setLoading, saving, setSaving, error, setError, dashboard, setDashboard, attention, setAttention, auditRows, setAuditRows, expenseCategories, setExpenseCategories, expenseCategoryForm, setExpenseCategoryForm, account, setAccount, accountForm, setAccountForm, applicationSettings, setApplicationSettings, backupSettings, setBackupSettings, selectedBatchId, setSelectedBatchId, batchDashboard, setBatchDashboard, farmReport, setFarmReport, batchReport, setBatchReport, reportAsOf, setReportAsOf, load, loadReport, loadBatchReport, exportCsv, exportPdf, loadBatchDashboard, loadDashboard, submitFarm, saveFarm, createExpenseCategory, archiveExpenseCategory, saveAccount, saveApplicationSettings, chooseBackupSettingsDirectory, saveBackupSettings, createBackup, restoreBackup, saveSettings, loadExpenses, loadSales, saveCustomer, saveInventoryItem, loadInventoryMovements, saveInventoryMovement, saveExpense, createBatch, addBirdCost, createFeedType, purchaseFeed, useFeed, feedQuantity, parseWaterEntries, saveDailyRecord, recordPopulationEvent, loadPricingForBatch, savePricingSettings, loadBroilerForBatch, saveWeight, saveBirdSale, loadEggsForBatch, saveEggCollection, saveEggSale, saveHealth, saveDrug, saveVaccination, loadHealthForBatch, markBatchSold, reopenBatch, addHouse: saveHouse, editHouse, editingHouseId, cancelHouseEdit, populationAdjustmentForm, setPopulationAdjustmentForm, populationAdjustments, savePopulationAdjustment, markPopulationEstimated };
 
   return (
     <AppShell farm={farm} error={error} appInfo={appInfo} onRetry={() => initialize({ preserveScreen: true })} startPage={applicationSettings.startPage} startPageReady={settingsReady}>
