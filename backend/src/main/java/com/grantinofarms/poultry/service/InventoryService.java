@@ -1,5 +1,7 @@
 package com.grantinofarms.poultry.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.grantinofarms.poultry.dto.InventoryItemCreateRequest;
 import com.grantinofarms.poultry.dto.InventoryItemResponse;
 import com.grantinofarms.poultry.dto.InventoryMovementRequest;
@@ -28,12 +30,14 @@ public class InventoryService {
     private final InventoryRepository repository;
     private final BatchRepository batchRepository;
     private final AuditRepository auditRepository;
+    private final ObjectMapper objectMapper;
 
     public InventoryService(InventoryRepository repository, BatchRepository batchRepository,
-                            AuditRepository auditRepository) {
+                            AuditRepository auditRepository, ObjectMapper objectMapper) {
         this.repository = repository;
         this.batchRepository = batchRepository;
         this.auditRepository = auditRepository;
+        this.objectMapper = objectMapper;
     }
 
     public List<InventoryItemResponse> listItems() {
@@ -188,6 +192,14 @@ public class InventoryService {
                     "Inventory reorder level cannot be negative.");
         }
         return quantity.stripTrailingZeros();
+    }
+
+    private String json(Object value) {
+        try {
+            return objectMapper.writeValueAsString(value);
+        } catch (JsonProcessingException e) {
+            throw new IllegalStateException("Unable to serialize audit data", e);
+        }
     }
 
     private String normalize(String value) {
