@@ -192,7 +192,7 @@ describe("AppShell", () => {
     expect(window.location.hash).toBe("#flocks/batch-dashboard");
   });
 
-  it("shows the packaged product version and architecture in the application footer", () => {
+  it("shows the packaged product version without runtime architecture in the application footer", () => {
     render(
       <AppShell
         farm={{ name: "Grantino", location: "", currency: "NGN", timezone: "Africa/Lagos" }}
@@ -203,7 +203,7 @@ describe("AppShell", () => {
     );
 
     expect(screen.getByRole("contentinfo", { name: "Application information" }))
-      .toHaveTextContent("POMAS v1.0.3 · x64");
+      .toHaveTextContent("POMAS v1.0.3");
   });
 
 });
