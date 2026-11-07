@@ -113,7 +113,7 @@ public class FeedRepository {
 
     public List<com.grantinofarms.poultry.dto.FeedOpeningBalanceResponse> findOpeningBalances(String feedTypeId) {
         return jdbc.query("""
-                SELECT b.id, b.feed_type_id, t.name AS feed_type_name, b.effective_date,
+                SELECT b.id, b.feed_type_id, t.name AS feed_type_name, t.brand, b.effective_date,
                        b.quantity_milli, b.unit, b.reason, b.created_at
                 FROM feed_opening_balances b
                 JOIN feed_types t ON t.id = b.feed_type_id
@@ -122,7 +122,7 @@ public class FeedRepository {
                 """, (rs, n) -> new com.grantinofarms.poultry.dto.FeedOpeningBalanceResponse(
                 rs.getString("id"), rs.getString("feed_type_id"), rs.getString("feed_type_name"),
                 LocalDate.parse(rs.getString("effective_date")), rs.getLong("quantity_milli"),
-                rs.getString("unit"), rs.getString("reason"), rs.getString("created_at")
+                rs.getString("unit"), rs.getString("reason"), rs.getString("created_at"), rs.getString("brand")
         ), feedTypeId);
     }
 
