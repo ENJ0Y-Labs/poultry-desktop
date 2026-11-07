@@ -335,8 +335,17 @@ public class FeedHistoryCsvImportService {
                     : repository.usageExists(batch.id(), feedType.id(), date, quantityMilli, reason);
         }
         Map<String, Object> toResult(int row, List<String> errors) {
-            return Map.of("rowNumber", row, "valid", errors.isEmpty(), "duplicate", duplicate,
-                    "errors", List.copyOf(errors));
+            Map<String, Object> result = new LinkedHashMap<>();
+            result.put("rowNumber", row);
+            result.put("valid", errors.isEmpty());
+            result.put("duplicate", duplicate);
+            result.put("errors", List.copyOf(errors));
+            if (feedType != null) {
+                result.put("feedTypeId", feedType.id());
+                result.put("feedTypeName", feedType.name());
+                result.put("feedTypeBrand", feedType.brand());
+            }
+            return result;
         }
     }
 }
