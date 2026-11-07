@@ -9,7 +9,7 @@ import PageSection from "../components/PageSection.jsx";
 import PageTemplate from "../components/PageTemplate.jsx";
 
 export default function FeedStockPage() {
-  const { formatMoney, farm, batches, feedTypes, setFeedTypes, feedInventory, feedTypeForm, setFeedTypeForm, setError, setSaving, feedPurchaseForm, setFeedPurchaseForm, inventoryItems, inventoryItemForm, setInventoryItemForm, inventoryMovementForm, setInventoryMovementForm, inventoryMovements, suppliers, supplierForm, setSupplierForm, saveSupplier, archiveSupplier, saving, saveInventoryItem, loadInventoryMovements, saveInventoryMovement, createFeedType, purchaseFeed, feedQuantity } = useContext(FarmManagerContext);
+  const { formatMoney, farm, batches, feedTypes, setFeedTypes, feedInventory, feedTypeForm, setFeedTypeForm, setError, setSaving, feedPurchaseForm, setFeedPurchaseForm, inventoryItems, inventoryItemForm, setInventoryItemForm, inventoryMovementForm, setInventoryMovementForm, inventoryMovements, suppliers, supplierForm, setSupplierForm, saveSupplier, archiveSupplier, editingSupplierId, editSupplier, cancelSupplierEdit, saving, saveInventoryItem, editingInventoryItemId, editInventoryItem, cancelInventoryItemEdit, editingFeedTypeId, editFeedType, cancelFeedTypeEdit, loadInventoryMovements, saveInventoryMovement, createFeedType, purchaseFeed, feedQuantity } = useContext(FarmManagerContext);
 
   async function saveConversion(event, type) {
     event.preventDefault();
@@ -44,13 +44,14 @@ export default function FeedStockPage() {
               <label className="field"><span>Applicable to</span><select value={feedTypeForm.applicableType} onChange={e=>setFeedTypeForm({...feedTypeForm,applicableType:e.target.value})}>
                 <option value="BOTH">All bird types</option><option value="LAYER">Layers</option><option value="BROILER">Broilers</option><option value="TURKEY">Turkeys</option>
               </select></label>
-              <button disabled={saving}>Add feed type</button>
+              <button disabled={saving}>{editingFeedTypeId ? "Save feed type" : "Add feed type"}</button>{editingFeedTypeId && <button type="button" className="secondary-button" onClick={cancelFeedTypeEdit}>Cancel</button>}
             </form>
             <DataTable caption="Feed types and unit conversions" columns={[
               { key: "name", label: "Product" }, { key: "brand", label: "Brand", render: type => type.brand || "—" }, { key: "packagingName", label: "Package", render: type => type.packagingName || "—" }, { key: "packageWeightKg", label: "Package weight", render: type => type.packageWeightKg == null ? "Unknown" : `${type.packageWeightKg} kg` }, { key: "unit", label: "Unit" }, { key: "applicableType", label: "For" },
               { key: "kgPerUnit", label: "Kg per unit", render: type => type.kgPerUnit == null ? "Unknown" : `${type.kgPerUnit} kg` },
               { key: "conversion", label: "Conversion setup", render: type => type.status === "ACTIVE" ? <form className="inline-form" onSubmit={event => saveConversion(event, type)}><label className="field"><span>Kg per {type.unit}</span><input name="kgPerUnit" aria-label={`Kilograms per ${type.unit} for ${type.name}`} type="number" min="0.001" step="0.001" defaultValue={type.kgPerUnit ?? ""} placeholder="Unknown" disabled={type.unit.trim().toLowerCase() === "kg"} /></label><button disabled={saving || type.unit.trim().toLowerCase() === "kg"}>Save conversion</button></form> : "Archived" },
               { key: "status", label: "Status" },
+              { key: "action", label: "Action", render: type => type.status === "ACTIVE" ? <button type="button" className="secondary-button" onClick={() => editFeedType(type)}>Edit</button> : "Archived" },
             ]} rows={feedTypes} emptyMessage="No feed types yet." />
           </div>
 
@@ -85,11 +86,12 @@ export default function FeedStockPage() {
               </select></label>
               <label className="field"><span>Unit e.g. bottle, piece, dose</span><input required value={inventoryItemForm.unit} onChange={e=>setInventoryItemForm({...inventoryItemForm,unit:e.target.value})}/></label>
               <label className="field"><span>Reorder level</span><input min="0" step="0.001" type="number" value={inventoryItemForm.reorderLevel} onChange={e=>setInventoryItemForm({...inventoryItemForm,reorderLevel:e.target.value})}/></label>
-              <button disabled={saving}>Add item</button>
+              <button disabled={saving}>{editingInventoryItemId ? "Save item" : "Add item"}</button>{editingInventoryItemId && <button type="button" className="secondary-button" onClick={cancelInventoryItemEdit}>Cancel</button>}
             </form>
             <DataTable caption="Inventory items" columns={[
               { key: "name", label: "Item" }, { key: "category", label: "Category" }, { key: "quantityOnHand", label: "Stock" },
               { key: "reorderLevel", label: "Reorder" }, { key: "unit", label: "Unit" }, { key: "status", label: "Status" },
+              { key: "action", label: "Action", render: item => item.status === "ACTIVE" ? <button type="button" className="secondary-button" onClick={() => editInventoryItem(item)}>Edit</button> : "Archived" },
             ]} rows={inventoryItems} emptyMessage="No non-feed inventory items yet." />
           </div>
 
@@ -161,13 +163,13 @@ export default function FeedStockPage() {
           <label>Supplier name<input required maxLength="120" value={supplierForm.name} onChange={event=>setSupplierForm({...supplierForm,name:event.target.value})}/></label>
           <label>Phone<input maxLength="40" value={supplierForm.phone} onChange={event=>setSupplierForm({...supplierForm,phone:event.target.value})}/></label>
           <label className="full">Notes<input value={supplierForm.notes} onChange={event=>setSupplierForm({...supplierForm,notes:event.target.value})}/></label>
-          <button disabled={saving}>Add supplier</button>
+          <button disabled={saving}>{editingSupplierId ? "Save supplier" : "Add supplier"}</button>{editingSupplierId && <button type="button" className="secondary-button" onClick={cancelSupplierEdit}>Cancel</button>}
         </form>
         <DataTable caption="Suppliers" columns={[
           { key: "name", label: "Supplier" }, { key: "phone", label: "Phone", render: supplier => supplier.phone || "—" },
           { key: "notes", label: "Notes", render: supplier => supplier.notes || "—" },
           { key: "status", label: "Status", render: supplier => supplier.status || "ACTIVE" },
-          { key: "action", label: "Action", render: supplier => supplier.status === "ARCHIVED" ? "Archived" : <button type="button" disabled={saving} onClick={() => archiveSupplier(supplier.id)}>Archive</button> },
+          { key: "action", label: "Action", render: supplier => supplier.status === "ARCHIVED" ? "Archived" : <><button type="button" className="secondary-button" disabled={saving} onClick={() => editSupplier(supplier)}>Edit</button> <button type="button" disabled={saving} onClick={() => archiveSupplier(supplier.id)}>Archive</button></> },
         ]} rows={suppliers} emptyMessage="No suppliers recorded yet." />
       </section></PageSection>
 
