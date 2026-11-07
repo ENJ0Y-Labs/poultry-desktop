@@ -16,4 +16,12 @@ public record FeedInventoryResponse(
     public FeedInventoryResponse {
         applicableTypes = applicableTypes == null ? List.of() : List.copyOf(applicableTypes);
     }
+
+    public FeedInventoryResponse(String feedTypeId, String feedTypeName, String unit,
+                                 long purchasedQuantityMilli, long consumedQuantityMilli,
+                                 long remainingQuantityMilli, long remainingCostMinor,
+                                 long consumedCostMinor) {
+        this(feedTypeId, feedTypeName, unit, purchasedQuantityMilli, consumedQuantityMilli,
+                remainingQuantityMilli, remainingCostMinor, consumedCostMinor, List.of());
+    }
 }
