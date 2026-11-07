@@ -44,13 +44,32 @@ export default function FeedStockPage() {
               <label className="field"><span>Package weight in kg (leave blank if unknown)</span><input min="0.001" step="0.001" type="number" value={feedTypeForm.packageWeightKg} onChange={e=>setFeedTypeForm({...feedTypeForm,packageWeightKg:e.target.value})}/></label>
               <label className="field"><span>Unit e.g. bag or kg</span><input required value={feedTypeForm.unit} onChange={e=>setFeedTypeForm({...feedTypeForm,unit:e.target.value,kgPerUnit:e.target.value.trim().toLowerCase()==="kg"?"1":feedTypeForm.kgPerUnit})}/></label>
               <label className="field"><span>Kg per unit (leave blank if unknown)</span><input min="0.001" step="0.001" type="number" value={feedTypeForm.unit.trim().toLowerCase()==="kg"?"1":feedTypeForm.kgPerUnit} disabled={feedTypeForm.unit.trim().toLowerCase()==="kg"} onChange={e=>setFeedTypeForm({...feedTypeForm,kgPerUnit:e.target.value})}/></label>
-              <label className="field"><span>Applicable to</span><select value={feedTypeForm.applicableType} onChange={e=>setFeedTypeForm({...feedTypeForm,applicableType:e.target.value})}>
-                <option value="BOTH">All bird types</option><option value="LAYER">Layers</option><option value="BROILER">Broilers</option><option value="TURKEY">Turkeys</option>
-              </select></label>
-              <button disabled={saving}>Add feed type</button>
+              <fieldset className="field">
+                <legend>Applicable to</legend>
+                {[
+                  ["LAYER", "Layers"],
+                  ["BROILER", "Broilers"],
+                  ["TURKEY", "Turkeys"],
+                ].map(([type, label]) => (
+                  <label key={type}>
+                    <input
+                      type="checkbox"
+                      checked={(feedTypeForm.applicableTypes || []).includes(type)}
+                      onChange={event => setFeedTypeForm({
+                        ...feedTypeForm,
+                        applicableTypes: event.target.checked
+                          ? [...(feedTypeForm.applicableTypes || []), type]
+                          : (feedTypeForm.applicableTypes || []).filter(item => item !== type),
+                      })}
+                    />
+                    {label}
+                  </label>
+                ))}
+              </fieldset>
+              <button disabled={saving || !(feedTypeForm.applicableTypes || []).length}>Add feed type</button>
             </form>
             <DataTable caption="Feed types and unit conversions" columns={[
-              { key: "name", label: "Product" }, { key: "brand", label: "Brand", render: type => type.brand || "—" }, { key: "packagingName", label: "Package", render: type => type.packagingName || "—" }, { key: "packageWeightKg", label: "Package weight", render: type => type.packageWeightKg == null ? "Unknown" : `${type.packageWeightKg} kg` }, { key: "unit", label: "Unit" }, { key: "applicableType", label: "For" },
+              { key: "name", label: "Product" }, { key: "brand", label: "Brand", render: type => type.brand || "—" }, { key: "packagingName", label: "Package", render: type => type.packagingName || "—" }, { key: "packageWeightKg", label: "Package weight", render: type => type.packageWeightKg == null ? "Unknown" : `${type.packageWeightKg} kg` }, { key: "unit", label: "Unit" }, { key: "applicableTypes", label: "For", render: type => (type.applicableTypes || []).map(value => ({ LAYER: "Layers", BROILER: "Broilers", TURKEY: "Turkeys" }[value] || value)).join(", ") || "—" },
               { key: "kgPerUnit", label: "Kg per unit", render: type => type.kgPerUnit == null ? "Unknown" : `${type.kgPerUnit} kg` },
               { key: "conversion", label: "Conversion setup", render: type => type.status === "ACTIVE" ? <form className="inline-form" onSubmit={event => saveConversion(event, type)}><label className="field"><span>Kg per {type.unit}</span><input name="kgPerUnit" aria-label={`Kilograms per ${type.unit} for ${type.name}`} type="number" min="0.001" step="0.001" defaultValue={type.kgPerUnit ?? ""} placeholder="Unknown" disabled={type.unit.trim().toLowerCase() === "kg"} /></label><button disabled={saving || type.unit.trim().toLowerCase() === "kg"}>Save conversion</button></form> : "Archived" },
               { key: "status", label: "Status" },
