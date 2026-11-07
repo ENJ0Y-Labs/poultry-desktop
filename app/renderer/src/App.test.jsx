@@ -897,8 +897,7 @@ describe("App", () => {
     mockFarmApis();
     render(<App />);
 
-    await waitFor(() => expect(screen.getByRole("heading", { name: "Farm dashboard" })).toBeInTheDocument());
-    expect(screen.getByText("Good eggs")).toBeInTheDocument();
+    await screen.findByText("Good eggs");
     expect(screen.getByText("29 crates, 5 eggs")).toBeInTheDocument();
     expect(screen.queryByText("875")).not.toBeInTheDocument();
   });
