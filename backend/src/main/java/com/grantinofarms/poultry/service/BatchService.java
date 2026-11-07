@@ -135,6 +135,36 @@ public class BatchService {
     }
 
     @Transactional
+    public BatchResponse updateSetup(String id, BatchSetupUpdateRequest request) {
+        BatchResponse current = get(id);
+        if (!"ACTIVE".equals(current.status())) {
+            throw new ApiException(HttpStatus.CONFLICT, "BATCH_SETUP_LOCKED",
+                    "Only active batches can have setup references edited.");
+        }
+        String farmId = current.farmId();
+        if (!batchRepository.houseBelongsToFarm(request.houseId(), farmId)) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_HOUSE",
+                    "The selected house/pen does not belong to this farm or is archived.");
+        }
+        String supplierId = clean(request.supplierId());
+        if (supplierId != null && !batchRepository.supplierBelongsToFarm(supplierId, farmId)) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_SUPPLIER",
+                    "The selected supplier/source does not belong to this farm or is archived.");
+        }
+        if (current.originalPurchaseCostMinor() != null
+                && !java.util.Objects.equals(current.supplierId(), supplierId)) {
+            throw new ApiException(HttpStatus.CONFLICT, "BATCH_PURCHASE_SOURCE_LOCKED",
+                    "The supplier/source cannot change after an original bird purchase cost has been recorded.");
+        }
+        String now = Instant.now().toString();
+        batchRepository.updateSetup(id, farmId, request.houseId(), supplierId, now);
+        BatchResponse updated = batchRepository.findById(id);
+        auditRepository.append(farmId, "UPDATE", "BATCH", id, null,
+                json(current), json(updated), now);
+        return updated;
+    }
+
+    @Transactional
     public BatchResponse markSold(String id) {
         BatchResponse current = get(id);
         if (!List.of("BROILER", "TURKEY").contains(current.type())) {
