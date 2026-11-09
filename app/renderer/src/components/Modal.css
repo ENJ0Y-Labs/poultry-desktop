@@ -61,4 +61,5 @@ button.pomas-modal-close { flex: 0 0 32px; width: 32px; height: 32px; padding: 0
 }
 
 .pomas-modal-form-fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
+.pomas-modal-form-fieldset > form { display: grid; gap: 13px; }
 .pomas-modal-form-fieldset:disabled { opacity: .72; }
