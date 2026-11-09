@@ -95,6 +95,7 @@ export default function SalesMoneyPage() {
                 { key: "amountMinor", label: "Amount", render: row => formatMoney(row.amountMinor, farm.currency) },
                 { key: "category", label: "Category" },
                 { key: "batchId", label: "Association", render: row => row.batchId ? (batches.find(batch => batch.id === row.batchId)?.code || row.batchId) : "Farm" },
+                { key: "details", label: "Details", render: row => <button type="button" className="secondary-button" onClick={() => setDrawerRecord({ title: row.description || "Expense", description: "Posted expense details. Posted transactions are not edited or deleted.", fields: [["Date", row.occurredDate], ["Description", row.description], ["Amount", formatMoney(row.amountMinor, farm.currency)], ["Category", row.category], ["Association", row.batchId ? (batches.find(batch => batch.id === row.batchId)?.code || row.batchId) : "Farm"]] })}>View</button> },
               ]} rows={expenses} emptyMessage="No expenses recorded." />
           </div>
         </section></PageSection>
