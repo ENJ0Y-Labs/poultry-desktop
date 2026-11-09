@@ -15,6 +15,8 @@ export function Modal({
   const dialogRef = useRef(null);
   const previousFocusRef = useRef(null);
   const [confirmDiscard, setConfirmDiscard] = useState(false);
+  const latestRef = useRef({ onClose, isDirty, loading });
+  latestRef.current = { onClose, isDirty, loading };
 
   useEffect(() => {
     if (!open) return undefined;
@@ -30,9 +32,9 @@ export function Modal({
     function onKeyDown(event) {
       if (event.key === "Escape") {
         event.preventDefault();
-        if (loading) return;
-        if (isDirty) setConfirmDiscard(true);
-        else onClose?.();
+        if (latestRef.current.loading) return;
+        if (latestRef.current.isDirty) setConfirmDiscard(true);
+        else latestRef.current.onClose?.();
         return;
       }
       if (event.key !== "Tab") return;
@@ -61,7 +63,7 @@ export function Modal({
       document.body.style.overflow = previousOverflow;
       previousFocusRef.current?.focus?.();
     };
-  }, [open, isDirty, loading, onClose]);
+  }, [open]);
 
   useEffect(() => {
     if (!open) setConfirmDiscard(false);
@@ -131,9 +133,22 @@ export function ModalForm({
 }) {
   const [open, setOpen] = useState(false);
   const [dirty, setDirty] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const sawLoadingRef = useRef(false);
+
+  useEffect(() => {
+    if (loading) sawLoadingRef.current = true;
+    if (submitted && sawLoadingRef.current && !loading) {
+      setSubmitted(false);
+      sawLoadingRef.current = false;
+      if (!error) close();
+    }
+  }, [loading, submitted, error]);
 
   function show() {
     setDirty(false);
+    setSubmitted(false);
+    sawLoadingRef.current = false;
     setOpen(true);
   }
 
@@ -156,7 +171,7 @@ export function ModalForm({
         error={error}
         isDirty={dirty}
       >
-        <div onInputCapture={() => setDirty(true)} onChangeCapture={() => setDirty(true)}>
+        <div onInputCapture={() => setDirty(true)} onChangeCapture={() => setDirty(true)} onSubmitCapture={() => setSubmitted(true)}>
           {children}
         </div>
       </Modal>
