@@ -18,7 +18,7 @@ describe("ValidatedForm", () => {
     fireEvent.submit(screen.getByRole("button", { name: "Save" }).closest("form"));
 
     expect(await screen.findByText("Please correct the following fields:")).toBeTruthy();
-    expect(screen.getByText("Batch is required.")).toBeTruthy();
+    expect(document.getElementById("batch-error").textContent).toBe("Batch is required.");
     expect(document.activeElement).toBe(screen.getByLabelText("Batch"));
     expect(screen.getByLabelText("Notes").value).toBe("keep these notes");
     expect(submit).not.toHaveBeenCalled();
@@ -31,7 +31,7 @@ describe("ValidatedForm", () => {
     </ValidatedForm>);
 
     fireEvent.submit(screen.getByRole("button", { name: "Save" }).closest("form"));
-    expect(await screen.findByText("New category is required.")).toBeTruthy();
+    expect(document.getElementById("new_category-error").textContent).toBe("New category is required.");
     expect(screen.getByRole("textbox").getAttribute("aria-describedby")).toContain("new_category-error");
   });
 
@@ -65,7 +65,7 @@ describe("ValidatedForm", () => {
     </ValidatedForm>);
 
     fireEvent.submit(screen.getByRole("button", { name: "Save" }).closest("form"));
-    expect(await screen.findByText("Must be a positive whole number.")).toBeTruthy();
+    expect(document.getElementById("quantity-error").textContent).toBe("Must be a positive whole number.");
     expect(screen.getByLabelText("Quantity").getAttribute("aria-invalid")).toBe("true");
   });
 });
