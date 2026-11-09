@@ -38,11 +38,8 @@ export default function FeedStockPage() {
       title: item.name,
       description: "Inventory profile and recorded stock movements.",
       fields: [
-        ["Category", item.category],
-        ["Quantity on hand", `${item.quantityOnHand ?? "—"} ${item.unit || ""}`.trim()],
         ["Reorder level", `${item.reorderLevel ?? "—"} ${item.unit || ""}`.trim()],
         ["Unit", item.unit],
-        ["Status", item.status],
       ].filter(([, value]) => value !== null && value !== undefined && value !== ""),
     });
     Promise.resolve(loadInventoryMovements(item.id)).finally(() => setDrawerMovementItemId(item.id));
@@ -61,7 +58,6 @@ export default function FeedStockPage() {
         ["Address", supplier.address],
         ["Status", supplier.status || "ACTIVE"],
         ["Notes", supplier.notes],
-        ["Linked batches", relatedBatches.length],
       ].filter(([, value]) => value !== null && value !== undefined && value !== ""),
       relatedBatches,
     });
@@ -367,7 +363,7 @@ export default function FeedStockPage() {
         </form>
 </ModalForm>
         <DataTable caption="Suppliers" columns={[
-          { key: "name", label: "Supplier" }, { key: "phone", label: "Phone", render: supplier => supplier.phone || "—" },
+          { key: "name", label: "Supplier" },
           { key: "linkedBatches", label: "Linked batches", render: supplier => batches.filter(batch => batch.supplierId === supplier.id).length },
           { key: "details", label: "Details", render: supplier => <button type="button" className="secondary-button" onClick={() => openSupplierDetails(supplier)}>View</button> },
           { key: "status", label: "Status", render: supplier => supplier.status || "ACTIVE" },
