@@ -1,4 +1,4 @@
-import { useContext } from "react";
+import { useContext, useState } from "react";
 import { FarmManagerContext } from "../components/FarmManagerContext.jsx";
 import { ModalForm } from "../components/Modal.jsx";
 // eslint-disable-next-line no-unused-vars
@@ -14,6 +14,7 @@ const saleTypeLabel = type => type === "EGG" ? "Eggs" : type === "BROILER" ? "Br
 
 export default function SalesMoneyPage() {
   const { error } = useContext(FarmManagerContext);
+  const [customerOpenSignal, setCustomerOpenSignal] = useState(0);
   const { formatMoney, farm, batches, expenseForm, setExpenseForm, expenses, expenseBatchFilter, setExpenseBatchFilter, customers, customerForm, setCustomerForm, editingCustomerId, editCustomer, cancelCustomerEdit, sales, saving, expenseCategories, loadExpenses, saveCustomer, saveExpense } = useContext(FarmManagerContext);
 
   return (
@@ -23,7 +24,7 @@ export default function SalesMoneyPage() {
             <h2>Customers</h2>
             <p className="muted">Keep reusable customer records for egg and broiler sales. Type-specific sale records also retain the customer name used when the sale was recorded.</p>
           </div>
-          <ModalForm title="Customer" description="Add or update a reusable customer record." triggerLabel="Add customer" loading={saving} error={error}>
+          <ModalForm title="Customer" description="Add or update a reusable customer record." triggerLabel={editingCustomerId ? "Edit customer" : "Add customer"} openSignal={customerOpenSignal} loading={saving} error={error}>
 <form className="inline-form" onSubmit={saveCustomer}>
             <label className="field"><span>Customer name</span><input required value={customerForm.name} onChange={e=>setCustomerForm({...customerForm,name:e.target.value})}/></label>
             <label className="field"><span>Phone</span><input value={customerForm.phone} onChange={e=>setCustomerForm({...customerForm,phone:e.target.value})}/></label>
@@ -34,7 +35,7 @@ export default function SalesMoneyPage() {
           <DataTable caption="Customers" columns={[
               { key: "name", label: "Name" }, { key: "phone", label: "Phone", render: row => row.phone || "—" },
               { key: "notes", label: "Notes", render: row => row.notes || "—" },
-              { key: "action", label: "Action", render: row => <button type="button" className="secondary-button" onClick={() => editCustomer(row)}>Edit</button> },
+              { key: "action", label: "Action", render: row => <button type="button" className="secondary-button" onClick={() => { editCustomer(row); setCustomerOpenSignal(value => value + 1); }}>Edit</button> },
             ]} rows={customers} emptyMessage="No customers yet." />
         </section></PageSection>
 
