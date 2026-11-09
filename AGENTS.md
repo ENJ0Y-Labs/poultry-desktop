@@ -1384,7 +1384,7 @@ An opening balance may be dated before a later purchase, but cannot be dated bef
 
 ## Client-side form validation
 
-- Use the shared `ValidatedForm` component and `app/renderer/src/utils/formValidation.js` for renderer form validation. Keep field labels visible, mark required fields, show field-level errors and a multi-error summary, and focus the first invalid field.
+- Use the shared `ValidatedForm` component and `app/renderer/src/utils/formValidation.js` for farm workflow form validation. Authentication keeps its existing sign-in validation feedback. Keep field labels visible, mark required fields, show field-level errors and a multi-error summary, and focus the first invalid field.
 - Preserve entered values after client validation and API failures. Disable submit while pending and prevent duplicate requests.
 - Validate only rules supported by existing field attributes and API/domain contracts. Negative quantities are invalid unless the field explicitly permits them; respect `min`, `max`, and `step`.
 - Parse naira inputs with `parseNairaToKobo` and retain integer kobo in API payloads. Never introduce floating-point money arithmetic or display raw minor units.
