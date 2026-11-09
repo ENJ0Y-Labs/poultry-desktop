@@ -10,7 +10,7 @@ const FOCUSABLE = [
 
 export function Modal({
   open, onClose, title, description, icon, size = "medium",
-  loading = false, error = "", isDirty = false, children, footer,
+  loading = false, error = "", isDirty = false, onDiscard, children, footer,
 }) {
   const dialogRef = useRef(null);
   const previousFocusRef = useRef(null);
@@ -39,7 +39,7 @@ export function Modal({
       }
       if (event.key !== "Tab") return;
       const items = [...(dialogRef.current?.querySelectorAll(FOCUSABLE) || [])]
-        .filter(item => item.getClientRects().length > 0);
+        .filter(item => !item.hasAttribute("hidden") && item.getAttribute("aria-hidden") !== "true");
       if (!items.length) {
         event.preventDefault();
         dialogRef.current?.focus();
@@ -114,7 +114,7 @@ export function Modal({
               <p>Your entries have not been saved. Discarding will close this form and lose those changes.</p>
               <div className="pomas-modal-actions">
                 <button type="button" className="secondary-button" onClick={() => setConfirmDiscard(false)}>Keep editing</button>
-                <button type="button" className="danger-button" onClick={() => { setConfirmDiscard(false); onClose?.(); }}>Discard changes</button>
+                <button type="button" className="danger-button" onClick={() => { setConfirmDiscard(false); onDiscard?.(); onClose?.(); }}>Discard changes</button>
               </div>
             </div>
           )}
@@ -129,7 +129,7 @@ export function Modal({
 
 export function ModalForm({
   title, description, triggerLabel, triggerClassName = "primary-button",
-  size = "medium", loading = false, error = "", openSignal = 0, children,
+  size = "medium", loading = false, error = "", openSignal = 0, onDiscard, children,
 }) {
   const [open, setOpen] = useState(false);
   const [dirty, setDirty] = useState(false);
@@ -179,6 +179,7 @@ export function ModalForm({
         loading={loading}
         error={error}
         isDirty={dirty}
+        onDiscard={onDiscard}
       >
         <div onInputCapture={() => setDirty(true)} onChangeCapture={() => setDirty(true)} onSubmitCapture={event => { if (loading) { event.preventDefault(); event.stopPropagation(); return; } setSubmitted(true); }}>
           {children}
