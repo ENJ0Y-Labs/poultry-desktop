@@ -1,10 +1,12 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { useState } from "react";
 import { describe, expect, it, vi } from "vitest";
+// eslint-disable-next-line no-unused-vars -- JSX component usage is not detected by the core rule
 import { ConfirmAction, Modal } from "./Modal.jsx";
 
 describe("Modal", () => {
   it("moves focus into the dialog and restores focus to the opener", async () => {
+    // eslint-disable-next-line no-unused-vars -- rendered as a JSX component below
     function Harness() {
       const [open, setOpen] = useState(false);
       return (
