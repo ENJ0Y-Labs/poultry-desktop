@@ -4,7 +4,7 @@ import pomasLogo from "./assets/pomas-logo.png";
 import ValidatedForm from "./components/ValidatedForm.jsx";
 import { todayLocalDate, getLastBatchId, rememberLastBatchId } from "./utils/farmUx.js";
 import { parseNairaToKobo } from "./utils/moneyInput.js";
-import { getActiveValidationForm, mapBackendFieldErrors } from "./utils/formValidation.js";
+import { getActiveValidationForm } from "./utils/formValidation.js";
 import { formatMoney } from "./utils/money.js";
 import { appVersionLabel } from "./utils/appInfo.js";
 import { getThemePreference, setThemePreference } from "./utils/theme.js";
@@ -45,13 +45,12 @@ function displayApiError(err) {
   if ((err.details && typeof err.details === "object") || err.code === "SUPPLIER_DUPLICATE") {
     const details = err.details || { fields: { name: err.message } };
     const activeForm = getActiveValidationForm();
-    const mappedFields = activeForm ? mapBackendFieldErrors(details, activeForm) : {};
     if (activeForm) window.dispatchEvent(new CustomEvent("pomas:form-validation-error", { detail: { form: activeForm, details } }));
     const fieldDetails = details.fields && typeof details.fields === "object" ? details.fields : details;
     const messages = Object.entries(fieldDetails)
       .map(([field, message]) => `${field}: ${Array.isArray(message) ? message.join(", ") : message}`)
       .filter(Boolean);
-    if (messages.length) return Object.keys(mappedFields).length ? "" : messages.join(" • ");
+    if (messages.length) return messages.join(" • ");
   }
   return err.message || "Something went wrong.";
 }
