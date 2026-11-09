@@ -210,6 +210,7 @@ describe("FeedStockPage", () => {
   it("opens supplier contact details in the contextual drawer", () => {
     const context = {
       ...contextValue,
+      batches: [{ id: "batch-1", code: "B-2026-001", supplierId: "supplier-1", type: "BROILER", placementDate: "2026-10-10", status: "ACTIVE" }],
       suppliers: [{ id: "supplier-1", name: "Farm Inputs Ltd", phone: "08012345678", email: "sales@example.test", address: "Port Harcourt", notes: "Feed supplier", status: "ACTIVE" }],
     };
     render(
