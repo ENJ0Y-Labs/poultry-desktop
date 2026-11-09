@@ -823,16 +823,19 @@ describe("App", () => {
 
     fireEvent.click(await screen.findByRole("button", { name: "Record mortality" }));
     expect(window.location.hash).toContain("daily-work/mortality");
+    fireEvent.click(await screen.findByRole("button", { name: "Record mortality" }));
     expect(await screen.findByRole("combobox", { name: "Batch" })).toHaveValue("layer-1");
 
     dashboardNav();
     fireEvent.click(await screen.findByRole("button", { name: "Collect eggs" }));
     expect(window.location.hash).toContain("production/eggs");
+    fireEvent.click(await screen.findByRole("button", { name: "Record collection" }));
     expect(await screen.findByRole("combobox", { name: "Layer batch" })).toHaveValue("layer-1");
 
     dashboardNav();
     fireEvent.click(await screen.findByRole("button", { name: "Record feed usage" }));
     expect(window.location.hash).toContain("daily-work/daily-record");
+    fireEvent.click(await screen.findByRole("button", { name: "Record feed usage" }));
     expect(await screen.findByRole("combobox", { name: "Batch" })).toHaveValue("layer-1");
     expect(screen.getByRole("combobox", { name: "Feed type" })).toHaveValue("feed-layer");
 
@@ -844,6 +847,7 @@ describe("App", () => {
     dashboardNav();
     fireEvent.click(await screen.findByRole("button", { name: "Record an expense" }));
     expect(window.location.hash).toContain("sales-money/expenses");
+    fireEvent.click(await screen.findByRole("button", { name: "Record expense" }));
     expect(await screen.findByLabelText("Batch association")).toHaveValue("layer-1");
   });
 
@@ -890,7 +894,8 @@ describe("App", () => {
     expect(screen.getByText("Open a batch")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Configure feed" })).toBeInTheDocument();
     expect(screen.getByText("Record a feed purchase")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Record purchase" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Record purchase" }));
+    expect(await screen.findByRole("button", { name: "Record purchase" })).toBeInTheDocument();
   });
 
   it("hides the getting-started checklist when all setup tasks have saved data", async () => {
