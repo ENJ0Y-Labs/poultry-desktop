@@ -36,10 +36,8 @@ export default function SalesMoneyPage() {
     }, 0);
     const latestSale = history[0];
     const fields = [
-      ["Phone", customer.phone],
       ["Email", customer.email],
       ["Address", customer.address],
-      ["Status", customer.status],
       ["Total sales", history.length],
       ["Total amount spent", formatMoney(totalSpentMinor, farm.currency)],
       ["Most recent purchase", latestSale?.saleDate],
@@ -54,12 +52,9 @@ export default function SalesMoneyPage() {
       title: `Sale · ${sale.saleDate || "Undated"}`,
       description: "Posted sale details. Posted transactions are corrected through the audited correction workflow.",
       fields: [
-        ["Sale type", saleTypeLabel(sale.saleType)],
-        ["Customer", sale.customerName],
         ["Batch", batch?.code || sale.batchId],
         ["Quantity", sale.quantity == null ? null : `${sale.quantity} ${sale.unit || ""}`.trim()],
         ["Unit price", formatMoney(sale.unitPriceMinor, farm.currency)],
-        ["Total", formatMoney(sale.totalAmountMinor, farm.currency)],
       ].filter(([, value]) => value !== null && value !== undefined && value !== ""),
     });
   }
@@ -70,9 +65,7 @@ export default function SalesMoneyPage() {
       title: expense.description || "Expense",
       description: "Posted expense context. Posted transactions are not edited or deleted.",
       fields: [
-        ["Date", expense.occurredDate],
         ["Category", expense.category],
-        ["Amount", formatMoney(expense.amountMinor, farm.currency)],
         ["Association", batch?.code || (expense.batchId ? expense.batchId : "Farm-level")],
       ],
     });
