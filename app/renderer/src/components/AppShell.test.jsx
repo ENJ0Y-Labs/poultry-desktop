@@ -84,6 +84,27 @@ describe("AppShell", () => {
     fireEvent.click(screen.getByRole("button", { name: "Suppliers" }));
     expect(window.location.hash).toBe("#feed-stock/suppliers");
   });
+  it("uses Ctrl+9 for Import / Export and Ctrl+0 for the tenth destination, Settings", () => {
+    render(
+      <AppShell farm={{ name: "Grantino", location: "", currency: "NGN", timezone: "Africa/Lagos" }}>
+        <PageSection page="import-export"><section>Import / Export content</section></PageSection>
+        <PageSection page="settings"><section>Settings content</section></PageSection>
+      </AppShell>
+    );
+
+    const navigation = screen.getByRole("navigation", { name: "Main navigation" });
+    expect(within(navigation).getByRole("button", { name: "Import / Export" })).toHaveTextContent("⌃+9");
+    expect(within(navigation).getByRole("button", { name: "Settings" })).toHaveTextContent("⌃+0");
+
+    fireEvent.keyDown(window, { key: "9", ctrlKey: true });
+    expect(window.location.hash).toBe("#import-export/overview");
+    expect(within(navigation).getByRole("button", { name: "Import / Export" })).toHaveAttribute("aria-current", "page");
+
+    fireEvent.keyDown(window, { key: "0", ctrlKey: true });
+    expect(window.location.hash).toBe("#settings/farm");
+    expect(within(navigation).getByRole("button", { name: "Settings" })).toHaveAttribute("aria-current", "page");
+  });
+
   it("does not accept Import / Export as a saved start page", () => {
     render(
       <AppShell farm={{ name: "Grantino", location: "", currency: "NGN", timezone: "Africa/Lagos" }} startPage="import-export">
