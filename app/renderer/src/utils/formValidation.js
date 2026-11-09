@@ -1,6 +1,6 @@
 import { parseNairaToKobo } from "./moneyInput.js";
 
-const FIELD_LABEL_IGNORE = /\\s+/g;
+const FIELD_LABEL_IGNORE = /\s+/g;
 
 export function normalizeFieldKey(value) {
   return String(value ?? "")
@@ -12,7 +12,7 @@ export function normalizeFieldKey(value) {
 
 export function formatFieldLabel(value) {
   const label = String(value ?? "").replace(FIELD_LABEL_IGNORE, " ").trim();
-  return label.replace(/\\s*\\*$/, "") || "This field";
+  return label.replace(/\s*\*$/, "") || "This field";
 }
 
 let activeValidationForm = null;
@@ -39,7 +39,7 @@ function fieldKey(control) {
 }
 
 function validCalendarDate(value) {
-  if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(value)) return false;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
   const [year, month, day] = value.split("-").map(Number);
   const date = new Date(Date.UTC(year, month - 1, day));
   return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day;
@@ -69,7 +69,7 @@ export function validateForm(form) {
       else if (control.min !== "" && number < Number(control.min)) message = `${label} must be at least ${control.min}.`;
       else if (control.max !== "" && number > Number(control.max)) message = `${label} must be no more than ${control.max}.`;
       else if (control.validity?.stepMismatch) message = `Enter a valid value for ${label.toLowerCase()}.`;
-    } else if (value && /₦|\\b(amount|price|cost|revenue)\\b/i.test(label) && control.type !== "number") {
+    } else if (value && /₦|\b(amount|price|cost|revenue)\b/i.test(label) && control.type !== "number") {
       try { parseNairaToKobo(value, { allowZero: true }); }
       catch (error) { message = error.message; }
     } else if (value && control.type === "email" && control.validity?.typeMismatch) {
