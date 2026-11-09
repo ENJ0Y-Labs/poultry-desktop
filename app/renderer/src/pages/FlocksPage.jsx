@@ -47,7 +47,6 @@ export default function FlocksPage() {
     const relatedBatches = batches
       .filter(batch => batch.houseId === house.id)
       .sort((a, b) => String(b.placementDate || "").localeCompare(String(a.placementDate || "")));
-    const activeBatch = relatedBatches.find(batch => batch.status === "ACTIVE");
     setDrawerRecord({
       kind: "house",
       house,
