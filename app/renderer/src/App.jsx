@@ -41,10 +41,11 @@ function formatMetric(value) { return value == null ? "—" : Number(value).toFi
 function formatCount(value) { return value == null ? "—" : Number(value).toLocaleString("en-NG"); }
 function displayApiError(err) {
   if (!err) return "";
-  if (err.details && typeof err.details === "object") {
-    window.dispatchEvent(new CustomEvent("pomas:form-validation-error", { detail: { form: getActiveValidationForm(), details: err.details } }));
-    const details = err.details.fields && typeof err.details.fields === "object" ? err.details.fields : err.details;
-    const messages = Object.entries(details)
+  if (err.details && typeof err.details === "object" || err.code === "SUPPLIER_DUPLICATE") {
+    const details = err.details || { fields: { name: err.message } };
+    window.dispatchEvent(new CustomEvent("pomas:form-validation-error", { detail: { form: getActiveValidationForm(), details } }));
+    const fieldDetails = details.fields && typeof details.fields === "object" ? details.fields : details;
+    const messages = Object.entries(fieldDetails)
       .map(([field, message]) => `${field}: ${Array.isArray(message) ? message.join(", ") : message}`)
       .filter(Boolean);
     if (messages.length) return messages.join(" • ");
