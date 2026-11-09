@@ -9,12 +9,12 @@ function childText(children) {
   }).join(" ").replace(/\\s+/g, " ").trim();
 }
 
-function controlKey(control, labelText) {
-  return String(control.props.name || labelText || control.props.id || "field")
+function fieldKey(control, inheritedLabel = "") {
+  return String(control.props.name || control.props.id || inheritedLabel || "field")
     .toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
 }
 
-function enhanceChildren(children, errors, clearError, pending) {
+function enhanceChildren(children, errors, clearError, pending, inheritedLabel = "") {
   return React.Children.map(children, child => {
     if (!React.isValidElement(child)) return child;
 
@@ -24,25 +24,23 @@ function enhanceChildren(children, errors, clearError, pending) {
       const inspect = nodes => React.Children.forEach(nodes, node => {
         if (!React.isValidElement(node)) return;
         if (["input", "select", "textarea"].includes(typeof node.type === "string" ? node.type : "")) {
-          controlName = controlKey(node, labelText);
+          controlName = fieldKey(node, labelText);
         } else if (node.props.children) inspect(node.props.children);
       });
       inspect(child.props.children);
       const error = errors[controlName];
-      const content = enhanceChildren(child.props.children, errors, clearError, pending);
       return React.cloneElement(child, {}, <>
-        {content}
-        {error && <small className="field-error" role="alert">{error}</small>}
+        {enhanceChildren(child.props.children, errors, clearError, pending, labelText)}
+        {error && <small id={`${controlName}-error`} className="field-error" role="alert">{error}</small>}
       </>);
     }
 
     if (typeof child.type === "string" && ["input", "select", "textarea"].includes(child.type)) {
-      const label = child.props.name || child.props.id;
-      const key = controlKey(child, label);
+      const key = fieldKey(child, inheritedLabel);
       const error = errors[key];
       return React.cloneElement(child, {
-        "aria-invalid": error ? "true" : child.props["aria-invalid"],
-        "aria-describedby": error ? `${child.props["aria-describedby"] || ""} ${key}-error`.trim() : child.props["aria-describedby"],
+        "aria-invalid": error ? "true" : undefined,
+        "aria-describedby": error ? [child.props["aria-describedby"], `${key}-error`].filter(Boolean).join(" ") : child.props["aria-describedby"],
         onChange: event => {
           child.props.onChange?.(event);
           clearError(key);
@@ -56,7 +54,7 @@ function enhanceChildren(children, errors, clearError, pending) {
     }
 
     if (child.props?.children) {
-      return React.cloneElement(child, {}, enhanceChildren(child.props.children, errors, clearError, pending));
+      return React.cloneElement(child, {}, enhanceChildren(child.props.children, errors, clearError, pending, inheritedLabel));
     }
     return child;
   });
@@ -99,14 +97,13 @@ export default function ValidatedForm({ onSubmit, children, ...props }) {
     }
   }
 
-  const enhanced = enhanceChildren(children, errors, clearError, pending);
   return <>
     {Object.keys(errors).length > 0 && <div className="validation-summary" role="alert" aria-live="polite">
       <strong>Please correct the following fields:</strong>
       <ul>{Object.values(errors).map((message, index) => <li key={index}>{message}</li>)}</ul>
     </div>}
     <form {...props} ref={formRef} noValidate onSubmit={handleSubmit} aria-busy={pending || undefined}>
-      {enhanced}
+      {enhanceChildren(children, errors, clearError, pending)}
     </form>
   </>;
 }
