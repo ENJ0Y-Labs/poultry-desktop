@@ -182,7 +182,7 @@ export function ModalForm({
         onDiscard={onDiscard}
       >
         <div onInputCapture={() => setDirty(true)} onChangeCapture={() => setDirty(true)} onSubmitCapture={event => { if (loading) { event.preventDefault(); event.stopPropagation(); return; } setSubmitted(true); }}>
-          {children}
+          <fieldset className="pomas-modal-form-fieldset" disabled={loading}>{children}</fieldset>
         </div>
       </Modal>
     </>
