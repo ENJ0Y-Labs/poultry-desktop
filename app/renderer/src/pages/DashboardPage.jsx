@@ -50,6 +50,8 @@ export default function DashboardPage() {
     applicationSettings,
     selectedBatchId,
     setMortalityForm,
+    setMortalityModalSignal,
+    setFeedUsageModalSignal,
     setEggBatchId,
     setEggCollectionForm,
     setFeedUsageForm,
@@ -58,6 +60,7 @@ export default function DashboardPage() {
     setBirdSaleForm,
     setEggSaleForm,
     setExpenseForm,
+    setFeedPurchaseModalSignal,
     loadEggsForBatch,
     loadBroilerForBatch,
   } = useContext(FarmManagerContext);
@@ -114,13 +117,14 @@ export default function DashboardPage() {
           </section>
         ) : (
           <>
-            <GettingStartedChecklist houses={houses} batches={batches} feedTypes={feedTypes} feedInventory={feedInventory} />
+            <GettingStartedChecklist houses={houses} batches={batches} feedTypes={feedTypes} feedInventory={feedInventory} onTaskAction={route => { if (route === "feed-stock/purchases") setFeedPurchaseModalSignal(value => value + 1); }} />
             <section className="subsection quick-actions" aria-labelledby="quick-actions-title">
               <div className="section-head"><div><p className="eyebrow">DAILY WORK</p><h3 id="quick-actions-title">Quick actions</h3></div><p className="muted">Jump straight to a validated entry form.</p></div>
               <div className="quick-action-grid">
                 <button type="button" onClick={() => {
                   const batch = batches.find(item => item.id === selectedBatchId && item.status === "ACTIVE") || batches.find(item => item.status === "ACTIVE");
                   setMortalityForm(form => ({ ...form, batchId: batch?.id || form.batchId, date: todayLocalDate() }));
+                  setMortalityModalSignal(value => value + 1);
                   navigateTo("daily-work/mortality");
                 }}>Record mortality</button>
                 <button type="button" onClick={() => {
@@ -138,6 +142,7 @@ export default function DashboardPage() {
                   const batchId = batch?.id || "";
                   setDailyForm(form => ({ ...form, batchId, date: todayLocalDate() }));
                   setFeedUsageForm(form => ({ ...form, batchId, feedTypeId: type?.id || form.feedTypeId, unit: type?.unit || form.unit, usageDate: todayLocalDate() }));
+                  setFeedUsageModalSignal(value => value + 1);
                   navigateTo("daily-work/daily-record");
                 }}>Record feed usage</button>
                 <button type="button" onClick={() => {
