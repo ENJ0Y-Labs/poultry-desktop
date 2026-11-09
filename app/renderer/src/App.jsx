@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import pomasLogo from "./assets/pomas-logo.png";
+import ValidatedForm from "./components/ValidatedForm.jsx";
 import { todayLocalDate, getLastBatchId, rememberLastBatchId } from "./utils/farmUx.js";
 import { parseNairaToKobo } from "./utils/moneyInput.js";
 import { formatMoney } from "./utils/money.js";
@@ -1318,7 +1319,7 @@ export default function App() {
 
           {error && <div className="error auth-error" role="alert">{error}</div>}
           {authStatus ? (
-            <form className="auth-form" onSubmit={submitAuth}>
+            <ValidatedForm className="auth-form" onSubmit={submitAuth}>
               {authStatus.setupRequired ? (
                 <>
                   <label className="auth-field" htmlFor="auth-full-name">Full name
@@ -1357,7 +1358,7 @@ export default function App() {
               <p className="auth-form-footnote">{authStatus.setupRequired
                 ? "This creates the primary local owner account. Multi-user access is not required to get started."
                 : "Access is managed locally by your Pomas installation."}</p>
-            </form>
+            </ValidatedForm>
           ) : (
             <div className="auth-connect-state">
               <p>Could not confirm the local account status.</p>
@@ -1373,13 +1374,13 @@ export default function App() {
     <main className="shell narrow">
       <header className="hero"><p className="eyebrow">POMAS · FARM MANAGEMENT</p><h1>Set up your farm</h1><p className="muted">Create the local farm profile first. Everything else hangs from it.</p></header>
       {error && <div className="error">{error}</div>}
-      <form className="card form-grid" onSubmit={submitFarm}>
+      <ValidatedForm className="card form-grid" onSubmit={submitFarm}>
         <label>Farm name<input required value={farmForm.name} onChange={e=>setFarmForm({...farmForm,name:e.target.value})}/></label>
         <label>Location<input value={farmForm.location} onChange={e=>setFarmForm({...farmForm,location:e.target.value})}/></label>
         <label>Timezone<input required value={farmForm.timezone} onChange={e=>setFarmForm({...farmForm,timezone:e.target.value})}/></label>
         <label>Currency<input required maxLength="3" value={farmForm.currency} onChange={e=>setFarmForm({...farmForm,currency:e.target.value.toUpperCase()})}/></label>
         <button disabled={saving} type="submit">{saving ? "Creating..." : "Create farm"}</button>
-      </form>
+      </ValidatedForm>
     </main>
   );
 
