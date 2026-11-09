@@ -360,7 +360,7 @@ export default function FeedStockPage() {
         <div className="section-head"><h2>Suppliers</h2><p className="muted">Maintain reusable supplier records for feed purchases. Archiving keeps historical purchase references intact.</p></div>
         <ModalForm title="Supplier" description="Add or update a reusable supplier record." triggerLabel={editingSupplierId ? "Edit supplier" : "Add supplier"} openSignal={supplierOpenSignal} loading={saving} error={error} onDiscard={() => { setSupplierForm(emptySupplier); cancelSupplierEdit(); }}>
 <ValidatedForm className="form-grid" onSubmit={saveSupplier} validate={() => {
-          const duplicate = suppliers.some(supplier => supplier.id !== editingSupplierId && supplier.name.trim().toLocaleLowerCase() === supplierForm.name.trim().toLocaleLowerCase());
+          const duplicate = suppliers.some(supplier => supplier.id !== editingSupplierId && supplier.name.trim() === supplierForm.name.trim());
           return duplicate ? { supplier_name: "A supplier with this name already exists." } : {};
         }}>
           <label>Supplier name<input required maxLength="120" value={supplierForm.name} onChange={event=>setSupplierForm({...supplierForm,name:event.target.value})}/></label>
