@@ -1090,14 +1090,16 @@ body { min-width: 0; }
 
 
 /* Shared client-side form validation */
-.form-grid > label:has(:required)::before,
-.inline-form > label:has(:required)::before,
-.auth-form > label:has(:required)::before {
+.form-grid > .validated-field:has(:required)::before,
+.inline-form > .validated-field:has(:required)::before,
+.auth-form > .validated-field:has(:required)::before {
   content: "*";
   color: var(--error-text);
   font-weight: 900;
   margin-right: 3px;
 }
+.validated-field { display: grid; gap: 6px; min-width: 0; }
+.validated-field.full { grid-column: 1 / -1; }
 .field-error {
   display: block;
   margin: 0;
