@@ -12,7 +12,7 @@ export function normalizeFieldKey(value) {
 }
 
 export function formatFieldLabel(value) {
-  const label = String(value ?? "").replace(FIELD_LABEL_IGNORE, " ").trim();
+  const label = String(value ?? "").replace(/([a-z0-9])([A-Z])/g, "$1 $2").replace(/[_-]+/g, " ").replace(FIELD_LABEL_IGNORE, " ").trim();
   return label.replace(/\s*\*$/, "") || "This field";
 }
 
