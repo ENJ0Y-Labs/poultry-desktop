@@ -1,6 +1,7 @@
 import { useContext, useEffect, useState } from "react";
 import { feedApi } from "../services/api.js";
 import { FarmManagerContext } from "../components/FarmManagerContext.jsx";
+// eslint-disable-next-line no-unused-vars -- JSX component usage is not detected by the core rule
 import { ConfirmAction, ModalForm } from "../components/Modal.jsx";
 // eslint-disable-next-line no-unused-vars
 import DataTable from "../components/DataTable.jsx";
