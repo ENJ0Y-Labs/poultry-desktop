@@ -13,7 +13,7 @@ import EmptyState from "../components/EmptyState.jsx";
 export default function DailyWorkPage() {
   const { error } = useContext(FarmManagerContext);
   const {
-    batches, dailyForm, setDailyForm, dailyRecord, dailyRecordLoading, waterUnitLabel,
+    batches, dailyForm, setDailyForm, emptyDaily, emptyFeedUsage, emptyPopulationEvent, dailyRecord, dailyRecordLoading, waterUnitLabel,
     mortalityForm, setMortalityForm, cullingForm, setCullingForm, saving,
     saveDailyRecord, recordPopulationEvent, feedTypes, feedUsageForm, setFeedUsageForm,
     useFeed, feedQuantity,
@@ -51,7 +51,7 @@ export default function DailyWorkPage() {
       <PageSection page="daily-work" tab="daily-record">
         <section id="operations" className="card full">
           <div className="section-head"><h2>Daily record</h2><p className="muted">Choose the batch and farm date once, then record feed usage and daily notes. Population totals come from the backend ledger.</p></div>
-          <ModalForm title="Daily record" description="Save the batch's daily notes for the selected date." triggerLabel="Save daily notes" loading={saving} error={error} onDiscard={() => setDailyForm(form => ({ ...form, notes: "" }))}>
+          <ModalForm title="Daily record" description="Save the batch's daily notes for the selected date." triggerLabel="Save daily notes" loading={saving} error={error} onDiscard={() => setDailyForm(form => ({ ...emptyDaily, batchId: form.batchId }))}>
 <form className="form-grid" onSubmit={event => saveDailyRecord(event, "notes")}>
             <label>Batch<select required value={dailyForm.batchId} onChange={event => updateDailyBatch(event.target.value)}>{batchOptions}</select></label>
             <label>Date<input required type="date" value={dailyForm.date} onChange={event => updateDailyDate(event.target.value)}/></label>
@@ -63,7 +63,7 @@ export default function DailyWorkPage() {
           <div className="subsection">
             <h3>Feed usage</h3>
             <p className="muted">Record the feed given to this batch for the selected date. This uses the existing feed ledger, deducts stock, and allocates FIFO cost once.</p>
-            <ModalForm title="Feed usage" description="Record feed issued to the selected batch. Stock and FIFO costing remain managed by the backend." triggerLabel="Record feed usage" loading={saving} error={error} onDiscard={() => setFeedUsageForm(form => ({ ...form, quantity: "", reason: "" }))}>
+            <ModalForm title="Feed usage" description="Record feed issued to the selected batch. Stock and FIFO costing remain managed by the backend." triggerLabel="Record feed usage" loading={saving} error={error} onDiscard={() => setFeedUsageForm(form => ({ ...emptyFeedUsage, batchId: form.batchId }))}>
 <form className="form-grid" onSubmit={useFeed}>
               <label>Feed type<select required value={feedUsageForm.feedTypeId} onChange={event => {
                 const type = feedTypes.find(item => item.id === event.target.value);
@@ -95,7 +95,7 @@ export default function DailyWorkPage() {
 
       <PageSection page="daily-work" tab="mortality">
         <section className="card full"><div className="section-head"><h2>Mortality</h2><p className="muted">Record birds that died. Mortality is separate from sales and culling.</p></div>
-          <ModalForm title="Record mortality" description="Record birds that died. This entry updates the batch population ledger." triggerLabel="Record mortality" loading={saving} error={error} onDiscard={() => setMortalityForm(form => ({ ...form, quantity: "", reason: "", notes: "" }))}>
+          <ModalForm title="Record mortality" description="Record birds that died. This entry updates the batch population ledger." triggerLabel="Record mortality" loading={saving} error={error} onDiscard={() => setMortalityForm(form => ({ ...emptyPopulationEvent, batchId: form.batchId }))}>
 <form className="form-grid" onSubmit={event => recordPopulationEvent(event,"MORTALITY")}>
             <label>Batch<select required value={mortalityForm.batchId} onChange={event => setMortalityForm({...mortalityForm,batchId:event.target.value})}>{batchOptions}</select></label>
             <label>Date<input required type="date" value={mortalityForm.date} onChange={event => setMortalityForm({...mortalityForm,date:event.target.value})}/></label>
@@ -110,7 +110,7 @@ export default function DailyWorkPage() {
 
       <PageSection page="daily-work" tab="culling">
         <section className="card full"><div className="section-head"><h2>Culling</h2><p className="muted">Record birds intentionally removed from the flock. This does not count as mortality.</p></div>
-          <ModalForm title="Record culling" description="Record birds intentionally removed from the flock." triggerLabel="Record culling" loading={saving} error={error} onDiscard={() => setCullingForm(form => ({ ...form, quantity: "", reason: "", notes: "" }))}>
+          <ModalForm title="Record culling" description="Record birds intentionally removed from the flock." triggerLabel="Record culling" loading={saving} error={error} onDiscard={() => setCullingForm(form => ({ ...emptyPopulationEvent, batchId: form.batchId }))}>
 <form className="form-grid" onSubmit={event => recordPopulationEvent(event,"CULLING")}>
             <label>Batch<select required value={cullingForm.batchId} onChange={event => setCullingForm({...cullingForm,batchId:event.target.value})}>{batchOptions}</select></label>
             <label>Date<input required type="date" value={cullingForm.date} onChange={event => setCullingForm({...cullingForm,date:event.target.value})}/></label>
@@ -125,7 +125,7 @@ export default function DailyWorkPage() {
 
       <PageSection page="daily-work" tab="water">
         <section className="card full"><div className="section-head"><h2>Water usage</h2><p className="muted">Enter configured container sizes and counts, for example 25:4, 75:2. Values use the farm unit label ({waterUnitLabel || "litres"}); no conversion is applied. This saves water figures as part of that date's daily record.</p></div>
-          <ModalForm title="Water usage" description="Save the selected batch's water-container readings for this date." triggerLabel="Save water usage" loading={saving} error={error} onDiscard={() => setDailyForm(form => ({ ...form, water: "" }))}>
+          <ModalForm title="Water usage" description="Save the selected batch's water-container readings for this date." triggerLabel="Save water usage" loading={saving} error={error} onDiscard={() => setDailyForm(form => ({ ...emptyDaily, batchId: form.batchId }))}>
 <form className="form-grid" onSubmit={event => saveDailyRecord(event, "water")}>
             <label>Batch<select required value={dailyForm.batchId} onChange={event => updateDailyBatch(event.target.value)}>{batchOptions}</select></label>
             <label>Date<input required type="date" value={dailyForm.date} onChange={event => updateDailyDate(event.target.value)}/></label>
