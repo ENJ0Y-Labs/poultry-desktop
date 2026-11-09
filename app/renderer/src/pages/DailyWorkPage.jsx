@@ -15,7 +15,7 @@ export default function DailyWorkPage() {
   const { error } = useContext(FarmManagerContext);
   const {
     batches, dailyForm, setDailyForm, emptyDaily, emptyFeedUsage, emptyPopulationEvent, dailyRecord, dailyRecordLoading, waterUnitLabel,
-    mortalityForm, setMortalityForm, cullingForm, setCullingForm, saving,
+    mortalityForm, setMortalityForm, mortalityModalSignal, feedUsageModalSignal, cullingForm, setCullingForm, saving,
     saveDailyRecord, recordPopulationEvent, feedTypes, feedUsageForm, setFeedUsageForm,
     useFeed, feedQuantity,
   } = useContext(FarmManagerContext);
@@ -64,7 +64,7 @@ export default function DailyWorkPage() {
           <div className="subsection">
             <h3>Feed usage</h3>
             <p className="muted">Record the feed given to this batch for the selected date. This uses the existing feed ledger, deducts stock, and allocates FIFO cost once.</p>
-            <ModalForm title="Feed usage" description="Record feed issued to the selected batch. Stock and FIFO costing remain managed by the backend." triggerLabel="Record feed usage" loading={saving} error={error} onDiscard={() => setFeedUsageForm(form => ({ ...emptyFeedUsage, batchId: form.batchId }))}>
+            <ModalForm title="Feed usage" description="Record feed issued to the selected batch. Stock and FIFO costing remain managed by the backend." triggerLabel="Record feed usage" openSignal={feedUsageModalSignal} loading={saving} error={error} onDiscard={() => setFeedUsageForm(form => ({ ...emptyFeedUsage, batchId: form.batchId }))}>
 <form className="form-grid" onSubmit={useFeed}>
               <label>Feed type<select required value={feedUsageForm.feedTypeId} onChange={event => {
                 const type = feedTypes.find(item => item.id === event.target.value);
@@ -96,7 +96,7 @@ export default function DailyWorkPage() {
 
       <PageSection page="daily-work" tab="mortality">
         <section className="card full"><div className="section-head"><h2>Mortality</h2><p className="muted">Record birds that died. Mortality is separate from sales and culling.</p></div>
-          <ModalForm title="Record mortality" description="Record birds that died. This entry updates the batch population ledger." triggerLabel="Record mortality" loading={saving} error={error} onDiscard={() => setMortalityForm(form => ({ ...emptyPopulationEvent, batchId: form.batchId }))}>
+          <ModalForm title="Record mortality" description="Record birds that died. This entry updates the batch population ledger." triggerLabel="Record mortality" openSignal={mortalityModalSignal} loading={saving} error={error} onDiscard={() => setMortalityForm(form => ({ ...emptyPopulationEvent, batchId: form.batchId }))}>
 <form className="form-grid" onSubmit={event => recordPopulationEvent(event,"MORTALITY")}>
             <label>Batch<select required value={mortalityForm.batchId} onChange={event => setMortalityForm({...mortalityForm,batchId:event.target.value})}>{batchOptions}</select></label>
             <label>Date<input required type="date" value={mortalityForm.date} onChange={event => setMortalityForm({...mortalityForm,date:event.target.value})}/></label>
