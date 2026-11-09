@@ -181,6 +181,7 @@ describe("FeedStockPage", () => {
     }));
     expect(container.textContent).not.toContain("\\n");
   });
+
   it("opens inventory item details without leaving the inventory list", () => {
     const context = {
       ...contextValue,
@@ -218,9 +219,9 @@ describe("FeedStockPage", () => {
     );
 
     fireEvent.click(screen.getByRole("button", { name: "View" }));
-    expect(screen.getByRole("dialog", { name: "Farm Inputs Ltd" })).toBeInTheDocument();
-    expect(screen.getByText("sales@example.test")).toBeInTheDocument();
-    expect(screen.getByText("Feed supplier")).toBeInTheDocument();
+    const drawer = screen.getByRole("dialog", { name: "Farm Inputs Ltd" });
+    expect(drawer).toBeInTheDocument();
+    expect(within(drawer).getByText("sales@example.test")).toBeInTheDocument();
+    expect(within(drawer).getByText("Feed supplier")).toBeInTheDocument();
   });
-
 });
