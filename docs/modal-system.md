@@ -15,7 +15,8 @@ the existing page/context and Spring Boot layers.
   actions such as archiving a supplier.
 - A dirty form cannot be dismissed accidentally. Escape, the close control,
   and backdrop dismissal show a discard choice with **Keep editing** and
-  **Discard changes** actions.
+  **Discard changes** actions. Discard callbacks restore the form state to its
+  initial defaults; successful submissions keep using the existing page handlers.
 - Focus moves into the dialog, Tab/Shift+Tab stay inside it, and focus returns
   to the element that opened it when the dialog closes.
 - The page behind an open dialog cannot scroll. Dialog content scrolls within
