@@ -1,3 +1,5 @@
+import { parseNairaToKobo } from "./moneyInput.js";
+
 const FIELD_LABEL_IGNORE = /\\s+/g;
 
 export function normalizeFieldKey(value) {
@@ -67,6 +69,9 @@ export function validateForm(form) {
       else if (control.min !== "" && number < Number(control.min)) message = `${label} must be at least ${control.min}.`;
       else if (control.max !== "" && number > Number(control.max)) message = `${label} must be no more than ${control.max}.`;
       else if (control.validity?.stepMismatch) message = `Enter a valid value for ${label.toLowerCase()}.`;
+    } else if (value && /₦|\\b(amount|price|cost|revenue)\\b/i.test(label) && control.type !== "number") {
+      try { parseNairaToKobo(value, { allowZero: true }); }
+      catch (error) { message = error.message; }
     } else if (value && control.type === "email" && control.validity?.typeMismatch) {
       message = `Enter a valid email address for ${label.toLowerCase()}.`;
     } else if (value && control.type === "date" && !validCalendarDate(value)) {
@@ -93,10 +98,12 @@ export function mapBackendFieldErrors(details, form) {
   for (const [field, rawMessage] of Object.entries(fieldDetails)) {
     const message = Array.isArray(rawMessage) ? rawMessage.join(", ") : String(rawMessage ?? "");
     if (!message) continue;
-    const key = normalizeFieldKey(field).replace(/_(minor|id|date)$/g, "");
+    const normalizedField = normalizeFieldKey(field);
+    const key = normalizedField.endsWith("_date") ? "date" : normalizedField.replace(/_(minor|id)$/g, "");
     const matching = controls.find(control => {
-      const candidate = normalizeFieldKey(control.name || labelFor(control)).replace(/_(minor|id|date)$/g, "");
-      const label = normalizeFieldKey(labelFor(control)).replace(/_(minor|id|date)$/g, "");
+      const normalizedCandidate = normalizeFieldKey(control.name || labelFor(control));
+      const candidate = normalizedCandidate.endsWith("_date") ? "date" : normalizedCandidate.replace(/_(minor|id)$/g, "");
+      const label = normalizeFieldKey(labelFor(control)).replace(/_(minor|id)$/g, "");
       return candidate === key || label === key || label.includes(key) || key.includes(label);
     });
     if (matching) errors[fieldKey(matching)] = message;
