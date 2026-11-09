@@ -2,6 +2,8 @@ import { useContext, useState } from "react";
 import { FarmManagerContext } from "../components/FarmManagerContext.jsx";
 // eslint-disable-next-line no-unused-vars -- JSX component usage is not detected by the core rule
 import { ModalForm } from "../components/Modal.jsx";
+// eslint-disable-next-line no-unused-vars -- JSX component usage is not detected by the core rule
+import ContextDrawer, { DrawerDetails } from "../components/ContextDrawer.jsx";
 // eslint-disable-next-line no-unused-vars
 import PageSection from "../components/PageSection.jsx";
 // eslint-disable-next-line no-unused-vars
@@ -16,6 +18,7 @@ const saleTypeLabel = type => type === "EGG" ? "Eggs" : type === "BROILER" ? "Br
 export default function SalesMoneyPage() {
   const { error } = useContext(FarmManagerContext);
   const [customerOpenSignal, setCustomerOpenSignal] = useState(0);
+  const [drawerRecord, setDrawerRecord] = useState(null);
   const { formatMoney, farm, batches, expenseForm, setExpenseForm, expenses, expenseBatchFilter, setExpenseBatchFilter, customers, customerForm, setCustomerForm, emptyCustomer, emptyExpense, editingCustomerId, editCustomer, cancelCustomerEdit, sales, saving, expenseCategories, loadExpenses, saveCustomer, saveExpense } = useContext(FarmManagerContext);
 
   return (
@@ -35,6 +38,7 @@ export default function SalesMoneyPage() {
 </ModalForm>
           <DataTable caption="Customers" columns={[
               { key: "name", label: "Name" }, { key: "phone", label: "Phone", render: row => row.phone || "—" },
+              { key: "details", label: "Details", render: row => <button type="button" className="secondary-button" onClick={() => setDrawerRecord({ title: row.name, description: "Saved customer contact details.", fields: [["Phone", row.phone], ["Notes", row.notes], ["Status", row.status || "Active"]] })}>View</button> },
               { key: "notes", label: "Notes", render: row => row.notes || "—" },
               { key: "action", label: "Action", render: row => <button type="button" className="secondary-button" onClick={() => { editCustomer(row); setCustomerOpenSignal(value => value + 1); }}>Edit</button> },
             ]} rows={customers} emptyMessage="No customers yet." />
@@ -52,6 +56,7 @@ export default function SalesMoneyPage() {
                 { key: "quantity", label: "Quantity", render: row => row.quantity?.toString() }, { key: "unit", label: "Unit" },
                 { key: "unitPriceMinor", label: "Unit price", render: row => formatMoney(row.unitPriceMinor, farm.currency) },
                 { key: "totalAmountMinor", label: "Total", render: row => formatMoney(row.totalAmountMinor, farm.currency) },
+                { key: "details", label: "Details", render: row => <button type="button" className="secondary-button" onClick={() => setDrawerRecord({ title: `Sale · ${row.saleDate}`, description: "Posted sale details. This view is read-only; posted transactions are corrected through the audited correction workflow.", fields: [["Date", row.saleDate], ["Type", saleTypeLabel(row.saleType)], ["Customer", row.customerName], ["Batch", batches.find(batch => batch.id === row.batchId)?.code || row.batchId], ["Quantity", row.quantity == null ? "—" : `${row.quantity} ${row.unit || ""}`.trim()], ["Unit price", formatMoney(row.unitPriceMinor, farm.currency)], ["Total", formatMoney(row.totalAmountMinor, farm.currency)]] })}>View</button> },
               ]} rows={sales} emptyMessage="No sales recorded yet. Record an egg or meat-bird sale in Production to see it here." />
           </div>
         </section></PageSection>
@@ -93,6 +98,9 @@ export default function SalesMoneyPage() {
               ]} rows={expenses} emptyMessage="No expenses recorded." />
           </div>
         </section></PageSection>
+      <ContextDrawer open={Boolean(drawerRecord)} onClose={() => setDrawerRecord(null)} title={drawerRecord?.title || "Record details"} description={drawerRecord?.description} size="medium">
+        {drawerRecord && <DrawerDetails fields={drawerRecord.fields} />}
+      </ContextDrawer>
     </PageTemplate>
   );
 }
