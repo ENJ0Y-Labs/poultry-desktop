@@ -35,7 +35,7 @@ function labelFor(control) {
   return formatFieldLabel(clone.textContent);
 }
 
-function fieldKey(control) {
+export function getFormControlKey(control) {
   return normalizeFieldKey(control.name || labelFor(control));
 }
 
@@ -54,7 +54,7 @@ export function validateForm(form) {
   );
 
   for (const control of controls) {
-    const key = fieldKey(control);
+    const key = getFormControlKey(control);
     const label = labelFor(control);
     const value = String(control.value ?? "").trim();
     let message = "";
@@ -112,7 +112,7 @@ export function mapBackendFieldErrors(details, form) {
       const label = normalizeFieldKey(labelFor(control)).replace(/_(minor|id|percent)$/g, "");
       return candidate === key || label === key || label.includes(key) || key.includes(label);
     });
-    if (matching) errors[fieldKey(matching)] = message;
+    if (matching) errors[getFormControlKey(matching)] = message;
   }
   return errors;
 }
