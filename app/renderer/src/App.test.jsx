@@ -826,7 +826,6 @@ describe("App", () => {
     fireEvent.click(await screen.findByRole("button", { name: "Record mortality" }));
     expect(window.location.hash).toContain("daily-work/mortality");
     await screen.findByRole("heading", { name: "Record mortality" });
-    fireEvent.click(screen.getByRole("button", { name: "Record mortality" }));
     expect(await screen.findByRole("combobox", { name: "Batch" })).toHaveValue("layer-1");
 
     dashboardNav();
@@ -839,7 +838,6 @@ describe("App", () => {
     fireEvent.click(await screen.findByRole("button", { name: "Record feed usage" }));
     expect(window.location.hash).toContain("daily-work/daily-record");
     await screen.findByRole("heading", { name: "Feed usage" });
-    fireEvent.click(screen.getByRole("button", { name: "Record feed usage" }));
     expect(await screen.findByRole("combobox", { name: "Batch" })).toHaveValue("layer-1");
     expect(screen.getByRole("combobox", { name: "Feed type" })).toHaveValue("feed-layer");
 
