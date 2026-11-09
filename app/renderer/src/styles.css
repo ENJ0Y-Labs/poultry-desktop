@@ -1005,6 +1005,16 @@ body { min-width: 0; }
 }
 
 
+/* Compact sidebar rail works at desktop and narrow window sizes. */
+.app-shell.sidebar-collapsed .sidebar { width: 68px; }
+.app-shell.sidebar-collapsed .app-main { margin-left: 68px; }
+.app-shell.sidebar-collapsed .sidebar .brand-copy,
+.app-shell.sidebar-collapsed .sidebar .workspace-summary,
+.app-shell.sidebar-collapsed .sidebar .nav-group > p,
+.app-shell.sidebar-collapsed .sidebar .nav-label,
+.app-shell.sidebar-collapsed .sidebar .nav-item kbd,
+.app-shell.sidebar-collapsed .sidebar .sidebar-footer .nav-label { display: none; }
+
 /* Compact sidebar rail: keep only the product mark, destination icons, and farm avatar. */
 .brand-mark-button {
   flex: 0 0 38px;
