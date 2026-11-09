@@ -17,6 +17,11 @@ function enhanceChildren(children, errors, clearError, pending, inheritedLabel =
   return React.Children.map(children, child => {
     if (!React.isValidElement(child)) return child;
 
+    if (child.type?.name === "FormField" && typeof child.props.label === "string") {
+      const key = normalizeFieldKey(child.props.label);
+      return React.cloneElement(child, { error: errors[key] }, enhanceChildren(child.props.children, errors, clearError, pending, child.props.label));
+    }
+
     if (child.type === "label") {
       const labelText = childText(child.props.children);
       let controlName = "";
