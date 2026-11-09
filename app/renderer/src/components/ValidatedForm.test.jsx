@@ -2,7 +2,10 @@ import React from "react";
 import { describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 // eslint-disable-next-line no-unused-vars -- JSX component usage is not detected by the core rule
+// eslint-disable-next-line no-unused-vars -- JSX component usage is not detected by the core rule
 import ValidatedForm from "./ValidatedForm.jsx";
+// eslint-disable-next-line no-unused-vars -- JSX component usage is not detected by the core rule
+import FormField from "./FormField.jsx";
 
 describe("ValidatedForm", () => {
   it("shows a summary and inline required-field error while preserving entered values", async () => {
@@ -20,6 +23,17 @@ describe("ValidatedForm", () => {
     expect(document.activeElement).toBe(screen.getByLabelText("Batch"));
     expect(screen.getByLabelText("Notes").value).toBe("keep these notes");
     expect(submit).not.toHaveBeenCalled();
+  });
+
+  it("supports the existing FormField wrapper and links its inline error", async () => {
+    render(<ValidatedForm onSubmit={vi.fn()}>
+      <FormField label="New category" required><input required defaultValue="" /></FormField>
+      <button type="submit">Save</button>
+    </ValidatedForm>);
+
+    fireEvent.submit(screen.getByRole("button", { name: "Save" }).closest("form"));
+    expect(await screen.findByText("New category is required.")).toBeTruthy();
+    expect(screen.getByLabelText("New category *").getAttribute("aria-describedby")).toContain("new_category-error");
   });
 
   it("prevents another submit while the first request is pending", async () => {
