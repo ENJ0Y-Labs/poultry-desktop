@@ -14,7 +14,7 @@ export default function FeedStockPage() {
   const { error } = useContext(FarmManagerContext);
   const [inventoryItemOpenSignal, setInventoryItemOpenSignal] = useState(0);
   const [supplierOpenSignal, setSupplierOpenSignal] = useState(0);
-  const { formatMoney, farm, batches, feedTypes, setFeedTypes, feedInventory, feedTypeForm, setFeedTypeForm, setError, setSaving, feedPurchaseForm, setFeedPurchaseForm, inventoryItems, inventoryItemForm, setInventoryItemForm, emptyInventoryItem, emptyInventoryMovement, emptyFeedPurchase, emptySupplier, editingInventoryItemId, editInventoryItem, cancelInventoryItemEdit, inventoryMovementForm, setInventoryMovementForm, inventoryMovements, suppliers, supplierForm, setSupplierForm, editingSupplierId, editSupplier, cancelSupplierEdit, saveSupplier, archiveSupplier, saving, saveInventoryItem, loadInventoryMovements, saveInventoryMovement, createFeedType, purchaseFeed, feedQuantity } = useContext(FarmManagerContext);
+  const { formatMoney, farm, batches, feedTypes, setFeedTypes, feedInventory, feedTypeForm, setFeedTypeForm, setError, setSaving, feedPurchaseForm, setFeedPurchaseForm, inventoryItems, inventoryItemForm, setInventoryItemForm, emptyInventoryItem, emptyInventoryMovement, emptyFeedPurchase, emptySupplier, feedPurchaseModalSignal, editingInventoryItemId, editInventoryItem, cancelInventoryItemEdit, inventoryMovementForm, setInventoryMovementForm, inventoryMovements, suppliers, supplierForm, setSupplierForm, editingSupplierId, editSupplier, cancelSupplierEdit, saveSupplier, archiveSupplier, saving, saveInventoryItem, loadInventoryMovements, saveInventoryMovement, createFeedType, purchaseFeed, feedQuantity } = useContext(FarmManagerContext);
   const [openingStockForm, setOpeningStockForm] = useState({
     feedTypeId: "", effectiveDate: "", quantity: "", reason: "",
   });
@@ -294,7 +294,7 @@ export default function FeedStockPage() {
       <PageSection page="feed-stock" tab="purchases"><section id="purchases" className="card full"><div className="section-head"><h2>Feed purchases</h2><p className="muted">Choose a registered supplier or leave it blank if the source is unknown.</p></div>
           <div className="subsection">
             <h3>Purchase feed</h3>
-            <ModalForm title="Feed purchase" description="Record a feed purchase. The backend updates the FIFO stock ledger and expense record." triggerLabel="Record purchase" loading={saving} error={error} onDiscard={() => setFeedPurchaseForm(emptyFeedPurchase)}>
+            <ModalForm title="Feed purchase" description="Record a feed purchase. The backend updates the FIFO stock ledger and expense record." triggerLabel="Record purchase" openSignal={feedPurchaseModalSignal} loading={saving} error={error} onDiscard={() => setFeedPurchaseForm(emptyFeedPurchase)}>
 <form className="inline-form" onSubmit={purchaseFeed}>
               <label className="field"><span>Feed type</span><select required value={feedPurchaseForm.feedTypeId} onChange={e=>{
                 const type=feedTypes.find(item=>item.id===e.target.value);
