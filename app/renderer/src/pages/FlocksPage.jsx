@@ -21,8 +21,10 @@ export default function FlocksPage() {
     const house = houses.find(item => item.id === batch.houseId);
     const supplier = suppliers.find(item => item.id === batch.supplierId);
     setDrawerRecord({
+      kind: "batch",
+      batch,
       title: batch.code,
-      description: "Batch setup and source information. Live population and performance are calculated in the batch dashboard.",
+      description: "Batch setup, source information and the available operational snapshot.",
       fields: [
         ["Type", batchTypeLabel(batch.type)],
         ["Status", batchStatusLabel(batch.status)],
@@ -32,6 +34,17 @@ export default function FlocksPage() {
         ["House / pen", house ? `${house.name} (${house.code})` : batch.houseId],
         ["House type", house?.houseType === "TEMPORARY" ? "Temporary" : house ? "Permanent" : null],
         ["Supplier / source", supplier?.name || "Unknown / not recorded"],
+        ...(batchDashboard?.batch?.id === batch.id ? [
+          ["Current birds", batchDashboard.population?.currentBirds],
+          ["Mortality", batchDashboard.population?.mortality],
+          ["Culling", batchDashboard.population?.culling],
+          ["Sold birds", batchDashboard.population?.sold],
+          ["Feed used", formatQuantity(batchDashboard.feed?.totalQuantityMilli)],
+          ["Feed cost", formatMoney(batchDashboard.feed?.totalCostMinor, farm.currency)],
+          ["Expenses", formatMoney(batchDashboard.expensesMinor, farm.currency)],
+          ["Revenue", formatMoney(batchDashboard.revenueMinor, farm.currency)],
+          ["Profit", formatMoney(batchDashboard.profitMinor, farm.currency)],
+        ] : []),
       ].filter(([, value]) => value !== null && value !== undefined && value !== ""),
     });
   }
@@ -42,6 +55,8 @@ export default function FlocksPage() {
       .sort((a, b) => String(b.placementDate || "").localeCompare(String(a.placementDate || "")));
     const activeBatch = relatedBatches.find(batch => batch.status === "ACTIVE");
     setDrawerRecord({
+      kind: "house",
+      house,
       title: house.name,
       description: "House / pen profile and the flocks assigned to this location.",
       fields: [
@@ -126,7 +141,6 @@ export default function FlocksPage() {
               { key: "placementDate", label: "Placement" }, { key: "initialBirdCount", label: "Initial birds" }, { key: "populationCountStatus", label: "Count confidence", render: batch => batch.populationCountStatus === "ESTIMATED" ? "Estimated" : "Verified" },
               { key: "confidenceAction", label: "Count action", render: batch => batch.populationCountStatus !== "ESTIMATED" ? <button type="button" className="secondary-button" disabled={saving} onClick={() => markPopulationEstimated(batch.id)}>Mark estimated</button> : "Awaiting physical count" },
               { key: "status", label: "Status", render: batch => batchStatusLabel(batch.status) },
-              { key: "setup", label: "Setup", render: batch => batch.status === "ACTIVE" ? <button type="button" className="secondary-button" onClick={() => editBatchSetup(batch)}>Edit setup</button> : "Locked" },
               { key: "action", label: "Action", render: batch => batch.status === "SOLD"
                 ? <button type="button" onClick={() => reopenBatch(batch.id)} disabled={saving}>Reopen</button>
                 : ["BROILER", "TURKEY"].includes(batch.type) ? <button type="button" onClick={() => markBatchSold(batch.id)} disabled={saving}>Mark sold</button> : "—" },
@@ -159,10 +173,22 @@ export default function FlocksPage() {
               { key: "name", label: "Name" }, { key: "code", label: "Code" }, { key: "houseType", label: "Type", render: house => house.houseType === "TEMPORARY" ? "Temporary" : "Permanent" }, { key: "status", label: "Status" },
               { key: "occupancy", label: "Occupancy", render: house => batches.some(batch => batch.houseId === house.id && batch.status === "ACTIVE") ? "Occupied" : "Empty" },
               { key: "details", label: "Details", render: house => <button type="button" className="secondary-button" onClick={() => openHouseDetails(house)}>View</button> },
-              { key: "action", label: "Action", render: house => <button type="button" className="secondary-button" onClick={() => editHouse(house)}>Edit</button> },
             ]} rows={houses} emptyMessage="No houses or pens yet." />
         </section></PageSection>
-      <ContextDrawer open={Boolean(drawerRecord)} onClose={() => setDrawerRecord(null)} title={drawerRecord?.title || "Record details"} description={drawerRecord?.description} size={drawerRecord?.relatedBatches ? "large" : "medium"}>
+      <ContextDrawer
+        open={Boolean(drawerRecord)}
+        onClose={() => setDrawerRecord(null)}
+        title={drawerRecord?.title || "Record details"}
+        description={drawerRecord?.description}
+        size={drawerRecord?.relatedBatches || drawerRecord?.kind === "batch" ? "large" : "medium"}
+        footer={drawerRecord?.kind === "batch" && drawerRecord.batch.status === "ACTIVE" ? <button type="button" onClick={() => {
+          editBatchSetup(drawerRecord.batch);
+          setDrawerRecord(null);
+        }}>Edit batch setup</button> : drawerRecord?.kind === "house" && drawerRecord.house.status === "ACTIVE" ? <button type="button" onClick={() => {
+          editHouse(drawerRecord.house);
+          setDrawerRecord(null);
+        }}>Edit house</button> : null}
+      >
         {drawerRecord && <DrawerDetails fields={drawerRecord.fields} />}
         {drawerRecord?.relatedBatches && <section className="subsection" aria-labelledby="house-batch-history-title">
           <h3 id="house-batch-history-title">Batch history</h3>
