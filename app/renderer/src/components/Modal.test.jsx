@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { useState } from "react";
 import { describe, expect, it, vi } from "vitest";
-import { Modal } from "./Modal.jsx";
+import { ConfirmAction, Modal } from "./Modal.jsx";
 
 describe("Modal", () => {
   it("moves focus into the dialog and restores focus to the opener", async () => {
@@ -72,6 +72,16 @@ describe("Modal", () => {
     fireEvent.mouseDown(document.querySelector(".pomas-modal-backdrop"));
     fireEvent.click(screen.getByRole("button", { name: "Close dialog" }));
     expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it("requires confirmation before running a destructive action", async () => {
+    const onConfirm = vi.fn();
+    render(<ConfirmAction title="Archive supplier?" description="Archive this supplier?" triggerLabel="Archive" confirmLabel="Archive supplier" onConfirm={onConfirm} />);
+    fireEvent.click(screen.getByRole("button", { name: "Archive" }));
+    expect(onConfirm).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Archive supplier" }));
+    await waitFor(() => expect(onConfirm).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
   });
 
   it("renders an accessible error message", () => {
