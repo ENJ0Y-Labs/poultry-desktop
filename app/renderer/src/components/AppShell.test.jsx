@@ -187,7 +187,7 @@ describe("AppShell", () => {
 
   it("uses one navigation surface and persists collapse without changing the selected page", () => {
     const { unmount } = render(
-      <AppShell farm={{ name: "Grantino", location: "", currency: "NGN", timezone: "Africa/Lagos" }}>
+      <AppShell farm={{ name: "Grantino Farms", location: "", currency: "NGN", timezone: "Africa/Lagos" }}>
         <section id="dashboard">Dashboard</section>
       </AppShell>
     );
@@ -200,10 +200,14 @@ describe("AppShell", () => {
     expect(window.location.hash).toBe("#flocks/batch-dashboard");
     expect(localStorage.getItem("pomas:sidebar-collapsed")).toBe("true");
     expect(screen.getByRole("button", { name: "Expand sidebar" })).toHaveAttribute("aria-expanded", "false");
+    expect(screen.getByRole("button", { name: "Expand sidebar" })).toHaveClass("brand-mark-button");
+    expect(screen.queryByRole("button", { name: "Collapse sidebar" })).not.toBeInTheDocument();
+    expect(within(screen.getByRole("button", { name: "Account" })).getByText("GF")).toBeInTheDocument();
+    expect(document.querySelector(".app-shell")).toHaveClass("sidebar-collapsed");
 
     unmount();
     render(
-      <AppShell farm={{ name: "Grantino", location: "", currency: "NGN", timezone: "Africa/Lagos" }}>
+      <AppShell farm={{ name: "Grantino Farms", location: "", currency: "NGN", timezone: "Africa/Lagos" }}>
         <section id="dashboard">Dashboard</section>
       </AppShell>
     );
@@ -211,23 +215,10 @@ describe("AppShell", () => {
     expect(screen.getByRole("button", { name: "Expand sidebar" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Flocks" })).toHaveAttribute("aria-current", "page");
     expect(window.location.hash).toBe("#flocks/batch-dashboard");
-  });
-
-  it("uses the logo, icon rail, and farm initials as the only compact sidebar controls", () => {
-    render(
-      <AppShell farm={{ name: "Grantino Farms", location: "", currency: "NGN", timezone: "Africa/Lagos" }}>
-        <section id="dashboard">Dashboard</section>
-      </AppShell>
-    );
-
-    fireEvent.click(screen.getByRole("button", { name: "Collapse sidebar" }));
-    expect(screen.getByRole("button", { name: "Expand sidebar" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Dashboard" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Account" })).toHaveTextContent("GF");
-    expect(screen.queryByRole("button", { name: "Collapse sidebar" })).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Expand sidebar" }));
-    expect(screen.getByRole("button", { name: "Collapse sidebar" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Collapse sidebar" })).toHaveAttribute("aria-expanded", "true");
+    expect(localStorage.getItem("pomas:sidebar-collapsed")).toBe("false");
   });
 
   it("shows the packaged product version without runtime architecture in the application footer", () => {
