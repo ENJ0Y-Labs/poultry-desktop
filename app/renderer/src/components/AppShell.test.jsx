@@ -192,6 +192,23 @@ describe("AppShell", () => {
     expect(window.location.hash).toBe("#flocks/batch-dashboard");
   });
 
+  it("uses the logo, icon rail, and farm initials as the only compact sidebar controls", () => {
+    render(
+      <AppShell farm={{ name: "Grantino Farms", location: "", currency: "NGN", timezone: "Africa/Lagos" }}>
+        <section id="dashboard">Dashboard</section>
+      </AppShell>
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Collapse sidebar" }));
+    expect(screen.getByRole("button", { name: "Expand sidebar" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Dashboard" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Account" })).toHaveTextContent("GF");
+    expect(screen.queryByRole("button", { name: "Collapse sidebar" })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Expand sidebar" }));
+    expect(screen.getByRole("button", { name: "Collapse sidebar" })).toBeInTheDocument();
+  });
+
   it("shows the packaged product version without runtime architecture in the application footer", () => {
     render(
       <AppShell
