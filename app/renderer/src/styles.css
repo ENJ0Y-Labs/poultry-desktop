@@ -1005,6 +1005,35 @@ body { min-width: 0; }
 }
 
 
+/* Compact sidebar rail: keep only the product mark, destination icons, and farm avatar. */
+.brand-mark-button {
+  flex: 0 0 38px;
+  cursor: pointer;
+  background: var(--palette-10141a);
+  border: 1px solid var(--palette-303844);
+}
+.brand-mark-button:hover { border-color: var(--ide-accent); }
+.app-shell.sidebar-collapsed .sidebar .brand {
+  justify-content: center;
+  gap: 0;
+  padding: 12px 6px;
+}
+.app-shell.sidebar-collapsed .sidebar .sidebar-toggle { display: none; }
+.app-shell.sidebar-collapsed .sidebar .nav-item {
+  justify-content: center;
+  padding: 10px 4px;
+  gap: 0;
+}
+.app-shell.sidebar-collapsed .sidebar .nav-icon-wrap { margin: 0; }
+.app-shell.sidebar-collapsed .sidebar .sidebar-footer {
+  justify-content: center;
+  padding: 10px 4px;
+}
+.app-shell.sidebar-collapsed .sidebar .sidebar-footer .nav-item {
+  justify-content: center;
+  width: 100%;
+}
+
 .app-version-footer {
   display: flex;
   justify-content: space-between;
