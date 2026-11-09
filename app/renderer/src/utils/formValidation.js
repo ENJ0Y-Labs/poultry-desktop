@@ -13,12 +13,22 @@ export function formatFieldLabel(value) {
   return label.replace(/\\s*\\*$/, "") || "This field";
 }
 
+let activeValidationForm = null;
+
+export function setActiveValidationForm(form) {
+  activeValidationForm = form || null;
+}
+
+export function getActiveValidationForm() {
+  return activeValidationForm;
+}
+
 function labelFor(control) {
   if (control.name) return formatFieldLabel(control.name.replace(/[_-]+/g, " "));
   const label = control.closest("label");
   if (!label) return formatFieldLabel(control.getAttribute("aria-label") || control.id);
   const clone = label.cloneNode(true);
-  clone.querySelectorAll("small, .required-indicator, .field-error").forEach(node => node.remove());
+  clone.querySelectorAll("small, input, select, textarea, button, .required-indicator, .field-error").forEach(node => node.remove());
   return formatFieldLabel(clone.textContent);
 }
 
@@ -77,17 +87,18 @@ export function validateForm(form) {
 
 export function mapBackendFieldErrors(details, form) {
   if (!details || typeof details !== "object" || Array.isArray(details)) return {};
+  const fieldDetails = details.fields && typeof details.fields === "object" ? details.fields : details;
   const controls = Array.from(form?.elements || []);
   const errors = {};
-  for (const [field, rawMessage] of Object.entries(details)) {
+  for (const [field, rawMessage] of Object.entries(fieldDetails)) {
     const message = Array.isArray(rawMessage) ? rawMessage.join(", ") : String(rawMessage ?? "");
     if (!message) continue;
-    const key = normalizeFieldKey(field);
-    const matching = controls.find(control =>
-      normalizeFieldKey(control.name || labelFor(control)) === key ||
-      normalizeFieldKey(labelFor(control)).includes(key) ||
-      key.includes(normalizeFieldKey(labelFor(control)))
-    );
+    const key = normalizeFieldKey(field).replace(/_(minor|id|date)$/g, "");
+    const matching = controls.find(control => {
+      const candidate = normalizeFieldKey(control.name || labelFor(control)).replace(/_(minor|id|date)$/g, "");
+      const label = normalizeFieldKey(labelFor(control)).replace(/_(minor|id|date)$/g, "");
+      return candidate === key || label === key || label.includes(key) || key.includes(label);
+    });
     if (matching) errors[fieldKey(matching)] = message;
   }
   return errors;
