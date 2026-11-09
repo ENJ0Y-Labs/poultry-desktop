@@ -28,7 +28,7 @@ function enhanceChildren(children, errors, clearError, pending, inheritedLabel =
       });
       inspect(child.props.children);
       const error = errors[controlName];
-      const wrapperClass = child.props.className?.split(/\\s+/).includes("full") ? "validated-field full" : "validated-field";
+      const wrapperClass = String(child.props.className || "").split(" ").includes("full") ? "validated-field full" : "validated-field";
       return <div className={wrapperClass}>
         {React.cloneElement(child, {}, enhanceChildren(child.props.children, errors, clearError, pending, labelText))}
         {error && <small id={`${controlName}-error`} className="field-error" role="alert">{error}</small>}
