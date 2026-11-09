@@ -13,7 +13,7 @@ export default function FeedStockPage() {
   const { error } = useContext(FarmManagerContext);
   const [inventoryItemOpenSignal, setInventoryItemOpenSignal] = useState(0);
   const [supplierOpenSignal, setSupplierOpenSignal] = useState(0);
-  const { formatMoney, farm, batches, feedTypes, setFeedTypes, feedInventory, feedTypeForm, setFeedTypeForm, setError, setSaving, feedPurchaseForm, setFeedPurchaseForm, inventoryItems, inventoryItemForm, setInventoryItemForm, editingInventoryItemId, editInventoryItem, cancelInventoryItemEdit, inventoryMovementForm, setInventoryMovementForm, inventoryMovements, suppliers, supplierForm, setSupplierForm, editingSupplierId, editSupplier, cancelSupplierEdit, saveSupplier, archiveSupplier, saving, saveInventoryItem, loadInventoryMovements, saveInventoryMovement, createFeedType, purchaseFeed, feedQuantity } = useContext(FarmManagerContext);
+  const { formatMoney, farm, batches, feedTypes, setFeedTypes, feedInventory, feedTypeForm, setFeedTypeForm, setError, setSaving, feedPurchaseForm, setFeedPurchaseForm, inventoryItems, inventoryItemForm, setInventoryItemForm, emptyInventoryItem, emptyInventoryMovement, emptyFeedPurchase, emptySupplier, editingInventoryItemId, editInventoryItem, cancelInventoryItemEdit, inventoryMovementForm, setInventoryMovementForm, inventoryMovements, suppliers, supplierForm, setSupplierForm, editingSupplierId, editSupplier, cancelSupplierEdit, saveSupplier, archiveSupplier, saving, saveInventoryItem, loadInventoryMovements, saveInventoryMovement, createFeedType, purchaseFeed, feedQuantity } = useContext(FarmManagerContext);
   const [openingStockForm, setOpeningStockForm] = useState({
     feedTypeId: "", effectiveDate: "", quantity: "", reason: "",
   });
