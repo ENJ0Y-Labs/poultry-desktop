@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 // eslint-disable-next-line no-unused-vars
 import DailyWorkPage from "./DailyWorkPage.jsx";
@@ -47,6 +47,7 @@ describe("DailyWorkPage feed applicability", () => {
       </NavigationContext.Provider>
     );
 
+    fireEvent.click(screen.getByRole("button", { name: "Record feed usage" }));
     const selectors = screen.getAllByRole("combobox", { name: "Feed type" });
     expect(selectors).toHaveLength(1);
     expect(within(selectors[0]).getByRole("option", { name: "Layer Mash (bag)" })).toBeInTheDocument();
