@@ -1,0 +1,112 @@
+import React, { useCallback, useRef, useState } from "react";
+import { validateForm } from "../utils/formValidation.js";
+
+function childText(children) {
+  return React.Children.toArray(children).map(child => {
+    if (typeof child === "string" || typeof child === "number") return String(child);
+    if (!React.isValidElement(child) || child.type === "small") return "";
+    return childText(child.props.children);
+  }).join(" ").replace(/\\s+/g, " ").trim();
+}
+
+function controlKey(control, labelText) {
+  return String(control.props.name || labelText || control.props.id || "field")
+    .toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+}
+
+function enhanceChildren(children, errors, clearError, pending) {
+  return React.Children.map(children, child => {
+    if (!React.isValidElement(child)) return child;
+
+    if (child.type === "label") {
+      const labelText = childText(child.props.children);
+      let controlName = "";
+      const inspect = nodes => React.Children.forEach(nodes, node => {
+        if (!React.isValidElement(node)) return;
+        if (["input", "select", "textarea"].includes(typeof node.type === "string" ? node.type : "")) {
+          controlName = controlKey(node, labelText);
+        } else if (node.props.children) inspect(node.props.children);
+      });
+      inspect(child.props.children);
+      const error = errors[controlName];
+      const content = enhanceChildren(child.props.children, errors, clearError, pending);
+      return React.cloneElement(child, {}, <>
+        {content}
+        {error && <small className="field-error" role="alert">{error}</small>}
+      </>);
+    }
+
+    if (typeof child.type === "string" && ["input", "select", "textarea"].includes(child.type)) {
+      const label = child.props.name || child.props.id;
+      const key = controlKey(child, label);
+      const error = errors[key];
+      return React.cloneElement(child, {
+        "aria-invalid": error ? "true" : child.props["aria-invalid"],
+        "aria-describedby": error ? `${child.props["aria-describedby"] || ""} ${key}-error`.trim() : child.props["aria-describedby"],
+        onChange: event => {
+          child.props.onChange?.(event);
+          clearError(key);
+        },
+      });
+    }
+
+    if (typeof child.type === "string" && child.type === "button" &&
+      (child.props.type === "submit" || !child.props.type)) {
+      return React.cloneElement(child, { disabled: pending || child.props.disabled });
+    }
+
+    if (child.props?.children) {
+      return React.cloneElement(child, {}, enhanceChildren(child.props.children, errors, clearError, pending));
+    }
+    return child;
+  });
+}
+
+export default function ValidatedForm({ onSubmit, children, ...props }) {
+  const formRef = useRef(null);
+  const pendingRef = useRef(false);
+  const [errors, setErrors] = useState({});
+  const [pending, setPending] = useState(false);
+
+  const clearError = useCallback(key => {
+    setErrors(current => {
+      if (!current[key]) return current;
+      const next = { ...current };
+      delete next[key];
+      return next;
+    });
+  }, []);
+
+  async function handleSubmit(event) {
+    event.preventDefault();
+    if (pendingRef.current) return;
+
+    const nextErrors = validateForm(formRef.current);
+    setErrors(nextErrors);
+    if (Object.keys(nextErrors).length) {
+      const firstInvalid = formRef.current?.querySelector('[aria-invalid="true"]');
+      firstInvalid?.focus();
+      return;
+    }
+
+    pendingRef.current = true;
+    setPending(true);
+    try {
+      await onSubmit?.(event);
+    } finally {
+      pendingRef.current = false;
+      setPending(false);
+    }
+  }
+
+  const enhanced = enhanceChildren(children, errors, clearError, pending);
+  return <>
+    {Object.keys(errors).length > 0 && <div className="validation-summary" role="alert" aria-live="polite">
+      <strong>Please correct the following fields:</strong>
+      <ul>{Object.values(errors).map((message, index) => <li key={index}>{message}</li>)}</ul>
+    </div>}
+    <form {...props} ref={formRef} noValidate onSubmit={handleSubmit} aria-busy={pending || undefined}>
+      {enhanced}
+    </form>
+  </>;
+}
