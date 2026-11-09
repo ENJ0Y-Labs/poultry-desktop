@@ -198,7 +198,9 @@ describe("FeedStockPage", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "View" }));
     expect(screen.getByRole("dialog", { name: "Vitamin supplement" })).toBeInTheDocument();
-    expect(screen.getByText("12 bottle")).toBeInTheDocument();
+    expect(within(screen.getByRole("dialog", { name: "Vitamin supplement" })).getByText("3 bottle")).toBeInTheDocument();
+    expect(within(screen.getByRole("dialog", { name: "Vitamin supplement" })).getByRole("button", { name: "Edit inventory item" })).toBeInTheDocument();
+    expect(context.loadInventoryMovements).toHaveBeenCalledWith("item-1");
     expect(screen.getByRole("table", { name: "Inventory items" })).toBeInTheDocument();
     expect(window.location.hash).toBe(initialHash);
     fireEvent.click(screen.getByRole("button", { name: "Close drawer" }));
@@ -223,5 +225,8 @@ describe("FeedStockPage", () => {
     expect(drawer).toBeInTheDocument();
     expect(within(drawer).getByText("sales@example.test")).toBeInTheDocument();
     expect(within(drawer).getByText("Feed supplier")).toBeInTheDocument();
+    expect(within(drawer).getByText("B-2026-001")).toBeInTheDocument();
+    expect(within(drawer).getByRole("button", { name: "Edit supplier" })).toBeInTheDocument();
+    expect(within(screen.getByRole("table", { name: "Suppliers" })).queryByText("Feed supplier")).not.toBeInTheDocument();
   });
 });
