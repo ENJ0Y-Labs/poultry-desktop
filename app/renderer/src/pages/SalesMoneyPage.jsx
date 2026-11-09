@@ -22,7 +22,9 @@ export default function SalesMoneyPage() {
 
   function salesForCustomer(customer) {
     return sales
-      .filter(sale => customerKey(sale.customerName) === customerKey(customer.name))
+      .filter(sale => sale.customerId && customer.id
+        ? sale.customerId === customer.id
+        : customerKey(sale.customerName) === customerKey(customer.name))
       .sort((a, b) => String(b.saleDate || "").localeCompare(String(a.saleDate || "")));
   }
 
