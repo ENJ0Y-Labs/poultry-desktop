@@ -25,7 +25,7 @@ export function Modal({
     document.body.style.overflow = "hidden";
 
     const focusTimer = window.setTimeout(() => {
-      const first = dialogRef.current?.querySelector("input:not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled])") || dialogRef.current?.querySelector(FOCUSABLE);
+      const first = dialogRef.current?.querySelector("input:not([disabled]), select:not([disabled]), textarea:not([disabled])") || dialogRef.current?.querySelector(FOCUSABLE);
       (first || dialogRef.current)?.focus();
     }, 0);
 
