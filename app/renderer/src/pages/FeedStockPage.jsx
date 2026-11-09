@@ -1,4 +1,5 @@
 import { useContext, useEffect, useRef, useState } from "react";
+// eslint-disable-next-line no-unused-vars -- JSX component usage is not detected by the core rule
 import ValidatedForm from "../components/ValidatedForm.jsx";
 import { feedApi } from "../services/api.js";
 import { FarmManagerContext } from "../components/FarmManagerContext.jsx";
