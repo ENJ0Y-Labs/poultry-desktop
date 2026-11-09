@@ -100,13 +100,9 @@ export default function DashboardPage() {
       title: formatAuditAction(row.action),
       description: "Immutable audit activity. The recorded values are displayed without changing audit history.",
       fields: [
-        ["Timestamp", formatAuditTimestamp(row.occurredAt, farm?.timezone)],
-        ["Action", formatAuditAction(row.action)],
-        ["Entity", formatAuditEntity(row.entityType)],
         ["Entity ID", row.entityId],
         ["User ID", row.userId],
         ["Batch ID", row.batchId],
-        ["Reason", row.reason],
         ["Changed fields", changedFieldsLabel],
         ["Audit record ID", row.id],
       ].filter(([, value]) => value !== null && value !== undefined && value !== ""),
