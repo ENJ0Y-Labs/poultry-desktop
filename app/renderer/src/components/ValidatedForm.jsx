@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { mapBackendFieldErrors, normalizeFieldKey, setActiveValidationForm, validateForm } from "../utils/formValidation.js";
+import { getFormControlKey, mapBackendFieldErrors, normalizeFieldKey, setActiveValidationForm, validateForm } from "../utils/formValidation.js";
 
 function childText(children) {
   return React.Children.toArray(children).map(child => {
@@ -91,7 +91,7 @@ export default function ValidatedForm({ onSubmit, validate, children, ...props }
     const nextErrors = { ...validateForm(formRef.current), ...(validate?.(formRef.current) || {}) };
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length) {
-      const firstInvalid = formRef.current?.querySelector('[aria-invalid="true"]');
+      const firstInvalid = Array.from(formRef.current?.elements || []).find(control => nextErrors[getFormControlKey(control)]);
       firstInvalid?.focus();
       return;
     }
