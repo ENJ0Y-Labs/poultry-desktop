@@ -509,6 +509,7 @@ describe("App", () => {
     await waitFor(() => expect(screen.getByRole("heading", { name: "Farm dashboard" })).toBeInTheDocument());
     fireEvent.click(within(screen.getByRole("navigation", { name: "Main navigation" })).getByRole("button", { name: "Production" }));
     fireEvent.change(await screen.findByLabelText("Layer batch"), { target: { value: "layer-1" } });
+    fireEvent.click(screen.getByRole("button", { name: "Record egg sale" }));
 
     const savedCustomer = await screen.findByLabelText("Saved customer");
     expect(savedCustomer).not.toBeRequired();
@@ -693,6 +694,7 @@ describe("App", () => {
     await waitFor(() => expect(window.location.hash).toBe(
       "#daily-work/daily-record/batchId=layer-1/date=2026-10-25"
     ));
+    fireEvent.click(await screen.findByRole("button", { name: "Save daily notes" }));
     expect(await screen.findByLabelText("Batch")).toHaveValue("layer-1");
     expect(screen.getByLabelText("Date")).toHaveValue("2026-10-25");
   });
@@ -823,7 +825,8 @@ describe("App", () => {
 
     fireEvent.click(await screen.findByRole("button", { name: "Record mortality" }));
     expect(window.location.hash).toContain("daily-work/mortality");
-    fireEvent.click(await screen.findByRole("button", { name: "Record mortality" }));
+    await screen.findByRole("heading", { name: "Daily record" });
+    fireEvent.click(screen.getByRole("button", { name: "Record mortality" }));
     expect(await screen.findByRole("combobox", { name: "Batch" })).toHaveValue("layer-1");
 
     dashboardNav();
@@ -835,7 +838,8 @@ describe("App", () => {
     dashboardNav();
     fireEvent.click(await screen.findByRole("button", { name: "Record feed usage" }));
     expect(window.location.hash).toContain("daily-work/daily-record");
-    fireEvent.click(await screen.findByRole("button", { name: "Record feed usage" }));
+    await screen.findByRole("heading", { name: "Daily record" });
+    fireEvent.click(screen.getByRole("button", { name: "Record feed usage" }));
     expect(await screen.findByRole("combobox", { name: "Batch" })).toHaveValue("layer-1");
     expect(screen.getByRole("combobox", { name: "Feed type" })).toHaveValue("feed-layer");
 
