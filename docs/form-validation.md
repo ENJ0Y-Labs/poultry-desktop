@@ -16,7 +16,7 @@
 - Customer phone is optional and has no format constraint in the current create API. Do not invent a phone-number pattern.
 - Supplier phone is optional and limited to 40 characters by the current API contract. The renderer enforces the declared maximum where the field is rendered.
 - Supplier email validation follows the existing API constraints; do not infer a stricter requirement for customer phone or other free-form contact fields.
-- Duplicate and business-identity checks remain on the backend. Do not rely on a client-side list as the final duplicate check because it can be stale.
+- Supplier names receive an early client-side duplicate check against the loaded supplier list because the backend enforces unique supplier names; the backend remains authoritative if the list is stale. Customer names are not pre-checked because the customer create API does not enforce uniqueness. All other business-identity rules remain backend-owned.
 
 ## Automated verification
 
