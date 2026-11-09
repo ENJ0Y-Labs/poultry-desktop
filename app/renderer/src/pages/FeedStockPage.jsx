@@ -3,6 +3,8 @@ import { feedApi } from "../services/api.js";
 import { FarmManagerContext } from "../components/FarmManagerContext.jsx";
 // eslint-disable-next-line no-unused-vars -- JSX component usage is not detected by the core rule
 import { ConfirmAction, ModalForm } from "../components/Modal.jsx";
+// eslint-disable-next-line no-unused-vars -- JSX component usage is not detected by the core rule
+import ContextDrawer, { DrawerDetails } from "../components/ContextDrawer.jsx";
 // eslint-disable-next-line no-unused-vars
 import DataTable from "../components/DataTable.jsx";
 // eslint-disable-next-line no-unused-vars
@@ -20,6 +22,7 @@ export default function FeedStockPage() {
   });
   const [openingBalances, setOpeningBalances] = useState([]);
   const [editingFeedType, setEditingFeedType] = useState(null);
+  const [drawerRecord, setDrawerRecord] = useState(null);
 
   function feedProductLabel(type) {
     const brand = type.brand ? ` · ${type.brand}` : "";
@@ -242,6 +245,7 @@ export default function FeedStockPage() {
 </ModalForm>
             <DataTable caption="Inventory items" columns={[
               { key: "name", label: "Item" }, { key: "category", label: "Category" }, { key: "quantityOnHand", label: "Stock" },
+              { key: "details", label: "Details", render: item => <button type="button" className="secondary-button" onClick={() => setDrawerRecord({ title: item.name, description: "Inventory item details. Stock changes remain recorded through the inventory movement workflow.", fields: [["Category", item.category], ["Quantity on hand", `${item.quantityOnHand ?? "—"} ${item.unit || ""}`.trim()], ["Reorder level", `${item.reorderLevel ?? "—"} ${item.unit || ""}`.trim()], ["Unit", item.unit], ["Status", item.status]] })}>View</button> },
               { key: "reorderLevel", label: "Reorder" }, { key: "unit", label: "Unit" }, { key: "status", label: "Status" },
               { key: "action", label: "Action", render: item => item.status === "ACTIVE" ? <button type="button" className="secondary-button" onClick={() => { editInventoryItem(item); setInventoryItemOpenSignal(value => value + 1); }}>Edit</button> : "Archived" },
             ]} rows={inventoryItems} emptyMessage="No non-feed inventory items yet." />
@@ -327,12 +331,16 @@ export default function FeedStockPage() {
 </ModalForm>
         <DataTable caption="Suppliers" columns={[
           { key: "name", label: "Supplier" }, { key: "phone", label: "Phone", render: supplier => supplier.phone || "—" },
+          { key: "details", label: "Details", render: supplier => <button type="button" className="secondary-button" onClick={() => setDrawerRecord({ title: supplier.name, description: "Supplier contact information and notes.", fields: [["Phone", supplier.phone], ["Email", supplier.email], ["Address", supplier.address], ["Status", supplier.status || "ACTIVE"], ["Notes", supplier.notes]] })}>View</button> },
           { key: "notes", label: "Notes", render: supplier => supplier.notes || "—" },
           { key: "status", label: "Status", render: supplier => supplier.status || "ACTIVE" },
           { key: "action", label: "Action", render: supplier => supplier.status === "ARCHIVED" ? "Archived" : <><button type="button" className="secondary-button" disabled={saving} onClick={() => { editSupplier(supplier); setSupplierOpenSignal(value => value + 1); }}>Edit</button> <ConfirmAction title="Archive supplier?" description={`Archive ${supplier.name}? It will no longer be offered for new purchases, while historical purchase references remain intact.`} triggerLabel="Archive" confirmLabel="Archive supplier" loading={saving} error={error} onConfirm={() => archiveSupplier(supplier.id)} /></> },
         ]} rows={suppliers} emptyMessage="No suppliers recorded yet." />
       </section></PageSection>
 
+      <ContextDrawer open={Boolean(drawerRecord)} onClose={() => setDrawerRecord(null)} title={drawerRecord?.title || "Record details"} description={drawerRecord?.description} size="medium">
+        {drawerRecord && <DrawerDetails fields={drawerRecord.fields} />}
+      </ContextDrawer>
     </PageTemplate>
   );
 }
