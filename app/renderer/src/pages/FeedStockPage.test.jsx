@@ -181,4 +181,46 @@ describe("FeedStockPage", () => {
     }));
     expect(container.textContent).not.toContain("\\n");
   });
+  it("opens inventory item details without leaving the inventory list", () => {
+    const context = {
+      ...contextValue,
+      inventoryItems: [{ id: "item-1", name: "Vitamin supplement", category: "DRUG", quantityOnHand: 12, reorderLevel: 3, unit: "bottle", status: "ACTIVE" }],
+    };
+    const initialHash = window.location.hash;
+    render(
+      <NavigationContext.Provider value={{ activePage: "feed-stock", activeTab: "inventory" }}>
+        <FarmManagerContext.Provider value={context}>
+          <FeedStockPage />
+        </FarmManagerContext.Provider>
+      </NavigationContext.Provider>
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "View" }));
+    expect(screen.getByRole("dialog", { name: "Vitamin supplement" })).toBeInTheDocument();
+    expect(screen.getByText("12 bottle")).toBeInTheDocument();
+    expect(screen.getByRole("table", { name: "Inventory items" })).toBeInTheDocument();
+    expect(window.location.hash).toBe(initialHash);
+    fireEvent.click(screen.getByRole("button", { name: "Close drawer" }));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("opens supplier contact details in the contextual drawer", () => {
+    const context = {
+      ...contextValue,
+      suppliers: [{ id: "supplier-1", name: "Farm Inputs Ltd", phone: "08012345678", email: "sales@example.test", address: "Port Harcourt", notes: "Feed supplier", status: "ACTIVE" }],
+    };
+    render(
+      <NavigationContext.Provider value={{ activePage: "feed-stock", activeTab: "suppliers" }}>
+        <FarmManagerContext.Provider value={context}>
+          <FeedStockPage />
+        </FarmManagerContext.Provider>
+      </NavigationContext.Provider>
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "View" }));
+    expect(screen.getByRole("dialog", { name: "Farm Inputs Ltd" })).toBeInTheDocument();
+    expect(screen.getByText("sales@example.test")).toBeInTheDocument();
+    expect(screen.getByText("Feed supplier")).toBeInTheDocument();
+  });
+
 });
