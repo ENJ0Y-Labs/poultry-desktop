@@ -166,7 +166,7 @@ describe("AppShell", () => {
 
   it("uses one navigation surface and persists collapse without changing the selected page", () => {
     const { unmount } = render(
-      <AppShell farm={{ name: "Grantino", location: "", currency: "NGN", timezone: "Africa/Lagos" }}>
+      <AppShell farm={{ name: "Grantino Farms", location: "", currency: "NGN", timezone: "Africa/Lagos" }}>
         <section id="dashboard">Dashboard</section>
       </AppShell>
     );
@@ -181,12 +181,12 @@ describe("AppShell", () => {
     expect(screen.getByRole("button", { name: "Expand sidebar" })).toHaveAttribute("aria-expanded", "false");
     expect(screen.getByRole("button", { name: "Expand sidebar" })).toHaveClass("brand-mark-button");
     expect(screen.queryByRole("button", { name: "Collapse sidebar" })).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Account" })).toHaveTextContent("GF");
+    expect(within(screen.getByRole("button", { name: "Account" })).getByText("GF")).toBeInTheDocument();
     expect(document.querySelector(".app-shell")).toHaveClass("sidebar-collapsed");
 
     unmount();
     render(
-      <AppShell farm={{ name: "Grantino", location: "", currency: "NGN", timezone: "Africa/Lagos" }}>
+      <AppShell farm={{ name: "Grantino Farms", location: "", currency: "NGN", timezone: "Africa/Lagos" }}>
         <section id="dashboard">Dashboard</section>
       </AppShell>
     );
