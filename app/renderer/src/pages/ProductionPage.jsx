@@ -3,6 +3,7 @@ import { productionTrendApi } from "../services/api.js";
 // eslint-disable-next-line no-unused-vars
 import ProductionTrendChart from "../components/ProductionTrendChart.jsx";
 import { FarmManagerContext } from "../components/FarmManagerContext.jsx";
+// eslint-disable-next-line no-unused-vars -- JSX component usage is not detected by the core rule
 import { ModalForm } from "../components/Modal.jsx";
 import { todayLocalDate } from "../utils/farmUx.js";
 // eslint-disable-next-line no-unused-vars
