@@ -71,7 +71,7 @@ export function validateForm(form) {
       else if (control.max !== "" && number > Number(control.max)) message = `${label} must be no more than ${control.max}.`;
       else if (control.validity?.stepMismatch) message = `Enter a valid value for ${label.toLowerCase()}.`;
     } else if (value && /₦|\b(amount|price|cost|revenue)\b/i.test(label) && control.type !== "number") {
-      try { parseNairaToKobo(value, { allowZero: true }); }
+      try { parseNairaToKobo(value, { allowZero: /purchase cost/i.test(label) }); }
       catch (error) { message = error.message; }
     } else if (value && control.type === "email" && control.validity?.typeMismatch) {
       message = `Enter a valid email address for ${label.toLowerCase()}.`;
