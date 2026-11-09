@@ -9,22 +9,6 @@ function childText(children) {
   }).join(" ").replace(/\s+/g, " ").trim();
 }
 
-function addRequiredMarker(children) {
-  let inserted = false;
-  return React.Children.map(children, child => {
-    if (inserted) return child;
-    if (typeof child === "string" && child.trim()) {
-      inserted = true;
-      return <>{child}<span className="required-indicator" aria-hidden="true">*</span></>;
-    }
-    if (React.isValidElement(child) && child.type === "span" && childText(child.props.children)) {
-      inserted = true;
-      return React.cloneElement(child, {}, <>{child.props.children}<span className="required-indicator" aria-hidden="true">*</span></>);
-    }
-    return child;
-  });
-}
-
 function fieldKey(control, inheritedLabel = "") {
   return normalizeFieldKey(control.props.name || inheritedLabel || control.props.id || "field");
 }
@@ -41,20 +25,17 @@ function enhanceChildren(children, errors, clearError, pending, inheritedLabel =
     if (child.type === "label") {
       const labelText = childText(child.props.children);
       let controlName = "";
-      let hasRequired = false;
       const inspect = nodes => React.Children.forEach(nodes, node => {
         if (!React.isValidElement(node)) return;
         if (["input", "select", "textarea"].includes(typeof node.type === "string" ? node.type : "")) {
           controlName = fieldKey(node, labelText);
-          hasRequired = hasRequired || Boolean(node.props.required);
         } else if (node.props.children) inspect(node.props.children);
       });
       inspect(child.props.children);
       const error = errors[controlName];
       const wrapperClass = String(child.props.className || "").split(" ").includes("full") ? "validated-field full" : "validated-field";
-      const labelChildren = hasRequired ? addRequiredMarker(child.props.children) : child.props.children;
       return <div className={wrapperClass}>
-        {React.cloneElement(child, {}, enhanceChildren(labelChildren, errors, clearError, pending, labelText))}
+        {React.cloneElement(child, {}, enhanceChildren(child.props.children, errors, clearError, pending, labelText))}
         {error && <small id={`${controlName}-error`} className="field-error" aria-live="polite">{error}</small>}
       </div>;
     }
