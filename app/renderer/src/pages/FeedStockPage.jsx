@@ -1,4 +1,4 @@
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import { feedApi } from "../services/api.js";
 import { FarmManagerContext } from "../components/FarmManagerContext.jsx";
 // eslint-disable-next-line no-unused-vars -- JSX component usage is not detected by the core rule
@@ -24,6 +24,7 @@ export default function FeedStockPage() {
   const [editingFeedType, setEditingFeedType] = useState(null);
   const [drawerRecord, setDrawerRecord] = useState(null);
   const [drawerMovementItemId, setDrawerMovementItemId] = useState("");
+  const drawerMovementRequestRef = useRef(0);
 
   function feedProductLabel(type) {
     const brand = type.brand ? ` · ${type.brand}` : "";
@@ -31,6 +32,7 @@ export default function FeedStockPage() {
   }
 
   function openInventoryDetails(item) {
+    const requestId = ++drawerMovementRequestRef.current;
     setDrawerMovementItemId("");
     setDrawerRecord({
       kind: "inventory",
@@ -42,10 +44,13 @@ export default function FeedStockPage() {
         ["Unit", item.unit],
       ].filter(([, value]) => value !== null && value !== undefined && value !== ""),
     });
-    Promise.resolve(loadInventoryMovements(item.id)).finally(() => setDrawerMovementItemId(item.id));
+    Promise.resolve(loadInventoryMovements(item.id)).finally(() => {
+      if (drawerMovementRequestRef.current === requestId) setDrawerMovementItemId(item.id);
+    });
   }
 
   function openSupplierDetails(supplier) {
+    drawerMovementRequestRef.current += 1;
     const relatedBatches = batches.filter(batch => batch.supplierId === supplier.id);
     setDrawerRecord({
       kind: "supplier",
@@ -372,7 +377,10 @@ export default function FeedStockPage() {
 
       <ContextDrawer
         open={Boolean(drawerRecord)}
-        onClose={() => setDrawerRecord(null)}
+        onClose={() => {
+          drawerMovementRequestRef.current += 1;
+          setDrawerRecord(null);
+        }}
         title={drawerRecord?.title || "Record details"}
         description={drawerRecord?.description}
         size={drawerRecord?.kind === "supplier" || drawerRecord?.kind === "inventory" ? "large" : "medium"}
