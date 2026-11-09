@@ -3,6 +3,7 @@ import { productionTrendApi } from "../services/api.js";
 // eslint-disable-next-line no-unused-vars
 import ProductionTrendChart from "../components/ProductionTrendChart.jsx";
 import { FarmManagerContext } from "../components/FarmManagerContext.jsx";
+import { ModalForm } from "../components/Modal.jsx";
 // eslint-disable-next-line no-unused-vars
 import DataTable from "../components/DataTable.jsx";
 // eslint-disable-next-line no-unused-vars
@@ -13,6 +14,7 @@ import PageTemplate from "../components/PageTemplate.jsx";
 import MetricHelp from "../components/MetricHelp.jsx";
 
 export default function ProductionPage() {
+  const { error } = useContext(FarmManagerContext);
   const { formatMoney, farm, batches, customers, eggBatchId, setEggBatchId, broilerBatchId, setBroilerBatchId, broilerGrowth, broilerWeights, broilerSales, weightForm, setWeightForm, birdSaleForm, setBirdSaleForm, pricing, pricingForm, setPricingForm, eggInventory, eggCollections, eggSales, eggCollectionForm, setEggCollectionForm, eggSaleForm, setEggSaleForm, crateSize, saving, loadPricingForBatch, loadBroilerForBatch, saveWeight, saveBirdSale, loadEggsForBatch, saveEggCollection, saveEggSale } = useContext(FarmManagerContext);
 
   return (
@@ -58,13 +60,15 @@ export default function ProductionPage() {
 
               <div className="subsection">
                 <h3>Record egg production</h3>
-                <form className="inline-form" onSubmit={saveEggCollection}>
+                <ModalForm title="Egg collection" description="Record good and cracked eggs collected from this layer batch." triggerLabel="Record collection" loading={saving} error={error}>
+<form className="inline-form" onSubmit={saveEggCollection}>
                   <label className="field"><span>Collection date</span><input required type="date" value={eggCollectionForm.date} onChange={e=>setEggCollectionForm({...eggCollectionForm,date:e.target.value})}/></label>
                   <label className="field"><span>Good eggs</span><input required min="0" step="1" type="number" value={eggCollectionForm.good} onChange={e=>setEggCollectionForm({...eggCollectionForm,good:e.target.value})}/></label>
                   <label className="field"><span>Cracked eggs</span><input required min="0" step="1" type="number" value={eggCollectionForm.cracked} onChange={e=>setEggCollectionForm({...eggCollectionForm,cracked:e.target.value})}/></label>
                   <label className="field"><span>Notes</span><input value={eggCollectionForm.notes} onChange={e=>setEggCollectionForm({...eggCollectionForm,notes:e.target.value})}/></label>
                   <button disabled={saving}>Record collection</button>
                 </form>
+</ModalForm>
                 <DataTable caption="Egg collections" columns={[
                     { key: "recordDate", label: "Date" }, { key: "good", label: "Good" }, { key: "cracked", label: "Cracked" },
                     { key: "total", label: "Total" }, { key: "notes", label: "Notes", render: row => row.notes || "—" },
@@ -74,7 +78,8 @@ export default function ProductionPage() {
               <div className="subsection">
                 <h3>Egg sales</h3>
                 <p className="muted">Current crate size: {crateSize} eggs. The sale stores the crate size used at the time, so changing settings does not rewrite history.</p>
-                <form className="inline-form" onSubmit={saveEggSale}>
+                <ModalForm title="Egg sale" description="Record a sale from the available good-egg inventory." triggerLabel="Record egg sale" loading={saving} error={error}>
+<form className="inline-form" onSubmit={saveEggSale}>
                   <label className="field"><span>Sale date</span><input required type="date" value={eggSaleForm.date} onChange={e=>setEggSaleForm({...eggSaleForm,date:e.target.value})}/></label>
                   <label className="field"><span>Saved customer</span><select value={eggSaleForm.customerId} onChange={e=>{const id=e.target.value;const customer=customers.find(c=>c.id===id);setEggSaleForm({...eggSaleForm,customerId:id,customer:customer?.name||""});}}>
                     <option value="">Walk-in sale / no saved customer</option>
@@ -85,6 +90,7 @@ export default function ProductionPage() {
                   <label className="field"><span>Price per crate (₦)</span><input required type="text" inputMode="decimal" value={eggSaleForm.pricePerCrateMinor} onChange={e=>setEggSaleForm({...eggSaleForm,pricePerCrateMinor:e.target.value})}/></label>
                   <button disabled={saving}>Record sale</button>
                 </form>
+</ModalForm>
                 <DataTable caption="Egg sales" columns={[
                     { key: "recordDate", label: "Date" }, { key: "customer", label: "Customer" },
                     { key: "crates", label: "Crates", render: row => row.crates.toString() }, { key: "soldEggs", label: "Eggs" },
@@ -141,13 +147,15 @@ export default function ProductionPage() {
 
               <div className="subsection">
                 <h3>Record weight</h3>
-                <form className="inline-form" onSubmit={saveWeight}>
+                <ModalForm title="Weight record" description="Record the sampled bird count and total sample weight." triggerLabel="Record weight" loading={saving} error={error}>
+<form className="inline-form" onSubmit={saveWeight}>
                   <label className="field"><span>Record date</span><input required type="date" value={weightForm.date} onChange={e=>setWeightForm({...weightForm,date:e.target.value})}/></label>
                   <label className="field"><span>Sampled birds</span><input required min="1" type="number" value={weightForm.sampleQuantity} onChange={e=>setWeightForm({...weightForm,sampleQuantity:e.target.value})}/></label>
                   <label className="field"><span>Total sample weight (kg)</span><input required min="0.001" step="0.001" type="number" value={weightForm.totalWeightKg} onChange={e=>setWeightForm({...weightForm,totalWeightKg:e.target.value})}/></label>
                   <label className="field"><span>Notes</span><input value={weightForm.notes} onChange={e=>setWeightForm({...weightForm,notes:e.target.value})}/></label>
                   <button disabled={saving}>Record weight</button>
                 </form>
+</ModalForm>
                 <DataTable caption="Meat-bird weight records" columns={[
                     { key: "recordDate", label: "Date" }, { key: "sampleQuantity", label: "Sample" }, { key: "totalWeightKg", label: "Total kg" },
                     { key: "averageWeightKg", label: "Average kg" }, { key: "weightGainKg", label: "Gain kg/bird" },
@@ -173,7 +181,8 @@ export default function ProductionPage() {
 
               <div className="subsection">
                 <h3>Bird sales</h3>
-                <form className="inline-form" onSubmit={saveBirdSale}>
+                <ModalForm title="Bird sale" description="Record a partial or full sale of birds from this batch." triggerLabel="Record bird sale" loading={saving} error={error}>
+<form className="inline-form" onSubmit={saveBirdSale}>
                   <label className="field"><span>Sale date</span><input required type="date" value={birdSaleForm.date} onChange={e=>setBirdSaleForm({...birdSaleForm,date:e.target.value})}/></label>
                   <label className="field"><span>Quantity</span><input required min="1" type="number" value={birdSaleForm.quantity} onChange={e=>setBirdSaleForm({...birdSaleForm,quantity:e.target.value})}/></label>
                   <label className="field"><span>Price per bird (₦)</span><input required type="text" inputMode="decimal" value={birdSaleForm.pricePerBirdMinor} onChange={e=>setBirdSaleForm({...birdSaleForm,pricePerBirdMinor:e.target.value})}/></label>
@@ -184,6 +193,7 @@ export default function ProductionPage() {
                   {!birdSaleForm.customerId && <label className="field"><span>Walk-in customer name</span><input required maxLength="120" value={birdSaleForm.customer} onChange={e=>setBirdSaleForm({...birdSaleForm,customer:e.target.value})} placeholder="Enter buyer name"/></label>}
                   <button disabled={saving}>Record bird sale</button>
                 </form>
+</ModalForm>
                 <DataTable caption="Meat-bird sales" columns={[
                     { key: "recordDate", label: "Date" }, { key: "quantity", label: "Quantity" },
                     { key: "pricePerBirdMinor", label: "Price / bird", render: row => formatMoney(row.pricePerBirdMinor, farm.currency) },
