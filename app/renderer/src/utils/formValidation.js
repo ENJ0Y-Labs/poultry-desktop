@@ -75,8 +75,10 @@ export function validateForm(form) {
       catch (error) { message = error.message; }
     } else if (value && control.type === "email" && control.validity?.typeMismatch) {
       message = `Enter a valid email address for ${label.toLowerCase()}.`;
-    } else if (value && control.type === "date" && !validCalendarDate(value)) {
-      message = `Enter a valid date for ${label.toLowerCase()}.`;
+    } else if (value && control.type === "date") {
+      if (!validCalendarDate(value)) message = `Enter a valid date for ${label.toLowerCase()}.`;
+      else if (control.min && value < control.min) message = `${label} must be on or after ${control.min}.`;
+      else if (control.max && value > control.max) message = `${label} must be on or before ${control.max}.`;
     } else if (value && control.minLength > 0 && value.length < control.minLength) {
       message = `${label} must contain at least ${control.minLength} characters.`;
     } else if (value && control.maxLength > 0 && value.length > control.maxLength) {
