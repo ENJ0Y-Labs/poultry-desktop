@@ -16,6 +16,7 @@ describe("ValidatedForm", () => {
 
     expect(await screen.findByText("Please correct the following fields:")).toBeTruthy();
     expect(screen.getByText("Batch is required.")).toBeTruthy();
+    expect(document.activeElement).toBe(screen.getByLabelText("Batch"));
     expect(screen.getByLabelText("Notes").value).toBe("keep these notes");
     expect(submit).not.toHaveBeenCalled();
   });
