@@ -1,10 +1,12 @@
-import { useContext } from "react";
+import { useContext, useState } from "react";
 import { FarmManagerContext } from "../components/FarmManagerContext.jsx";
 // eslint-disable-next-line no-unused-vars
 import PageSection from "../components/PageSection.jsx";
 // eslint-disable-next-line no-unused-vars
 import PageTemplate from "../components/PageTemplate.jsx";
 import { rememberLastBatchId } from "../utils/farmUx.js";
+// eslint-disable-next-line no-unused-vars -- JSX component usage is not detected by the core rule
+import ContextDrawer, { DrawerDetails } from "../components/ContextDrawer.jsx";
 // eslint-disable-next-line no-unused-vars
 import DataTable from "../components/DataTable.jsx";
 
@@ -12,6 +14,7 @@ const batchTypeLabel = type => type === "LAYER" ? "Layer" : type === "BROILER" ?
 const batchStatusLabel = status => status === "ACTIVE" ? "Active" : status === "SOLD" ? "Sold" : String(status || "Unknown").toLowerCase().replace(/\b\w/g, letter => letter.toUpperCase());
 
 export default function FlocksPage() {
+  const [drawerRecord, setDrawerRecord] = useState(null);
   const { formatMoney, formatQuantity, formatPercent, formatKg, formatMetric, farm, houses, batches, suppliers, batchForm, setBatchForm, costForm, setCostForm, houseForm, setHouseForm, saving, selectedBatchId, setSelectedBatchId, batchDashboard, createBatch, addBirdCost, markBatchSold, reopenBatch, addHouse, editHouse, editingHouseId, cancelHouseEdit, populationAdjustmentForm, setPopulationAdjustmentForm, populationAdjustments, savePopulationAdjustment, markPopulationEstimated, editingBatchId, batchSetupForm, setBatchSetupForm, saveBatchSetup, editBatchSetup, cancelBatchSetup } = useContext(FarmManagerContext);
 
   return (
@@ -80,6 +83,7 @@ export default function FlocksPage() {
           </form>
           <DataTable caption="Batch records" columns={[
               { key: "code", label: "Code" }, { key: "type", label: "Type", render: batch => batchTypeLabel(batch.type) },
+              { key: "details", label: "Details", render: batch => <button type="button" className="secondary-button" onClick={() => setDrawerRecord({ title: batch.code, description: "Batch record overview. Operational figures remain calculated by the backend.", fields: [["Type", batchTypeLabel(batch.type)], ["Status", batchStatusLabel(batch.status)], ["Placement date", batch.placementDate], ["Initial birds", batch.initialBirdCount], ["Population confidence", batch.populationCountStatus === "ESTIMATED" ? "Estimated" : "Verified"], ["House / pen", houses.find(house => house.id === batch.houseId)?.name || batch.houseId], ["Supplier / source", suppliers.find(supplier => supplier.id === batch.supplierId)?.name || "Unknown / not recorded"]] })}>View</button> },
               { key: "placementDate", label: "Placement" }, { key: "initialBirdCount", label: "Initial birds" }, { key: "populationCountStatus", label: "Count confidence", render: batch => batch.populationCountStatus === "ESTIMATED" ? "Estimated" : "Verified" },
               { key: "confidenceAction", label: "Count action", render: batch => batch.populationCountStatus !== "ESTIMATED" ? <button type="button" className="secondary-button" disabled={saving} onClick={() => markPopulationEstimated(batch.id)}>Mark estimated</button> : "Awaiting physical count" },
               { key: "status", label: "Status", render: batch => batchStatusLabel(batch.status) },
@@ -114,11 +118,15 @@ export default function FlocksPage() {
           <form className="inline-form" onSubmit={addHouse}><label className="field"><span>Name</span><input required value={houseForm.name} onChange={e=>setHouseForm({...houseForm,name:e.target.value})}/></label><label className="field"><span>Code</span><input required value={houseForm.code} onChange={e=>setHouseForm({...houseForm,code:e.target.value})}/></label><label className="field"><span>House type</span><select required value={houseForm.houseType} onChange={e=>setHouseForm({...houseForm,houseType:e.target.value})}><option value="PERMANENT">Permanent</option><option value="TEMPORARY">Temporary</option></select></label><label className="field"><span>Notes</span><input value={houseForm.notes} onChange={e=>setHouseForm({...houseForm,notes:e.target.value})}/></label><button disabled={saving}>{editingHouseId ? "Save house" : "Add house"}</button>{editingHouseId && <button type="button" className="secondary-button" onClick={cancelHouseEdit}>Cancel</button>}</form>
           <DataTable caption="Houses and pens" columns={[
               { key: "name", label: "Name" }, { key: "code", label: "Code" }, { key: "houseType", label: "Type", render: house => house.houseType === "TEMPORARY" ? "Temporary" : "Permanent" }, { key: "status", label: "Status" },
+              { key: "details", label: "Details", render: house => <button type="button" className="secondary-button" onClick={() => setDrawerRecord({ title: house.name, description: "House / pen details and current occupancy.", fields: [["Code", house.code], ["Type", house.houseType === "TEMPORARY" ? "Temporary" : "Permanent"], ["Status", house.status], ["Occupancy", batches.some(batch => batch.houseId === house.id && batch.status === "ACTIVE") ? "Occupied" : "Empty"], ["Active batch", batches.find(batch => batch.houseId === house.id && batch.status === "ACTIVE")?.code || "None"], ["Notes", house.notes || "—"]] })}>View</button> },
               { key: "occupancy", label: "Occupancy", render: house => batches.some(batch => batch.houseId === house.id && batch.status === "ACTIVE") ? "Occupied" : "Empty" },
               { key: "notes", label: "Notes", render: house => house.notes || "—" },
               { key: "action", label: "Action", render: house => <button type="button" className="secondary-button" onClick={() => editHouse(house)}>Edit</button> },
             ]} rows={houses} emptyMessage="No houses or pens yet." />
         </section></PageSection>
+      <ContextDrawer open={Boolean(drawerRecord)} onClose={() => setDrawerRecord(null)} title={drawerRecord?.title || "Record details"} description={drawerRecord?.description} size="medium">
+        {drawerRecord && <DrawerDetails fields={drawerRecord.fields} />}
+      </ContextDrawer>
     </PageTemplate>
   );
 }
