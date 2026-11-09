@@ -191,17 +191,25 @@ export function ModalForm({
 
 export function ConfirmAction({
   title, description, confirmLabel = "Confirm", triggerLabel,
-  tone = "danger", loading = false, onConfirm,
+  tone = "danger", loading = false, error = "", onConfirm,
 }) {
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+
+  useEffect(() => {
+    if (submitted && !busy && !loading) {
+      setSubmitted(false);
+      if (!error) setOpen(false);
+    }
+  }, [submitted, busy, loading, error]);
 
   async function confirm() {
     if (loading || busy) return;
     setBusy(true);
+    setSubmitted(true);
     try {
       await onConfirm?.();
-      setOpen(false);
     } finally {
       setBusy(false);
     }
@@ -217,6 +225,7 @@ export function ConfirmAction({
         description={description}
         size="small"
         loading={busy || loading}
+        error={error}
         footer={
           <div className="pomas-modal-actions">
             <button type="button" className="secondary-button" disabled={busy || loading} onClick={() => setOpen(false)}>Cancel</button>
