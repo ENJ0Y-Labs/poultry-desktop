@@ -29,7 +29,8 @@ describe("Modal", () => {
 
   it("requires an explicit discard choice when the form is dirty", () => {
     const onClose = vi.fn();
-    render(<Modal open onClose={onClose} title="Edit record" isDirty>
+    const onDiscard = vi.fn();
+    render(<Modal open onClose={onClose} onDiscard={onDiscard} title="Edit record" isDirty>
       <input aria-label="Name" />
     </Modal>);
 
@@ -42,7 +43,23 @@ describe("Modal", () => {
     fireEvent.click(screen.getByRole("button", { name: "Close dialog" }));
     expect(screen.getByText("Discard unsaved changes?")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Discard changes" }));
+    expect(onDiscard).toHaveBeenCalledTimes(1);
     expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps keyboard focus inside the dialog", () => {
+    render(<Modal open onClose={() => {}} title="Keyboard dialog">
+      <button type="button">First action</button>
+      <button type="button">Last action</button>
+    </Modal>);
+    const close = screen.getByRole("button", { name: "Close dialog" });
+    const last = screen.getByRole("button", { name: "Last action" });
+    last.focus();
+    fireEvent.keyDown(last, { key: "Tab" });
+    expect(close).toHaveFocus();
+    close.focus();
+    fireEvent.keyDown(close, { key: "Tab", shiftKey: true });
+    expect(last).toHaveFocus();
   });
 
   it("does not close while a submission is loading", () => {
