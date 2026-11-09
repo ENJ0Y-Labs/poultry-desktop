@@ -31,7 +31,7 @@ export default function FeedStockPage() {
   }
 
   function openInventoryDetails(item) {
-    setDrawerMovementItemId(item.id);
+    setDrawerMovementItemId("");
     setDrawerRecord({
       kind: "inventory",
       item,
@@ -45,7 +45,7 @@ export default function FeedStockPage() {
         ["Status", item.status],
       ].filter(([, value]) => value !== null && value !== undefined && value !== ""),
     });
-    loadInventoryMovements(item.id);
+    Promise.resolve(loadInventoryMovements(item.id)).finally(() => setDrawerMovementItemId(item.id));
   }
 
   function openSupplierDetails(supplier) {
@@ -285,7 +285,6 @@ export default function FeedStockPage() {
               { key: "name", label: "Item" }, { key: "category", label: "Category" }, { key: "quantityOnHand", label: "Stock" },
               { key: "details", label: "Details", render: item => <button type="button" className="secondary-button" onClick={() => openInventoryDetails(item)}>View</button> },
               { key: "reorderLevel", label: "Reorder" }, { key: "unit", label: "Unit" }, { key: "status", label: "Status" },
-              { key: "action", label: "Action", render: item => item.status === "ACTIVE" ? <button type="button" className="secondary-button" onClick={() => { editInventoryItem(item); setInventoryItemOpenSignal(value => value + 1); }}>Edit</button> : "Archived" },
             ]} rows={inventoryItems} emptyMessage="No non-feed inventory items yet." />
           </div>
 
@@ -372,7 +371,7 @@ export default function FeedStockPage() {
           { key: "linkedBatches", label: "Linked batches", render: supplier => batches.filter(batch => batch.supplierId === supplier.id).length },
           { key: "details", label: "Details", render: supplier => <button type="button" className="secondary-button" onClick={() => openSupplierDetails(supplier)}>View</button> },
           { key: "status", label: "Status", render: supplier => supplier.status || "ACTIVE" },
-          { key: "action", label: "Action", render: supplier => supplier.status === "ARCHIVED" ? "Archived" : <><button type="button" className="secondary-button" disabled={saving} onClick={() => { editSupplier(supplier); setSupplierOpenSignal(value => value + 1); }}>Edit</button> <ConfirmAction title="Archive supplier?" description={`Archive ${supplier.name}? It will no longer be offered for new purchases, while historical purchase references remain intact.`} triggerLabel="Archive" confirmLabel="Archive supplier" loading={saving} error={error} onConfirm={() => archiveSupplier(supplier.id)} /></> },
+          { key: "action", label: "Action", render: supplier => supplier.status === "ARCHIVED" ? "Archived" : <ConfirmAction title="Archive supplier?" description={`Archive ${supplier.name}? It will no longer be offered for new purchases, while historical purchase references remain intact.`} triggerLabel="Archive" confirmLabel="Archive supplier" loading={saving} error={error} onConfirm={() => archiveSupplier(supplier.id)} /> },
         ]} rows={suppliers} emptyMessage="No suppliers recorded yet." />
       </section></PageSection>
 
