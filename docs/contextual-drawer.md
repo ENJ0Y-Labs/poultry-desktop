@@ -35,12 +35,21 @@ current list or losing its filters, selection, or scroll position.
 ## Contextual entry points
 
 Use record detail actions on existing lists for batches, houses/pens, customers,
-suppliers, inventory items, feed purchases, sales, expenses and audit activity
-where the screen already has the relevant record data. Do not invent detail
-fields or issue new API calls solely to populate a drawer when the current view
-does not expose that information. Feed purchase detail is not available in the
-current Feed & Stock page data model, so it remains out of scope until purchase
-history is exposed there.
+suppliers, inventory items, sales, expenses and audit activity where the screen
+already has the relevant record data. Tables should remain scannable summaries;
+drawers should add meaningful context instead of repeating every visible column.
+Do not invent fields or balances. Derive customer purchase counts, totals and
+last-purchase dates from the existing common sales rows, matching the recorded
+customer name. Outstanding balances are omitted because the current sales data
+does not expose payment or receivable state.
+
+Inventory drawers may load the existing stock-movement history for the selected
+item through the current inventory movement API. Supplier drawers may show
+batches that reference the supplier as their source. Feed purchase history is
+not exposed in the current Feed & Stock page data model, so it remains out of
+scope. Audit drawers may display the immutable changed-fields, before and after
+snapshots already returned by the audit endpoint. Keep posted sales, expenses
+and audit records read-only.
 
 ## Automated checks
 
