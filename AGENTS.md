@@ -1380,3 +1380,14 @@ An opening balance may be dated before a later purchase, but cannot be dated bef
 - Support small/medium/large sizes, read-only/editable modes, loading/error states, safe backdrop close, Escape, focus trapping/restoration, body-scroll locking and explicit discard confirmation for dirty edits.
 - Do not invent fields or fetch additional detail data unless the existing workflow supports it. Feed purchase detail remains out of scope until purchase history is exposed to the renderer.
 - Add Vitest coverage and update `docs/contextual-drawer.md` plus relevant manual test instructions when the drawer contract changes.
+
+
+## Client-side form validation
+
+- Use the shared `ValidatedForm` component and `app/renderer/src/utils/formValidation.js` for renderer form validation. Keep field labels visible, mark required fields, show field-level errors and a multi-error summary, and focus the first invalid field.
+- Preserve entered values after client validation and API failures. Disable submit while pending and prevent duplicate requests.
+- Validate only rules supported by existing field attributes and API/domain contracts. Negative quantities are invalid unless the field explicitly permits them; respect `min`, `max`, and `step`.
+- Parse naira inputs with `parseNairaToKobo` and retain integer kobo in API payloads. Never introduce floating-point money arithmetic or display raw minor units.
+- Map backend Bean Validation field details to controls when supplied. The backend remains authoritative for population, FIFO, lifecycle, duplicate, financial and all other domain invariants.
+- Do not invent phone-number formats: customer phone is optional without a format constraint; supplier phone is optional and capped at 40 characters by the current API contract. Keep duplicate checks on the backend.
+- Update `docs/form-validation.md` and its manual mock-data steps when validation behavior changes. Run focused renderer tests, then the full test, lint, backend verification and build commands. Do not claim manual desktop checks unless performed with a disposable database.
