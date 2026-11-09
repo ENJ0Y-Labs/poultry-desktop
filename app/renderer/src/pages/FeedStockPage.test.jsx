@@ -154,6 +154,7 @@ describe("FeedStockPage", () => {
       </NavigationContext.Provider>
     );
 
+    fireEvent.click(screen.getByRole("button", { name: "Record purchase" }));
     const select = screen.getByLabelText("Feed type");
     expect(within(select).getByRole("option", { name: "Grower Mash · Brand A (bag)" })).toBeInTheDocument();
     expect(within(select).getByRole("option", { name: "Grower Mash · Brand B (bag)" })).toBeInTheDocument();
