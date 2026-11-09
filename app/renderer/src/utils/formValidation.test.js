@@ -32,6 +32,11 @@ describe("form validation", () => {
     expect(Object.values(validateForm(form))).toHaveLength(2);
   });
 
+  it("rejects dates outside the field's declared range", () => {
+    const form = formWith('<label>Placement date<input type="date" min="2026-01-01" max="2026-12-31" value="2025-12-31"></label>');
+    expect(Object.values(validateForm(form))).toContain("Placement date must be on or after 2026-01-01.");
+  });
+
   it("validates naira text with the integer-kobo parser", () => {
     const invalid = formWith('<label>Amount (₦)<input value="12.345"></label>');
     expect(Object.values(validateForm(invalid))).toContain("Enter a valid naira amount with up to 2 decimal places.");
