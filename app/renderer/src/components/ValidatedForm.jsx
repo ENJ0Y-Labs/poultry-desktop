@@ -60,7 +60,7 @@ function enhanceChildren(children, errors, clearError, pending, inheritedLabel =
   });
 }
 
-export default function ValidatedForm({ onSubmit, children, ...props }) {
+export default function ValidatedForm({ onSubmit, validate, children, ...props }) {
   const formRef = useRef(null);
   const pendingRef = useRef(false);
   const [errors, setErrors] = useState({});
@@ -89,7 +89,7 @@ export default function ValidatedForm({ onSubmit, children, ...props }) {
     event.preventDefault();
     if (pendingRef.current) return;
 
-    const nextErrors = validateForm(formRef.current);
+    const nextErrors = { ...validateForm(formRef.current), ...(validate?.(formRef.current) || {}) };
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length) {
       const firstInvalid = formRef.current?.querySelector('[aria-invalid="true"]');
