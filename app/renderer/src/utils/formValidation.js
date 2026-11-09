@@ -5,6 +5,7 @@ const FIELD_LABEL_IGNORE = /\s+/g;
 export function normalizeFieldKey(value) {
   return String(value ?? "")
     .trim()
+    .replace(/([a-z0-9])([A-Z])/g, "$1_$2")
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "_")
     .replace(/^_+|_+$/g, "");
@@ -99,11 +100,16 @@ export function mapBackendFieldErrors(details, form) {
     const message = Array.isArray(rawMessage) ? rawMessage.join(", ") : String(rawMessage ?? "");
     if (!message) continue;
     const normalizedField = normalizeFieldKey(field);
-    const key = normalizedField.endsWith("_date") ? "date" : normalizedField.replace(/_(minor|id)$/g, "");
+    const aliases = {
+      initial_bird_count: "initial_birds", sample_quantity: "sampled_birds",
+      total_weight_kg: "total_sample_weight_kg", purchase_cost_recorded: "purchase_information",
+      new_count: "physical_count", movement_type: "movement", target_margin_percent: "target_margin",
+    };
+    const key = aliases[normalizedField] || (normalizedField.endsWith("_date") ? "date" : normalizedField.replace(/_(minor|id|percent)$/g, ""));
     const matching = controls.find(control => {
       const normalizedCandidate = normalizeFieldKey(control.name || labelFor(control));
-      const candidate = normalizedCandidate.endsWith("_date") ? "date" : normalizedCandidate.replace(/_(minor|id)$/g, "");
-      const label = normalizeFieldKey(labelFor(control)).replace(/_(minor|id)$/g, "");
+      const candidate = aliases[normalizedCandidate] || (normalizedCandidate.endsWith("_date") ? "date" : normalizedCandidate.replace(/_(minor|id|percent)$/g, ""));
+      const label = normalizeFieldKey(labelFor(control)).replace(/_(minor|id|percent)$/g, "");
       return candidate === key || label === key || label.includes(key) || key.includes(label);
     });
     if (matching) errors[fieldKey(matching)] = message;
