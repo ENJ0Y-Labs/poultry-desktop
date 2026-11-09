@@ -1,5 +1,5 @@
+import React, { useState } from "react";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { useState } from "react";
 import { describe, expect, it, vi } from "vitest";
 import ContextDrawer from "./ContextDrawer.jsx";
 
@@ -15,7 +15,8 @@ describe("ContextDrawer", () => {
         </ContextDrawer>
       </>;
     }
-    render(<Harness />);
+    expect(ContextDrawer).toBeDefined();
+    render(React.createElement(Harness));
     const opener = screen.getByRole("button", { name: "Inspect batch" });
     opener.focus();
     fireEvent.click(opener);
