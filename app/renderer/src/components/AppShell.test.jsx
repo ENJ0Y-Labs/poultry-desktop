@@ -179,6 +179,10 @@ describe("AppShell", () => {
     expect(window.location.hash).toBe("#flocks/batch-dashboard");
     expect(localStorage.getItem("pomas:sidebar-collapsed")).toBe("true");
     expect(screen.getByRole("button", { name: "Expand sidebar" })).toHaveAttribute("aria-expanded", "false");
+    expect(screen.getByRole("button", { name: "Expand sidebar" })).toHaveClass("brand-mark-button");
+    expect(screen.queryByRole("button", { name: "Collapse sidebar" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Account" })).toHaveTextContent("GF");
+    expect(document.querySelector(".app-shell")).toHaveClass("sidebar-collapsed");
 
     unmount();
     render(
@@ -190,6 +194,10 @@ describe("AppShell", () => {
     expect(screen.getByRole("button", { name: "Expand sidebar" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Flocks" })).toHaveAttribute("aria-current", "page");
     expect(window.location.hash).toBe("#flocks/batch-dashboard");
+
+    fireEvent.click(screen.getByRole("button", { name: "Expand sidebar" }));
+    expect(screen.getByRole("button", { name: "Collapse sidebar" })).toHaveAttribute("aria-expanded", "true");
+    expect(localStorage.getItem("pomas:sidebar-collapsed")).toBe("false");
   });
 
   it("shows the packaged product version without runtime architecture in the application footer", () => {
