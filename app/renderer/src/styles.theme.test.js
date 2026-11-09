@@ -64,6 +64,14 @@ describe("navigation theme tokens", () => {
     expect(stylesheet).toMatch(/\.page-tab:hover\s*\{[^}]*color:\s*var\(--text\);[^}]*background:\s*var\(--ide-tab-hover-bg\)/);
     expect(stylesheet).toMatch(/\.page-tab\.active\s*\{[^}]*border-color:\s*var\(--ide-tab-active-border\);[^}]*background:\s*var\(--ide-tab-active-bg\)/);
   });
+
+  it("aligns the single sidebar and main content in expanded and collapsed modes", () => {
+    expect(stylesheet).toMatch(/\.sidebar\s*\{\s*inset:\s*0 auto 0 0;\s*width:\s*var\(--ide-sidebar-width\);/);
+    expect(stylesheet).toContain(".app-main { margin-left: var(--ide-sidebar-width); }");
+    expect(stylesheet).toContain(".app-shell.sidebar-collapsed .sidebar { width: 68px; }");
+    expect(stylesheet).toContain(".app-shell.sidebar-collapsed .app-main { margin-left: 68px; }");
+    expect(stylesheet).not.toContain("calc(var(--ide-activity-width) + var(--ide-sidebar-width))");
+  });
 });
 
 
