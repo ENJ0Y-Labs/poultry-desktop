@@ -54,7 +54,7 @@ For routine React UI and backend development, run both services together:
 npm run dev:browser:all
 ```
 
-Open `http://127.0.0.1:5173/` in Chrome or another browser. This command starts the existing backend and Vite scripts concurrently. Vite React Fast Refresh and Hot Module Replacement (HMR) automatically apply supported React and CSS edits without packaging or rebuilding the desktop application. Spring Boot serves the API on `http://127.0.0.1:18942/api/v1`.
+Open `http://127.0.0.1:5173/` in Chrome or another browser. This command starts the existing backend and Vite scripts concurrently. If a backend is already listening on the configured port, it is reused only when `/api/v1/health` confirms that the database and schema are ready; an occupied but unhealthy port is reported without starting a second backend. Vite React Fast Refresh and Hot Module Replacement (HMR) automatically apply supported React and CSS edits without packaging or rebuilding the desktop application. Spring Boot serves the API on `http://127.0.0.1:18942/api/v1` by default.
 
 You can also start the services separately in two terminals:
 

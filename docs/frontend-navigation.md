@@ -24,6 +24,7 @@
 - Supplier records are loaded and managed through the existing supplier API; feed purchases can reference a registered supplier.
 - The connection indicator probes the backend health endpoint and refreshes periodically. It reports healthy status only when the backend responds successfully and reports a valid database schema.
 - The API base can be configured with `VITE_API_BASE_URL` or the desktop bridge's `getApiBaseUrl`; the local loopback address is only the development fallback.
+- Keyboard navigation shortcuts follow the ten-destination sidebar order: Ctrl+1 through Ctrl+8 open Dashboard through Reports, Ctrl+9 opens Import / Export, and Ctrl+0 opens Settings (the tenth destination, since keyboards have no 10 key). The sidebar displays the matching shortcut beside each destination.
 - Navigation is fully local and adds no package dependency.
 - Only the active page/tab sections are mounted. The backend remains the source of truth for farm calculations and records.
 
