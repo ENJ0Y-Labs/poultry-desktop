@@ -15,7 +15,7 @@ const saleTypeLabel = type => type === "EGG" ? "Eggs" : type === "BROILER" ? "Br
 export default function SalesMoneyPage() {
   const { error } = useContext(FarmManagerContext);
   const [customerOpenSignal, setCustomerOpenSignal] = useState(0);
-  const { formatMoney, farm, batches, expenseForm, setExpenseForm, expenses, expenseBatchFilter, setExpenseBatchFilter, customers, customerForm, setCustomerForm, editingCustomerId, editCustomer, cancelCustomerEdit, sales, saving, expenseCategories, loadExpenses, saveCustomer, saveExpense } = useContext(FarmManagerContext);
+  const { formatMoney, farm, batches, expenseForm, setExpenseForm, expenses, expenseBatchFilter, setExpenseBatchFilter, customers, customerForm, setCustomerForm, emptyCustomer, emptyExpense, editingCustomerId, editCustomer, cancelCustomerEdit, sales, saving, expenseCategories, loadExpenses, saveCustomer, saveExpense } = useContext(FarmManagerContext);
 
   return (
     <PageTemplate className="grid">
