@@ -9,7 +9,7 @@ import FormField from "./FormField.jsx";
 describe("ValidatedForm", () => {
   it("shows a summary and inline required-field error while preserving entered values", async () => {
     const submit = vi.fn();
-    const { container } = render(<ValidatedForm onSubmit={submit}>
+    render(<ValidatedForm onSubmit={submit}>
       <label>Batch<input name="batch" required defaultValue="" /></label>
       <label>Notes<input name="notes" defaultValue="keep these notes" /></label>
       <button type="submit">Save</button>
