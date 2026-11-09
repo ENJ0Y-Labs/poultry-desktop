@@ -51,7 +51,7 @@ The top-level page components live under `app/renderer/src/pages/`. Shared form 
 ## Single collapsible navigation
 
 - One sidebar contains the nine existing top-level destinations. Do not render a second activity rail with duplicate destinations.
-- The collapse/expand control switches between a labeled sidebar and a compact icon rail. In compact mode, show only the Pomas logo (which also expands the sidebar), navigation icons, and the active farm initials in the account slot; hide the product wordmark, farm summary, group labels, navigation labels, shortcut hints, and separate collapse chevron. Each icon retains an accessible name and tooltip.
+- The collapse/expand control switches between a labeled sidebar and a compact icon rail. Each icon retains an accessible name and tooltip.
 - The compact-mode preference is stored locally in renderer localStorage under `pomas:sidebar-collapsed`; it does not require a backend request or network access.
 - The active page and subpage remain encoded in the URL hash when the sidebar is collapsed or expanded.
 - Account opens the existing Settings → App, appearance & account section. Settings remains available in the main navigation.
