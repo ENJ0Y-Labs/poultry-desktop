@@ -4,9 +4,25 @@ import { getFormControlKey, mapBackendFieldErrors, normalizeFieldKey, setActiveV
 function childText(children) {
   return React.Children.toArray(children).map(child => {
     if (typeof child === "string" || typeof child === "number") return String(child);
-    if (!React.isValidElement(child) || child.type === "small" || ["input", "select", "textarea", "button", "option"].includes(child.type)) return "";
+    if (!React.isValidElement(child) || child.type === "small" || child.props?.className?.includes("required-indicator") || ["input", "select", "textarea", "button", "option"].includes(child.type)) return "";
     return childText(child.props.children);
   }).join(" ").replace(/\s+/g, " ").trim();
+}
+
+function addRequiredMarker(children) {
+  let inserted = false;
+  return React.Children.map(children, child => {
+    if (inserted) return child;
+    if (typeof child === "string" && child.trim()) {
+      inserted = true;
+      return <>{child}<span className="required-indicator" aria-hidden="true">*</span></>;
+    }
+    if (React.isValidElement(child) && child.type === "span" && childText(child.props.children)) {
+      inserted = true;
+      return React.cloneElement(child, {}, <>{child.props.children}<span className="required-indicator" aria-hidden="true">*</span></>);
+    }
+    return child;
+  });
 }
 
 function fieldKey(control, inheritedLabel = "") {
@@ -25,17 +41,20 @@ function enhanceChildren(children, errors, clearError, pending, inheritedLabel =
     if (child.type === "label") {
       const labelText = childText(child.props.children);
       let controlName = "";
+      let hasRequired = false;
       const inspect = nodes => React.Children.forEach(nodes, node => {
         if (!React.isValidElement(node)) return;
         if (["input", "select", "textarea"].includes(typeof node.type === "string" ? node.type : "")) {
           controlName = fieldKey(node, labelText);
+          hasRequired = hasRequired || Boolean(node.props.required);
         } else if (node.props.children) inspect(node.props.children);
       });
       inspect(child.props.children);
       const error = errors[controlName];
       const wrapperClass = String(child.props.className || "").split(" ").includes("full") ? "validated-field full" : "validated-field";
+      const labelChildren = hasRequired ? addRequiredMarker(child.props.children) : child.props.children;
       return <div className={wrapperClass}>
-        {React.cloneElement(child, {}, enhanceChildren(child.props.children, errors, clearError, pending, labelText))}
+        {React.cloneElement(child, {}, enhanceChildren(labelChildren, errors, clearError, pending, labelText))}
         {error && <small id={`${controlName}-error`} className="field-error" aria-live="polite">{error}</small>}
       </div>;
     }
