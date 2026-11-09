@@ -26,14 +26,8 @@ export default function FlocksPage() {
       title: batch.code,
       description: "Batch setup, source information and the available operational snapshot.",
       fields: [
-        ["Type", batchTypeLabel(batch.type)],
-        ["Status", batchStatusLabel(batch.status)],
-        ["Placement date", batch.placementDate],
-        ["Initial birds", batch.initialBirdCount],
-        ["Population confidence", batch.populationCountStatus === "ESTIMATED" ? "Estimated" : "Verified"],
-        ["House / pen", house ? `${house.name} (${house.code})` : batch.houseId],
-        ["House type", house?.houseType === "TEMPORARY" ? "Temporary" : house ? "Permanent" : null],
         ["Supplier / source", supplier?.name || "Unknown / not recorded"],
+        ["House type", house?.houseType === "TEMPORARY" ? "Temporary" : house ? "Permanent" : null],
         ...(batchDashboard?.batch?.id === batch.id ? [
           ["Current birds", batchDashboard.population?.currentBirds],
           ["Mortality", batchDashboard.population?.mortality],
@@ -60,10 +54,6 @@ export default function FlocksPage() {
       title: house.name,
       description: "House / pen profile and the flocks assigned to this location.",
       fields: [
-        ["Code", house.code],
-        ["Type", house.houseType === "TEMPORARY" ? "Temporary" : "Permanent"],
-        ["Status", house.status],
-        ["Occupancy", activeBatch ? "Occupied" : "Empty"],
         ["Notes", house.notes],
       ],
       relatedBatches,
