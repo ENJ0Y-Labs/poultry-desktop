@@ -3,6 +3,7 @@ import pomasLogo from "./assets/pomas-logo.png";
 import ValidatedForm from "./components/ValidatedForm.jsx";
 import { todayLocalDate, getLastBatchId, rememberLastBatchId } from "./utils/farmUx.js";
 import { parseNairaToKobo } from "./utils/moneyInput.js";
+import { getActiveValidationForm } from "./utils/formValidation.js";
 import { formatMoney } from "./utils/money.js";
 import { appVersionLabel } from "./utils/appInfo.js";
 import { getThemePreference, setThemePreference } from "./utils/theme.js";
@@ -41,7 +42,9 @@ function formatCount(value) { return value == null ? "—" : Number(value).toLoc
 function displayApiError(err) {
   if (!err) return "";
   if (err.details && typeof err.details === "object") {
-    const messages = Object.entries(err.details)
+    window.dispatchEvent(new CustomEvent("pomas:form-validation-error", { detail: { form: getActiveValidationForm(), details: err.details } }));
+    const details = err.details.fields && typeof err.details.fields === "object" ? err.details.fields : err.details;
+    const messages = Object.entries(details)
       .map(([field, message]) => `${field}: ${Array.isArray(message) ? message.join(", ") : message}`)
       .filter(Boolean);
     if (messages.length) return messages.join(" • ");
