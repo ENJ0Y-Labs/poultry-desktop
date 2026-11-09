@@ -45,7 +45,7 @@ describe("form validation", () => {
   });
 
   it("maps backend validation details only to matching controls", () => {
-    const form = formWith('<label>Phone<input name="phone"></label><label>Quantity<input name="quantity"></label>');
-    expect(mapBackendFieldErrors({ phone: "Invalid phone", missing: "Not found" }, form)).toEqual({ phone: "Invalid phone" });
+    const form = formWith('<label>Record date<input type="date"></label><label>Phone<input name="phone"></label><label>Quantity<input name="quantity"></label>');
+    expect(mapBackendFieldErrors({ fields: { recordDate: "Date is outside the allowed range.", phone: "Invalid phone", missing: "Not found" } }, form)).toEqual({ record_date: "Date is outside the allowed range.", phone: "Invalid phone" });
   });
 });
