@@ -24,7 +24,7 @@ export default function SalesMoneyPage() {
             <h2>Customers</h2>
             <p className="muted">Keep reusable customer records for egg and broiler sales. Type-specific sale records also retain the customer name used when the sale was recorded.</p>
           </div>
-          <ModalForm title="Customer" description="Add or update a reusable customer record." triggerLabel={editingCustomerId ? "Edit customer" : "Add customer"} openSignal={customerOpenSignal} loading={saving} error={error}>
+          <ModalForm title="Customer" description="Add or update a reusable customer record." triggerLabel={editingCustomerId ? "Edit customer" : "Add customer"} openSignal={customerOpenSignal} loading={saving} error={error} onDiscard={() => { setCustomerForm(emptyCustomer); cancelCustomerEdit(); }}>
 <form className="inline-form" onSubmit={saveCustomer}>
             <label className="field"><span>Customer name</span><input required value={customerForm.name} onChange={e=>setCustomerForm({...customerForm,name:e.target.value})}/></label>
             <label className="field"><span>Phone</span><input value={customerForm.phone} onChange={e=>setCustomerForm({...customerForm,phone:e.target.value})}/></label>
@@ -60,7 +60,7 @@ export default function SalesMoneyPage() {
             <h2>Expenses</h2>
             <p className="muted">Record farm-level or batch-associated expenses. Enter amounts in naira (₦); the app stores exact kobo values.</p>
           </div>
-          <ModalForm title="Record expense" description="Record a farm-level or batch-associated expense." triggerLabel="Record expense" loading={saving} error={error}>
+          <ModalForm title="Record expense" description="Record a farm-level or batch-associated expense." triggerLabel="Record expense" loading={saving} error={error} onDiscard={() => setExpenseForm(emptyExpense)}>
 <form className="inline-form" onSubmit={saveExpense}>
             <label className="field"><span>Expense date</span><input required type="date" value={expenseForm.occurredDate} onChange={e=>setExpenseForm({...expenseForm,occurredDate:e.target.value})}/></label>
             <label className="field"><span>Description</span><input required value={expenseForm.description} onChange={e=>setExpenseForm({...expenseForm,description:e.target.value})}/></label>
