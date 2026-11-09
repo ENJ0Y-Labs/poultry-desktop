@@ -12,7 +12,7 @@ import DataTable from "../components/DataTable.jsx";
 
 export default function HealthPage() {
   const { error } = useContext(FarmManagerContext);
-  const { formatMoney, farm, batches, healthForm, setHealthForm, drugForm, setDrugForm, vaccinationForm, setVaccinationForm, healthRecords, drugRecords, vaccinationRecords, saving, saveHealth, saveDrug, saveVaccination, loadHealthForBatch } = useContext(FarmManagerContext);
+  const { formatMoney, farm, batches, healthForm, setHealthForm, drugForm, setDrugForm, vaccinationForm, setVaccinationForm, emptyHealth, emptyDrug, emptyVaccination, healthRecords, drugRecords, vaccinationRecords, saving, saveHealth, saveDrug, saveVaccination, loadHealthForBatch } = useContext(FarmManagerContext);
   const batchOptions = <><option value="">Batch</option>{batches.map(batch => <option key={batch.id} value={batch.id}>{batch.code}</option>)}</>;
 
   return (
