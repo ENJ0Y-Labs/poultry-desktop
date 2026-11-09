@@ -20,7 +20,7 @@ export default function HealthPage() {
       {batches.length === 0 && <EmptyState className="empty-state" role="status">No batches yet. Create a batch in <a href="#flocks/flocks">Flocks → Batches</a> before recording health, treatment, or vaccination details.</EmptyState>}
       <PageSection page="health" tab="health-record">
         <section id="health" className="card full"><div className="section-head"><h2>Health records</h2><p className="muted">Record symptoms, conditions, and action taken. Treatments and vaccinations are tracked separately.</p></div>
-          <ModalForm title="Health record" description="Record a health condition and the action taken." triggerLabel="Add health record" loading={saving} error={error}>
+          <ModalForm title="Health record" description="Record a health condition and the action taken." triggerLabel="Add health record" loading={saving} error={error} onDiscard={() => setHealthForm(emptyHealth)}>
 <form className="form-grid" onSubmit={saveHealth}>
             <label>Batch<select required value={healthForm.batchId} onChange={event => {setHealthForm({...healthForm,batchId:event.target.value});loadHealthForBatch(event.target.value);}}>{batchOptions}</select></label>
             <label>Date<input required type="date" value={healthForm.date} onChange={event => setHealthForm({...healthForm,date:event.target.value})}/></label>
@@ -39,7 +39,7 @@ export default function HealthPage() {
 
       <PageSection page="health" tab="drugs">
         <section className="card full"><div className="section-head"><h2>Drugs & treatments</h2><p className="muted">Each drug record creates one shared DRUGS expense. Do not record the same cost again as a separate expense.</p></div>
-          <ModalForm title="Drug record" description="Record treatment details and associated cost." triggerLabel="Record drug use" loading={saving} error={error}>
+          <ModalForm title="Drug record" description="Record treatment details and associated cost." triggerLabel="Record drug use" loading={saving} error={error} onDiscard={() => setDrugForm(emptyDrug)}>
 <form className="form-grid" onSubmit={saveDrug}>
             <label>Batch<select required value={drugForm.batchId} onChange={event => {setDrugForm({...drugForm,batchId:event.target.value});loadHealthForBatch(event.target.value);}}>{batchOptions}</select></label>
             <label>Date<input required type="date" value={drugForm.date} onChange={event => setDrugForm({...drugForm,date:event.target.value})}/></label>
@@ -59,7 +59,7 @@ export default function HealthPage() {
 
       <PageSection page="health" tab="vaccination">
         <section className="card full"><div className="section-head"><h2>Vaccination</h2><p className="muted">Keep vaccine schedule and administration history separate from illness and drug records.</p></div>
-          <ModalForm title="Vaccination record" description="Record vaccination details for the selected batch." triggerLabel="Record vaccination" loading={saving} error={error}>
+          <ModalForm title="Vaccination record" description="Record vaccination details for the selected batch." triggerLabel="Record vaccination" loading={saving} error={error} onDiscard={() => setVaccinationForm(emptyVaccination)}>
 <form className="form-grid" onSubmit={saveVaccination}>
             <label>Batch<select required value={vaccinationForm.batchId} onChange={event => {setVaccinationForm({...vaccinationForm,batchId:event.target.value});loadHealthForBatch(event.target.value);}}>{batchOptions}</select></label>
             <label>Date<input required type="date" value={vaccinationForm.date} onChange={event => setVaccinationForm({...vaccinationForm,date:event.target.value})}/></label>
