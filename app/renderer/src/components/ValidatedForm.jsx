@@ -10,7 +10,7 @@ function childText(children) {
 }
 
 function fieldKey(control, inheritedLabel = "") {
-  return normalizeFieldKey(control.props.name || control.props.id || inheritedLabel || "field");
+  return normalizeFieldKey(control.props.name || inheritedLabel || control.props.id || "field");
 }
 
 function enhanceChildren(children, errors, clearError, pending, inheritedLabel = "") {
