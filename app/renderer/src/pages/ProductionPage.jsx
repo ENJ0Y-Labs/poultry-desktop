@@ -168,7 +168,7 @@ export default function ProductionPage() {
               <div className="subsection">
                 <h3>Cost-based pricing</h3>
                 <p className="muted">Actual cost comes from the backend bird-cost ledger. Prices are calculated by Spring Boot.</p>
-                <ValidatedForm className="inline-form" onSubmit={e=>{e.preventDefault(); loadPricingForBatch(broilerBatchId, pricingForm.quantity, pricingForm.date);}}>
+                <ValidatedForm className="inline-form" onSubmit={async e=>{e.preventDefault(); await loadPricingForBatch(broilerBatchId, pricingForm.quantity, pricingForm.date);}}>
                   <label className="field"><span>Bird quantity</span><input required min="1" type="number" value={pricingForm.quantity} onChange={e=>setPricingForm({...pricingForm,quantity:e.target.value})}/></label>
                   <label className="field"><span>Pricing date</span><input required type="date" value={pricingForm.date} onChange={e=>setPricingForm({...pricingForm,date:e.target.value})}/></label>
                   <button disabled={saving}>Calculate price</button>
