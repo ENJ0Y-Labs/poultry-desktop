@@ -13,7 +13,8 @@ export function normalizeFieldKey(value) {
 
 export function formatFieldLabel(value) {
   const label = String(value ?? "").replace(/([a-z0-9])([A-Z])/g, "$1 $2").replace(/[_-]+/g, " ").replace(FIELD_LABEL_IGNORE, " ").trim();
-  return label.replace(/\s*\*$/, "") || "This field";
+  const cleaned = label.replace(/\s*\*$/, "");
+  return cleaned ? cleaned[0].toUpperCase() + cleaned.slice(1) : "This field";
 }
 
 let activeValidationForm = null;
@@ -27,9 +28,8 @@ export function getActiveValidationForm() {
 }
 
 function labelFor(control) {
-  if (control.name) return formatFieldLabel(control.name.replace(/[_-]+/g, " "));
   const label = control.closest("label");
-  if (!label) return formatFieldLabel(control.getAttribute("aria-label") || control.id);
+  if (!label) return formatFieldLabel(control.name || control.getAttribute("aria-label") || control.id);
   const clone = label.cloneNode(true);
   clone.querySelectorAll("small, input, select, textarea, button, .required-indicator, .field-error").forEach(node => node.remove());
   return formatFieldLabel(clone.textContent);
