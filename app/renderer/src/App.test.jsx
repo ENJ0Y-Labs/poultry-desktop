@@ -838,10 +838,13 @@ describe("App", () => {
     fireEvent.click(await screen.findByRole("button", { name: "Record feed usage" }));
     await waitFor(() => expect(window.location.hash).toContain("daily-work/daily-record"));
     fireEvent(window, new HashChangeEvent("hashchange"));
-    await screen.findByRole("heading", { name: "Daily record" });
-    await screen.findByRole("heading", { name: "Feed usage" });
-    expect(await screen.findByRole("combobox", { name: "Batch" })).toHaveValue("layer-1");
-    expect(screen.getByRole("combobox", { name: "Feed type" })).toHaveValue("feed-layer");
+    const feedUsageDialog = await screen.findByRole("dialog", { name: "Feed usage" });
+    expect(within(feedUsageDialog).getByRole("combobox", { name: "Feed type" })).toHaveValue("feed-layer");
+
+    fireEvent.click(within(feedUsageDialog).getByRole("button", { name: "Close dialog" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Save daily notes" }));
+    const dailyRecordDialog = await screen.findByRole("dialog", { name: "Daily record" });
+    expect(within(dailyRecordDialog).getByRole("combobox", { name: "Batch" })).toHaveValue("layer-1");
 
     dashboardNav();
     fireEvent.click(await screen.findByRole("button", { name: "Record a sale" }));
