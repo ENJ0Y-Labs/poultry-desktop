@@ -33,7 +33,7 @@ describe("ValidatedForm", () => {
 
     fireEvent.submit(screen.getByRole("button", { name: "Save" }).closest("form"));
     expect(await screen.findByText("New category is required.")).toBeTruthy();
-    expect(screen.getByLabelText("New category *").getAttribute("aria-describedby")).toContain("new_category-error");
+    expect(screen.getByRole("textbox").getAttribute("aria-describedby")).toContain("new_category-error");
   });
 
   it("prevents another submit while the first request is pending", async () => {
