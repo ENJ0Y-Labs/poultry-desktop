@@ -25,7 +25,7 @@ export function Modal({
     document.body.style.overflow = "hidden";
 
     const frame = requestAnimationFrame(() => {
-      const first = dialogRef.current?.querySelector(FOCUSABLE);
+      const first = dialogRef.current?.querySelector("input:not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled])") || dialogRef.current?.querySelector(FOCUSABLE);
       (first || dialogRef.current)?.focus();
     });
 
@@ -109,7 +109,7 @@ export function Modal({
           {error && <div className="error" role="alert">{error}</div>}
           {children}
           {confirmDiscard && (
-            <div className="pomas-modal-discard" role="alertdialog" aria-labelledby="pomas-discard-title">
+            <div className="pomas-modal-discard" role="alert" aria-labelledby="pomas-discard-title">
               <strong id="pomas-discard-title">Discard unsaved changes?</strong>
               <p>Your entries have not been saved. Discarding will close this form and lose those changes.</p>
               <div className="pomas-modal-actions">
@@ -171,7 +171,7 @@ export function ModalForm({
         error={error}
         isDirty={dirty}
       >
-        <div onInputCapture={() => setDirty(true)} onChangeCapture={() => setDirty(true)} onSubmitCapture={() => setSubmitted(true)}>
+        <div onInputCapture={() => setDirty(true)} onChangeCapture={() => setDirty(true)} onSubmitCapture={event => { if (loading) { event.preventDefault(); event.stopPropagation(); return; } setSubmitted(true); }}>
           {children}
         </div>
       </Modal>
