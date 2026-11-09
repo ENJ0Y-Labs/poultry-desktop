@@ -20,8 +20,8 @@ const groups = [
     { label: "Production", target: "production", icon: "eggs", shortcut: "Ctrl+6" },
     { label: "Sales & Money", target: "sales-money", icon: "sales", shortcut: "Ctrl+7" },
     { label: "Reports", target: "reports", icon: "reports", shortcut: "Ctrl+8" },
-    { label: "Import / Export", target: "import-export", icon: "importExport" },
-    { label: "Settings", target: "settings", icon: "settings", shortcut: "Ctrl+9" },
+    { label: "Import / Export", target: "import-export", icon: "importExport", shortcut: "Ctrl+9" },
+    { label: "Settings", target: "settings", icon: "settings", shortcut: "Ctrl+0" },
   ]},
 ];
 
@@ -242,7 +242,7 @@ export default function AppShell({ farm, error, appInfo, onRetry, children, star
   useEffect(() => {
     const onKeyDown = (event) => {
       if (!event.ctrlKey || event.altKey || event.shiftKey) return;
-      const shortcuts = { "1": "dashboard", "2": "flocks", "3": "daily-work", "4": "feed-stock", "5": "health", "6": "production", "7": "sales-money", "8": "reports", "9": "settings" };
+      const shortcuts = { "1": "dashboard", "2": "flocks", "3": "daily-work", "4": "feed-stock", "5": "health", "6": "production", "7": "sales-money", "8": "reports", "9": "import-export", "0": "settings" };
       const target = shortcuts[event.key];
       if (!target) return;
       event.preventDefault();
