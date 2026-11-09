@@ -270,21 +270,36 @@ export default function AppShell({ farm, error, appInfo, onRetry, children, star
       </a>
       <aside className={sidebarCollapsed ? "sidebar collapsed" : "sidebar"}>
         <div className="brand" data-tour="brand">
-          <div className="brand-mark" aria-hidden="true"><img src={pomasLogo} alt="" draggable="false" /></div>
-          <div className="brand-copy">
-            <strong>Pomas</strong>
-            <small>Farm management</small>
-          </div>
-          <button
-            type="button"
-            className="sidebar-toggle"
-            aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-            aria-expanded={!sidebarCollapsed}
-            title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-            onClick={() => setSidebarCollapsed(value => !value)}
-          >
-            <span aria-hidden="true">{sidebarCollapsed ? "›" : "‹"}</span>
-          </button>
+          {sidebarCollapsed ? (
+            <button
+              type="button"
+              className="brand-mark brand-mark-button"
+              aria-label="Expand sidebar"
+              aria-expanded="false"
+              title="Expand sidebar"
+              onClick={() => setSidebarCollapsed(false)}
+            >
+              <img src={pomasLogo} alt="" draggable="false" />
+            </button>
+          ) : (
+            <>
+              <div className="brand-mark" aria-hidden="true"><img src={pomasLogo} alt="" draggable="false" /></div>
+              <div className="brand-copy">
+                <strong>Pomas</strong>
+                <small>Farm management</small>
+              </div>
+              <button
+                type="button"
+                className="sidebar-toggle"
+                aria-label="Collapse sidebar"
+                aria-expanded="true"
+                title="Collapse sidebar"
+                onClick={() => setSidebarCollapsed(true)}
+              >
+                <span aria-hidden="true">‹</span>
+              </button>
+            </>
+          )}
         </div>
 
         <div className="workspace-summary" aria-label="Active farm" data-tour="farm-summary">
