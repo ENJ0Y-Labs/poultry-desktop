@@ -1,6 +1,7 @@
 import React from "react";
 import { describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+// eslint-disable-next-line no-unused-vars -- JSX component usage is not detected by the core rule
 import ValidatedForm from "./ValidatedForm.jsx";
 
 describe("ValidatedForm", () => {
