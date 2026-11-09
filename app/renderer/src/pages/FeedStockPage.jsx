@@ -11,6 +11,8 @@ import PageTemplate from "../components/PageTemplate.jsx";
 
 export default function FeedStockPage() {
   const { error } = useContext(FarmManagerContext);
+  const [inventoryItemOpenSignal, setInventoryItemOpenSignal] = useState(0);
+  const [supplierOpenSignal, setSupplierOpenSignal] = useState(0);
   const { formatMoney, farm, batches, feedTypes, setFeedTypes, feedInventory, feedTypeForm, setFeedTypeForm, setError, setSaving, feedPurchaseForm, setFeedPurchaseForm, inventoryItems, inventoryItemForm, setInventoryItemForm, editingInventoryItemId, editInventoryItem, cancelInventoryItemEdit, inventoryMovementForm, setInventoryMovementForm, inventoryMovements, suppliers, supplierForm, setSupplierForm, editingSupplierId, editSupplier, cancelSupplierEdit, saveSupplier, archiveSupplier, saving, saveInventoryItem, loadInventoryMovements, saveInventoryMovement, createFeedType, purchaseFeed, feedQuantity } = useContext(FarmManagerContext);
   const [openingStockForm, setOpeningStockForm] = useState({
     feedTypeId: "", effectiveDate: "", quantity: "", reason: "",
@@ -224,7 +226,7 @@ export default function FeedStockPage() {
 
           <div className="subsection">
             <h3>Inventory items</h3>
-            <ModalForm title="Inventory item" description="Create or update a drug, vaccine, or farm-supply item." triggerLabel="Add inventory item" loading={saving} error={error}>
+            <ModalForm title="Inventory item" description="Create or update a drug, vaccine, or farm-supply item." triggerLabel={editingInventoryItemId ? "Edit inventory item" : "Add inventory item"} openSignal={inventoryItemOpenSignal} loading={saving} error={error}>
 <form className="inline-form" onSubmit={saveInventoryItem}>
               <label className="field"><span>Item name</span><input required value={inventoryItemForm.name} onChange={e=>setInventoryItemForm({...inventoryItemForm,name:e.target.value})}/></label>
               <label className="field"><span>Category</span><select value={inventoryItemForm.category} onChange={e=>setInventoryItemForm({...inventoryItemForm,category:e.target.value})}>
@@ -240,7 +242,7 @@ export default function FeedStockPage() {
             <DataTable caption="Inventory items" columns={[
               { key: "name", label: "Item" }, { key: "category", label: "Category" }, { key: "quantityOnHand", label: "Stock" },
               { key: "reorderLevel", label: "Reorder" }, { key: "unit", label: "Unit" }, { key: "status", label: "Status" },
-              { key: "action", label: "Action", render: item => item.status === "ACTIVE" ? <button type="button" className="secondary-button" onClick={() => editInventoryItem(item)}>Edit</button> : "Archived" },
+              { key: "action", label: "Action", render: item => item.status === "ACTIVE" ? <button type="button" className="secondary-button" onClick={() => { editInventoryItem(item); setInventoryItemOpenSignal(value => value + 1); }}>Edit</button> : "Archived" },
             ]} rows={inventoryItems} emptyMessage="No non-feed inventory items yet." />
           </div>
 
@@ -312,7 +314,7 @@ export default function FeedStockPage() {
 
       <PageSection page="feed-stock" tab="suppliers"><section id="suppliers" className="card full">
         <div className="section-head"><h2>Suppliers</h2><p className="muted">Maintain reusable supplier records for feed purchases. Archiving keeps historical purchase references intact.</p></div>
-        <ModalForm title="Supplier" description="Add or update a reusable supplier record." triggerLabel="Add supplier" loading={saving} error={error}>
+        <ModalForm title="Supplier" description="Add or update a reusable supplier record." triggerLabel={editingSupplierId ? "Edit supplier" : "Add supplier"} openSignal={supplierOpenSignal} loading={saving} error={error}>
 <form className="form-grid" onSubmit={saveSupplier}>
           <label>Supplier name<input required maxLength="120" value={supplierForm.name} onChange={event=>setSupplierForm({...supplierForm,name:event.target.value})}/></label>
           <label>Phone<input maxLength="40" value={supplierForm.phone} onChange={event=>setSupplierForm({...supplierForm,phone:event.target.value})}/></label>
@@ -326,7 +328,7 @@ export default function FeedStockPage() {
           { key: "name", label: "Supplier" }, { key: "phone", label: "Phone", render: supplier => supplier.phone || "—" },
           { key: "notes", label: "Notes", render: supplier => supplier.notes || "—" },
           { key: "status", label: "Status", render: supplier => supplier.status || "ACTIVE" },
-          { key: "action", label: "Action", render: supplier => supplier.status === "ARCHIVED" ? "Archived" : <><button type="button" className="secondary-button" disabled={saving} onClick={() => editSupplier(supplier)}>Edit</button> <button type="button" disabled={saving} onClick={() => archiveSupplier(supplier.id)}>Archive</button></> },
+          { key: "action", label: "Action", render: supplier => supplier.status === "ARCHIVED" ? "Archived" : <><button type="button" className="secondary-button" disabled={saving} onClick={() => { editSupplier(supplier); setSupplierOpenSignal(value => value + 1); }}>Edit</button> <button type="button" disabled={saving} onClick={() => archiveSupplier(supplier.id)}>Archive</button></> },
         ]} rows={suppliers} emptyMessage="No suppliers recorded yet." />
       </section></PageSection>
 
