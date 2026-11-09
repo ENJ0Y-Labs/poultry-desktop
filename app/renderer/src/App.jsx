@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import pomasLogo from "./assets/pomas-logo.png";
+// eslint-disable-next-line no-unused-vars -- JSX component usage is not detected by the core rule
 import ValidatedForm from "./components/ValidatedForm.jsx";
 import { todayLocalDate, getLastBatchId, rememberLastBatchId } from "./utils/farmUx.js";
 import { parseNairaToKobo } from "./utils/moneyInput.js";
