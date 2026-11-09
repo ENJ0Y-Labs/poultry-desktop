@@ -7,6 +7,8 @@ import PageSection from "../components/PageSection.jsx";
 // eslint-disable-next-line no-unused-vars
 import PageTemplate from "../components/PageTemplate.jsx";
 import { formatAuditAction, formatAuditEntity, formatAuditTimestamp } from "../utils/auditFormatting.js";
+// eslint-disable-next-line no-unused-vars -- JSX component usage is not detected by the core rule
+import ContextDrawer, { DrawerDetails } from "../components/ContextDrawer.jsx";
 import { attentionTarget } from "../utils/attentionNavigation.js";
 import { formatEggQuantity } from "../utils/eggFormatting.js";
 // eslint-disable-next-line no-unused-vars
@@ -64,6 +66,8 @@ export default function DashboardPage() {
     loadEggsForBatch,
     loadBroilerForBatch,
   } = useContext(FarmManagerContext);
+
+  const [drawerRecord, setDrawerRecord] = useState(null);
 
   const isFirstRunEmpty = dashboard
     && houses.length === 0
@@ -224,10 +228,14 @@ export default function DashboardPage() {
                 { key: "action", label: "Action", render: row => formatAuditAction(row.action) },
                 { key: "entityType", label: "Entity", render: row => formatAuditEntity(row.entityType) },
                 { key: "reason", label: "Reason", render: row => typeof row.reason === "string" && row.reason.trim() ? row.reason : "—" },
+                { key: "details", label: "Details", render: row => <button type="button" className="secondary-button" onClick={() => setDrawerRecord({ title: formatAuditAction(row.action), description: "Immutable audit activity. This drawer presents the recorded values without changing audit history.", fields: [["Timestamp", formatAuditTimestamp(row.occurredAt, farm?.timezone)], ["Action", formatAuditAction(row.action)], ["Entity", formatAuditEntity(row.entityType)], ["Reason", row.reason || "—"]] })}>View</button> },
               ]} rows={auditRows.slice(0, 8)} emptyMessage="No audit records yet." />}</div>
           </>
         ) : <p className="muted">Dashboard is loading…</p>}
       </section></PageSection>
+      <ContextDrawer open={Boolean(drawerRecord)} onClose={() => setDrawerRecord(null)} title={drawerRecord?.title || "Audit details"} description={drawerRecord?.description} size="medium">
+        {drawerRecord && <DrawerDetails fields={drawerRecord.fields} />}
+      </ContextDrawer>
     </PageTemplate>
   );
 }
