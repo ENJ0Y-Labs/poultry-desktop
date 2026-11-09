@@ -6,7 +6,7 @@ function childText(children) {
     if (typeof child === "string" || typeof child === "number") return String(child);
     if (!React.isValidElement(child) || child.type === "small" || ["input", "select", "textarea", "button", "option"].includes(child.type)) return "";
     return childText(child.props.children);
-  }).join(" ").replace(/\\s+/g, " ").trim();
+  }).join(" ").replace(/\s+/g, " ").trim();
 }
 
 function fieldKey(control, inheritedLabel = "") {
