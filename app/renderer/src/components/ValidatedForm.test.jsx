@@ -24,6 +24,19 @@ describe("ValidatedForm", () => {
     expect(submit).not.toHaveBeenCalled();
   });
 
+  it("summarizes multiple invalid fields before sending a request", () => {
+    const submit = vi.fn();
+    render(<ValidatedForm onSubmit={submit}>
+      <label>Batch code<input required defaultValue="" /></label>
+      <label>Placement date<input type="date" required /></label>
+      <button type="submit">Save</button>
+    </ValidatedForm>);
+
+    fireEvent.submit(screen.getByRole("button", { name: "Save" }).closest("form"));
+    expect(screen.getByRole("alert").querySelectorAll("li")).toHaveLength(2);
+    expect(submit).not.toHaveBeenCalled();
+  });
+
   it("supports the existing FormField wrapper and links its inline error", async () => {
     render(<ValidatedForm onSubmit={vi.fn()}>
       <FormField label="New category" required><input required defaultValue="" /></FormField>
@@ -67,5 +80,6 @@ describe("ValidatedForm", () => {
     fireEvent.submit(screen.getByRole("button", { name: "Save" }).closest("form"));
     expect(document.getElementById("quantity-error").textContent).toBe("Must be a positive whole number.");
     expect(screen.getByLabelText("Quantity").getAttribute("aria-invalid")).toBe("true");
+    expect(screen.getByLabelText("Quantity").value).toBe("2");
   });
 });
