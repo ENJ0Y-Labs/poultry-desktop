@@ -1,7 +1,10 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
+// eslint-disable-next-line no-unused-vars -- JSX component usage is not detected by the core rule
 import FlocksPage from "./FlocksPage.jsx";
+// eslint-disable-next-line no-unused-vars -- JSX provider usage is not detected by the core rule
 import { FarmManagerContext } from "../components/FarmManagerContext.jsx";
+// eslint-disable-next-line no-unused-vars -- JSX provider usage is not detected by the core rule
 import { NavigationContext } from "../components/NavigationContext.jsx";
 
 const house = {
