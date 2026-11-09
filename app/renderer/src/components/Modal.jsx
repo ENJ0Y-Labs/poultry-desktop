@@ -187,3 +187,44 @@ export function ModalForm({
     </>
   );
 }
+
+export function ConfirmAction({
+  title, description, confirmLabel = "Confirm", triggerLabel,
+  tone = "danger", loading = false, onConfirm,
+}) {
+  const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  async function confirm() {
+    if (loading || busy) return;
+    setBusy(true);
+    try {
+      await onConfirm?.();
+      setOpen(false);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <>
+      <button type="button" className={tone === "danger" ? "danger-button" : "secondary-button"} disabled={loading || busy} onClick={() => setOpen(true)}>{triggerLabel}</button>
+      <Modal
+        open={open}
+        onClose={() => { if (!busy && !loading) setOpen(false); }}
+        title={title}
+        description={description}
+        size="small"
+        loading={busy || loading}
+        footer={
+          <div className="pomas-modal-actions">
+            <button type="button" className="secondary-button" disabled={busy || loading} onClick={() => setOpen(false)}>Cancel</button>
+            <button type="button" className={tone === "danger" ? "danger-button" : ""} disabled={busy || loading} onClick={confirm}>{busy || loading ? "Working…" : confirmLabel}</button>
+          </div>
+        }
+      >
+        <p className="muted">This action may affect how this record is used in future farm operations. Historical records are preserved where the application supports archiving.</p>
+      </Modal>
+    </>
+  );
+}
