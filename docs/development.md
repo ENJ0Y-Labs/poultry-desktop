@@ -36,23 +36,25 @@ $env:JAVA_HOME
 
 ## Run the desktop application
 
-Start Electron, React, and the supervised Spring Boot backend:
+The normal Electron development command is:
 
 ```powershell
 npm run dev
 ```
 
-On first launch, create the owner account. On later launches, sign in before the renderer loads farm or account data.
+**Current limitation:** In the investigated environment using Node.js `v26.13.0`, Electron `38.2.1` and electron-vite `4.0.1`, this command fails during Electron binary path detection with an `Electron uninstall at getElectronPath` error. The Electron development window has not been verified in that environment. Do not describe Electron desktop development as working until the command has been tested successfully.
+
+Once the Electron development launcher is working, the desktop app should be used to test native file dialogs, preload-bridge filesystem operations, desktop IPC, and other Electron-only behavior.
 
 ## Run the UI in a browser
 
-For browser-only development, run both services together:
+For routine React UI and backend development, run both services together:
 
 ```powershell
 npm run dev:browser:all
 ```
 
-Open `http://127.0.0.1:5173` in Chrome or another browser. Vite provides frontend hot reload; Spring Boot serves the API on `http://127.0.0.1:18942/api/v1`.
+Open `http://127.0.0.1:5173/` in Chrome or another browser. This command starts the existing backend and Vite scripts concurrently. Vite React Fast Refresh and Hot Module Replacement (HMR) automatically apply supported React and CSS edits without packaging or rebuilding the desktop application. Spring Boot serves the API on `http://127.0.0.1:18942/api/v1`.
 
 You can also start the services separately in two terminals:
 
@@ -64,9 +66,9 @@ npm run dev:backend
 npm run dev:browser
 ```
 
-The browser workflow uses the same local development database as Electron: `data/poultry.db`. The database path is supplied through `poultry.database-path`; the datasource URL must resolve from that property rather than a machine-specific absolute path. Spring Boot logs are written to `logs/backend.log`; Electron process output and startup diagnostics are written separately to `logs/backend-process.log`.
+The browser workflow uses the local development database at `data/poultry.db` by default. The database path is supplied through `poultry.database-path`; the datasource URL must resolve from that property rather than a machine-specific absolute path. Spring Boot logs are written to `logs/backend.log`; Electron process output and startup diagnostics are written separately to `logs/backend-process.log`.
 
-The browser does not provide Electron-only native features such as choosing a backup folder through the desktop dialog. Test those features with `npm run dev`.
+The browser does not provide Electron-only native features such as choosing a backup folder through the desktop dialog. Test those features with the actual Electron runtime when its development launcher is available.
 
 ## Commands
 
