@@ -56,7 +56,6 @@ export default function FeedStockPage() {
         ["Phone", supplier.phone],
         ["Email", supplier.email],
         ["Address", supplier.address],
-        ["Status", supplier.status || "ACTIVE"],
         ["Notes", supplier.notes],
       ].filter(([, value]) => value !== null && value !== undefined && value !== ""),
       relatedBatches,
@@ -280,7 +279,7 @@ export default function FeedStockPage() {
             <DataTable caption="Inventory items" columns={[
               { key: "name", label: "Item" }, { key: "category", label: "Category" }, { key: "quantityOnHand", label: "Stock" },
               { key: "details", label: "Details", render: item => <button type="button" className="secondary-button" onClick={() => openInventoryDetails(item)}>View</button> },
-              { key: "reorderLevel", label: "Reorder" }, { key: "unit", label: "Unit" }, { key: "status", label: "Status" },
+              { key: "status", label: "Status" },
             ]} rows={inventoryItems} emptyMessage="No non-feed inventory items yet." />
           </div>
 
