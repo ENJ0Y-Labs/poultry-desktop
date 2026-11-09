@@ -9,7 +9,7 @@ import FormField from "./FormField.jsx";
 describe("ValidatedForm", () => {
   it("shows a summary and inline required-field error while preserving entered values", async () => {
     const submit = vi.fn();
-    render(<ValidatedForm onSubmit={submit}>
+    const { container } = render(<ValidatedForm onSubmit={submit}>
       <label>Batch<input name="batch" required defaultValue="" /></label>
       <label>Notes<input name="notes" defaultValue="keep these notes" /></label>
       <button type="submit">Save</button>
@@ -19,6 +19,7 @@ describe("ValidatedForm", () => {
 
     expect(await screen.findByText("Please correct the following fields:")).toBeTruthy();
     expect(document.getElementById("batch-error").textContent).toBe("Batch is required.");
+    expect(container.querySelector(".required-indicator").getAttribute("aria-hidden")).toBe("true");
     expect(document.activeElement).toBe(screen.getByLabelText("Batch"));
     expect(screen.getByLabelText("Notes").value).toBe("keep these notes");
     expect(submit).not.toHaveBeenCalled();
