@@ -1,0 +1,56 @@
+import React from "react";
+import { describe, expect, it, vi } from "vitest";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import ValidatedForm from "./ValidatedForm.jsx";
+
+describe("ValidatedForm", () => {
+  it("shows a summary and inline required-field error while preserving entered values", async () => {
+    const submit = vi.fn();
+    render(<ValidatedForm onSubmit={submit}>
+      <label>Batch<input name="batch" required defaultValue="" /></label>
+      <label>Notes<input name="notes" defaultValue="keep these notes" /></label>
+      <button type="submit">Save</button>
+    </ValidatedForm>);
+
+    fireEvent.submit(screen.getByRole("button", { name: "Save" }).closest("form"));
+
+    expect(await screen.findByText("Please correct the following fields:")).toBeTruthy();
+    expect(screen.getByText("Batch is required.")).toBeTruthy();
+    expect(screen.getByLabelText("Notes").value).toBe("keep these notes");
+    expect(submit).not.toHaveBeenCalled();
+  });
+
+  it("prevents another submit while the first request is pending", async () => {
+    let finish;
+    const submit = vi.fn(() => new Promise(resolve => { finish = resolve; }));
+    render(<ValidatedForm onSubmit={submit}>
+      <label>Farm name<input name="name" required defaultValue="Grantino" /></label>
+      <button type="submit">Save</button>
+    </ValidatedForm>);
+
+    const form = screen.getByRole("button", { name: "Save" }).closest("form");
+    fireEvent.submit(form);
+    fireEvent.submit(form);
+
+    expect(submit).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole("button", { name: "Save" }).disabled).toBe(true);
+    finish();
+    await waitFor(() => expect(screen.getByRole("button", { name: "Save" }).disabled).toBe(false));
+  });
+
+  it("shows backend field errors beside the matching control", async () => {
+    render(<ValidatedForm onSubmit={async () => {
+      const form = document.querySelector("form");
+      window.dispatchEvent(new CustomEvent("pomas:form-validation-error", {
+        detail: { form, details: { fields: { quantity: "Must be a positive whole number." } } }
+      }));
+    }}>
+      <label>Quantity<input name="quantity" defaultValue="2" /></label>
+      <button type="submit">Save</button>
+    </ValidatedForm>);
+
+    fireEvent.submit(screen.getByRole("button", { name: "Save" }).closest("form"));
+    expect(await screen.findByText("Must be a positive whole number.")).toBeTruthy();
+    expect(screen.getByLabelText("Quantity").getAttribute("aria-invalid")).toBe("true");
+  });
+});
