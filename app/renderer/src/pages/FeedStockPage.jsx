@@ -1,6 +1,7 @@
 import { useContext, useEffect, useState } from "react";
 import { feedApi } from "../services/api.js";
 import { FarmManagerContext } from "../components/FarmManagerContext.jsx";
+import { ModalForm } from "../components/Modal.jsx";
 // eslint-disable-next-line no-unused-vars
 import DataTable from "../components/DataTable.jsx";
 // eslint-disable-next-line no-unused-vars
@@ -9,6 +10,7 @@ import PageSection from "../components/PageSection.jsx";
 import PageTemplate from "../components/PageTemplate.jsx";
 
 export default function FeedStockPage() {
+  const { error } = useContext(FarmManagerContext);
   const { formatMoney, farm, batches, feedTypes, setFeedTypes, feedInventory, feedTypeForm, setFeedTypeForm, setError, setSaving, feedPurchaseForm, setFeedPurchaseForm, inventoryItems, inventoryItemForm, setInventoryItemForm, editingInventoryItemId, editInventoryItem, cancelInventoryItemEdit, inventoryMovementForm, setInventoryMovementForm, inventoryMovements, suppliers, supplierForm, setSupplierForm, editingSupplierId, editSupplier, cancelSupplierEdit, saveSupplier, archiveSupplier, saving, saveInventoryItem, loadInventoryMovements, saveInventoryMovement, createFeedType, purchaseFeed, feedQuantity } = useContext(FarmManagerContext);
   const [openingStockForm, setOpeningStockForm] = useState({
     feedTypeId: "", effectiveDate: "", quantity: "", reason: "",
@@ -222,7 +224,8 @@ export default function FeedStockPage() {
 
           <div className="subsection">
             <h3>Inventory items</h3>
-            <form className="inline-form" onSubmit={saveInventoryItem}>
+            <ModalForm title="Inventory item" description="Create or update a drug, vaccine, or farm-supply item." triggerLabel="Add inventory item" loading={saving} error={error}>
+<form className="inline-form" onSubmit={saveInventoryItem}>
               <label className="field"><span>Item name</span><input required value={inventoryItemForm.name} onChange={e=>setInventoryItemForm({...inventoryItemForm,name:e.target.value})}/></label>
               <label className="field"><span>Category</span><select value={inventoryItemForm.category} onChange={e=>setInventoryItemForm({...inventoryItemForm,category:e.target.value})}>
                 <option value="SUPPLY">Farm supply</option>
@@ -233,6 +236,7 @@ export default function FeedStockPage() {
               <label className="field"><span>Reorder level</span><input min="0" step="0.001" type="number" value={inventoryItemForm.reorderLevel} onChange={e=>setInventoryItemForm({...inventoryItemForm,reorderLevel:e.target.value})}/></label>
               <button disabled={saving}>{editingInventoryItemId ? "Save item" : "Add item"}</button>{editingInventoryItemId && <button type="button" className="secondary-button" onClick={cancelInventoryItemEdit}>Cancel</button>}
             </form>
+</ModalForm>
             <DataTable caption="Inventory items" columns={[
               { key: "name", label: "Item" }, { key: "category", label: "Category" }, { key: "quantityOnHand", label: "Stock" },
               { key: "reorderLevel", label: "Reorder" }, { key: "unit", label: "Unit" }, { key: "status", label: "Status" },
@@ -253,7 +257,8 @@ export default function FeedStockPage() {
 
           <div className="subsection">
             <h3>Record inventory movement</h3>
-            <form className="inline-form" onSubmit={saveInventoryMovement}>
+            <ModalForm title="Inventory movement" description="Record a stock receipt, issue, adjustment, or waste movement." triggerLabel="Record movement" loading={saving} error={error}>
+<form className="inline-form" onSubmit={saveInventoryMovement}>
               <label className="field"><span>Inventory item</span><select required value={inventoryMovementForm.itemId} onChange={e=>{const id=e.target.value;setInventoryMovementForm({...inventoryMovementForm,itemId:id});loadInventoryMovements(id);}}>
                 <option value="">Select item</option>
                 {inventoryItems.filter(i=>i.status==="ACTIVE").map(i=><option key={i.id} value={i.id}>{i.name}</option>)}
@@ -275,6 +280,7 @@ export default function FeedStockPage() {
               </select></label>
               <button disabled={saving || !inventoryMovementForm.itemId}>Record movement</button>
             </form>
+</ModalForm>
             {inventoryMovementForm.itemId && <DataTable caption="Inventory movement history" columns={[
               { key: "movementDate", label: "Date" }, { key: "movementType", label: "Movement" },
               { key: "quantity", label: "Quantity" }, { key: "reason", label: "Reason" }, { key: "source", label: "Source" },
@@ -285,7 +291,8 @@ export default function FeedStockPage() {
       <PageSection page="feed-stock" tab="purchases"><section id="purchases" className="card full"><div className="section-head"><h2>Feed purchases</h2><p className="muted">Choose a registered supplier or leave it blank if the source is unknown.</p></div>
           <div className="subsection">
             <h3>Purchase feed</h3>
-            <form className="inline-form" onSubmit={purchaseFeed}>
+            <ModalForm title="Feed purchase" description="Record a feed purchase. The backend updates the FIFO stock ledger and expense record." triggerLabel="Record purchase" loading={saving} error={error}>
+<form className="inline-form" onSubmit={purchaseFeed}>
               <label className="field"><span>Feed type</span><select required value={feedPurchaseForm.feedTypeId} onChange={e=>{
                 const type=feedTypes.find(item=>item.id===e.target.value);
                 setFeedPurchaseForm({...feedPurchaseForm,feedTypeId:e.target.value,unit:type?.unit||"bag"});
@@ -298,13 +305,15 @@ export default function FeedStockPage() {
               <label className="field"><span>Total cost (₦)</span><input required type="text" inputMode="decimal" value={feedPurchaseForm.totalCostMinor} onChange={e=>setFeedPurchaseForm({...feedPurchaseForm,totalCostMinor:e.target.value})}/></label>
               <button disabled={saving || feedTypes.filter(t=>t.status==="ACTIVE").length===0}>Record purchase</button>
             </form>
+</ModalForm>
           </div>
 
       </section></PageSection>
 
       <PageSection page="feed-stock" tab="suppliers"><section id="suppliers" className="card full">
         <div className="section-head"><h2>Suppliers</h2><p className="muted">Maintain reusable supplier records for feed purchases. Archiving keeps historical purchase references intact.</p></div>
-        <form className="form-grid" onSubmit={saveSupplier}>
+        <ModalForm title="Supplier" description="Add or update a reusable supplier record." triggerLabel="Add supplier" loading={saving} error={error}>
+<form className="form-grid" onSubmit={saveSupplier}>
           <label>Supplier name<input required maxLength="120" value={supplierForm.name} onChange={event=>setSupplierForm({...supplierForm,name:event.target.value})}/></label>
           <label>Phone<input maxLength="40" value={supplierForm.phone} onChange={event=>setSupplierForm({...supplierForm,phone:event.target.value})}/></label>
           <label>Email<input type="email" maxLength="160" value={supplierForm.email} onChange={event=>setSupplierForm({...supplierForm,email:event.target.value})}/></label>
@@ -312,6 +321,7 @@ export default function FeedStockPage() {
           <label className="full">Notes<input value={supplierForm.notes} onChange={event=>setSupplierForm({...supplierForm,notes:event.target.value})}/></label>
           <button disabled={saving}>{editingSupplierId ? "Save supplier" : "Add supplier"}</button>{editingSupplierId && <button type="button" className="secondary-button" onClick={cancelSupplierEdit}>Cancel</button>}
         </form>
+</ModalForm>
         <DataTable caption="Suppliers" columns={[
           { key: "name", label: "Supplier" }, { key: "phone", label: "Phone", render: supplier => supplier.phone || "—" },
           { key: "notes", label: "Notes", render: supplier => supplier.notes || "—" },
