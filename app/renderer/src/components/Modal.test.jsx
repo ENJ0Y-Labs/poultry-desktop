@@ -1,24 +1,30 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { useState } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { Modal } from "./Modal.jsx";
 
 describe("Modal", () => {
   it("moves focus into the dialog and restores focus to the opener", async () => {
-    const onClose = vi.fn();
-    render(
-      <>
-        <button type="button">Open modal</button>
-        <Modal open onClose={onClose} title="Create record">
-          <input aria-label="Record name" />
-        </Modal>
-      </>
-    );
+    function Harness() {
+      const [open, setOpen] = useState(false);
+      return (
+        <>
+          <button type="button" onClick={() => setOpen(true)}>Open modal</button>
+          <Modal open={open} onClose={() => setOpen(false)} title="Create record">
+            <input aria-label="Record name" />
+          </Modal>
+        </>
+      );
+    }
 
+    render(<Harness />);
     const opener = screen.getByRole("button", { name: "Open modal" });
     opener.focus();
+    fireEvent.click(opener);
     await waitFor(() => expect(screen.getByRole("textbox", { name: "Record name" })).toHaveFocus());
     fireEvent.click(screen.getByRole("button", { name: "Close dialog" }));
-    expect(onClose).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    expect(opener).toHaveFocus();
   });
 
   it("requires an explicit discard choice when the form is dirty", () => {
