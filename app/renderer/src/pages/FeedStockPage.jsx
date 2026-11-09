@@ -23,10 +23,48 @@ export default function FeedStockPage() {
   const [openingBalances, setOpeningBalances] = useState([]);
   const [editingFeedType, setEditingFeedType] = useState(null);
   const [drawerRecord, setDrawerRecord] = useState(null);
+  const [drawerMovementItemId, setDrawerMovementItemId] = useState("");
 
   function feedProductLabel(type) {
     const brand = type.brand ? ` · ${type.brand}` : "";
     return `${type.name}${brand} (${type.unit})`;
+  }
+
+  function openInventoryDetails(item) {
+    setDrawerMovementItemId(item.id);
+    setDrawerRecord({
+      kind: "inventory",
+      item,
+      title: item.name,
+      description: "Inventory profile and recorded stock movements.",
+      fields: [
+        ["Category", item.category],
+        ["Quantity on hand", `${item.quantityOnHand ?? "—"} ${item.unit || ""}`.trim()],
+        ["Reorder level", `${item.reorderLevel ?? "—"} ${item.unit || ""}`.trim()],
+        ["Unit", item.unit],
+        ["Status", item.status],
+      ].filter(([, value]) => value !== null && value !== undefined && value !== ""),
+    });
+    loadInventoryMovements(item.id);
+  }
+
+  function openSupplierDetails(supplier) {
+    const relatedBatches = batches.filter(batch => batch.supplierId === supplier.id);
+    setDrawerRecord({
+      kind: "supplier",
+      supplier,
+      title: supplier.name,
+      description: "Supplier contact profile and batches that reference this supplier as their source.",
+      fields: [
+        ["Phone", supplier.phone],
+        ["Email", supplier.email],
+        ["Address", supplier.address],
+        ["Status", supplier.status || "ACTIVE"],
+        ["Notes", supplier.notes],
+        ["Linked batches", relatedBatches.length],
+      ].filter(([, value]) => value !== null && value !== undefined && value !== ""),
+      relatedBatches,
+    });
   }
 
   async function saveFeedProduct(event) {
@@ -245,7 +283,7 @@ export default function FeedStockPage() {
 </ModalForm>
             <DataTable caption="Inventory items" columns={[
               { key: "name", label: "Item" }, { key: "category", label: "Category" }, { key: "quantityOnHand", label: "Stock" },
-              { key: "details", label: "Details", render: item => <button type="button" className="secondary-button" onClick={() => setDrawerRecord({ title: item.name, description: "Inventory item details. Stock changes remain recorded through the inventory movement workflow.", fields: [["Category", item.category], ["Quantity on hand", `${item.quantityOnHand ?? "—"} ${item.unit || ""}`.trim()], ["Reorder level", `${item.reorderLevel ?? "—"} ${item.unit || ""}`.trim()], ["Unit", item.unit], ["Status", item.status]] })}>View</button> },
+              { key: "details", label: "Details", render: item => <button type="button" className="secondary-button" onClick={() => openInventoryDetails(item)}>View</button> },
               { key: "reorderLevel", label: "Reorder" }, { key: "unit", label: "Unit" }, { key: "status", label: "Status" },
               { key: "action", label: "Action", render: item => item.status === "ACTIVE" ? <button type="button" className="secondary-button" onClick={() => { editInventoryItem(item); setInventoryItemOpenSignal(value => value + 1); }}>Edit</button> : "Archived" },
             ]} rows={inventoryItems} emptyMessage="No non-feed inventory items yet." />
@@ -331,15 +369,53 @@ export default function FeedStockPage() {
 </ModalForm>
         <DataTable caption="Suppliers" columns={[
           { key: "name", label: "Supplier" }, { key: "phone", label: "Phone", render: supplier => supplier.phone || "—" },
-          { key: "details", label: "Details", render: supplier => <button type="button" className="secondary-button" onClick={() => setDrawerRecord({ title: supplier.name, description: "Supplier contact information and notes.", fields: [["Phone", supplier.phone], ["Email", supplier.email], ["Address", supplier.address], ["Status", supplier.status || "ACTIVE"], ["Notes", supplier.notes]] })}>View</button> },
-          { key: "notes", label: "Notes", render: supplier => supplier.notes || "—" },
+          { key: "linkedBatches", label: "Linked batches", render: supplier => batches.filter(batch => batch.supplierId === supplier.id).length },
+          { key: "details", label: "Details", render: supplier => <button type="button" className="secondary-button" onClick={() => openSupplierDetails(supplier)}>View</button> },
           { key: "status", label: "Status", render: supplier => supplier.status || "ACTIVE" },
           { key: "action", label: "Action", render: supplier => supplier.status === "ARCHIVED" ? "Archived" : <><button type="button" className="secondary-button" disabled={saving} onClick={() => { editSupplier(supplier); setSupplierOpenSignal(value => value + 1); }}>Edit</button> <ConfirmAction title="Archive supplier?" description={`Archive ${supplier.name}? It will no longer be offered for new purchases, while historical purchase references remain intact.`} triggerLabel="Archive" confirmLabel="Archive supplier" loading={saving} error={error} onConfirm={() => archiveSupplier(supplier.id)} /></> },
         ]} rows={suppliers} emptyMessage="No suppliers recorded yet." />
       </section></PageSection>
 
-      <ContextDrawer open={Boolean(drawerRecord)} onClose={() => setDrawerRecord(null)} title={drawerRecord?.title || "Record details"} description={drawerRecord?.description} size="medium">
+      <ContextDrawer
+        open={Boolean(drawerRecord)}
+        onClose={() => setDrawerRecord(null)}
+        title={drawerRecord?.title || "Record details"}
+        description={drawerRecord?.description}
+        size={drawerRecord?.kind === "supplier" || drawerRecord?.kind === "inventory" ? "large" : "medium"}
+        footer={drawerRecord?.kind === "inventory" ? <button type="button" onClick={() => {
+          editInventoryItem(drawerRecord.item);
+          setDrawerRecord(null);
+          setInventoryItemOpenSignal(value => value + 1);
+        }}>Edit inventory item</button> : drawerRecord?.kind === "supplier" ? <button type="button" onClick={() => {
+          editSupplier(drawerRecord.supplier);
+          setDrawerRecord(null);
+          setSupplierOpenSignal(value => value + 1);
+        }}>Edit supplier</button> : null}
+      >
         {drawerRecord && <DrawerDetails fields={drawerRecord.fields} />}
+        {drawerRecord?.kind === "inventory" && <section className="subsection" aria-labelledby="inventory-movement-history-title">
+          <h3 id="inventory-movement-history-title">Stock movement history</h3>
+          {drawerMovementItemId !== drawerRecord.item.id ? <p className="muted">Loading stock movements…</p> : inventoryMovements.length === 0
+            ? <p className="muted">No stock movements recorded for this item.</p>
+            : <ol className="pomas-drawer-record-list">
+              {inventoryMovements.map((movement, index) => {
+                const batch = batches.find(item => item.id === movement.batchId);
+                return <li key={movement.id || `${movement.movementDate}-${index}`}>
+                  <div><strong>{movement.movementDate || "Undated"} · {movement.movementType || "Movement"}</strong><span>{movement.reason || "No reason recorded"} · {movement.source || "Source not recorded"}</span><span>{batch?.code || (movement.batchId ? movement.batchId : "Farm-level")}</span></div>
+                  <strong>{movement.quantity ?? "—"} {drawerRecord.item.unit || ""}</strong>
+                </li>;
+              })}
+            </ol>}
+        </section>}
+        {drawerRecord?.kind === "supplier" && <section className="subsection" aria-labelledby="supplier-batch-history-title">
+          <h3 id="supplier-batch-history-title">Linked batch records</h3>
+          {drawerRecord.relatedBatches.length === 0 ? <p className="muted">No batch currently references this supplier as its source. Feed purchase history is not exposed in this view.</p> : <ol className="pomas-drawer-record-list">
+            {drawerRecord.relatedBatches.map(batch => <li key={batch.id}>
+              <div><strong>{batch.code}</strong><span>{batch.type} · {batch.placementDate || "Placement date unavailable"}</span></div>
+              <strong>{batch.status || "—"}</strong>
+            </li>)}
+          </ol>}
+        </section>}
       </ContextDrawer>
     </PageTemplate>
   );
