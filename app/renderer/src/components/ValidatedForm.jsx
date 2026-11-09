@@ -1,5 +1,5 @@
-import React, { useCallback, useRef, useState } from "react";
-import { validateForm } from "../utils/formValidation.js";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { mapBackendFieldErrors, setActiveValidationForm, validateForm } from "../utils/formValidation.js";
 
 function childText(children) {
   return React.Children.toArray(children).map(child => {
@@ -66,6 +66,16 @@ export default function ValidatedForm({ onSubmit, children, ...props }) {
   const [errors, setErrors] = useState({});
   const [pending, setPending] = useState(false);
 
+  useEffect(() => {
+    function handleBackendValidation(event) {
+      if (event.detail?.form && event.detail.form !== formRef.current) return;
+      const mapped = mapBackendFieldErrors(event.detail?.details || event.detail, formRef.current);
+      if (Object.keys(mapped).length) setErrors(mapped);
+    }
+    window.addEventListener("pomas:form-validation-error", handleBackendValidation);
+    return () => window.removeEventListener("pomas:form-validation-error", handleBackendValidation);
+  }, []);
+
   const clearError = useCallback(key => {
     setErrors(current => {
       if (!current[key]) return current;
@@ -89,9 +99,11 @@ export default function ValidatedForm({ onSubmit, children, ...props }) {
 
     pendingRef.current = true;
     setPending(true);
+    setActiveValidationForm(formRef.current);
     try {
       await onSubmit?.(event);
     } finally {
+      setActiveValidationForm(null);
       pendingRef.current = false;
       setPending(false);
     }
