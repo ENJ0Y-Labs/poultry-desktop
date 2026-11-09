@@ -70,3 +70,10 @@ button.pomas-drawer-close {
   .pomas-drawer-details > div { grid-template-columns: minmax(90px, .75fr) minmax(0, 1.25fr); gap: 10px; }
 }
 @media (prefers-reduced-motion: reduce) { .pomas-context-drawer { animation: none; } }
+
+.pomas-drawer-record-list { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; }
+.pomas-drawer-record-list > li { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; padding: 13px 0; border-bottom: 1px solid var(--border-soft); }
+.pomas-drawer-record-list > li > div { display: grid; gap: 4px; min-width: 0; }
+.pomas-drawer-record-list strong { color: var(--text); font-size: 12px; }
+.pomas-drawer-record-list span { color: var(--muted); font-size: 11px; line-height: 1.5; overflow-wrap: anywhere; }
+.pomas-audit-snapshot { max-width: 100%; margin: 0; padding: 14px; overflow: auto; border: 1px solid var(--border-soft); border-radius: 8px; background: var(--panel-soft); color: var(--text); font: 11px/1.6 ui-monospace, SFMono-Regular, Consolas, monospace; white-space: pre-wrap; overflow-wrap: anywhere; }
