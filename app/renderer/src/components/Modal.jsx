@@ -129,12 +129,21 @@ export function Modal({
 
 export function ModalForm({
   title, description, triggerLabel, triggerClassName = "primary-button",
-  size = "medium", loading = false, error = "", children,
+  size = "medium", loading = false, error = "", openSignal = 0, children,
 }) {
   const [open, setOpen] = useState(false);
   const [dirty, setDirty] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const sawLoadingRef = useRef(false);
+
+  useEffect(() => {
+    if (openSignal) {
+      setDirty(false);
+      setSubmitted(false);
+      sawLoadingRef.current = false;
+      setOpen(true);
+    }
+  }, [openSignal]);
 
   useEffect(() => {
     if (loading) sawLoadingRef.current = true;
