@@ -1090,7 +1090,15 @@ body { min-width: 0; }
 
 
 /* Shared client-side form validation */
-.required-indicator { color: var(--error-text); font-weight: 900; margin-left: 3px; }
+.validated-field > label:has(:required) { position: relative; }
+.validated-field > label:has(:required)::before {
+  content: "*";
+  position: absolute;
+  left: -9px;
+  top: 0;
+  color: var(--error-text);
+  font-weight: 900;
+}
 .validated-field { display: grid; gap: 6px; min-width: 0; }
 .validated-field.full { grid-column: 1 / -1; }
 .field-error {
