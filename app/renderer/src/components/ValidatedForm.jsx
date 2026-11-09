@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { mapBackendFieldErrors, setActiveValidationForm, validateForm } from "../utils/formValidation.js";
+import { mapBackendFieldErrors, normalizeFieldKey, setActiveValidationForm, validateForm } from "../utils/formValidation.js";
 
 function childText(children) {
   return React.Children.toArray(children).map(child => {
@@ -10,8 +10,7 @@ function childText(children) {
 }
 
 function fieldKey(control, inheritedLabel = "") {
-  return String(control.props.name || control.props.id || inheritedLabel || "field")
-    .toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+  return normalizeFieldKey(control.props.name || control.props.id || inheritedLabel || "field");
 }
 
 function enhanceChildren(children, errors, clearError, pending, inheritedLabel = "") {
