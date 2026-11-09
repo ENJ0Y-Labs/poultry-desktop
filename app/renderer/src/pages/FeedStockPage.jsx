@@ -1,7 +1,7 @@
 import { useContext, useEffect, useState } from "react";
 import { feedApi } from "../services/api.js";
 import { FarmManagerContext } from "../components/FarmManagerContext.jsx";
-import { ModalForm } from "../components/Modal.jsx";
+import { ConfirmAction, ModalForm } from "../components/Modal.jsx";
 // eslint-disable-next-line no-unused-vars
 import DataTable from "../components/DataTable.jsx";
 // eslint-disable-next-line no-unused-vars
@@ -328,7 +328,7 @@ export default function FeedStockPage() {
           { key: "name", label: "Supplier" }, { key: "phone", label: "Phone", render: supplier => supplier.phone || "—" },
           { key: "notes", label: "Notes", render: supplier => supplier.notes || "—" },
           { key: "status", label: "Status", render: supplier => supplier.status || "ACTIVE" },
-          { key: "action", label: "Action", render: supplier => supplier.status === "ARCHIVED" ? "Archived" : <><button type="button" className="secondary-button" disabled={saving} onClick={() => { editSupplier(supplier); setSupplierOpenSignal(value => value + 1); }}>Edit</button> <button type="button" disabled={saving} onClick={() => archiveSupplier(supplier.id)}>Archive</button></> },
+          { key: "action", label: "Action", render: supplier => supplier.status === "ARCHIVED" ? "Archived" : <><button type="button" className="secondary-button" disabled={saving} onClick={() => { editSupplier(supplier); setSupplierOpenSignal(value => value + 1); }}>Edit</button> <ConfirmAction title="Archive supplier?" description={`Archive ${supplier.name}? It will no longer be offered for new purchases, while historical purchase references remain intact.`} triggerLabel="Archive" confirmLabel="Archive supplier" loading={saving} onConfirm={() => archiveSupplier(supplier.id)} /></> },
         ]} rows={suppliers} emptyMessage="No suppliers recorded yet." />
       </section></PageSection>
 
