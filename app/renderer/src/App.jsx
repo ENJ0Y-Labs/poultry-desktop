@@ -1325,7 +1325,7 @@ export default function App() {
 
           {error && <div className="error auth-error" role="alert">{error}</div>}
           {authStatus ? (
-            <ValidatedForm className="auth-form" onSubmit={submitAuth}>
+            <form className="auth-form" onSubmit={submitAuth}>
               {authStatus.setupRequired ? (
                 <>
                   <label className="auth-field" htmlFor="auth-full-name">Full name
@@ -1364,7 +1364,7 @@ export default function App() {
               <p className="auth-form-footnote">{authStatus.setupRequired
                 ? "This creates the primary local owner account. Multi-user access is not required to get started."
                 : "Access is managed locally by your Pomas installation."}</p>
-            </ValidatedForm>
+            </form>
           ) : (
             <div className="auth-connect-state">
               <p>Could not confirm the local account status.</p>
