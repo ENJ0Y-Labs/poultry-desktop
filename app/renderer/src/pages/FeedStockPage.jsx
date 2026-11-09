@@ -226,7 +226,7 @@ export default function FeedStockPage() {
 
           <div className="subsection">
             <h3>Inventory items</h3>
-            <ModalForm title="Inventory item" description="Create or update a drug, vaccine, or farm-supply item." triggerLabel={editingInventoryItemId ? "Edit inventory item" : "Add inventory item"} openSignal={inventoryItemOpenSignal} loading={saving} error={error}>
+            <ModalForm title="Inventory item" description="Create or update a drug, vaccine, or farm-supply item." triggerLabel={editingInventoryItemId ? "Edit inventory item" : "Add inventory item"} openSignal={inventoryItemOpenSignal} loading={saving} error={error} onDiscard={() => { setInventoryItemForm(emptyInventoryItem); cancelInventoryItemEdit(); }}>
 <form className="inline-form" onSubmit={saveInventoryItem}>
               <label className="field"><span>Item name</span><input required value={inventoryItemForm.name} onChange={e=>setInventoryItemForm({...inventoryItemForm,name:e.target.value})}/></label>
               <label className="field"><span>Category</span><select value={inventoryItemForm.category} onChange={e=>setInventoryItemForm({...inventoryItemForm,category:e.target.value})}>
@@ -259,7 +259,7 @@ export default function FeedStockPage() {
 
           <div className="subsection">
             <h3>Record inventory movement</h3>
-            <ModalForm title="Inventory movement" description="Record a stock receipt, issue, adjustment, or waste movement." triggerLabel="Record movement" loading={saving} error={error}>
+            <ModalForm title="Inventory movement" description="Record a stock receipt, issue, adjustment, or waste movement." triggerLabel="Record movement" loading={saving} error={error} onDiscard={() => setInventoryMovementForm(emptyInventoryMovement)}>
 <form className="inline-form" onSubmit={saveInventoryMovement}>
               <label className="field"><span>Inventory item</span><select required value={inventoryMovementForm.itemId} onChange={e=>{const id=e.target.value;setInventoryMovementForm({...inventoryMovementForm,itemId:id});loadInventoryMovements(id);}}>
                 <option value="">Select item</option>
@@ -293,7 +293,7 @@ export default function FeedStockPage() {
       <PageSection page="feed-stock" tab="purchases"><section id="purchases" className="card full"><div className="section-head"><h2>Feed purchases</h2><p className="muted">Choose a registered supplier or leave it blank if the source is unknown.</p></div>
           <div className="subsection">
             <h3>Purchase feed</h3>
-            <ModalForm title="Feed purchase" description="Record a feed purchase. The backend updates the FIFO stock ledger and expense record." triggerLabel="Record purchase" loading={saving} error={error}>
+            <ModalForm title="Feed purchase" description="Record a feed purchase. The backend updates the FIFO stock ledger and expense record." triggerLabel="Record purchase" loading={saving} error={error} onDiscard={() => setFeedPurchaseForm(emptyFeedPurchase)}>
 <form className="inline-form" onSubmit={purchaseFeed}>
               <label className="field"><span>Feed type</span><select required value={feedPurchaseForm.feedTypeId} onChange={e=>{
                 const type=feedTypes.find(item=>item.id===e.target.value);
@@ -314,7 +314,7 @@ export default function FeedStockPage() {
 
       <PageSection page="feed-stock" tab="suppliers"><section id="suppliers" className="card full">
         <div className="section-head"><h2>Suppliers</h2><p className="muted">Maintain reusable supplier records for feed purchases. Archiving keeps historical purchase references intact.</p></div>
-        <ModalForm title="Supplier" description="Add or update a reusable supplier record." triggerLabel={editingSupplierId ? "Edit supplier" : "Add supplier"} openSignal={supplierOpenSignal} loading={saving} error={error}>
+        <ModalForm title="Supplier" description="Add or update a reusable supplier record." triggerLabel={editingSupplierId ? "Edit supplier" : "Add supplier"} openSignal={supplierOpenSignal} loading={saving} error={error} onDiscard={() => { setSupplierForm(emptySupplier); cancelSupplierEdit(); }}>
 <form className="form-grid" onSubmit={saveSupplier}>
           <label>Supplier name<input required maxLength="120" value={supplierForm.name} onChange={event=>setSupplierForm({...supplierForm,name:event.target.value})}/></label>
           <label>Phone<input maxLength="40" value={supplierForm.phone} onChange={event=>setSupplierForm({...supplierForm,phone:event.target.value})}/></label>
