@@ -24,8 +24,10 @@ export function Modal({
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
 
-    const first = dialogRef.current?.querySelector("input:not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled])") || dialogRef.current?.querySelector(FOCUSABLE);
-    (first || dialogRef.current)?.focus();
+    const focusTimer = window.setTimeout(() => {
+      const first = dialogRef.current?.querySelector("input:not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled])") || dialogRef.current?.querySelector(FOCUSABLE);
+      (first || dialogRef.current)?.focus();
+    }, 0);
 
     function onKeyDown(event) {
       if (event.key === "Escape") {
@@ -56,6 +58,7 @@ export function Modal({
 
     document.addEventListener("keydown", onKeyDown);
     return () => {
+      window.clearTimeout(focusTimer);
       document.removeEventListener("keydown", onKeyDown);
       document.body.style.overflow = previousOverflow;
       previousFocusRef.current?.focus?.();
