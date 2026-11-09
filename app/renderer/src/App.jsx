@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
 import pomasLogo from "./assets/pomas-logo.png";
+// eslint-disable-next-line no-unused-vars -- JSX component usage is not detected by the core rule
+import ValidatedForm from "./components/ValidatedForm.jsx";
 import { todayLocalDate, getLastBatchId, rememberLastBatchId } from "./utils/farmUx.js";
 import { parseNairaToKobo } from "./utils/moneyInput.js";
+import { getActiveValidationForm } from "./utils/formValidation.js";
 import { formatMoney } from "./utils/money.js";
 import { appVersionLabel } from "./utils/appInfo.js";
 import { getThemePreference, setThemePreference } from "./utils/theme.js";
@@ -39,8 +42,12 @@ function formatMetric(value) { return value == null ? "—" : Number(value).toFi
 function formatCount(value) { return value == null ? "—" : Number(value).toLocaleString("en-NG"); }
 function displayApiError(err) {
   if (!err) return "";
-  if (err.details && typeof err.details === "object") {
-    const messages = Object.entries(err.details)
+  if ((err.details && typeof err.details === "object") || err.code === "SUPPLIER_DUPLICATE") {
+    const details = err.details || { fields: { name: err.message } };
+    const activeForm = getActiveValidationForm();
+    if (activeForm) window.dispatchEvent(new CustomEvent("pomas:form-validation-error", { detail: { form: activeForm, details } }));
+    const fieldDetails = details.fields && typeof details.fields === "object" ? details.fields : details;
+    const messages = Object.entries(fieldDetails)
       .map(([field, message]) => `${field}: ${Array.isArray(message) ? message.join(", ") : message}`)
       .filter(Boolean);
     if (messages.length) return messages.join(" • ");
@@ -1373,13 +1380,13 @@ export default function App() {
     <main className="shell narrow">
       <header className="hero"><p className="eyebrow">POMAS · FARM MANAGEMENT</p><h1>Set up your farm</h1><p className="muted">Create the local farm profile first. Everything else hangs from it.</p></header>
       {error && <div className="error">{error}</div>}
-      <form className="card form-grid" onSubmit={submitFarm}>
+      <ValidatedForm className="card form-grid" onSubmit={submitFarm}>
         <label>Farm name<input required value={farmForm.name} onChange={e=>setFarmForm({...farmForm,name:e.target.value})}/></label>
         <label>Location<input value={farmForm.location} onChange={e=>setFarmForm({...farmForm,location:e.target.value})}/></label>
         <label>Timezone<input required value={farmForm.timezone} onChange={e=>setFarmForm({...farmForm,timezone:e.target.value})}/></label>
         <label>Currency<input required maxLength="3" value={farmForm.currency} onChange={e=>setFarmForm({...farmForm,currency:e.target.value.toUpperCase()})}/></label>
         <button disabled={saving} type="submit">{saving ? "Creating..." : "Create farm"}</button>
-      </form>
+      </ValidatedForm>
     </main>
   );
 
