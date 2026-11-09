@@ -7,7 +7,7 @@ export default function FormField({ id, label, children, hint, error, required =
     <div className={`form-field ${className}`.trim()}>
       {id ? <><label htmlFor={id}>{labelContent}</label>{children}</> : <label className="form-field-label">{labelContent}{children}</label>}
       {hint && <p className="form-field-hint" id={id ? `${id}-hint` : undefined}>{hint}</p>}
-      {error && <p className="form-field-error" id={id ? `${id}-error` : `${normalizeFieldKey(label)}-error`} role="alert">{error}</p>}
+      {error && <p className="form-field-error" id={id ? `${id}-error` : `${normalizeFieldKey(label)}-error`} aria-live="polite">{error}</p>}
     </div>
   );
 }
