@@ -4,6 +4,7 @@ import { productionTrendApi } from "../services/api.js";
 import ProductionTrendChart from "../components/ProductionTrendChart.jsx";
 import { FarmManagerContext } from "../components/FarmManagerContext.jsx";
 import { ModalForm } from "../components/Modal.jsx";
+import { todayLocalDate } from "../utils/farmUx.js";
 // eslint-disable-next-line no-unused-vars
 import DataTable from "../components/DataTable.jsx";
 // eslint-disable-next-line no-unused-vars
@@ -60,7 +61,7 @@ export default function ProductionPage() {
 
               <div className="subsection">
                 <h3>Record egg production</h3>
-                <ModalForm title="Egg collection" description="Record good and cracked eggs collected from this layer batch." triggerLabel="Record collection" loading={saving} error={error} onDiscard={() => setEggCollectionForm(form => ({ ...form, good: "", cracked: "", notes: "" }))}>
+                <ModalForm title="Egg collection" description="Record good and cracked eggs collected from this layer batch." triggerLabel="Record collection" loading={saving} error={error} onDiscard={() => setEggCollectionForm(form => ({ batchId: form.batchId, date: todayLocalDate(), good: "", cracked: "", notes: "" }))}>
 <form className="inline-form" onSubmit={saveEggCollection}>
                   <label className="field"><span>Collection date</span><input required type="date" value={eggCollectionForm.date} onChange={e=>setEggCollectionForm({...eggCollectionForm,date:e.target.value})}/></label>
                   <label className="field"><span>Good eggs</span><input required min="0" step="1" type="number" value={eggCollectionForm.good} onChange={e=>setEggCollectionForm({...eggCollectionForm,good:e.target.value})}/></label>
@@ -78,7 +79,7 @@ export default function ProductionPage() {
               <div className="subsection">
                 <h3>Egg sales</h3>
                 <p className="muted">Current crate size: {crateSize} eggs. The sale stores the crate size used at the time, so changing settings does not rewrite history.</p>
-                <ModalForm title="Egg sale" description="Record a sale from the available good-egg inventory." triggerLabel="Record egg sale" loading={saving} error={error} onDiscard={() => setEggSaleForm(form => ({ ...form, customer: "", customerId: "", crates: "", pricePerCrateMinor: "" }))}>
+                <ModalForm title="Egg sale" description="Record a sale from the available good-egg inventory." triggerLabel="Record egg sale" loading={saving} error={error} onDiscard={() => setEggSaleForm(form => ({ batchId: form.batchId, date: todayLocalDate(), customer: "", customerId: "", crates: "", pricePerCrateMinor: "" }))}>
 <form className="inline-form" onSubmit={saveEggSale}>
                   <label className="field"><span>Sale date</span><input required type="date" value={eggSaleForm.date} onChange={e=>setEggSaleForm({...eggSaleForm,date:e.target.value})}/></label>
                   <label className="field"><span>Saved customer</span><select value={eggSaleForm.customerId} onChange={e=>{const id=e.target.value;const customer=customers.find(c=>c.id===id);setEggSaleForm({...eggSaleForm,customerId:id,customer:customer?.name||""});}}>
@@ -147,7 +148,7 @@ export default function ProductionPage() {
 
               <div className="subsection">
                 <h3>Record weight</h3>
-                <ModalForm title="Weight record" description="Record the sampled bird count and total sample weight." triggerLabel="Record weight" loading={saving} error={error} onDiscard={() => setWeightForm(emptyWeight)}>
+                <ModalForm title="Weight record" description="Record the sampled bird count and total sample weight." triggerLabel="Record weight" loading={saving} error={error} onDiscard={() => setWeightForm(form => ({ ...emptyWeight, batchId: form.batchId }))}>
 <form className="inline-form" onSubmit={saveWeight}>
                   <label className="field"><span>Record date</span><input required type="date" value={weightForm.date} onChange={e=>setWeightForm({...weightForm,date:e.target.value})}/></label>
                   <label className="field"><span>Sampled birds</span><input required min="1" type="number" value={weightForm.sampleQuantity} onChange={e=>setWeightForm({...weightForm,sampleQuantity:e.target.value})}/></label>
@@ -181,7 +182,7 @@ export default function ProductionPage() {
 
               <div className="subsection">
                 <h3>Bird sales</h3>
-                <ModalForm title="Bird sale" description="Record a partial or full sale of birds from this batch." triggerLabel="Record bird sale" loading={saving} error={error} onDiscard={() => setBirdSaleForm(emptyBirdSale)}>
+                <ModalForm title="Bird sale" description="Record a partial or full sale of birds from this batch." triggerLabel="Record bird sale" loading={saving} error={error} onDiscard={() => setBirdSaleForm(form => ({ ...emptyBirdSale, batchId: form.batchId }))}>
 <form className="inline-form" onSubmit={saveBirdSale}>
                   <label className="field"><span>Sale date</span><input required type="date" value={birdSaleForm.date} onChange={e=>setBirdSaleForm({...birdSaleForm,date:e.target.value})}/></label>
                   <label className="field"><span>Quantity</span><input required min="1" type="number" value={birdSaleForm.quantity} onChange={e=>setBirdSaleForm({...birdSaleForm,quantity:e.target.value})}/></label>
