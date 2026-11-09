@@ -85,6 +85,36 @@ export default function DashboardPage() {
     window.location.hash = target;
   }
 
+  function openAuditDetails(row) {
+    let changedFields = row.changedFields;
+    if (typeof changedFields === "string") {
+      try { changedFields = JSON.parse(changedFields); } catch { /* Preserve the recorded value. */ }
+    }
+    const changedFieldsLabel = Array.isArray(changedFields) ? changedFields.join(", ") : changedFields;
+    const snapshotText = value => {
+      if (value == null || value === "") return "";
+      if (typeof value !== "string") return JSON.stringify(value, null, 2);
+      try { return JSON.stringify(JSON.parse(value), null, 2); } catch { return value; }
+    };
+    setDrawerRecord({
+      title: formatAuditAction(row.action),
+      description: "Immutable audit activity. The recorded values are displayed without changing audit history.",
+      fields: [
+        ["Timestamp", formatAuditTimestamp(row.occurredAt, farm?.timezone)],
+        ["Action", formatAuditAction(row.action)],
+        ["Entity", formatAuditEntity(row.entityType)],
+        ["Entity ID", row.entityId],
+        ["User ID", row.userId],
+        ["Batch ID", row.batchId],
+        ["Reason", row.reason],
+        ["Changed fields", changedFieldsLabel],
+        ["Audit record ID", row.id],
+      ].filter(([, value]) => value !== null && value !== undefined && value !== ""),
+      before: snapshotText(row.before),
+      after: snapshotText(row.after),
+    });
+  }
+
 
 
   const [checklistDismissed, setChecklistDismissed] = useState(
@@ -228,13 +258,21 @@ export default function DashboardPage() {
                 { key: "action", label: "Action", render: row => formatAuditAction(row.action) },
                 { key: "entityType", label: "Entity", render: row => formatAuditEntity(row.entityType) },
                 { key: "reason", label: "Reason", render: row => typeof row.reason === "string" && row.reason.trim() ? row.reason : "—" },
-                { key: "details", label: "Details", render: row => <button type="button" className="secondary-button" onClick={() => setDrawerRecord({ title: formatAuditAction(row.action), description: "Immutable audit activity. This drawer presents the recorded values without changing audit history.", fields: [["Timestamp", formatAuditTimestamp(row.occurredAt, farm?.timezone)], ["Action", formatAuditAction(row.action)], ["Entity", formatAuditEntity(row.entityType)], ["Reason", row.reason || "—"]] })}>View</button> },
+                { key: "details", label: "Details", render: row => <button type="button" className="secondary-button" onClick={() => openAuditDetails(row)}>View</button> },
               ]} rows={auditRows.slice(0, 8)} emptyMessage="No audit records yet." />}</div>
           </>
         ) : <p className="muted">Dashboard is loading…</p>}
       </section></PageSection>
-      <ContextDrawer open={Boolean(drawerRecord)} onClose={() => setDrawerRecord(null)} title={drawerRecord?.title || "Audit details"} description={drawerRecord?.description} size="medium">
+      <ContextDrawer open={Boolean(drawerRecord)} onClose={() => setDrawerRecord(null)} title={drawerRecord?.title || "Audit details"} description={drawerRecord?.description} size="large">
         {drawerRecord && <DrawerDetails fields={drawerRecord.fields} />}
+        {drawerRecord?.before && <section className="subsection">
+          <h3>Before</h3>
+          <pre className="pomas-audit-snapshot">{drawerRecord.before}</pre>
+        </section>}
+        {drawerRecord?.after && <section className="subsection">
+          <h3>After</h3>
+          <pre className="pomas-audit-snapshot">{drawerRecord.after}</pre>
+        </section>}
       </ContextDrawer>
     </PageTemplate>
   );
