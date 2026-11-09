@@ -125,3 +125,16 @@ export default function ContextDrawer({
     document.body
   );
 }
+
+export function DrawerDetails({ fields = [] }) {
+  return (
+    <dl className="pomas-drawer-details">
+      {fields.map(([label, value]) => (
+        <div key={label}>
+          <dt>{label}</dt>
+          <dd>{value == null || value === "" ? "—" : String(value)}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
