@@ -509,6 +509,7 @@ describe("App", () => {
     await waitFor(() => expect(screen.getByRole("heading", { name: "Farm dashboard" })).toBeInTheDocument());
     fireEvent.click(within(screen.getByRole("navigation", { name: "Main navigation" })).getByRole("button", { name: "Production" }));
     fireEvent.change(await screen.findByLabelText("Layer batch"), { target: { value: "layer-1" } });
+    fireEvent.click(screen.getByRole("button", { name: "Record egg sale" }));
 
     const savedCustomer = await screen.findByLabelText("Saved customer");
     expect(savedCustomer).not.toBeRequired();
@@ -693,6 +694,7 @@ describe("App", () => {
     await waitFor(() => expect(window.location.hash).toBe(
       "#daily-work/daily-record/batchId=layer-1/date=2026-10-25"
     ));
+    fireEvent.click(await screen.findByRole("button", { name: "Save daily notes" }));
     expect(await screen.findByLabelText("Batch")).toHaveValue("layer-1");
     expect(screen.getByLabelText("Date")).toHaveValue("2026-10-25");
   });
@@ -823,18 +825,26 @@ describe("App", () => {
 
     fireEvent.click(await screen.findByRole("button", { name: "Record mortality" }));
     expect(window.location.hash).toContain("daily-work/mortality");
+    await screen.findByRole("heading", { name: "Record mortality" });
     expect(await screen.findByRole("combobox", { name: "Batch" })).toHaveValue("layer-1");
 
     dashboardNav();
     fireEvent.click(await screen.findByRole("button", { name: "Collect eggs" }));
     expect(window.location.hash).toContain("production/eggs");
+    fireEvent.click(await screen.findByRole("button", { name: "Record collection" }));
     expect(await screen.findByRole("combobox", { name: "Layer batch" })).toHaveValue("layer-1");
 
     dashboardNav();
     fireEvent.click(await screen.findByRole("button", { name: "Record feed usage" }));
-    expect(window.location.hash).toContain("daily-work/daily-record");
-    expect(await screen.findByRole("combobox", { name: "Batch" })).toHaveValue("layer-1");
-    expect(screen.getByRole("combobox", { name: "Feed type" })).toHaveValue("feed-layer");
+    await waitFor(() => expect(window.location.hash).toContain("daily-work/daily-record"));
+    fireEvent(window, new HashChangeEvent("hashchange"));
+    const feedUsageDialog = await screen.findByRole("dialog", { name: "Feed usage" });
+    expect(within(feedUsageDialog).getByRole("combobox", { name: "Feed type" })).toHaveValue("feed-layer");
+
+    fireEvent.click(within(feedUsageDialog).getByRole("button", { name: "Close dialog" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Save daily notes" }));
+    const dailyRecordDialog = await screen.findByRole("dialog", { name: "Daily record" });
+    expect(within(dailyRecordDialog).getByRole("combobox", { name: "Batch" })).toHaveValue("layer-1");
 
     dashboardNav();
     fireEvent.click(await screen.findByRole("button", { name: "Record a sale" }));
@@ -844,6 +854,7 @@ describe("App", () => {
     dashboardNav();
     fireEvent.click(await screen.findByRole("button", { name: "Record an expense" }));
     expect(window.location.hash).toContain("sales-money/expenses");
+    fireEvent.click(await screen.findByRole("button", { name: "Record expense" }));
     expect(await screen.findByLabelText("Batch association")).toHaveValue("layer-1");
   });
 
@@ -890,7 +901,8 @@ describe("App", () => {
     expect(screen.getByText("Open a batch")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Configure feed" })).toBeInTheDocument();
     expect(screen.getByText("Record a feed purchase")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Record purchase" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Record purchase" }));
+    expect(await screen.findByRole("heading", { name: "Feed purchase" })).toBeInTheDocument();
   });
 
   it("hides the getting-started checklist when all setup tasks have saved data", async () => {

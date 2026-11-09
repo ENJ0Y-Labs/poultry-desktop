@@ -1,6 +1,8 @@
 import { useContext, useEffect, useState } from "react";
 import { feedApi } from "../services/api.js";
 import { FarmManagerContext } from "../components/FarmManagerContext.jsx";
+// eslint-disable-next-line no-unused-vars -- JSX component usage is not detected by the core rule
+import { ConfirmAction, ModalForm } from "../components/Modal.jsx";
 // eslint-disable-next-line no-unused-vars
 import DataTable from "../components/DataTable.jsx";
 // eslint-disable-next-line no-unused-vars
@@ -9,7 +11,10 @@ import PageSection from "../components/PageSection.jsx";
 import PageTemplate from "../components/PageTemplate.jsx";
 
 export default function FeedStockPage() {
-  const { formatMoney, farm, batches, feedTypes, setFeedTypes, feedInventory, feedTypeForm, setFeedTypeForm, setError, setSaving, feedPurchaseForm, setFeedPurchaseForm, inventoryItems, inventoryItemForm, setInventoryItemForm, editingInventoryItemId, editInventoryItem, cancelInventoryItemEdit, inventoryMovementForm, setInventoryMovementForm, inventoryMovements, suppliers, supplierForm, setSupplierForm, editingSupplierId, editSupplier, cancelSupplierEdit, saveSupplier, archiveSupplier, saving, saveInventoryItem, loadInventoryMovements, saveInventoryMovement, createFeedType, purchaseFeed, feedQuantity } = useContext(FarmManagerContext);
+  const { error } = useContext(FarmManagerContext);
+  const [inventoryItemOpenSignal, setInventoryItemOpenSignal] = useState(0);
+  const [supplierOpenSignal, setSupplierOpenSignal] = useState(0);
+  const { formatMoney, farm, batches, feedTypes, setFeedTypes, feedInventory, feedTypeForm, setFeedTypeForm, setError, setSaving, feedPurchaseForm, setFeedPurchaseForm, inventoryItems, inventoryItemForm, setInventoryItemForm, emptyInventoryItem, emptyInventoryMovement, emptyFeedPurchase, emptySupplier, feedPurchaseModalSignal, editingInventoryItemId, editInventoryItem, cancelInventoryItemEdit, inventoryMovementForm, setInventoryMovementForm, inventoryMovements, suppliers, supplierForm, setSupplierForm, editingSupplierId, editSupplier, cancelSupplierEdit, saveSupplier, archiveSupplier, saving, saveInventoryItem, loadInventoryMovements, saveInventoryMovement, createFeedType, purchaseFeed, feedQuantity } = useContext(FarmManagerContext);
   const [openingStockForm, setOpeningStockForm] = useState({
     feedTypeId: "", effectiveDate: "", quantity: "", reason: "",
   });
@@ -222,7 +227,8 @@ export default function FeedStockPage() {
 
           <div className="subsection">
             <h3>Inventory items</h3>
-            <form className="inline-form" onSubmit={saveInventoryItem}>
+            <ModalForm title="Inventory item" description="Create or update a drug, vaccine, or farm-supply item." triggerLabel={editingInventoryItemId ? "Edit inventory item" : "Add inventory item"} openSignal={inventoryItemOpenSignal} loading={saving} error={error} onDiscard={() => { setInventoryItemForm(emptyInventoryItem); cancelInventoryItemEdit(); }}>
+<form className="inline-form" onSubmit={saveInventoryItem}>
               <label className="field"><span>Item name</span><input required value={inventoryItemForm.name} onChange={e=>setInventoryItemForm({...inventoryItemForm,name:e.target.value})}/></label>
               <label className="field"><span>Category</span><select value={inventoryItemForm.category} onChange={e=>setInventoryItemForm({...inventoryItemForm,category:e.target.value})}>
                 <option value="SUPPLY">Farm supply</option>
@@ -233,10 +239,11 @@ export default function FeedStockPage() {
               <label className="field"><span>Reorder level</span><input min="0" step="0.001" type="number" value={inventoryItemForm.reorderLevel} onChange={e=>setInventoryItemForm({...inventoryItemForm,reorderLevel:e.target.value})}/></label>
               <button disabled={saving}>{editingInventoryItemId ? "Save item" : "Add item"}</button>{editingInventoryItemId && <button type="button" className="secondary-button" onClick={cancelInventoryItemEdit}>Cancel</button>}
             </form>
+</ModalForm>
             <DataTable caption="Inventory items" columns={[
               { key: "name", label: "Item" }, { key: "category", label: "Category" }, { key: "quantityOnHand", label: "Stock" },
               { key: "reorderLevel", label: "Reorder" }, { key: "unit", label: "Unit" }, { key: "status", label: "Status" },
-              { key: "action", label: "Action", render: item => item.status === "ACTIVE" ? <button type="button" className="secondary-button" onClick={() => editInventoryItem(item)}>Edit</button> : "Archived" },
+              { key: "action", label: "Action", render: item => item.status === "ACTIVE" ? <button type="button" className="secondary-button" onClick={() => { editInventoryItem(item); setInventoryItemOpenSignal(value => value + 1); }}>Edit</button> : "Archived" },
             ]} rows={inventoryItems} emptyMessage="No non-feed inventory items yet." />
           </div>
 
@@ -253,7 +260,8 @@ export default function FeedStockPage() {
 
           <div className="subsection">
             <h3>Record inventory movement</h3>
-            <form className="inline-form" onSubmit={saveInventoryMovement}>
+            <ModalForm title="Inventory movement" description="Record a stock receipt, issue, adjustment, or waste movement." triggerLabel="Record movement" loading={saving} error={error} onDiscard={() => setInventoryMovementForm(emptyInventoryMovement)}>
+<form className="inline-form" onSubmit={saveInventoryMovement}>
               <label className="field"><span>Inventory item</span><select required value={inventoryMovementForm.itemId} onChange={e=>{const id=e.target.value;setInventoryMovementForm({...inventoryMovementForm,itemId:id});loadInventoryMovements(id);}}>
                 <option value="">Select item</option>
                 {inventoryItems.filter(i=>i.status==="ACTIVE").map(i=><option key={i.id} value={i.id}>{i.name}</option>)}
@@ -275,6 +283,7 @@ export default function FeedStockPage() {
               </select></label>
               <button disabled={saving || !inventoryMovementForm.itemId}>Record movement</button>
             </form>
+</ModalForm>
             {inventoryMovementForm.itemId && <DataTable caption="Inventory movement history" columns={[
               { key: "movementDate", label: "Date" }, { key: "movementType", label: "Movement" },
               { key: "quantity", label: "Quantity" }, { key: "reason", label: "Reason" }, { key: "source", label: "Source" },
@@ -285,7 +294,8 @@ export default function FeedStockPage() {
       <PageSection page="feed-stock" tab="purchases"><section id="purchases" className="card full"><div className="section-head"><h2>Feed purchases</h2><p className="muted">Choose a registered supplier or leave it blank if the source is unknown.</p></div>
           <div className="subsection">
             <h3>Purchase feed</h3>
-            <form className="inline-form" onSubmit={purchaseFeed}>
+            <ModalForm title="Feed purchase" description="Record a feed purchase. The backend updates the FIFO stock ledger and expense record." triggerLabel="Record purchase" openSignal={feedPurchaseModalSignal} loading={saving} error={error} onDiscard={() => setFeedPurchaseForm(emptyFeedPurchase)}>
+<form className="inline-form" onSubmit={purchaseFeed}>
               <label className="field"><span>Feed type</span><select required value={feedPurchaseForm.feedTypeId} onChange={e=>{
                 const type=feedTypes.find(item=>item.id===e.target.value);
                 setFeedPurchaseForm({...feedPurchaseForm,feedTypeId:e.target.value,unit:type?.unit||"bag"});
@@ -298,13 +308,15 @@ export default function FeedStockPage() {
               <label className="field"><span>Total cost (₦)</span><input required type="text" inputMode="decimal" value={feedPurchaseForm.totalCostMinor} onChange={e=>setFeedPurchaseForm({...feedPurchaseForm,totalCostMinor:e.target.value})}/></label>
               <button disabled={saving || feedTypes.filter(t=>t.status==="ACTIVE").length===0}>Record purchase</button>
             </form>
+</ModalForm>
           </div>
 
       </section></PageSection>
 
       <PageSection page="feed-stock" tab="suppliers"><section id="suppliers" className="card full">
         <div className="section-head"><h2>Suppliers</h2><p className="muted">Maintain reusable supplier records for feed purchases. Archiving keeps historical purchase references intact.</p></div>
-        <form className="form-grid" onSubmit={saveSupplier}>
+        <ModalForm title="Supplier" description="Add or update a reusable supplier record." triggerLabel={editingSupplierId ? "Edit supplier" : "Add supplier"} openSignal={supplierOpenSignal} loading={saving} error={error} onDiscard={() => { setSupplierForm(emptySupplier); cancelSupplierEdit(); }}>
+<form className="form-grid" onSubmit={saveSupplier}>
           <label>Supplier name<input required maxLength="120" value={supplierForm.name} onChange={event=>setSupplierForm({...supplierForm,name:event.target.value})}/></label>
           <label>Phone<input maxLength="40" value={supplierForm.phone} onChange={event=>setSupplierForm({...supplierForm,phone:event.target.value})}/></label>
           <label>Email<input type="email" maxLength="160" value={supplierForm.email} onChange={event=>setSupplierForm({...supplierForm,email:event.target.value})}/></label>
@@ -312,11 +324,12 @@ export default function FeedStockPage() {
           <label className="full">Notes<input value={supplierForm.notes} onChange={event=>setSupplierForm({...supplierForm,notes:event.target.value})}/></label>
           <button disabled={saving}>{editingSupplierId ? "Save supplier" : "Add supplier"}</button>{editingSupplierId && <button type="button" className="secondary-button" onClick={cancelSupplierEdit}>Cancel</button>}
         </form>
+</ModalForm>
         <DataTable caption="Suppliers" columns={[
           { key: "name", label: "Supplier" }, { key: "phone", label: "Phone", render: supplier => supplier.phone || "—" },
           { key: "notes", label: "Notes", render: supplier => supplier.notes || "—" },
           { key: "status", label: "Status", render: supplier => supplier.status || "ACTIVE" },
-          { key: "action", label: "Action", render: supplier => supplier.status === "ARCHIVED" ? "Archived" : <><button type="button" className="secondary-button" disabled={saving} onClick={() => editSupplier(supplier)}>Edit</button> <button type="button" disabled={saving} onClick={() => archiveSupplier(supplier.id)}>Archive</button></> },
+          { key: "action", label: "Action", render: supplier => supplier.status === "ARCHIVED" ? "Archived" : <><button type="button" className="secondary-button" disabled={saving} onClick={() => { editSupplier(supplier); setSupplierOpenSignal(value => value + 1); }}>Edit</button> <ConfirmAction title="Archive supplier?" description={`Archive ${supplier.name}? It will no longer be offered for new purchases, while historical purchase references remain intact.`} triggerLabel="Archive" confirmLabel="Archive supplier" loading={saving} error={error} onConfirm={() => archiveSupplier(supplier.id)} /></> },
         ]} rows={suppliers} emptyMessage="No suppliers recorded yet." />
       </section></PageSection>
 
