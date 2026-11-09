@@ -58,7 +58,7 @@ See [docs/architecture.md](docs/architecture.md).
 Development:
 
 - Windows is the primary supported desktop platform.
-- Node.js 20+
+- Node.js 22.12+
 - npm
 - JDK 17
 - Git
@@ -94,25 +94,73 @@ The backend uses SQLite and Flyway. No PostgreSQL, MySQL or cloud database is re
 
 ## Run locally
 
-Start the Electron desktop application:
+### Browser development (recommended)
 
-```bash
+The browser workflow is the current recommended development path while the Electron development launcher is being investigated.
+
+Start the Spring Boot backend and Vite frontend together:
+
+```powershell
+npm run dev:browser:all
+```
+
+Then open:
+
+- **Frontend:** [http://127.0.0.1:5173/](http://127.0.0.1:5173/)
+- **Backend API:** [http://127.0.0.1:18942/api/v1](http://127.0.0.1:18942/api/v1)
+
+The command runs the existing `dev:backend` and `dev:browser` scripts concurrently. The backend uses the local SQLite development database at `data/poultry.db` by default. Vite provides React Fast Refresh and Hot Module Replacement (HMR), so supported React and CSS edits appear in the browser without rebuilding or packaging the desktop application.
+
+The browser frontend connects to the local backend. Keep both processes running while developing. Stop them with **Ctrl+C** in the terminal.
+
+You can also run the services separately in two terminals:
+
+```powershell
+# Terminal 1
+npm run dev:backend
+```
+
+```powershell
+# Terminal 2
+npm run dev:browser
+```
+
+### Troubleshooting a port conflict
+
+The backend uses port `18942` and Vite uses port `5173`. If a port is already occupied, first identify the process listening on it:
+
+```powershell
+Get-NetTCPConnection -LocalPort 18942 -State Listen |
+    Select-Object LocalAddress, LocalPort, OwningProcess
+```
+
+Inspect the process before stopping it:
+
+```powershell
+Get-Process -Id <PID>
+```
+
+If it is an old development backend process that you own and no longer need, stop only that process:
+
+```powershell
+Stop-Process -Id <PID> -Force
+```
+
+Replace `<PID>` with the process ID returned above. Do not terminate every `java.exe` process; other applications may be using Java.
+
+### Electron desktop development
+
+The normal Electron development command is:
+
+```powershell
 npm run dev
 ```
 
-Development Electron starts Spring Boot with the Maven Wrapper and uses the development database path:
+**Current limitation:** In the investigated environment using Node.js `v26.13.0`, Electron `38.2.1` and electron-vite `4.0.1`, this command fails during Electron binary path detection with an `Electron uninstall at getElectronPath` error. The Electron development window therefore has not been verified in that environment.
 
-```
-project/data/poultry.db
-```
+Use `npm run dev:browser:all` for routine React UI and backend development. Browser mode does not expose Electron-only capabilities such as native file dialogs, filesystem access through the preload bridge, or desktop IPC. Those features still require testing in the actual Electron runtime once its development launcher is working.
 
-The local backend listens on:
-
-```
-http://127.0.0.1:18942
-```
-
-The renderer talks to the same localhost API.
+Do not package the application for ordinary UI development. Production packaging is a separate release workflow documented below.
 
 ## Testing and quality checks
 
