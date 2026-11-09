@@ -181,4 +181,53 @@ describe("FeedStockPage", () => {
     }));
     expect(container.textContent).not.toContain("\\n");
   });
+
+  it("opens inventory item details without leaving the inventory list", () => {
+    const context = {
+      ...contextValue,
+      inventoryItems: [{ id: "item-1", name: "Vitamin supplement", category: "DRUG", quantityOnHand: 12, reorderLevel: 3, unit: "bottle", status: "ACTIVE" }],
+    };
+    const initialHash = window.location.hash;
+    render(
+      <NavigationContext.Provider value={{ activePage: "feed-stock", activeTab: "inventory" }}>
+        <FarmManagerContext.Provider value={context}>
+          <FeedStockPage />
+        </FarmManagerContext.Provider>
+      </NavigationContext.Provider>
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "View" }));
+    expect(screen.getByRole("dialog", { name: "Vitamin supplement" })).toBeInTheDocument();
+    expect(within(screen.getByRole("dialog", { name: "Vitamin supplement" })).getByText("3 bottle")).toBeInTheDocument();
+    expect(within(screen.getByRole("dialog", { name: "Vitamin supplement" })).getByRole("button", { name: "Edit inventory item" })).toBeInTheDocument();
+    expect(context.loadInventoryMovements).toHaveBeenCalledWith("item-1");
+    expect(screen.getByRole("table", { name: "Inventory items" })).toBeInTheDocument();
+    expect(window.location.hash).toBe(initialHash);
+    fireEvent.click(screen.getByRole("button", { name: "Close drawer" }));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("opens supplier contact details in the contextual drawer", () => {
+    const context = {
+      ...contextValue,
+      batches: [{ id: "batch-1", code: "B-2026-001", supplierId: "supplier-1", type: "BROILER", placementDate: "2026-10-10", status: "ACTIVE" }],
+      suppliers: [{ id: "supplier-1", name: "Farm Inputs Ltd", phone: "08012345678", email: "sales@example.test", address: "Port Harcourt", notes: "Feed supplier", status: "ACTIVE" }],
+    };
+    render(
+      <NavigationContext.Provider value={{ activePage: "feed-stock", activeTab: "suppliers" }}>
+        <FarmManagerContext.Provider value={context}>
+          <FeedStockPage />
+        </FarmManagerContext.Provider>
+      </NavigationContext.Provider>
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "View" }));
+    const drawer = screen.getByRole("dialog", { name: "Farm Inputs Ltd" });
+    expect(drawer).toBeInTheDocument();
+    expect(within(drawer).getByText("sales@example.test")).toBeInTheDocument();
+    expect(within(drawer).getByText("Feed supplier")).toBeInTheDocument();
+    expect(within(drawer).getByText("B-2026-001")).toBeInTheDocument();
+    expect(within(drawer).getByRole("button", { name: "Edit supplier" })).toBeInTheDocument();
+    expect(within(screen.getByRole("table", { name: "Suppliers" })).queryByText("Feed supplier")).not.toBeInTheDocument();
+  });
 });

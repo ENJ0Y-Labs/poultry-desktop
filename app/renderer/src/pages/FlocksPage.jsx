@@ -1,10 +1,12 @@
-import { useContext } from "react";
+import { useContext, useState } from "react";
 import { FarmManagerContext } from "../components/FarmManagerContext.jsx";
 // eslint-disable-next-line no-unused-vars
 import PageSection from "../components/PageSection.jsx";
 // eslint-disable-next-line no-unused-vars
 import PageTemplate from "../components/PageTemplate.jsx";
 import { rememberLastBatchId } from "../utils/farmUx.js";
+// eslint-disable-next-line no-unused-vars -- JSX component usage is not detected by the core rule
+import ContextDrawer, { DrawerDetails } from "../components/ContextDrawer.jsx";
 // eslint-disable-next-line no-unused-vars
 import DataTable from "../components/DataTable.jsx";
 
@@ -12,7 +14,50 @@ const batchTypeLabel = type => type === "LAYER" ? "Layer" : type === "BROILER" ?
 const batchStatusLabel = status => status === "ACTIVE" ? "Active" : status === "SOLD" ? "Sold" : String(status || "Unknown").toLowerCase().replace(/\b\w/g, letter => letter.toUpperCase());
 
 export default function FlocksPage() {
+  const [drawerRecord, setDrawerRecord] = useState(null);
   const { formatMoney, formatQuantity, formatPercent, formatKg, formatMetric, farm, houses, batches, suppliers, batchForm, setBatchForm, costForm, setCostForm, houseForm, setHouseForm, saving, selectedBatchId, setSelectedBatchId, batchDashboard, createBatch, addBirdCost, markBatchSold, reopenBatch, addHouse, editHouse, editingHouseId, cancelHouseEdit, populationAdjustmentForm, setPopulationAdjustmentForm, populationAdjustments, savePopulationAdjustment, markPopulationEstimated, editingBatchId, batchSetupForm, setBatchSetupForm, saveBatchSetup, editBatchSetup, cancelBatchSetup } = useContext(FarmManagerContext);
+
+  function openBatchDetails(batch) {
+    const house = houses.find(item => item.id === batch.houseId);
+    const supplier = suppliers.find(item => item.id === batch.supplierId);
+    setDrawerRecord({
+      kind: "batch",
+      batch,
+      title: batch.code,
+      description: "Batch setup, source information and the available operational snapshot.",
+      fields: [
+        ["Supplier / source", supplier?.name || "Unknown / not recorded"],
+        ["House type", house?.houseType === "TEMPORARY" ? "Temporary" : house ? "Permanent" : null],
+        ...(batchDashboard?.batch?.id === batch.id ? [
+          ["Current birds", batchDashboard.population?.currentBirds],
+          ["Mortality", batchDashboard.population?.mortality],
+          ["Culling", batchDashboard.population?.culling],
+          ["Sold birds", batchDashboard.population?.sold],
+          ["Feed used", formatQuantity(batchDashboard.feed?.totalQuantityMilli)],
+          ["Feed cost", formatMoney(batchDashboard.feed?.totalCostMinor, farm.currency)],
+          ["Expenses", formatMoney(batchDashboard.expensesMinor, farm.currency)],
+          ["Revenue", formatMoney(batchDashboard.revenueMinor, farm.currency)],
+          ["Profit", formatMoney(batchDashboard.profitMinor, farm.currency)],
+        ] : []),
+      ].filter(([, value]) => value !== null && value !== undefined && value !== ""),
+    });
+  }
+
+  function openHouseDetails(house) {
+    const relatedBatches = batches
+      .filter(batch => batch.houseId === house.id)
+      .sort((a, b) => String(b.placementDate || "").localeCompare(String(a.placementDate || "")));
+    setDrawerRecord({
+      kind: "house",
+      house,
+      title: house.name,
+      description: "House / pen profile and the flocks assigned to this location.",
+      fields: [
+        ["Notes", house.notes],
+      ],
+      relatedBatches,
+    });
+  }
 
   return (
     <PageTemplate className="grid">
@@ -80,10 +125,11 @@ export default function FlocksPage() {
           </form>
           <DataTable caption="Batch records" columns={[
               { key: "code", label: "Code" }, { key: "type", label: "Type", render: batch => batchTypeLabel(batch.type) },
+              { key: "houseId", label: "House / pen", render: batch => { const house = houses.find(item => item.id === batch.houseId); return house ? `${house.name} (${house.code})` : batch.houseId || "—"; } },
+              { key: "details", label: "Details", render: batch => <button type="button" className="secondary-button" onClick={() => openBatchDetails(batch)}>View</button> },
               { key: "placementDate", label: "Placement" }, { key: "initialBirdCount", label: "Initial birds" }, { key: "populationCountStatus", label: "Count confidence", render: batch => batch.populationCountStatus === "ESTIMATED" ? "Estimated" : "Verified" },
               { key: "confidenceAction", label: "Count action", render: batch => batch.populationCountStatus !== "ESTIMATED" ? <button type="button" className="secondary-button" disabled={saving} onClick={() => markPopulationEstimated(batch.id)}>Mark estimated</button> : "Awaiting physical count" },
               { key: "status", label: "Status", render: batch => batchStatusLabel(batch.status) },
-              { key: "setup", label: "Setup", render: batch => batch.status === "ACTIVE" ? <button type="button" className="secondary-button" onClick={() => editBatchSetup(batch)}>Edit setup</button> : "Locked" },
               { key: "action", label: "Action", render: batch => batch.status === "SOLD"
                 ? <button type="button" onClick={() => reopenBatch(batch.id)} disabled={saving}>Reopen</button>
                 : ["BROILER", "TURKEY"].includes(batch.type) ? <button type="button" onClick={() => markBatchSold(batch.id)} disabled={saving}>Mark sold</button> : "—" },
@@ -115,10 +161,34 @@ export default function FlocksPage() {
           <DataTable caption="Houses and pens" columns={[
               { key: "name", label: "Name" }, { key: "code", label: "Code" }, { key: "houseType", label: "Type", render: house => house.houseType === "TEMPORARY" ? "Temporary" : "Permanent" }, { key: "status", label: "Status" },
               { key: "occupancy", label: "Occupancy", render: house => batches.some(batch => batch.houseId === house.id && batch.status === "ACTIVE") ? "Occupied" : "Empty" },
-              { key: "notes", label: "Notes", render: house => house.notes || "—" },
-              { key: "action", label: "Action", render: house => <button type="button" className="secondary-button" onClick={() => editHouse(house)}>Edit</button> },
+              { key: "details", label: "Details", render: house => <button type="button" className="secondary-button" onClick={() => openHouseDetails(house)}>View</button> },
             ]} rows={houses} emptyMessage="No houses or pens yet." />
         </section></PageSection>
+      <ContextDrawer
+        open={Boolean(drawerRecord)}
+        onClose={() => setDrawerRecord(null)}
+        title={drawerRecord?.title || "Record details"}
+        description={drawerRecord?.description}
+        size={drawerRecord?.relatedBatches || drawerRecord?.kind === "batch" ? "large" : "medium"}
+        footer={drawerRecord?.kind === "batch" && drawerRecord.batch.status === "ACTIVE" ? <button type="button" onClick={() => {
+          editBatchSetup(drawerRecord.batch);
+          setDrawerRecord(null);
+        }}>Edit batch setup</button> : drawerRecord?.kind === "house" && drawerRecord.house.status === "ACTIVE" ? <button type="button" onClick={() => {
+          editHouse(drawerRecord.house);
+          setDrawerRecord(null);
+        }}>Edit house</button> : null}
+      >
+        {drawerRecord && <DrawerDetails fields={drawerRecord.fields} />}
+        {drawerRecord?.relatedBatches && <section className="subsection" aria-labelledby="house-batch-history-title">
+          <h3 id="house-batch-history-title">Batch history</h3>
+          {drawerRecord.relatedBatches.length === 0 ? <p className="muted">No batches have been assigned to this house or pen.</p> : <ol className="pomas-drawer-record-list">
+            {drawerRecord.relatedBatches.map(batch => <li key={batch.id}>
+              <div><strong>{batch.code}</strong><span>{batchTypeLabel(batch.type)} · {batch.placementDate || "Placement date unavailable"}</span></div>
+              <strong>{batchStatusLabel(batch.status)}</strong>
+            </li>)}
+          </ol>}
+        </section>}
+      </ContextDrawer>
     </PageTemplate>
   );
 }

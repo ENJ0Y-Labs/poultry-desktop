@@ -7,6 +7,8 @@ import PageSection from "../components/PageSection.jsx";
 // eslint-disable-next-line no-unused-vars
 import PageTemplate from "../components/PageTemplate.jsx";
 import { formatAuditAction, formatAuditEntity, formatAuditTimestamp } from "../utils/auditFormatting.js";
+// eslint-disable-next-line no-unused-vars -- JSX component usage is not detected by the core rule
+import ContextDrawer, { DrawerDetails } from "../components/ContextDrawer.jsx";
 import { attentionTarget } from "../utils/attentionNavigation.js";
 import { formatEggQuantity } from "../utils/eggFormatting.js";
 // eslint-disable-next-line no-unused-vars
@@ -65,6 +67,8 @@ export default function DashboardPage() {
     loadBroilerForBatch,
   } = useContext(FarmManagerContext);
 
+  const [drawerRecord, setDrawerRecord] = useState(null);
+
   const isFirstRunEmpty = dashboard
     && houses.length === 0
     && batches.length === 0
@@ -79,6 +83,32 @@ export default function DashboardPage() {
 
   function navigateTo(target) {
     window.location.hash = target;
+  }
+
+  function openAuditDetails(row) {
+    let changedFields = row.changedFields;
+    if (typeof changedFields === "string") {
+      try { changedFields = JSON.parse(changedFields); } catch { /* Preserve the recorded value. */ }
+    }
+    const changedFieldsLabel = Array.isArray(changedFields) ? changedFields.join(", ") : changedFields;
+    const snapshotText = value => {
+      if (value == null || value === "") return "";
+      if (typeof value !== "string") return JSON.stringify(value, null, 2);
+      try { return JSON.stringify(JSON.parse(value), null, 2); } catch { return value; }
+    };
+    setDrawerRecord({
+      title: formatAuditAction(row.action),
+      description: "Immutable audit activity. The recorded values are displayed without changing audit history.",
+      fields: [
+        ["Entity ID", row.entityId],
+        ["User ID", row.userId],
+        ["Batch ID", row.batchId],
+        ["Changed fields", changedFieldsLabel],
+        ["Audit record ID", row.id],
+      ].filter(([, value]) => value !== null && value !== undefined && value !== ""),
+      before: snapshotText(row.before),
+      after: snapshotText(row.after),
+    });
   }
 
 
@@ -224,10 +254,22 @@ export default function DashboardPage() {
                 { key: "action", label: "Action", render: row => formatAuditAction(row.action) },
                 { key: "entityType", label: "Entity", render: row => formatAuditEntity(row.entityType) },
                 { key: "reason", label: "Reason", render: row => typeof row.reason === "string" && row.reason.trim() ? row.reason : "—" },
+                { key: "details", label: "Details", render: row => <button type="button" className="secondary-button" onClick={() => openAuditDetails(row)}>View</button> },
               ]} rows={auditRows.slice(0, 8)} emptyMessage="No audit records yet." />}</div>
           </>
         ) : <p className="muted">Dashboard is loading…</p>}
       </section></PageSection>
+      <ContextDrawer open={Boolean(drawerRecord)} onClose={() => setDrawerRecord(null)} title={drawerRecord?.title || "Audit details"} description={drawerRecord?.description} size="large">
+        {drawerRecord && <DrawerDetails fields={drawerRecord.fields} />}
+        {drawerRecord?.before && <section className="subsection">
+          <h3>Before</h3>
+          <pre className="pomas-audit-snapshot">{drawerRecord.before}</pre>
+        </section>}
+        {drawerRecord?.after && <section className="subsection">
+          <h3>After</h3>
+          <pre className="pomas-audit-snapshot">{drawerRecord.after}</pre>
+        </section>}
+      </ContextDrawer>
     </PageTemplate>
   );
 }
