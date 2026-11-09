@@ -1,5 +1,6 @@
 import { useContext } from "react";
 import { FarmManagerContext } from "../components/FarmManagerContext.jsx";
+import { ModalForm } from "../components/Modal.jsx";
 // eslint-disable-next-line no-unused-vars -- JSX component usage is not detected by the core rule
 import DataTable from "../components/DataTable.jsx";
 // eslint-disable-next-line no-unused-vars -- JSX component usage is not detected by the core rule
@@ -10,6 +11,7 @@ import PageTemplate from "../components/PageTemplate.jsx";
 import EmptyState from "../components/EmptyState.jsx";
 
 export default function DailyWorkPage() {
+  const { error } = useContext(FarmManagerContext);
   const {
     batches, dailyForm, setDailyForm, dailyRecord, dailyRecordLoading, waterUnitLabel,
     mortalityForm, setMortalityForm, cullingForm, setCullingForm, saving,
@@ -49,17 +51,20 @@ export default function DailyWorkPage() {
       <PageSection page="daily-work" tab="daily-record">
         <section id="operations" className="card full">
           <div className="section-head"><h2>Daily record</h2><p className="muted">Choose the batch and farm date once, then record feed usage and daily notes. Population totals come from the backend ledger.</p></div>
-          <form className="form-grid" onSubmit={event => saveDailyRecord(event, "notes")}>
+          <ModalForm title="Daily record" description="Save the batch's daily notes for the selected date." triggerLabel="Save daily notes" loading={saving} error={error}>
+<form className="form-grid" onSubmit={event => saveDailyRecord(event, "notes")}>
             <label>Batch<select required value={dailyForm.batchId} onChange={event => updateDailyBatch(event.target.value)}>{batchOptions}</select></label>
             <label>Date<input required type="date" value={dailyForm.date} onChange={event => updateDailyDate(event.target.value)}/></label>
             <label className="full">Daily notes<input value={dailyForm.notes} onChange={event => setDailyForm({...dailyForm,notes:event.target.value})}/></label>
             <button disabled={saving}>Save daily notes</button>
           </form>
+</ModalForm>
 
           <div className="subsection">
             <h3>Feed usage</h3>
             <p className="muted">Record the feed given to this batch for the selected date. This uses the existing feed ledger, deducts stock, and allocates FIFO cost once.</p>
-            <form className="form-grid" onSubmit={useFeed}>
+            <ModalForm title="Feed usage" description="Record feed issued to the selected batch. Stock and FIFO costing remain managed by the backend." triggerLabel="Record feed usage" loading={saving} error={error}>
+<form className="form-grid" onSubmit={useFeed}>
               <label>Feed type<select required value={feedUsageForm.feedTypeId} onChange={event => {
                 const type = feedTypes.find(item => item.id === event.target.value);
                 setFeedUsageForm(form => ({...form,feedTypeId:event.target.value,unit:type?.unit||"bag"}));
@@ -70,6 +75,7 @@ export default function DailyWorkPage() {
               <label className="full">Reason (optional)<input value={feedUsageForm.reason} onChange={event => setFeedUsageForm({...feedUsageForm,reason:event.target.value})} placeholder="e.g. Morning feeding"/></label>
               <button disabled={saving || !dailyForm.batchId || applicableFeedTypes.length === 0}>Record feed usage</button>
             </form>
+</ModalForm>
             {applicableFeedTypes.length === 0 && <p className="muted">No active feed types are configured for this batch's bird type. Add an applicable feed type in Feed & Stock first.</p>}
           </div>
 
@@ -89,7 +95,8 @@ export default function DailyWorkPage() {
 
       <PageSection page="daily-work" tab="mortality">
         <section className="card full"><div className="section-head"><h2>Mortality</h2><p className="muted">Record birds that died. Mortality is separate from sales and culling.</p></div>
-          <form className="form-grid" onSubmit={event => recordPopulationEvent(event,"MORTALITY")}>
+          <ModalForm title="Record mortality" description="Record birds that died. This entry updates the batch population ledger." triggerLabel="Record mortality" loading={saving} error={error}>
+<form className="form-grid" onSubmit={event => recordPopulationEvent(event,"MORTALITY")}>
             <label>Batch<select required value={mortalityForm.batchId} onChange={event => setMortalityForm({...mortalityForm,batchId:event.target.value})}>{batchOptions}</select></label>
             <label>Date<input required type="date" value={mortalityForm.date} onChange={event => setMortalityForm({...mortalityForm,date:event.target.value})}/></label>
             <label>Quantity<input required min="1" step="1" type="number" value={mortalityForm.quantity} onChange={event => setMortalityForm({...mortalityForm,quantity:event.target.value})}/></label>
@@ -97,12 +104,14 @@ export default function DailyWorkPage() {
             <label className="full">Notes<input value={mortalityForm.notes} onChange={event => setMortalityForm({...mortalityForm,notes:event.target.value})}/></label>
             <button disabled={saving}>Record mortality</button>
           </form>
+</ModalForm>
         </section>
       </PageSection>
 
       <PageSection page="daily-work" tab="culling">
         <section className="card full"><div className="section-head"><h2>Culling</h2><p className="muted">Record birds intentionally removed from the flock. This does not count as mortality.</p></div>
-          <form className="form-grid" onSubmit={event => recordPopulationEvent(event,"CULLING")}>
+          <ModalForm title="Record culling" description="Record birds intentionally removed from the flock." triggerLabel="Record culling" loading={saving} error={error}>
+<form className="form-grid" onSubmit={event => recordPopulationEvent(event,"CULLING")}>
             <label>Batch<select required value={cullingForm.batchId} onChange={event => setCullingForm({...cullingForm,batchId:event.target.value})}>{batchOptions}</select></label>
             <label>Date<input required type="date" value={cullingForm.date} onChange={event => setCullingForm({...cullingForm,date:event.target.value})}/></label>
             <label>Quantity<input required min="1" step="1" type="number" value={cullingForm.quantity} onChange={event => setCullingForm({...cullingForm,quantity:event.target.value})}/></label>
@@ -110,18 +119,21 @@ export default function DailyWorkPage() {
             <label className="full">Notes<input value={cullingForm.notes} onChange={event => setCullingForm({...cullingForm,notes:event.target.value})}/></label>
             <button disabled={saving}>Record culling</button>
           </form>
+</ModalForm>
         </section>
       </PageSection>
 
       <PageSection page="daily-work" tab="water">
         <section className="card full"><div className="section-head"><h2>Water usage</h2><p className="muted">Enter configured container sizes and counts, for example 25:4, 75:2. Values use the farm unit label ({waterUnitLabel || "litres"}); no conversion is applied. This saves water figures as part of that date's daily record.</p></div>
-          <form className="form-grid" onSubmit={event => saveDailyRecord(event, "water")}>
+          <ModalForm title="Water usage" description="Save the selected batch's water-container readings for this date." triggerLabel="Save water usage" loading={saving} error={error}>
+<form className="form-grid" onSubmit={event => saveDailyRecord(event, "water")}>
             <label>Batch<select required value={dailyForm.batchId} onChange={event => updateDailyBatch(event.target.value)}>{batchOptions}</select></label>
             <label>Date<input required type="date" value={dailyForm.date} onChange={event => updateDailyDate(event.target.value)}/></label>
             <label className="full">Water containers ({waterUnitLabel || "litres"})<input required value={dailyForm.water} onChange={event => setDailyForm({...dailyForm,water:event.target.value})}/></label>
             <p className="muted">Water is stored in the daily record rather than as a separate transaction. Saving here preserves existing notes.</p>
             <button disabled={saving}>Save water usage</button>
           </form>
+</ModalForm>
         </section>
       </PageSection>
     </PageTemplate>
