@@ -39,8 +39,9 @@ suppliers, inventory items, sales, expenses and audit activity where the screen
 already has the relevant record data. Tables should remain scannable summaries;
 drawers should add meaningful context instead of repeating every visible column.
 Do not invent fields or balances. Derive customer purchase counts, totals and
-last-purchase dates from the existing common sales rows, matching the recorded
-customer name. Outstanding balances are omitted because the current sales data
+last-purchase dates from the existing common sales rows, matching customer IDs
+when present and falling back to the recorded customer name for legacy rows.
+Outstanding balances are omitted because the current sales data
 does not expose payment or receivable state.
 
 Inventory drawers may load the existing stock-movement history for the selected
