@@ -4,7 +4,7 @@ import { mapBackendFieldErrors, setActiveValidationForm, validateForm } from "..
 function childText(children) {
   return React.Children.toArray(children).map(child => {
     if (typeof child === "string" || typeof child === "number") return String(child);
-    if (!React.isValidElement(child) || child.type === "small") return "";
+    if (!React.isValidElement(child) || child.type === "small" || ["input", "select", "textarea", "button", "option"].includes(child.type)) return "";
     return childText(child.props.children);
   }).join(" ").replace(/\\s+/g, " ").trim();
 }
