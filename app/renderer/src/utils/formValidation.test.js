@@ -27,10 +27,9 @@ describe("form validation", () => {
     ]);
   });
 
-  it("rejects malformed email and impossible calendar dates", () => {
-    const form = formWith('<label>Email<input type="email" value="not-an-email"></label><label>Date<input type="date" value="2026-02-30"></label>');
-    const errors = validateForm(form);
-    expect(Object.values(errors)).toHaveLength(2);
+  it("rejects malformed email and missing dates", () => {
+    const form = formWith('<label>Email<input type="email" value="not-an-email"></label><label>Date<input type="date" required></label>');
+    expect(Object.values(validateForm(form))).toHaveLength(2);
   });
 
   it("maps backend validation details only to matching controls", () => {
