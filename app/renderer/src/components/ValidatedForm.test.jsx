@@ -2,7 +2,6 @@ import React from "react";
 import { describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 // eslint-disable-next-line no-unused-vars -- JSX component usage is not detected by the core rule
-// eslint-disable-next-line no-unused-vars -- JSX component usage is not detected by the core rule
 import ValidatedForm from "./ValidatedForm.jsx";
 // eslint-disable-next-line no-unused-vars -- JSX component usage is not detected by the core rule
 import FormField from "./FormField.jsx";
