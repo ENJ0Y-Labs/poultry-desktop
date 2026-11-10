@@ -1,3 +1,5 @@
+import { useContext } from "react";
+import { FarmManagerContext } from "./FarmManagerContext.jsx";
 import EmptyState from "./EmptyState.jsx";
 
 export default function DataTable({
@@ -16,16 +18,24 @@ export default function DataTable({
   emptyAction,
   emptyDescription,
 }) {
-  const resolvedState = error ? "error"
-    : loading ? "loading"
-      : notApplicable ? "not-applicable"
-        : rows.length === 0 && state === "no-search-results" ? "no-search-results"
-          : rows.length === 0 && (filtered || state === "no-filter-results" || state === "no-results") ? "no-filter-results"
-          : rows.length === 0 ? (state || "no-records")
-            : null;
+  const context = useContext(FarmManagerContext);
+  const retrievalError = error || context?.dataLoadError;
+  const isLoading = loading || Boolean(context?.loading);
+  const retry = onRetry || context?.retryData;
+  const hasRows = rows.length > 0;
+  const resolvedState = !hasRows && retrievalError ? "error"
+    : !hasRows && isLoading ? "loading"
+      : !hasRows && notApplicable ? "not-applicable"
+        : !hasRows && state === "no-search-results" ? "no-search-results"
+          : !hasRows && (filtered || state === "no-filter-results" || state === "no-results") ? "no-filter-results"
+            : !hasRows ? (state || "no-records")
+              : null;
 
   return (
     <div className="table-scroll" role="region" aria-label={caption} tabIndex={0}>
+      {hasRows && retrievalError && (
+        <EmptyState variant="error" description={typeof retrievalError === "string" ? retrievalError : undefined} onRetry={retry} compact />
+      )}
       <table className="data-table">
         <caption className="sr-only">{caption}</caption>
         <thead><tr>{columns.map(column => <th scope="col" key={column.key}>{column.label}</th>)}</tr></thead>
@@ -37,7 +47,7 @@ export default function DataTable({
                   variant={resolvedState}
                   description={emptyDescription || (resolvedState === "no-records" ? emptyMessage : undefined)}
                   primaryAction={emptyAction}
-                  onRetry={onRetry}
+                  onRetry={resolvedState === "error" ? retry : undefined}
                   onClearFilters={resolvedState === "no-filter-results" ? onClearFilters : undefined}
                   onClearSearch={resolvedState === "no-search-results" ? onClearSearch : undefined}
                   compact
