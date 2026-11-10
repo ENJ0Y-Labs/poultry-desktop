@@ -33,8 +33,9 @@ describe("ValidatedForm", () => {
     </ValidatedForm>);
 
     expect(document.querySelectorAll(".required-indicator")).toHaveLength(1);
-    expect(screen.getByText("Farm name").parentElement.querySelector(".required-indicator").textContent).toBe(" *");
-    expect(screen.getByText("Farm code").parentElement.querySelector(".required-indicator")).toBeNull();
+    expect(screen.getByLabelText("Farm name").required).toBe(true);
+    expect(screen.getByText("Farm name").closest(".validated-field").querySelector(".required-indicator").textContent).toBe(" *");
+    expect(screen.getByText("Farm code").closest(".validated-field").querySelector(".required-indicator")).toBeNull();
   });
 
   it("summarizes multiple invalid fields before sending a request", () => {
