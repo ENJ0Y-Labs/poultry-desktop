@@ -16,14 +16,27 @@ public class CsvImportController {
     private final FeedHistoryCsvImportService feedHistoryService;
     private final OperationalCsvImportService operationalService;
     private final ProductionHistoryCsvImportService productionHistoryService;
+    private final BatchCsvImportService batchCsvImportService;
 
     public CsvImportController(CsvImportService service, OperationalCsvImportService operationalService,
                                FeedHistoryCsvImportService feedHistoryService,
-                               ProductionHistoryCsvImportService productionHistoryService) {
+                               ProductionHistoryCsvImportService productionHistoryService,
+                               BatchCsvImportService batchCsvImportService) {
         this.service = service;
         this.operationalService = operationalService;
         this.feedHistoryService = feedHistoryService;
         this.productionHistoryService = productionHistoryService;
+        this.batchCsvImportService = batchCsvImportService;
+    }
+
+    @PostMapping("/csv/batches/preview")
+    public Map<String, Object> previewBatchesCsv(@Valid @RequestBody CsvImportRequest request) {
+        return Map.of("ok", true, "data", batchCsvImportService.preview(request));
+    }
+
+    @PostMapping("/csv/batches")
+    public Map<String, Object> importBatchesCsv(@Valid @RequestBody CsvImportRequest request) {
+        return Map.of("ok", true, "data", batchCsvImportService.importRecords(request));
     }
 
     @PostMapping("/csv/operational/preview")
