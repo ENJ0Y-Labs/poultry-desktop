@@ -11,6 +11,8 @@ describe("EmptyState", () => {
   it.each([
     ["no-records", "Nothing here yet", "status"],
     ["no-results", "No matching records", "status"],
+    ["no-search-results", "No search results", "status"],
+    ["no-filter-results", "No matching records", "status"],
     ["not-applicable", "Not applicable", "status"],
     ["loading", "Loading records", "status"],
     ["error", "Could not load records", "alert"],
@@ -46,6 +48,14 @@ describe("DataTable", () => {
     rerender(<DataTable caption="Houses" columns={columns} rows={[]} filtered onClearFilters={() => {}} />);
     expect(screen.getByRole("status")).toHaveTextContent("No matching records");
     expect(screen.getByRole("button", { name: "Clear filters" })).toBeInTheDocument();
+  });
+
+  it("supports a dedicated no-search-results state and clear-search action", () => {
+    const onClearSearch = vi.fn();
+    render(<DataTable caption="Customers" columns={columns} rows={[]} state="no-search-results" onClearSearch={onClearSearch} />);
+    expect(screen.getByRole("status")).toHaveTextContent("No search results");
+    fireEvent.click(screen.getByRole("button", { name: "Clear search" }));
+    expect(onClearSearch).toHaveBeenCalledOnce();
   });
 
   it("prioritizes loading and retrieval failure over empty data", () => {
