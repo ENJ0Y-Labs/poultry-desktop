@@ -82,7 +82,7 @@ export default function SalesMoneyPage() {
                 { key: "amountMinor", label: "Amount", render: row => formatMoney(row.amountMinor, farm.currency) },
                 { key: "category", label: "Category" },
                 { key: "batchId", label: "Association", render: row => row.batchId ? (batches.find(batch => batch.id === row.batchId)?.code || row.batchId) : "Farm" },
-              ]} rows={expenses} emptyMessage="No expenses recorded." />
+              ]} rows={expenses} emptyMessage="No expenses recorded. Record a farm-level or batch-associated expense above." filtered={Boolean(expenseBatchFilter)} onClearFilters={() => { setExpenseBatchFilter(""); loadExpenses(""); }} />
           </div>
         </section></PageSection>
     </PageTemplate>
