@@ -54,6 +54,7 @@ export default function EmptyState({
   onRetry,
   onClearFilters,
   onClearSearch,
+  role: roleOverride,
   className = "",
   compact = false,
 }) {
@@ -61,7 +62,7 @@ export default function EmptyState({
   const resolvedIcon = icon === undefined ? copy.icon : icon;
   const resolvedHeading = heading || copy.heading;
   const resolvedDescription = description || children || copy.description;
-  const role = copy.role;
+  const role = roleOverride || copy.role;
 
   return (
     <section
