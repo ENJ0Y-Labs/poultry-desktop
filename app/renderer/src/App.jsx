@@ -968,7 +968,7 @@ export default function App() {
   async function loadPricingForBatch(batchId, quantity, date) {
     if (!batchId || !quantity) { setPricing(null); return; }
     try { setPricing(await pricingApi.price(batchId, Number(quantity), date || undefined)); }
-    catch (err) { setError(displayApiError(err)); }
+    catch (err) { setDataLoadError(displayApiError(err)); setError(displayApiError(err)); }
   }
 
   async function savePricingSettings(event) {
