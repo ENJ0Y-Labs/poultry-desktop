@@ -1402,6 +1402,7 @@ export default function App() {
     if (healthForm.batchId) await loadHealthForBatch(healthForm.batchId);
     if (eggBatchId) await loadEggsForBatch(eggBatchId);
     if (broilerBatchId) await loadBroilerForBatch(broilerBatchId);
+    if (broilerBatchId && pricingForm.quantity) await loadPricingForBatch(broilerBatchId, pricingForm.quantity, pricingForm.date);
     if (inventoryMovementForm.itemId) await loadInventoryMovements(inventoryMovementForm.itemId);
     setDailyRecordReloadKey(key => key + 1);
     return true;
