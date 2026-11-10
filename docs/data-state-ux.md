@@ -30,6 +30,7 @@ Run focused tests:
 
 ```powershell
 npm test -- EmptyState.test.jsx
+npm test -- ProductionTrendChart.test.jsx
 npm test -- DailyWorkPage.test.jsx
 npm test -- FeedStockPage.test.jsx
 npm test -- HealthPage.test.jsx
