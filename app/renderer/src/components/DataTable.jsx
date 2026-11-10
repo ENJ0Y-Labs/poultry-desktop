@@ -12,13 +12,15 @@ export default function DataTable({
   notApplicable = false,
   onRetry,
   onClearFilters,
+  onClearSearch,
   emptyAction,
   emptyDescription,
 }) {
   const resolvedState = error ? "error"
     : loading ? "loading"
       : notApplicable ? "not-applicable"
-        : rows.length === 0 && (filtered || state === "no-results") ? "no-results"
+        : rows.length === 0 && state === "no-search-results" ? "no-search-results"
+          : rows.length === 0 && (filtered || state === "no-filter-results" || state === "no-results") ? "no-filter-results"
           : rows.length === 0 ? (state || "no-records")
             : null;
 
@@ -36,7 +38,8 @@ export default function DataTable({
                   description={emptyDescription || (resolvedState === "no-records" ? emptyMessage : undefined)}
                   primaryAction={emptyAction}
                   onRetry={onRetry}
-                  onClearFilters={resolvedState === "no-results" ? onClearFilters : undefined}
+                  onClearFilters={resolvedState === "no-filter-results" ? onClearFilters : undefined}
+                  onClearSearch={resolvedState === "no-search-results" ? onClearSearch : undefined}
                   compact
                 />
               </td>
