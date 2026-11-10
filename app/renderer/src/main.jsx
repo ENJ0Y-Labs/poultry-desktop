@@ -9,4 +9,4 @@ import "./accessibility.css";
 // index.html runs the external theme bootstrap in <head> before styles and the renderer module.
 // Initialize the live system-preference listener and desktop bridge before React mounts.
 initializeTheme();
-ReactDOM.createRoot(document.getElementById("root")).render(<React.StrictMode><ToastProvider><App /></ToastProvider></React.StrictMode>);
+ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(React.StrictMode, null, React.createElement(ToastProvider, null, React.createElement(App))));
