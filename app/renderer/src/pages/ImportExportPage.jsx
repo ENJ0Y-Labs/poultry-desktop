@@ -123,7 +123,10 @@ export default function ImportExportPage() {
 
   async function confirmImport() {
     if (!importPreview || importPreview.invalidRows || !importPreview.totalRows || importBusy) return;
-    const confirmed = window.confirm(`Import ${importPreview.totalRows} ${CSV_TEMPLATES[importModule].label.toLowerCase()}? Existing exact matches will be skipped as duplicates. This will write records to this farm.`);
+    const confirmationMessage = importModule === "batches"
+      ? `Create ${importPreview.totalRows} permanent batch opening record(s)? Pomas will generate a new batch code for each record. This will write records to this farm.`
+      : `Import ${importPreview.totalRows} ${CSV_TEMPLATES[importModule].label.toLowerCase()}? Existing exact matches will be skipped as duplicates. This will write records to this farm.`;
+    const confirmed = window.confirm(confirmationMessage);
     if (!confirmed) return;
     setImportBusy(true);
     setImportError("");
