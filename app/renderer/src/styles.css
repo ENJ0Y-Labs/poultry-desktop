@@ -1156,3 +1156,11 @@ body { min-width: 0; }
   .auth-whats-new { margin-top: 18px; }
   .auth-whats-new-item { padding: 9px; }
 }
+
+
+/* Required-field indicator shared by validated forms. */
+.required-indicator {
+  color: var(--danger, #b42318);
+  margin-inline-start: 0.15em;
+  font-weight: 700;
+}

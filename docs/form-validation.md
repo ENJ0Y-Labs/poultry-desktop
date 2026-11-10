@@ -3,7 +3,7 @@
 ## Behavior
 
 - Farm workflow forms use the shared `ValidatedForm` wrapper and `formValidation.js` helpers. Authentication keeps its existing sign-in validation feedback.
-- Required fields, HTML number bounds/steps, integer/decimal constraints, email syntax, date values, maximum/minimum text lengths, and declared patterns are checked before a request is sent.
+- Required fields are marked with a visible, screen-reader-hidden asterisk. Required fields, HTML number bounds/steps, integer/decimal constraints, email syntax, date values, maximum/minimum text lengths, and declared patterns are checked before a request is sent.
 - Negative values are rejected for numeric fields without an explicit negative minimum. Domain-specific minimums and precision continue to come from each field's existing `min` and `step` attributes.
 - Naira text fields are checked with the existing `parseNairaToKobo` parser. It uses integer arithmetic and returns integer kobo; the API payload and backend money contract are unchanged.
 - Field errors appear beside their controls, with a form summary and focus moved to the first invalid field. Entered values are not reset on validation or API failure.
