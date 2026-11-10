@@ -13,6 +13,19 @@ function fieldKey(control, inheritedLabel = "") {
   return normalizeFieldKey(control.props.name || inheritedLabel || control.props.id || "field");
 }
 
+function containsRequiredControl(children) {
+  let required = false;
+  React.Children.forEach(children, child => {
+    if (!React.isValidElement(child)) return;
+    if (["input", "select", "textarea"].includes(typeof child.type === "string" ? child.type : "") && child.props.required) {
+      required = true;
+    } else if (child.props.children && containsRequiredControl(child.props.children)) {
+      required = true;
+    }
+  });
+  return required;
+}
+
 function enhanceChildren(children, errors, clearError, pending, inheritedLabel = "") {
   return React.Children.map(children, child => {
     if (!React.isValidElement(child)) return child;
@@ -34,8 +47,14 @@ function enhanceChildren(children, errors, clearError, pending, inheritedLabel =
       inspect(child.props.children);
       const error = errors[controlName];
       const wrapperClass = String(child.props.className || "").split(" ").includes("full") ? "validated-field full" : "validated-field";
+      const enhancedLabelChildren = enhanceChildren(child.props.children, errors, clearError, pending, labelText);
+      const showRequired = containsRequiredControl(child.props.children) &&
+        !child.props.children?.props?.className?.includes("required-indicator");
       return <div className={wrapperClass}>
-        {React.cloneElement(child, {}, enhanceChildren(child.props.children, errors, clearError, pending, labelText))}
+        {React.cloneElement(child, {}, <>
+          {enhancedLabelChildren}
+          {showRequired && <span className="required-indicator" aria-hidden="true"> *</span>}
+        </>)}
         {error && <small id={`${controlName}-error`} className="field-error" aria-live="polite">{error}</small>}
       </div>;
     }
