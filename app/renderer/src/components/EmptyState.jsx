@@ -5,10 +5,22 @@ const STATE_COPY = {
     description: "There are no records to show yet. Add the first record when you are ready.",
     role: "status",
   },
+  "no-search-results": {
+    icon: "⌕",
+    heading: "No search results",
+    description: "No records match your search. Try a different search term or clear the search.",
+    role: "status",
+  },
+  "no-filter-results": {
+    icon: "≡",
+    heading: "No matching records",
+    description: "No records match the selected filters. Adjust your criteria or clear the filters.",
+    role: "status",
+  },
   "no-results": {
     icon: "⌕",
     heading: "No matching records",
-    description: "No records match the current search or filters. Adjust your criteria and try again.",
+    description: "No records match the current criteria. Adjust your search or filters and try again.",
     role: "status",
   },
   "not-applicable": {
@@ -41,6 +53,7 @@ export default function EmptyState({
   secondaryAction,
   onRetry,
   onClearFilters,
+  onClearSearch,
   className = "",
   compact = false,
 }) {
@@ -63,10 +76,10 @@ export default function EmptyState({
         <h3>{resolvedHeading}</h3>
         {resolvedDescription && <p>{resolvedDescription}</p>}
       </div>
-      {(primaryAction || secondaryAction || onRetry || onClearFilters) && (
+      {(primaryAction || secondaryAction || onRetry || onClearFilters || onClearSearch) && (
         <div className="empty-state__actions">
           {onRetry && <button type="button" onClick={onRetry}>Try again</button>}
-          {onClearFilters && <button type="button" className="secondary-button" onClick={onClearFilters}>Clear filters</button>}
+          {onClearSearch && <button type="button" className="secondary-button" onClick={onClearSearch}>Clear search</button>}{onClearFilters && <button type="button" className="secondary-button" onClick={onClearFilters}>Clear filters</button>}
           {primaryAction}
           {secondaryAction}
         </div>
