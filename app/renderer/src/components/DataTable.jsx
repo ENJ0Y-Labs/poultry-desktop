@@ -1,4 +1,4 @@
-import { useContext } from "react";
+import { createElement, useContext } from "react";
 import { FarmManagerContext } from "./FarmManagerContext.jsx";
 import EmptyState from "./EmptyState.jsx";
 
@@ -33,9 +33,12 @@ export default function DataTable({
 
   return (
     <div className="table-scroll" role="region" aria-label={caption} tabIndex={0}>
-      {hasRows && retrievalError && (
-        <EmptyState variant="error" description={typeof retrievalError === "string" ? retrievalError : undefined} onRetry={retry} compact />
-      )}
+      {hasRows && retrievalError && createElement(EmptyState, {
+        variant: "error",
+        description: typeof retrievalError === "string" ? retrievalError : undefined,
+        onRetry: retry,
+        compact: true,
+      })}
       <table className="data-table">
         <caption className="sr-only">{caption}</caption>
         <thead><tr>{columns.map(column => <th scope="col" key={column.key}>{column.label}</th>)}</tr></thead>
@@ -43,15 +46,15 @@ export default function DataTable({
           {resolvedState ? (
             <tr>
               <td colSpan={columns.length} className="data-table__empty-cell">
-                <EmptyState
-                  variant={resolvedState}
-                  description={emptyDescription || (resolvedState === "no-records" ? emptyMessage : undefined)}
-                  primaryAction={emptyAction}
-                  onRetry={resolvedState === "error" ? retry : undefined}
-                  onClearFilters={resolvedState === "no-filter-results" ? onClearFilters : undefined}
-                  onClearSearch={resolvedState === "no-search-results" ? onClearSearch : undefined}
-                  compact
-                />
+                {createElement(EmptyState, {
+                  variant: resolvedState,
+                  description: emptyDescription || (resolvedState === "no-records" ? emptyMessage : undefined),
+                  primaryAction: emptyAction,
+                  onRetry: resolvedState === "error" ? retry : undefined,
+                  onClearFilters: resolvedState === "no-filter-results" ? onClearFilters : undefined,
+                  onClearSearch: resolvedState === "no-search-results" ? onClearSearch : undefined,
+                  compact: true,
+                })}
               </td>
             </tr>
           ) : rows.map((row, index) => (
