@@ -240,7 +240,6 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const [successMessage, setSuccessMessage] = useState("");
   const [authStatus, setAuthStatus] = useState(null);
   const [showAuthPassword, setShowAuthPassword] = useState(false);
   const [authForm, setAuthForm] = useState({ username: "", identifier: "", email: "", fullName: "", password: "", rememberMe: false });
@@ -772,7 +771,7 @@ export default function App() {
   }
 
   async function saveExpense(event) {
-    event.preventDefault(); setSaving(true); setError(""); setSuccessMessage("");
+    event.preventDefault(); setSaving(true); setError("");
     try {
       const created = await expenseApi.create({
         occurredDate: expenseForm.occurredDate,
@@ -825,7 +824,7 @@ export default function App() {
   async function savePopulationAdjustment(event) {
     event.preventDefault();
     if (!selectedBatchId) return;
-    setSaving(true); setError(""); setSuccessMessage("");
+    setSaving(true); setError("");
     try {
       await populationApi.adjust(selectedBatchId, {
         effectiveDate: populationAdjustmentForm.effectiveDate,
@@ -892,7 +891,7 @@ export default function App() {
   }
 
   async function useFeed(event) {
-    event.preventDefault(); setSaving(true); setError(""); setSuccessMessage("");
+    event.preventDefault(); setSaving(true); setError("");
     try {
       const type = feedTypes.find(item => item.id === feedUsageForm.feedTypeId);
       await feedApi.use(feedUsageForm.batchId, {
@@ -947,7 +946,7 @@ export default function App() {
   }
 
   async function recordPopulationEvent(event, type) {
-    event.preventDefault(); setSaving(true); setError(""); setSuccessMessage("");
+    event.preventDefault(); setSaving(true); setError("");
     try {
       const form = type === "MORTALITY" ? mortalityForm : cullingForm;
       const save = type === "MORTALITY" ? populationApi.mortality : populationApi.culling;
@@ -1016,7 +1015,7 @@ export default function App() {
   }
 
   async function saveBirdSale(event) {
-    event.preventDefault(); setSaving(true); setError(""); setSuccessMessage("");
+    event.preventDefault(); setSaving(true); setError("");
     try {
       const batchId = birdSaleForm.batchId;
       const sale = {
@@ -1060,7 +1059,7 @@ export default function App() {
   }
 
   async function saveEggCollection(event) {
-    event.preventDefault(); setSaving(true); setError(""); setSuccessMessage("");
+    event.preventDefault(); setSaving(true); setError("");
     try {
       const batchId = eggCollectionForm.batchId;
       await eggApi.addCollection(batchId, {
@@ -1077,7 +1076,7 @@ export default function App() {
   }
 
   async function saveEggSale(event) {
-    event.preventDefault(); setSaving(true); setError(""); setSuccessMessage("");
+    event.preventDefault(); setSaving(true); setError("");
     try {
       const batchId = eggSaleForm.batchId;
       await eggApi.addSale(batchId, {
