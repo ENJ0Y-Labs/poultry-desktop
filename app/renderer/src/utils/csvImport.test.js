@@ -50,7 +50,7 @@ describe("batch opening template", () => {
       "supplier_name", "purchase_cost_recorded", "purchase_cost_naira",
     ]);
     const result = await inspectCsvFile(csvFile(
-      "type,placement_date,house_code,initial_bird_count,population_count_status,supplier_name,purchase_cost_recorded,purchase_cost_naira\\nBROILER,2026-01-15,H-001,1000,ESTIMATED,Daystar Chicks,true,250000.00\\n",
+      "type,placement_date,house_code,initial_bird_count,population_count_status,supplier_name,purchase_cost_recorded,purchase_cost_naira\nBROILER,2026-01-15,H-001,1000,ESTIMATED,Daystar Chicks,true,250000.00\n",
     ), "batches");
     expect(result.validRows).toBe(1);
     expect(result.rows[0].record.house_code).toBe("H-001");
