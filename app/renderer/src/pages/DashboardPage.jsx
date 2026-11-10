@@ -122,7 +122,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <PageTemplate className="grid">
+    <PageTemplate className="grid pomas-page page-dashboard">
       <PageSection page="dashboard" tab="overview"><section id="dashboard" className="card full dashboard-page">
         <div className="section-head">
           <div><p className="eyebrow">OVERVIEW</p><h2>Farm dashboard</h2></div>

@@ -74,7 +74,7 @@ export default function SalesMoneyPage() {
   }
 
   return (
-    <PageTemplate className="grid">
+    <PageTemplate className="grid pomas-page page-sales-money">
       <PageSection page="sales-money" tab="customers"><section id="customers" className="card full">
         <div className="section-head">
           <h2>Customers</h2>

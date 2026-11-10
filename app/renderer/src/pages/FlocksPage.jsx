@@ -62,7 +62,7 @@ export default function FlocksPage() {
   }
 
   return (
-    <PageTemplate className="grid">
+    <PageTemplate className="grid pomas-page page-flocks">
       <PageSection page="flocks" tab="batch-dashboard"><section id="batch-dashboard" className="card full dashboard-page">
         <div className="section-head"><div><p className="eyebrow">BATCH</p><h2>Batch dashboard</h2></div>
           <select aria-label="Batch dashboard" value={selectedBatchId} onChange={e => { setSelectedBatchId(e.target.value); rememberLastBatchId(e.target.value); }}>
