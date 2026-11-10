@@ -33,6 +33,7 @@ const STATE_COPY = {
 
 export default function EmptyState({
   variant = "no-records",
+  children,
   icon,
   heading,
   description,
@@ -46,7 +47,7 @@ export default function EmptyState({
   const copy = STATE_COPY[variant] || STATE_COPY["no-records"];
   const resolvedIcon = icon === undefined ? copy.icon : icon;
   const resolvedHeading = heading || copy.heading;
-  const resolvedDescription = description || copy.description;
+  const resolvedDescription = description || children || copy.description;
   const role = copy.role;
 
   return (
