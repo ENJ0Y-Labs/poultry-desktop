@@ -180,7 +180,7 @@ export default function FeedStockPage() {
                 id: type.id, name: type.name, brand: type.brand || "", packagingName: type.packagingName || "",
                 packageWeightKg: type.packageWeightKg == null ? "" : String(type.packageWeightKg),
               })}>Edit details</button> },
-            ]} rows={feedTypes} emptyMessage="No feed types yet." />
+            ]} rows={feedTypes} emptyMessage="No feed types yet. Configure a feed product using the form above before recording purchases or usage." />
           </div>
 
           <div className="subsection">
@@ -219,7 +219,7 @@ export default function FeedStockPage() {
               { key: "consumedQuantityMilli", label: "Used", render: item => `${feedQuantity(item.consumedQuantityMilli)} ${item.unit}` },
               { key: "remainingQuantityMilli", label: "Remaining", render: item => `${feedQuantity(item.remainingQuantityMilli)} ${item.unit}` },
               { key: "remainingCostMinor", label: "Remaining cost", render: item => item.remainingCostMinor == null ? "Unknown" : formatMoney(item.remainingCostMinor, farm.currency) },
-            ]} rows={feedInventory} emptyMessage="No feed inventory yet." />
+            ]} rows={feedInventory} emptyMessage="No feed inventory yet. Add a feed type and record a purchase or opening balance." />
           </div>
         </section></PageSection>
 
@@ -246,7 +246,7 @@ export default function FeedStockPage() {
               { key: "name", label: "Item" }, { key: "category", label: "Category" }, { key: "quantityOnHand", label: "Stock" },
               { key: "reorderLevel", label: "Reorder" }, { key: "unit", label: "Unit" }, { key: "status", label: "Status" },
               { key: "action", label: "Action", render: item => item.status === "ACTIVE" ? <button type="button" className="secondary-button" onClick={() => editInventoryItem(item)}>Edit</button> : "Archived" },
-            ]} rows={inventoryItems} emptyMessage="No non-feed inventory items yet." />
+            ]} rows={inventoryItems} emptyMessage="No supply, drug or vaccine items yet. Create an item above to begin tracking stock." />
           </div>
 
           <div className="subsection">
@@ -257,7 +257,7 @@ export default function FeedStockPage() {
               { key: "remainingQuantityMilli", label: "Remaining", render: item => `${feedQuantity(item.remainingQuantityMilli)} ${item.unit}` },
               { key: "consumedQuantityMilli", label: "Used", render: item => `${feedQuantity(item.consumedQuantityMilli)} ${item.unit}` },
               { key: "remainingCostMinor", label: "Remaining cost", render: item => item.remainingCostMinor == null ? "Unknown" : formatMoney(item.remainingCostMinor, farm.currency) },
-            ]} rows={feedInventory} emptyMessage="No feed stock yet." />
+            ]} rows={feedInventory} emptyMessage="No feed stock yet. Record a purchase or an opening balance for an existing feed type." />
           </div>
 
           <div className="subsection">
@@ -288,7 +288,7 @@ export default function FeedStockPage() {
               { key: "movementDate", label: "Date" }, { key: "movementType", label: "Movement" },
               { key: "quantity", label: "Quantity" }, { key: "reason", label: "Reason" }, { key: "source", label: "Source" },
               { key: "batchId", label: "Batch", render: row => row.batchId ? (batches.find(batch => batch.id === row.batchId)?.code || row.batchId) : "Farm" },
-            ]} rows={inventoryMovements} emptyMessage="No movements for this item." />}
+            ]} rows={inventoryMovements} emptyMessage="No stock movements recorded for this item yet." notApplicable={!inventoryMovementForm.itemId} />}
           </div>
         </section></PageSection>
       <PageSection page="feed-stock" tab="purchases"><section id="purchases" className="card full"><div className="section-head"><h2>Feed purchases</h2><p className="muted">Choose a registered supplier or leave it blank if the source is unknown.</p></div>
@@ -326,7 +326,7 @@ export default function FeedStockPage() {
           { key: "notes", label: "Notes", render: supplier => supplier.notes || "—" },
           { key: "status", label: "Status", render: supplier => supplier.status || "ACTIVE" },
           { key: "action", label: "Action", render: supplier => supplier.status === "ARCHIVED" ? "Archived" : <><button type="button" className="secondary-button" disabled={saving} onClick={() => editSupplier(supplier)}>Edit</button> <button type="button" disabled={saving} onClick={() => archiveSupplier(supplier.id)}>Archive</button></> },
-        ]} rows={suppliers} emptyMessage="No suppliers recorded yet." />
+        ]} rows={suppliers} emptyMessage="No suppliers recorded yet. Add a supplier above to associate it with purchases." />
       </section></PageSection>
 
     </PageTemplate>
