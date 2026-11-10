@@ -48,7 +48,9 @@ export default function DataTable({
               <td colSpan={columns.length} className="data-table__empty-cell">
                 {createElement(EmptyState, {
                   variant: resolvedState,
-                  description: emptyDescription || (resolvedState === "no-records" ? emptyMessage : undefined),
+                  description: emptyDescription || (resolvedState === "error"
+                    ? (typeof retrievalError === "string" ? retrievalError : retrievalError?.message)
+                    : resolvedState === "no-records" ? emptyMessage : undefined),
                   primaryAction: emptyAction,
                   onRetry: resolvedState === "error" ? retry : undefined,
                   onClearFilters: resolvedState === "no-filter-results" ? onClearFilters : undefined,
