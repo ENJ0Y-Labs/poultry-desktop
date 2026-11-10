@@ -146,14 +146,20 @@ public class BatchCsvImportService {
                         Integer.toString(initialBirdCount), supplier == null ? "" : supplier.id(),
                         purchaseCostMinor == null ? "" : purchaseCostMinor.toString(), populationStatus);
                 if (!fingerprints.add(fingerprint)) errors.add("Duplicate batch opening row within this file.");
+                final String resolvedType = type;
+                final LocalDate resolvedPlacementDate = placementDate;
+                final int resolvedBirdCount = initialBirdCount;
+                final String resolvedSupplierId = supplier == null ? null : supplier.id();
+                final Long resolvedPurchaseCostMinor = purchaseCostMinor;
+                final String resolvedPopulationStatus = populationStatus;
                 boolean existingMatch = existingBatches.stream().anyMatch(existing ->
-                        existing.type().equals(type)
-                                && existing.placementDate().equals(placementDate)
+                        existing.type().equals(resolvedType)
+                                && existing.placementDate().equals(resolvedPlacementDate)
                                 && existing.houseId().equals(house.id())
-                                && existing.initialBirdCount() == initialBirdCount
-                                && java.util.Objects.equals(existing.supplierId(), supplier == null ? null : supplier.id())
-                                && java.util.Objects.equals(existing.purchaseCostMinor(), purchaseCostMinor)
-                                && existing.populationCountStatus().equals(populationStatus));
+                                && existing.initialBirdCount() == resolvedBirdCount
+                                && java.util.Objects.equals(existing.supplierId(), resolvedSupplierId)
+                                && java.util.Objects.equals(existing.purchaseCostMinor(), resolvedPurchaseCostMinor)
+                                && existing.populationCountStatus().equals(resolvedPopulationStatus));
                 if (existingMatch) errors.add("A batch with the same opening details already exists. Review existing batches; no automatic skip is performed.");
             }
 
