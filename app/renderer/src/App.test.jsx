@@ -92,6 +92,9 @@ function mockFarmApis({
   vi.spyOn(accountApi, "get").mockResolvedValue({
     id: "user-1", email: "owner@example.com", fullName: "Farm Owner", role: "OWNER"
   });
+  vi.spyOn(settingsApi, "application").mockResolvedValue({
+    startPage: "dashboard", dateFormat: "YYYY-MM-DD"
+  });
   vi.spyOn(settingsApi, "backup").mockResolvedValue({
     enabled: false, directory: "", intervalMs: 86400000
   });
