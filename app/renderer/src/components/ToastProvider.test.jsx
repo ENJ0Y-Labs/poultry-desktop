@@ -1,0 +1,11 @@
+import { act, fireEvent, render, screen } from "@testing-library/react";
+import { afterEach,beforeEach,describe,expect,it,vi } from "vitest";
+import { ToastProvider,useToast } from "./ToastProvider.jsx";
+function Harness(){const toast=useToast();return <><button onClick={()=>toast.success("Saved successfully")}>Success</button><button onClick={()=>toast.error("Save failed")}>Error</button><button onClick={()=>toast.warning("Stock is low")}>Warning</button><button onClick={()=>toast.info("Backup completed",{duration:0})}>Info</button><button onClick={()=>{toast.info("Repeated event");toast.info("Repeated event");}}>Duplicate</button></>}
+describe("ToastProvider",()=>{
+ beforeEach(()=>vi.useFakeTimers());afterEach(()=>vi.useRealTimers());
+ it("supports accessible variants and manual dismissal",()=>{render(<ToastProvider><Harness/></ToastProvider>);fireEvent.click(screen.getByText("Success"));expect(screen.getByRole("status",{name:/saved successfully/i})).toBeTruthy();fireEvent.click(screen.getByText("Error"));expect(screen.getByRole("alert",{name:/save failed/i})).toBeTruthy();fireEvent.click(screen.getByText("Warning"));expect(screen.getByText("Stock is low")).toBeTruthy();fireEvent.click(screen.getByText("Info"));fireEvent.click(screen.getAllByRole("button",{name:"Dismiss notification"})[0]);expect(screen.queryByText("Saved successfully")).toBeNull();});
+ it("auto dismisses after the configured duration",()=>{render(<ToastProvider><Harness/></ToastProvider>);fireEvent.click(screen.getByText("Success"));act(()=>vi.advanceTimersByTime(5000));expect(screen.queryByText("Saved successfully")).toBeNull();});
+ it("suppresses duplicate notifications",()=>{render(<ToastProvider><Harness/></ToastProvider>);fireEvent.click(screen.getByText("Duplicate"));expect(screen.getAllByText("Repeated event")).toHaveLength(1);});
+ it("limits the visible stack to four",()=>{function Many(){const toast=useToast();return <button onClick={()=>{for(let i=0;i<6;i++)toast.info("Notice "+i,{duration:0});}}>Add six</button>;}render(<ToastProvider><Many/></ToastProvider>);fireEvent.click(screen.getByText("Add six"));expect(screen.queryByText("Notice 0")).toBeNull();expect(screen.getByText("Notice 5")).toBeTruthy();});
+});
