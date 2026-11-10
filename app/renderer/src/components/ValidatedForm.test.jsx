@@ -35,7 +35,8 @@ describe("ValidatedForm", () => {
     expect(document.querySelectorAll(".required-indicator")).toHaveLength(1);
     expect(screen.getByLabelText("Farm name").required).toBe(true);
     const farmNameLabel = screen.getByLabelText("Farm name").closest("label");
-    const farmCodeField = screen.getByLabelText("Farm code").closest(".form-field");
+    const farmCodeInput = document.querySelector('input[name="farmCode"]');
+    const farmCodeField = farmCodeInput.closest(".form-field");
     expect(farmNameLabel.parentElement.querySelector(".required-indicator").textContent).toBe(" *");
     expect(farmCodeField).not.toBeNull();
     expect(farmCodeField.querySelector(".required-indicator")).toBeNull();
