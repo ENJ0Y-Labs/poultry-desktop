@@ -18,11 +18,12 @@ export default function FeedStockPage() {
   const { error } = useContext(FarmManagerContext);
   const [inventoryItemOpenSignal, setInventoryItemOpenSignal] = useState(0);
   const [supplierOpenSignal, setSupplierOpenSignal] = useState(0);
-  const { formatMoney, farm, batches, feedTypes, setFeedTypes, feedInventory, feedTypeForm, setFeedTypeForm, setError, setSaving, feedPurchaseForm, setFeedPurchaseForm, inventoryItems, inventoryItemForm, setInventoryItemForm, emptyInventoryItem, emptyInventoryMovement, emptyFeedPurchase, emptySupplier, feedPurchaseModalSignal, editingInventoryItemId, editInventoryItem, cancelInventoryItemEdit, inventoryMovementForm, setInventoryMovementForm, inventoryMovements, suppliers, supplierForm, setSupplierForm, editingSupplierId, editSupplier, cancelSupplierEdit, saveSupplier, archiveSupplier, saving, saveInventoryItem, loadInventoryMovements, saveInventoryMovement, createFeedType, purchaseFeed, feedQuantity } = useContext(FarmManagerContext);
+  const { dataLoadError, retryData, setDataLoadError, formatMoney, farm, batches, feedTypes, setFeedTypes, feedInventory, feedTypeForm, setFeedTypeForm, setError, setSaving, feedPurchaseForm, setFeedPurchaseForm, inventoryItems, inventoryItemForm, setInventoryItemForm, emptyInventoryItem, emptyInventoryMovement, emptyFeedPurchase, emptySupplier, feedPurchaseModalSignal, editingInventoryItemId, editInventoryItem, cancelInventoryItemEdit, inventoryMovementForm, setInventoryMovementForm, inventoryMovements, suppliers, supplierForm, setSupplierForm, editingSupplierId, editSupplier, cancelSupplierEdit, saveSupplier, archiveSupplier, saving, saveInventoryItem, loadInventoryMovements, saveInventoryMovement, createFeedType, purchaseFeed, feedQuantity } = useContext(FarmManagerContext);
   const [openingStockForm, setOpeningStockForm] = useState({
     feedTypeId: "", effectiveDate: "", quantity: "", reason: "",
   });
   const [openingBalances, setOpeningBalances] = useState([]);
+  const [openingBalancesLoading, setOpeningBalancesLoading] = useState(false);
   const [editingFeedType, setEditingFeedType] = useState(null);
   const [drawerRecord, setDrawerRecord] = useState(null);
   const [drawerMovementItemId, setDrawerMovementItemId] = useState("");
@@ -101,17 +102,25 @@ export default function FeedStockPage() {
     let active = true;
     if (!feedTypes.length) {
       setOpeningBalances([]);
+      setOpeningBalancesLoading(false);
       return () => { active = false; };
     }
+    setOpeningBalancesLoading(true);
     Promise.all(feedTypes.map(type => feedApi.openingBalances(type.id)))
       .then(results => {
         if (active) setOpeningBalances(results.flat());
       })
       .catch(error => {
-        if (active) setError(error.message || "Could not load opening-stock history.");
+        if (active) {
+          setDataLoadError(error.message || "Could not load opening-stock history.");
+          setError(error.message || "Could not load opening-stock history.");
+        }
+      })
+      .finally(() => {
+        if (active) setOpeningBalancesLoading(false);
       });
     return () => { active = false; };
-  }, [feedTypes, setError]);
+  }, [feedTypes, setError, setDataLoadError]);
 
   async function recordOpeningStock(event) {
     event.preventDefault();
@@ -219,7 +228,7 @@ export default function FeedStockPage() {
                 id: type.id, name: type.name, brand: type.brand || "", packagingName: type.packagingName || "",
                 packageWeightKg: type.packageWeightKg == null ? "" : String(type.packageWeightKg),
               })}>Edit details</button> },
-            ]} rows={feedTypes} emptyMessage="No feed types yet." />
+            ]} rows={feedTypes} emptyMessage="No feed types yet. Configure a feed product using the form above before recording purchases or usage." />
           </div>
 
           <div className="subsection">
@@ -242,7 +251,7 @@ export default function FeedStockPage() {
               { key: "quantityMilli", label: "Quantity", render: item => `${feedQuantity(item.quantityMilli)} ${item.unit}` },
               { key: "reason", label: "Reason / source" },
               { key: "valuation", label: "Valuation", render: () => "Unvalued opening stock" },
-            ]} rows={openingBalances} emptyMessage="No opening stock recorded yet." />
+            ]} rows={openingBalances} emptyMessage="No opening stock recorded yet. Enter an opening balance above if the farm already has feed on hand." loading={openingBalancesLoading} error={dataLoadError} onRetry={retryData} />
           </div>
 
           <p className="muted">Record daily feed consumption in Daily Work. Feed usage still updates this inventory through the existing FIFO ledger.</p>
@@ -258,7 +267,7 @@ export default function FeedStockPage() {
               { key: "consumedQuantityMilli", label: "Used", render: item => `${feedQuantity(item.consumedQuantityMilli)} ${item.unit}` },
               { key: "remainingQuantityMilli", label: "Remaining", render: item => `${feedQuantity(item.remainingQuantityMilli)} ${item.unit}` },
               { key: "remainingCostMinor", label: "Remaining cost", render: item => item.remainingCostMinor == null ? "Unknown" : formatMoney(item.remainingCostMinor, farm.currency) },
-            ]} rows={feedInventory} emptyMessage="No feed inventory yet." />
+            ]} rows={feedInventory} emptyMessage="No feed inventory yet. Add a feed type and record a purchase or opening balance." />
           </div>
         </section></PageSection>
 
@@ -298,7 +307,7 @@ export default function FeedStockPage() {
               { key: "remainingQuantityMilli", label: "Remaining", render: item => `${feedQuantity(item.remainingQuantityMilli)} ${item.unit}` },
               { key: "consumedQuantityMilli", label: "Used", render: item => `${feedQuantity(item.consumedQuantityMilli)} ${item.unit}` },
               { key: "remainingCostMinor", label: "Remaining cost", render: item => item.remainingCostMinor == null ? "Unknown" : formatMoney(item.remainingCostMinor, farm.currency) },
-            ]} rows={feedInventory} emptyMessage="No feed stock yet." />
+            ]} rows={feedInventory} emptyMessage="No feed stock yet. Record a purchase or an opening balance for an existing feed type." />
           </div>
 
           <div className="subsection">
@@ -331,7 +340,7 @@ export default function FeedStockPage() {
               { key: "movementDate", label: "Date" }, { key: "movementType", label: "Movement" },
               { key: "quantity", label: "Quantity" }, { key: "reason", label: "Reason" }, { key: "source", label: "Source" },
               { key: "batchId", label: "Batch", render: row => row.batchId ? (batches.find(batch => batch.id === row.batchId)?.code || row.batchId) : "Farm" },
-            ]} rows={inventoryMovements} emptyMessage="No movements for this item." />}
+            ]} rows={inventoryMovements} emptyMessage="No stock movements recorded for this item yet." notApplicable={!inventoryMovementForm.itemId} />}
           </div>
         </section></PageSection>
       <PageSection page="feed-stock" tab="purchases"><section id="purchases" className="card full"><div className="section-head"><h2>Feed purchases</h2><p className="muted">Choose a registered supplier or leave it blank if the source is unknown.</p></div>

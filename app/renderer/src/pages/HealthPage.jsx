@@ -36,7 +36,7 @@ export default function HealthPage() {
           <DataTable caption="Health records" columns={[
               { key: "recordDate", label: "Date" }, { key: "conditionProblem", label: "Condition" },
               { key: "description", label: "Description" }, { key: "action", label: "Action" },
-            ]} rows={healthRecords} emptyMessage="Select a batch to view health records." />
+            ]} rows={healthRecords} emptyMessage="No health records for this batch yet. Record the first health observation above." notApplicable={!healthForm.batchId} />
         </section>
       </PageSection>
 
@@ -56,7 +56,7 @@ export default function HealthPage() {
           <DataTable caption="Drug and treatment records" columns={[
               { key: "recordDate", label: "Date" }, { key: "drug", label: "Drug" }, { key: "quantity", label: "Quantity" },
               { key: "costMinor", label: "Cost", render: row => formatMoney(row.costMinor, farm.currency) }, { key: "reason", label: "Reason" },
-            ]} rows={drugRecords} emptyMessage="No drug records for the selected batch." />
+            ]} rows={drugRecords} emptyMessage="No drug treatments recorded for this batch yet." notApplicable={!drugForm.batchId} />
         </section>
       </PageSection>
 
@@ -76,7 +76,7 @@ export default function HealthPage() {
           <DataTable caption="Vaccination records" columns={[
               { key: "recordDate", label: "Date" }, { key: "vaccine", label: "Vaccine" }, { key: "dose", label: "Dose" },
               { key: "quantity", label: "Quantity" }, { key: "notes", label: "Notes", render: row => row.notes || "—" },
-            ]} rows={vaccinationRecords} emptyMessage="No vaccination records for the selected batch." />
+            ]} rows={vaccinationRecords} emptyMessage="No vaccinations recorded for this batch yet." notApplicable={!vaccinationForm.batchId} />
         </section>
       </PageSection>
     </PageTemplate>

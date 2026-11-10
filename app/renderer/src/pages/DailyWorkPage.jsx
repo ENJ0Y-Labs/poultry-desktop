@@ -19,7 +19,7 @@ export default function DailyWorkPage() {
     batches, dailyForm, setDailyForm, emptyDaily, emptyFeedUsage, emptyPopulationEvent, dailyRecord, dailyRecordLoading, waterUnitLabel,
     mortalityForm, setMortalityForm, mortalityModalSignal, feedUsageModalSignal, cullingForm, setCullingForm, saving,
     saveDailyRecord, recordPopulationEvent, feedTypes, feedUsageForm, setFeedUsageForm,
-    useFeed, feedQuantity,
+    useFeed, feedQuantity, dataLoadError, retryData,
   } = useContext(FarmManagerContext);
   const activeBatches = batches.filter(batch => batch.status === "ACTIVE");
   const selectedBatch = activeBatches.find(batch => batch.id === dailyForm.batchId);
@@ -84,14 +84,14 @@ export default function DailyWorkPage() {
 
           <div className="subsection">
             <h3>Saved activity · {dailyForm.date}</h3>
-            {dailyRecordLoading ? <p className="muted" role="status">Loading saved activity…</p> : hasSavedActivity ? <>
+            {dailyRecordLoading ? <EmptyState variant="loading" heading="Loading saved activity" compact /> : dataLoadError ? <EmptyState variant="error" description={dataLoadError} onRetry={retryData} compact /> : hasSavedActivity ? <>
               <DataTable caption="Saved daily activity" columns={[
                   { key: "birds", label: "Birds" }, { key: "mortality", label: "Mortality" }, { key: "culling", label: "Culling" },
                   { key: "water", label: "Water" }, { key: "notes", label: "Notes" },
                 ]} rows={[{ id: "daily-activity", birds: dailyRecord.birds, mortality: dailyRecord.mortality, culling: dailyRecord.culling, water: `${dailyRecord.totalWaterUnits} ${waterUnitLabel || "litres"}`, notes: dailyRecord.notes || "—" }]} />
               <h4>Feed recorded</h4>
               {dailyRecord.feed?.length ? <ul>{dailyRecord.feed.map((entry, index) => <li key={entry.id || entry.usageId || index}>{entry.feedTypeName || entry.feedName || "Feed"}{entry.brand ? ` · ${entry.brand}` : ""}: {feedQuantity(entry.quantityMilli ?? entry.quantityUsedMilli ?? 0)} {entry.unit || ""}</li>)}</ul> : <p className="muted">No feed usage recorded for this date.</p>}
-            </> : <p className="muted">No saved daily record for this batch and date yet. Record feed usage or save daily notes to begin.</p>}
+            </> : <EmptyState variant="no-records" heading="No daily record for this date" description="Record feed usage, water or daily notes to begin this day’s activity." compact />}
           </div>
         </section>
       </PageSection>

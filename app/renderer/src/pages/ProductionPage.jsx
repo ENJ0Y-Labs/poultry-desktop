@@ -9,6 +9,8 @@ import { FarmManagerContext } from "../components/FarmManagerContext.jsx";
 import { ModalForm } from "../components/Modal.jsx";
 import { todayLocalDate } from "../utils/farmUx.js";
 // eslint-disable-next-line no-unused-vars
+import EmptyState from "../components/EmptyState.jsx";
+// eslint-disable-next-line no-unused-vars
 import DataTable from "../components/DataTable.jsx";
 // eslint-disable-next-line no-unused-vars
 import PageSection from "../components/PageSection.jsx";
@@ -42,6 +44,7 @@ export default function ProductionPage() {
               {batches.filter(b => b.type === "LAYER").map(b => <option key={b.id} value={b.id}>{b.code}</option>)}
             </select></label>
           </div>
+          {!batches.some(batch => batch.type === "LAYER") && <EmptyState variant="not-applicable" heading="No layer batches available" description="Create a LAYER batch in Flocks before recording egg production." compact />}
 
           {eggBatchId && (
             <>
@@ -76,7 +79,7 @@ export default function ProductionPage() {
                 <DataTable caption="Egg collections" columns={[
                     { key: "recordDate", label: "Date" }, { key: "good", label: "Good" }, { key: "cracked", label: "Cracked" },
                     { key: "total", label: "Total" }, { key: "notes", label: "Notes", render: row => row.notes || "—" },
-                  ]} rows={eggCollections} emptyMessage="No egg collections recorded." />
+                  ]} rows={eggCollections} emptyMessage="No egg collections recorded for this layer batch. Record the first collection above." />
               </div>
 
               <div className="subsection">
@@ -100,7 +103,7 @@ export default function ProductionPage() {
                     { key: "crates", label: "Crates", render: row => row.crates.toString() }, { key: "soldEggs", label: "Eggs" },
                     { key: "pricePerCrateMinor", label: "Price / crate", render: row => formatMoney(row.pricePerCrateMinor, farm.currency) },
                     { key: "totalAmountMinor", label: "Total", render: row => formatMoney(row.totalAmountMinor, farm.currency) },
-                  ]} rows={eggSales} emptyMessage="No egg sales recorded." />
+                  ]} rows={eggSales} emptyMessage="No egg sales recorded for this layer batch yet." />
               </div>
             </>
           )}
@@ -127,6 +130,7 @@ export default function ProductionPage() {
               )}
             </select></label>
           </div>
+          {!batches.some(batch => batch.type === "BROILER" || batch.type === "TURKEY") && <EmptyState variant="not-applicable" heading="No meat-bird batches available" description="Create a BROILER or TURKEY batch in Flocks before recording weights and bird sales." compact />}
 
           {broilerBatchId && (
             <>
@@ -144,7 +148,7 @@ export default function ProductionPage() {
                     { key: "weightGainKg", label: "Weight gain", render: row => row.weightGainKg == null ? "—" : `${row.weightGainKg} kg` },
                     { key: "feedConsumedKg", label: "Feed consumed (converted)", render: row => row.feedConsumedKg == null ? "—" : `${row.feedConsumedKg} kg` },
                     { key: "fcr", label: "FCR", render: row => row.fcr ?? "—" }, { key: "trend", label: "Trend records", render: row => row.trend?.length ?? 0 },
-                  ]} rows={[{ id: "growth-summary", ...(broilerGrowth || {}) }]} emptyMessage="No growth summary available." />
+                  ]} rows={broilerGrowth ? [{ id: "growth-summary", ...broilerGrowth }] : []} emptyMessage="No growth summary available until weight records have been entered." notApplicable={!broilerBatchId} />
                 <p className="muted">FCR uses converted kilograms of all recorded feed divided by live-weight gain. Configure each non-kg feed type’s kg-per-unit factor in Feed management. If any consumed feed type has an unknown conversion, feed consumed and FCR display — until the factor is configured.</p>
               </div>
 
@@ -162,7 +166,7 @@ export default function ProductionPage() {
                 <DataTable caption="Meat-bird weight records" columns={[
                     { key: "recordDate", label: "Date" }, { key: "sampleQuantity", label: "Sample" }, { key: "totalWeightKg", label: "Total kg" },
                     { key: "averageWeightKg", label: "Average kg" }, { key: "weightGainKg", label: "Gain kg/bird" },
-                  ]} rows={broilerWeights} emptyMessage="No weight records yet." />
+                  ]} rows={broilerWeights} emptyMessage="No weight records yet. Record a sample above to start the growth trend." />
               </div>
 
               <div className="subsection">
@@ -202,7 +206,7 @@ export default function ProductionPage() {
                     { key: "pricePerBirdMinor", label: "Price / bird", render: row => formatMoney(row.pricePerBirdMinor, farm.currency) },
                     { key: "totalAmountMinor", label: "Total", render: row => formatMoney(row.totalAmountMinor, farm.currency) },
                     { key: "customer", label: "Customer" },
-                  ]} rows={broilerSales} emptyMessage="No bird sales recorded." />
+                  ]} rows={broilerSales} emptyMessage="No bird sales recorded for this meat-bird batch yet." />
               </div>
             </>
           )}

@@ -8,13 +8,15 @@ import { reportApi, productionTrendApi } from "../services/api.js";
 // eslint-disable-next-line no-unused-vars
 import ProductionTrendChart from "../components/ProductionTrendChart.jsx";
 import { rememberLastBatchId } from "../utils/farmUx.js";
+// eslint-disable-next-line no-unused-vars
+import EmptyState from "../components/EmptyState.jsx";
 // eslint-disable-next-line no-unused-vars -- JSX component usage is not detected by the core rule
 import DataTable from "../components/DataTable.jsx";
 // eslint-disable-next-line no-unused-vars
 import MetricHelp from "../components/MetricHelp.jsx";
 
 export default function ReportsPage() {
-  const { formatMoney, formatQuantity, formatPercent, formatKg, formatMetric, formatCount, feedQuantity, farm, batches, selectedBatchId, setSelectedBatchId, farmReport, batchReport, reportAsOf, setReportAsOf, loadReport, loadBatchReport, exportCsv, exportPdf } = useContext(FarmManagerContext);
+  const { formatMoney, formatQuantity, formatPercent, formatKg, formatMetric, formatCount, feedQuantity, farm, batches, selectedBatchId, setSelectedBatchId, farmReport, batchReport, reportAsOf, setReportAsOf, loadReport, loadBatchReport, exportCsv, exportPdf, reportLoading, batchReportLoading, dataLoadError, retryData } = useContext(FarmManagerContext);
 
   return (
     <PageTemplate className="grid pomas-page page-reports">
@@ -52,7 +54,7 @@ export default function ReportsPage() {
                 { key: "remainingCostMinor", label: "Remaining cost", render: item => item.remainingCostMinor == null ? "Unknown" : formatMoney(item.remainingCostMinor, farm.currency) },
               ]} rows={farmReport.feed || []} emptyMessage="No feed products recorded." />
             </div>
-          </> : <p className="muted">Report is loading…</p>}
+          </> : reportLoading ? <EmptyState variant="loading" heading="Loading farm report" compact /> : dataLoadError ? <EmptyState variant="error" description={dataLoadError} onRetry={retryData} compact /> : <EmptyState variant="no-records" heading="Farm report is not available" description="Refresh the report to retrieve the latest farm summary." compact />}
         </section></PageSection>
 
       <PageSection page="reports" tab="batch-report"><section id="batch-reports" className="card full">
@@ -107,7 +109,7 @@ export default function ReportsPage() {
               </div>
             </div>
             <p className="muted">As of {batchReport.asOf}. Water quantities use the farm display label: {batchReport.waterUnitLabel || "litres"}. Population, feed, production, costs, revenue and profit reuse the dashboard calculation services.</p>
-          </> : <p className="muted">{selectedBatchId ? "Batch report is loading…" : "Select a batch to inspect its report."}</p>}
+          </> : !selectedBatchId ? <EmptyState variant="not-applicable" heading="Select a batch" description="Choose a batch above to view its report." compact /> : (batchReportLoading || reportLoading) ? <EmptyState variant="loading" heading="Loading batch report" compact /> : dataLoadError ? <EmptyState variant="error" description={dataLoadError} onRetry={retryData} compact /> : <EmptyState variant="no-records" heading="Batch report is not available" description="Refresh the report to retrieve this batch summary." compact />}
           {selectedBatchId && batches.find(batch => batch.id === selectedBatchId)?.type === "LAYER" && (
             <ProductionTrendChart
               batchId={selectedBatchId}
