@@ -80,6 +80,12 @@ describe("DataTable", () => {
     expect(retryData).toHaveBeenCalledOnce();
   });
 
+  it("keeps previously loaded rows visible when a later read fails", () => {
+    render(<DataTable caption="Houses" columns={columns} rows={[{ id: "h1", name: "House A" }]} error="Refresh failed." />);
+    expect(screen.getByRole("alert")).toHaveTextContent("Refresh failed.");
+    expect(screen.getByRole("cell", { name: "House A" })).toBeInTheDocument();
+  });
+
   it("does not replace valid rows with an empty state", () => {
     render(<DataTable caption="Houses" columns={columns} rows={[{ id: "h1", name: "House A" }]} />);
     expect(screen.getByRole("cell", { name: "House A" })).toBeInTheDocument();
