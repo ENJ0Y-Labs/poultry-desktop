@@ -1,4 +1,5 @@
 import { fireEvent, render as rtlRender, screen, waitFor, within } from "@testing-library/react";
+import { createElement } from "react";
 import { ToastProvider } from "./components/ToastProvider.jsx";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App.jsx";
@@ -15,7 +16,7 @@ import {
 } from "./services/api.js";
 
 function render(ui, options) {
-  return rtlRender(<ToastProvider>{ui}</ToastProvider>, options);
+  return rtlRender(createElement(ToastProvider, null, ui), options);
 }
 
 const farm = {
