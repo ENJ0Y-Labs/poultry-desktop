@@ -483,6 +483,10 @@ input[type="checkbox"]:not(.toggle-switch-input) {
   transition: background-color .16s ease, color .16s ease;
 }
 .brand-mark-button:hover:not(:disabled) { background: transparent; }
+.brand-mark-button:focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: 3px;
+}
 .brand-mark-button .brand-logo,
 .brand-mark-button .brand-hover-icon { grid-area: 1 / 1; }
 .brand-mark-button img { width: 26px; height: 26px; object-fit: contain; }
