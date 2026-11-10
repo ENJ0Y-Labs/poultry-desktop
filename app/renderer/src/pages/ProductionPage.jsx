@@ -4,6 +4,8 @@ import { productionTrendApi } from "../services/api.js";
 import ProductionTrendChart from "../components/ProductionTrendChart.jsx";
 import { FarmManagerContext } from "../components/FarmManagerContext.jsx";
 // eslint-disable-next-line no-unused-vars
+import EmptyState from "../components/EmptyState.jsx";
+// eslint-disable-next-line no-unused-vars
 import DataTable from "../components/DataTable.jsx";
 // eslint-disable-next-line no-unused-vars
 import PageSection from "../components/PageSection.jsx";
@@ -36,6 +38,7 @@ export default function ProductionPage() {
               {batches.filter(b => b.type === "LAYER").map(b => <option key={b.id} value={b.id}>{b.code}</option>)}
             </select></label>
           </div>
+          {!batches.some(batch => batch.type === "LAYER") && <EmptyState variant="not-applicable" heading="No layer batches available" description="Create a LAYER batch in Flocks before recording egg production." compact />}
 
           {eggBatchId && (
             <>
@@ -118,6 +121,7 @@ export default function ProductionPage() {
               )}
             </select></label>
           </div>
+          {!batches.some(batch => batch.type === "BROILER" || batch.type === "TURKEY") && <EmptyState variant="not-applicable" heading="No meat-bird batches available" description="Create a BROILER or TURKEY batch in Flocks before recording weights and bird sales." compact />}
 
           {broilerBatchId && (
             <>
