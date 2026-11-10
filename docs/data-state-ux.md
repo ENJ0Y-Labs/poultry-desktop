@@ -11,7 +11,7 @@ Use `app/renderer/src/components/EmptyState.jsx` for page-level states and `Data
 - `loading`: a request is in progress; do not render the empty-records message at the same time.
 - `error`: retrieval failed; retain existing data where possible and provide a retry action.
 
-The table component resolves states in this order: retrieval error, loading, not applicable, filtered no-results, then first-use no-records. Existing callers can keep using `emptyMessage`; it becomes the explanatory text for a first-use table state. Pass `filtered` and `onClearFilters` for a filtered empty result, and pass `loading`, `error`, and `onRetry` when the owning data loader exposes those states.
+The table component resolves states in this order: retrieval error, loading, not applicable, filtered no-results, then first-use no-records. Existing callers can keep using `emptyMessage`; it becomes the explanatory text for a first-use table state. Pass `filtered` and `onClearFilters` for a filtered empty result, and pass `loading`, `error`, and `onRetry` when the owning data loader exposes those states. The shared table also reads the app-level retrieval failure and retry callback from `FarmManagerContext`: it shows an error state when no rows are available, but keeps already-loaded rows visible with an error notice if a later refresh fails. Reports, the batch dashboard, Daily Work saved activity, Feed & Stock opening balances, and production trend charts expose their own loading/retry states.
 
 ## Product rules
 
