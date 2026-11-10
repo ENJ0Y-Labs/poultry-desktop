@@ -22,7 +22,7 @@ export default function ProductionPage() {
   const { formatMoney, farm, batches, customers, eggBatchId, setEggBatchId, broilerBatchId, setBroilerBatchId, broilerGrowth, broilerWeights, broilerSales, weightForm, setWeightForm, birdSaleForm, setBirdSaleForm, emptyWeight, emptyBirdSale, pricing, pricingForm, setPricingForm, eggInventory, eggCollections, eggSales, eggCollectionForm, setEggCollectionForm, eggSaleForm, setEggSaleForm, crateSize, saving, loadPricingForBatch, loadBroilerForBatch, saveWeight, saveBirdSale, loadEggsForBatch, saveEggCollection, saveEggSale } = useContext(FarmManagerContext);
 
   return (
-    <PageTemplate className="grid">
+    <PageTemplate className="grid pomas-page page-production">
       <PageSection page="production" tab="eggs"><section id="eggs" className="card full">
           <div className="section-head">
             <h2>Layer egg production <MetricHelp id="hdp-formula-help" label="HDP formula">Hen-day production (HDP) is calculated for each date: total eggs collected that day (good + cracked) ÷ live layer birds on that date × 100. The numerator is in eggs and the denominator is birds, so the result is a percentage for that day. For example, 850 eggs from 1,000 live hens = 85%. The backend calculates the historical live-bird count; missing egg records are shown as gaps, not zero.</MetricHelp></h2>
@@ -113,7 +113,6 @@ export default function ProductionPage() {
           </div>
 
           <div className="subsection">
-            <h3>Meat-production batch</h3>
             <label className="field"><span>Meat-production batch</span><select value={broilerBatchId} onChange={e => {
               const id = e.target.value;
               setBroilerBatchId(id);

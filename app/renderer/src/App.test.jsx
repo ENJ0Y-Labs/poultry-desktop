@@ -230,10 +230,11 @@ describe("App", () => {
     render(<App />);
 
     expect(await screen.findByRole("heading", { name: "Sign in to Pomas" })).toBeInTheDocument();
-    const themeSelector = screen.getByRole("combobox", { name: "Theme" });
-    expect(themeSelector).toHaveValue("auto");
-    fireEvent.change(themeSelector, { target: { value: "light" } });
-    expect(themeSelector).toHaveValue("light");
+    const systemThemeSwitch = screen.getByRole("switch", { name: "Follow system appearance" });
+    expect(systemThemeSwitch).toBeChecked();
+    fireEvent.click(systemThemeSwitch);
+    const darkThemeSwitch = screen.getByRole("switch", { name: "Dark appearance" });
+    if (darkThemeSwitch.checked) fireEvent.click(darkThemeSwitch);
     expect(document.documentElement.dataset.theme).toBe("light");
     expect(localStorage.getItem("pomas:theme")).toBe("light");
     expect(screen.getByRole("heading", { name: "What's new" })).toBeInTheDocument();
@@ -326,21 +327,27 @@ describe("App", () => {
     render(<App />);
 
     await screen.findByRole("heading", { name: "Create your owner account" });
-    const setupThemeSelector = screen.getByRole("combobox", { name: "Theme" });
-    expect(setupThemeSelector).toHaveValue("auto");
-    fireEvent.change(setupThemeSelector, { target: { value: "dark" } });
+    const setupSystemSwitch = screen.getByRole("switch", { name: "Follow system appearance" });
+    expect(setupSystemSwitch).toBeChecked();
+    fireEvent.click(setupSystemSwitch);
+    const setupDarkSwitch = screen.getByRole("switch", { name: "Dark appearance" });
+    if (!setupDarkSwitch.checked) fireEvent.click(setupDarkSwitch);
     expect(document.documentElement.dataset.theme).toBe("dark");
     expect(screen.getByRole("button", { name: "Create account and continue" })).toBeInTheDocument();
     expect(screen.queryByLabelText("Username or email")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Sign in to your farm/ })).not.toBeInTheDocument();
     fireEvent.change(screen.getByLabelText("Full name"), { target: { value: "Farm Owner" } });
-    fireEvent.change(screen.getByLabelText(/Username/), { target: { value: "farm-owner" } });
+    const username = screen.getByLabelText(/Username/);
+    expect(username).toHaveAttribute("pattern", "[A-Za-z0-9][A-Za-z0-9._\\-]{2,31}");
+    fireEvent.change(username, { target: { value: "farm-owner" } });
+    expect(username).toBeValid();
     fireEvent.change(screen.getByLabelText("Email (optional)"), { target: { value: "owner@example.com" } });
     fireEvent.change(screen.getByLabelText(/Password/), { target: { value: "correct-horse-battery" } });
     fireEvent.click(screen.getByRole("button", { name: "Create account and continue" }));
 
     await waitFor(() => expect(screen.getByRole("heading", { name: "Farm dashboard" })).toBeInTheDocument());
-    expect(screen.getByRole("combobox", { name: "Theme" })).toHaveValue("dark");
+    expect(localStorage.getItem("pomas:theme")).toBe("dark");
+    expect(document.documentElement.dataset.theme).toBe("dark");
     expect(setup).toHaveBeenCalledWith({
       username: "farm-owner",
       email: "owner@example.com",
@@ -446,16 +453,24 @@ describe("App", () => {
     expect(screen.queryByText("5678")).not.toBeInTheDocument();
   });
 
-  it("exposes the theme selector through its visible label and allows changing it", async () => {
+  it("exposes the theme switches through accessible names and allows changing appearance", async () => {
     mockFarmApis();
 
     render(<App />);
 
-    const themeSelector = await screen.findByRole("combobox", { name: "Theme" });
-    expect(themeSelector).toHaveValue("auto");
+    await screen.findByRole("heading", { name: "Farm dashboard" });
+    fireEvent.click(screen.getByRole("button", { name: "Settings" }));
+    fireEvent.click(screen.getByRole("button", { name: "App, appearance & account" }));
 
-    fireEvent.change(themeSelector, { target: { value: "dark" } });
-    expect(themeSelector).toHaveValue("dark");
+    const systemSwitch = await screen.findByRole("switch", { name: "Follow system appearance" });
+    fireEvent.click(systemSwitch);
+    const darkSwitch = screen.getByRole("switch", { name: "Dark appearance" });
+    if (!darkSwitch.checked) fireEvent.click(darkSwitch);
+    expect(darkSwitch).toBeChecked();
+    expect(localStorage.getItem("pomas:theme")).toBe("dark");
+    fireEvent.click(darkSwitch);
+    expect(document.documentElement.dataset.theme).toBe("light");
+    expect(localStorage.getItem("pomas:theme")).toBe("light");
   });
 
   it("renders backend-derived dashboard metrics and empty dashboard states", async () => {
@@ -781,6 +796,8 @@ describe("App", () => {
     fireEvent.click(screen.getByRole("button", { name: "Weight & growth" }));
     await waitFor(() => expect(screen.getByRole("option", { name: "Select a batch" })).toBeInTheDocument());
     const broilerBatch = screen.getByRole("option", { name: "Select a batch" }).parentElement;
+    expect(screen.getByRole("combobox", { name: "Meat-production batch" })).toBe(broilerBatch);
+    expect(screen.queryByRole("heading", { name: "Meat-production batch" })).not.toBeInTheDocument();
     fireEvent.change(broilerBatch, { target: { value: "broiler-1" } });
     await waitFor(() => expect(screen.getByRole("heading", { name: "Record weight" })).toBeInTheDocument());
     expect(within(broilerBatch).getByRole("option", { name: /B-2026-001/ })).toBeInTheDocument();

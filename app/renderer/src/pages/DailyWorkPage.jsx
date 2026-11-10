@@ -49,7 +49,7 @@ export default function DailyWorkPage() {
   }
 
   return (
-    <PageTemplate className="grid">
+    <PageTemplate className="grid pomas-page page-daily-work">
       {activeBatches.length === 0 && <EmptyState className="empty-state" role="status">No active batches are available. Create a batch in <a href="#flocks/flocks">Flocks → Batches</a> before recording daily work.</EmptyState>}
       <PageSection page="daily-work" tab="daily-record">
         <section id="operations" className="card full">
