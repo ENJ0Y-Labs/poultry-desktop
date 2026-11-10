@@ -639,12 +639,13 @@ export default function App() {
       const directory = window.poultryDesktop?.chooseBackupDirectory ? await window.poultryDesktop.chooseBackupDirectory() : null;
       if (!directory) return;
       await backupApi.create(directory);
+      notify.success("Backup completed successfully.");
     } catch (err) { setError(displayApiError(err)); } finally { setSaving(false); }
   }
 
   async function restoreBackup() {
     setSaving(true); setError("");
-    try { await window.poultryDesktop?.restoreBackup?.(); await load(); } catch (err) { setError(displayApiError(err)); } finally { setSaving(false); }
+    try { await window.poultryDesktop?.restoreBackup?.(); await load(); notify.success("Backup restored successfully."); } catch (err) { setError(displayApiError(err)); } finally { setSaving(false); }
   }
 
   async function saveSettings(event) {
