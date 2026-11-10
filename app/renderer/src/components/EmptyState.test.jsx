@@ -43,7 +43,7 @@ describe("DataTable", () => {
     const { rerender } = render(<DataTable caption="Houses" columns={columns} rows={[]} />);
     expect(screen.getByRole("status")).toHaveTextContent("Nothing here yet");
 
-    rerender(<DataTable caption="Houses" columns={columns} rows={[]} filtered />);
+    rerender(<DataTable caption="Houses" columns={columns} rows={[]} filtered onClearFilters={() => {}} />);
     expect(screen.getByRole("status")).toHaveTextContent("No matching records");
     expect(screen.getByRole("button", { name: "Clear filters" })).toBeInTheDocument();
   });
