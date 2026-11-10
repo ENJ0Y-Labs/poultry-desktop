@@ -4,7 +4,7 @@ const variants=new Set(["success","error","warning","info"]);
 function safeMessage(value){
  const message=String(value??"").replace(/[\r\n\t]+/g," ").trim();
  if(!message)return "Something went wrong.";
- if(/\b(select|insert|update|delete|drop|alter)\s+.{1,80}\b(from|into|table|set)\b|\bat\s+.*\.(java|js):\d+|(?:[A-Z]:\\|\/)(?:[^\s]+\/)*[^\s]+\.(?:db|sqlite|java|js)/i.test(message))return "The operation could not be completed. Check your data and try again.";
+ if(/\b(select|insert|update|delete|drop|alter)\s+.{1,80}\b(from|into|table|set)\b|\bat\s+.*\.(java|js):\d+|(?:[A-Z]:\\|\/)(?:[^\s]+\/)*[^\s]+\.(?:db|sqlite|java|js)|SQLITE_[A-Z_]+|SQLSTATE|org\.springframework|java\.lang\./i.test(message))return "The operation could not be completed. Check your data and try again.";
  return message.slice(0,240);
 }
 export function ToastProvider({children}){
