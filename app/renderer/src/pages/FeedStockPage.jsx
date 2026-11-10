@@ -9,11 +9,12 @@ import PageSection from "../components/PageSection.jsx";
 import PageTemplate from "../components/PageTemplate.jsx";
 
 export default function FeedStockPage() {
-  const { formatMoney, farm, batches, feedTypes, setFeedTypes, feedInventory, feedTypeForm, setFeedTypeForm, setError, setSaving, feedPurchaseForm, setFeedPurchaseForm, inventoryItems, inventoryItemForm, setInventoryItemForm, editingInventoryItemId, editInventoryItem, cancelInventoryItemEdit, inventoryMovementForm, setInventoryMovementForm, inventoryMovements, suppliers, supplierForm, setSupplierForm, editingSupplierId, editSupplier, cancelSupplierEdit, saveSupplier, archiveSupplier, saving, saveInventoryItem, loadInventoryMovements, saveInventoryMovement, createFeedType, purchaseFeed, feedQuantity } = useContext(FarmManagerContext);
+  const { formatMoney, farm, batches, feedTypes, setFeedTypes, feedInventory, feedTypeForm, setFeedTypeForm, setError, setSaving, feedPurchaseForm, setFeedPurchaseForm, inventoryItems, inventoryItemForm, setInventoryItemForm, editingInventoryItemId, editInventoryItem, cancelInventoryItemEdit, inventoryMovementForm, setInventoryMovementForm, inventoryMovements, suppliers, supplierForm, setSupplierForm, editingSupplierId, editSupplier, cancelSupplierEdit, saveSupplier, archiveSupplier, saving, saveInventoryItem, loadInventoryMovements, saveInventoryMovement, createFeedType, purchaseFeed, feedQuantity, dataLoadError, setDataLoadError, retryData } = useContext(FarmManagerContext);
   const [openingStockForm, setOpeningStockForm] = useState({
     feedTypeId: "", effectiveDate: "", quantity: "", reason: "",
   });
   const [openingBalances, setOpeningBalances] = useState([]);
+  const [openingBalancesLoading, setOpeningBalancesLoading] = useState(false);
   const [editingFeedType, setEditingFeedType] = useState(null);
 
   function feedProductLabel(type) {
@@ -53,17 +54,25 @@ export default function FeedStockPage() {
     let active = true;
     if (!feedTypes.length) {
       setOpeningBalances([]);
+      setOpeningBalancesLoading(false);
       return () => { active = false; };
     }
+    setOpeningBalancesLoading(true);
     Promise.all(feedTypes.map(type => feedApi.openingBalances(type.id)))
       .then(results => {
         if (active) setOpeningBalances(results.flat());
       })
       .catch(error => {
-        if (active) setError(error.message || "Could not load opening-stock history.");
+        if (active) {
+          setDataLoadError(error.message || "Could not load opening-stock history.");
+          setError(error.message || "Could not load opening-stock history.");
+        }
+      })
+      .finally(() => {
+        if (active) setOpeningBalancesLoading(false);
       });
     return () => { active = false; };
-  }, [feedTypes, setError]);
+  }, [feedTypes, setError, setDataLoadError]);
 
   async function recordOpeningStock(event) {
     event.preventDefault();
@@ -194,7 +203,7 @@ export default function FeedStockPage() {
               { key: "quantityMilli", label: "Quantity", render: item => `${feedQuantity(item.quantityMilli)} ${item.unit}` },
               { key: "reason", label: "Reason / source" },
               { key: "valuation", label: "Valuation", render: () => "Unvalued opening stock" },
-            ]} rows={openingBalances} emptyMessage="No opening stock recorded yet." />
+            ]} rows={openingBalances} emptyMessage="No opening stock recorded yet. Enter an opening balance above if the farm already has feed on hand." loading={openingBalancesLoading} error={dataLoadError} onRetry={retryData} />
           </div>
 
           <p className="muted">Record daily feed consumption in Daily Work. Feed usage still updates this inventory through the existing FIFO ledger.</p>
