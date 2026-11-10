@@ -25,6 +25,18 @@ describe("ValidatedForm", () => {
     expect(submit).not.toHaveBeenCalled();
   });
 
+  it("marks required controls in plain labels without duplicating FormField indicators", () => {
+    render(<ValidatedForm onSubmit={vi.fn()}>
+      <label>Farm name<input required name="farmName" /></label>
+      <FormField label="Farm code" required><input required name="farmCode" /></FormField>
+      <button type="submit">Save</button>
+    </ValidatedForm>);
+
+    expect(document.querySelectorAll(".required-indicator")).toHaveLength(1);
+    expect(screen.getByText("Farm name").parentElement.querySelector(".required-indicator").textContent).toBe(" *");
+    expect(screen.getByText("Farm code").parentElement.querySelector(".required-indicator")).toBeNull();
+  });
+
   it("summarizes multiple invalid fields before sending a request", () => {
     const submit = vi.fn();
     render(<ValidatedForm onSubmit={submit}>
