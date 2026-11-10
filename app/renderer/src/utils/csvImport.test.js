@@ -130,7 +130,7 @@ describe("inspectCsvFile", () => {
   it("rejects oversized files and unknown modules", async () => {
     await expect(inspectCsvFile({ size: 2 * 1024 * 1024 + 1 }, "customers"))
       .rejects.toThrow(/2 MB limit/);
-    await expect(inspectCsvFile(csvFile("name\nAda\n"), "batches"))
+    await expect(inspectCsvFile(csvFile("name\nAda\n"), "unknown-module"))
       .rejects.toThrow(/supported import module/);
   });
 });
