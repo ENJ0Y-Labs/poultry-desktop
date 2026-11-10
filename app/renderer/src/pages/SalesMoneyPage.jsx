@@ -31,7 +31,7 @@ export default function SalesMoneyPage() {
               { key: "name", label: "Name" }, { key: "phone", label: "Phone", render: row => row.phone || "—" },
               { key: "notes", label: "Notes", render: row => row.notes || "—" },
               { key: "action", label: "Action", render: row => <button type="button" className="secondary-button" onClick={() => editCustomer(row)}>Edit</button> },
-            ]} rows={customers} emptyMessage="No customers yet." />
+            ]} rows={customers} emptyMessage="No customers yet. Add a customer using the form above, or record a walk-in sale in Production." />
         </section></PageSection>
 
       <PageSection page="sales-money" tab="sales"><section id="sales" className="card full">
@@ -46,7 +46,7 @@ export default function SalesMoneyPage() {
                 { key: "quantity", label: "Quantity", render: row => row.quantity?.toString() }, { key: "unit", label: "Unit" },
                 { key: "unitPriceMinor", label: "Unit price", render: row => formatMoney(row.unitPriceMinor, farm.currency) },
                 { key: "totalAmountMinor", label: "Total", render: row => formatMoney(row.totalAmountMinor, farm.currency) },
-              ]} rows={sales} emptyMessage="No sales recorded yet. Record an egg or meat-bird sale in Production to see it here." />
+              ]} rows={sales} emptyMessage="No sales recorded yet. Record an egg or meat-bird sale in Production to populate this ledger." />
           </div>
         </section></PageSection>
 
