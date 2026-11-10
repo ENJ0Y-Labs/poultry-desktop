@@ -6,13 +6,15 @@ import PageSection from "../components/PageSection.jsx";
 import PageTemplate from "../components/PageTemplate.jsx";
 import { rememberLastBatchId } from "../utils/farmUx.js";
 // eslint-disable-next-line no-unused-vars
+import EmptyState from "../components/EmptyState.jsx";
+// eslint-disable-next-line no-unused-vars
 import DataTable from "../components/DataTable.jsx";
 
 const batchTypeLabel = type => type === "LAYER" ? "Layer" : type === "BROILER" ? "Broiler" : type === "TURKEY" ? "Turkey" : "Unknown type";
 const batchStatusLabel = status => status === "ACTIVE" ? "Active" : status === "SOLD" ? "Sold" : String(status || "Unknown").toLowerCase().replace(/\b\w/g, letter => letter.toUpperCase());
 
 export default function FlocksPage() {
-  const { formatMoney, formatQuantity, formatPercent, formatKg, formatMetric, farm, houses, batches, suppliers, batchForm, setBatchForm, costForm, setCostForm, houseForm, setHouseForm, saving, selectedBatchId, setSelectedBatchId, batchDashboard, createBatch, addBirdCost, markBatchSold, reopenBatch, addHouse, editHouse, editingHouseId, cancelHouseEdit, populationAdjustmentForm, setPopulationAdjustmentForm, populationAdjustments, savePopulationAdjustment, markPopulationEstimated, editingBatchId, batchSetupForm, setBatchSetupForm, saveBatchSetup, editBatchSetup, cancelBatchSetup } = useContext(FarmManagerContext);
+  const { formatMoney, formatQuantity, formatPercent, formatKg, formatMetric, farm, houses, batches, suppliers, batchForm, setBatchForm, costForm, setCostForm, houseForm, setHouseForm, saving, selectedBatchId, setSelectedBatchId, batchDashboard, batchDashboardLoading, dataLoadError, retryData, createBatch, addBirdCost, markBatchSold, reopenBatch, addHouse, editHouse, editingHouseId, cancelHouseEdit, populationAdjustmentForm, setPopulationAdjustmentForm, populationAdjustments, savePopulationAdjustment, markPopulationEstimated, editingBatchId, batchSetupForm, setBatchSetupForm, saveBatchSetup, editBatchSetup, cancelBatchSetup } = useContext(FarmManagerContext);
 
   return (
     <PageTemplate className="grid">
@@ -63,7 +65,7 @@ export default function FlocksPage() {
             </div>}</div>
             <div className="subsection"><h3>Status & attention</h3><div className="dashboard-list"><div><span>Status</span><strong>{batchStatusLabel(batchDashboard.batch.status)}</strong></div><div><span>Attention items</span><strong>{batchDashboard.attention}</strong></div></div></div>
           </div>
-        </div> : <p className="muted">{selectedBatchId ? "Loading batch dashboard…" : "Select a batch to inspect its dashboard."}</p>}
+        </div> : !selectedBatchId ? <EmptyState variant="not-applicable" heading="Select a batch" description="Choose a batch above to inspect its population, production and financial summary." compact /> : batchDashboardLoading ? <EmptyState variant="loading" heading="Loading batch dashboard" compact /> : dataLoadError ? <EmptyState variant="error" description={dataLoadError} onRetry={retryData} compact /> : <EmptyState variant="no-records" heading="Batch dashboard is not available" description="Refresh the farm data and select the batch again." compact />}
       </section></PageSection>
 
       <PageSection page="flocks" tab="flocks"><section id="batches" className="card full"><div className="section-head"><h2>Batches</h2><p className="muted">Opening a batch creates a permanent flock record and generates its code automatically.</p></div>
