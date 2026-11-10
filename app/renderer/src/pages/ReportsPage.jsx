@@ -109,7 +109,7 @@ export default function ReportsPage() {
               </div>
             </div>
             <p className="muted">As of {batchReport.asOf}. Water quantities use the farm display label: {batchReport.waterUnitLabel || "litres"}. Population, feed, production, costs, revenue and profit reuse the dashboard calculation services.</p>
-          </> : !selectedBatchId ? <EmptyState variant="not-applicable" heading="Select a batch" description="Choose a batch above to view its report." compact /> : batchReportLoading ? <EmptyState variant="loading" heading="Loading batch report" compact /> : dataLoadError ? <EmptyState variant="error" description={dataLoadError} onRetry={retryData} compact /> : <EmptyState variant="no-records" heading="Batch report is not available" description="Refresh the report to retrieve this batch summary." compact />}
+          </> : !selectedBatchId ? <EmptyState variant="not-applicable" heading="Select a batch" description="Choose a batch above to view its report." compact /> : (batchReportLoading || reportLoading) ? <EmptyState variant="loading" heading="Loading batch report" compact /> : dataLoadError ? <EmptyState variant="error" description={dataLoadError} onRetry={retryData} compact /> : <EmptyState variant="no-records" heading="Batch report is not available" description="Refresh the report to retrieve this batch summary." compact />}
           {selectedBatchId && batches.find(batch => batch.id === selectedBatchId)?.type === "LAYER" && (
             <ProductionTrendChart
               batchId={selectedBatchId}
