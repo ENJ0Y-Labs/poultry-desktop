@@ -200,6 +200,10 @@ Turkey is an independent `TURKEY` batch type, not a Broiler subtype. Farm dashbo
 
 The Import / Export screen supports versioned CSV imports for layer egg collections (`egg-collections`) and broiler weight records (`broiler-weights`) for existing ACTIVE batches. Batch references use human-readable batch codes. Egg imports must use LAYER batches and preserve good/cracked separation; weight imports must use BROILER batches and store sample count plus total sample weight in kilograms. All writes go through `EggManagementService` or `BroilerProductionService` in a single transaction so existing validation and audit behavior remain authoritative. Do not import derived averages, growth, sellable cracked eggs, or synthetic zero records for missing dates. See `docs/csv-bulk-import.md`.
 
+## Toast notifications
+
+Use the single app-wide React `ToastProvider` mounted in `app/renderer/src/main.jsx` and its `useToast()` API for routine success, warning, informational, and non-blocking error feedback. Do not create page-local toast providers or restore page-local success banners. Keep field validation inline and destructive confirmations / decisions in dialogs. Never display raw SQL, stack traces, filesystem paths, or raw backend exceptions. Follow `docs/toast-notifications.md` for API, accessibility, placement, and verification requirements.
+
 ## 5. Electron security
 
 Use:

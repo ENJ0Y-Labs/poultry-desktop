@@ -1,4 +1,5 @@
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, render as rtlRender, screen, waitFor, within } from "@testing-library/react";
+import { ToastProvider } from "./components/ToastProvider.jsx";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App.jsx";
 // eslint-disable-next-line no-unused-vars
@@ -12,6 +13,10 @@ import {
   feedApi, pricingApi, dashboardApi, attentionApi, auditApi,
   eggApi, broilerApi, reportApi, expenseCategoryApi, accountApi, settingsApi, supplierApi,
 } from "./services/api.js";
+
+function render(ui, options) {
+  return rtlRender(<ToastProvider>{ui}</ToastProvider>, options);
+}
 
 const farm = {
   id: "farm-1",
