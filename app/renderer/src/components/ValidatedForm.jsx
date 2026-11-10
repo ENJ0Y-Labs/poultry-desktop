@@ -48,13 +48,10 @@ function enhanceChildren(children, errors, clearError, pending, inheritedLabel =
       const error = errors[controlName];
       const wrapperClass = String(child.props.className || "").split(" ").includes("full") ? "validated-field full" : "validated-field";
       const enhancedLabelChildren = enhanceChildren(child.props.children, errors, clearError, pending, labelText);
-      const showRequired = containsRequiredControl(child.props.children) &&
-        !child.props.children?.props?.className?.includes("required-indicator");
+      const showRequired = containsRequiredControl(child.props.children);
       return <div className={wrapperClass}>
-        {React.cloneElement(child, {}, <>
-          {enhancedLabelChildren}
-          {showRequired && <span className="required-indicator" aria-hidden="true"> *</span>}
-        </>)}
+        {React.cloneElement(child, {}, enhancedLabelChildren)}
+        {showRequired && <span className="required-indicator" aria-hidden="true"> *</span>}
         {error && <small id={`${controlName}-error`} className="field-error" aria-live="polite">{error}</small>}
       </div>;
     }
