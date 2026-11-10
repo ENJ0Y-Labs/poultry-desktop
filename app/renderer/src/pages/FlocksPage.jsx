@@ -87,7 +87,7 @@ export default function FlocksPage() {
               { key: "action", label: "Action", render: batch => batch.status === "SOLD"
                 ? <button type="button" onClick={() => reopenBatch(batch.id)} disabled={saving}>Reopen</button>
                 : ["BROILER", "TURKEY"].includes(batch.type) ? <button type="button" onClick={() => markBatchSold(batch.id)} disabled={saving}>Mark sold</button> : "—" },
-            ]} rows={batches} emptyMessage="No batches yet." />
+            ]} rows={batches} emptyMessage="No batches yet. Create a house or pen first, then open a batch." emptyDescription="Create a house or pen before opening your first flock." emptyAction={<a href="#flocks/houses">Create a house / pen</a>} />
           {editingBatchId && <form className="inline-form subsection" onSubmit={saveBatchSetup}>
             <h3>Edit batch setup</h3>
             <p className="muted">Batch code, type, placement date and initial population are permanent. A supplier/source with recorded purchase cost is locked.</p>
@@ -117,7 +117,7 @@ export default function FlocksPage() {
               { key: "occupancy", label: "Occupancy", render: house => batches.some(batch => batch.houseId === house.id && batch.status === "ACTIVE") ? "Occupied" : "Empty" },
               { key: "notes", label: "Notes", render: house => house.notes || "—" },
               { key: "action", label: "Action", render: house => <button type="button" className="secondary-button" onClick={() => editHouse(house)}>Edit</button> },
-            ]} rows={houses} emptyMessage="No houses or pens yet." />
+            ]} rows={houses} emptyMessage="No houses or pens yet. Use the form above to add the first one." emptyDescription="Add a house or pen above. Every batch must be assigned to a house." />
         </section></PageSection>
     </PageTemplate>
   );
