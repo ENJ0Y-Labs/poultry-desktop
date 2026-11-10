@@ -1116,6 +1116,8 @@ body { min-width: 0; }
 .empty-state__copy h3 { margin: 1px 0 5px; color: var(--text); font-size: 13px; }
 .empty-state__copy p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.5; }
 .empty-state__actions { display: flex; flex-wrap: wrap; gap: 7px; align-items: center; }
+.empty-state__actions a { color: var(--cyan); font-size: 12px; font-weight: 750; text-decoration: none; }
+.empty-state__actions a:hover { text-decoration: underline; }
 .empty-state--loading { border-style: solid; }
 .empty-state--error { border-style: solid; border-color: var(--error-border); background: var(--error-bg); }
 .empty-state--error .empty-state__icon { color: var(--error-text); border-color: var(--error-border); }
