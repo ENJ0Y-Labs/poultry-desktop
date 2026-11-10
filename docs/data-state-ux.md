@@ -5,7 +5,8 @@
 Use `app/renderer/src/components/EmptyState.jsx` for page-level states and `DataTable.jsx` for table states. The shared component supports these distinct variants:
 
 - `no-records`: a valid successful response returned no records; explain the first valid action.
-- `no-results`: records exist, but the current search/filter criteria match none; provide a clear/reset action.
+- `no-search-results`: records exist, but the search term matches none; provide a clear-search action.
+- `no-filter-results`: records exist, but the selected filters match none; provide a clear-filters action.
 - `not-applicable`: the selected batch or module type does not support this data.
 - `loading`: a request is in progress; do not render the empty-records message at the same time.
 - `error`: retrieval failed; retain existing data where possible and provide a retry action.
