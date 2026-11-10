@@ -89,7 +89,7 @@ public class BatchCsvImportService {
 
             String type = clean(row.get("type"));
             if (type != null) type = type.toUpperCase(Locale.ROOT);
-            if (!List.of("LAYER", "BROILER", "TURKEY").contains(type)) errors.add("type must be LAYER, BROILER, or TURKEY.");
+            if (type == null || !List.of("LAYER", "BROILER", "TURKEY").contains(type)) errors.add("type must be LAYER, BROILER, or TURKEY.");
 
             LocalDate placementDate = null;
             try {
