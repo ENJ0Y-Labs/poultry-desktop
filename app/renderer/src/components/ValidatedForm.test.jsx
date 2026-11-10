@@ -34,8 +34,12 @@ describe("ValidatedForm", () => {
 
     expect(document.querySelectorAll(".required-indicator")).toHaveLength(1);
     expect(screen.getByLabelText("Farm name").required).toBe(true);
-    expect(screen.getByText("Farm name").closest(".validated-field").querySelector(".required-indicator").textContent).toBe(" *");
-    expect(screen.getByText("Farm code").closest(".validated-field").querySelector(".required-indicator")).toBeNull();
+    const farmNameLabel = screen.getByLabelText("Farm name").closest("label");
+    const farmCodeField = screen.getByLabelText("Farm code").closest(".form-field");
+    expect(farmNameLabel.parentElement.querySelector(".required-indicator").textContent).toBe(" *");
+    expect(farmCodeField).not.toBeNull();
+    expect(farmCodeField.querySelector(".required-indicator")).toBeNull();
+    expect(farmCodeField.querySelector("label").textContent).toContain("*");
   });
 
   it("summarizes multiple invalid fields before sending a request", () => {
