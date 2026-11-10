@@ -4,6 +4,8 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import EmptyState from "./EmptyState.jsx";
 // eslint-disable-next-line no-unused-vars
 import DataTable from "./DataTable.jsx";
+// eslint-disable-next-line no-unused-vars
+import { FarmManagerContext } from "./FarmManagerContext.jsx";
 
 afterEach(() => cleanup());
 
@@ -64,6 +66,18 @@ describe("DataTable", () => {
 
     rerender(<DataTable caption="Houses" columns={columns} rows={[]} error={new Error("Offline")} />);
     expect(screen.getByRole("alert")).toHaveTextContent("Could not load records");
+  });
+
+  it("shows retrieval failures from the farm context and retries through the app", () => {
+    const retryData = vi.fn();
+    render(
+      <FarmManagerContext.Provider value={{ dataLoadError: "The local backend is unavailable.", retryData }}>
+        <DataTable caption="Houses" columns={columns} rows={[]} />
+      </FarmManagerContext.Provider>
+    );
+    expect(screen.getByRole("alert")).toHaveTextContent("The local backend is unavailable.");
+    fireEvent.click(screen.getByRole("button", { name: "Try again" }));
+    expect(retryData).toHaveBeenCalledOnce();
   });
 
   it("does not replace valid rows with an empty state", () => {
