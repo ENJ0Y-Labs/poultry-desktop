@@ -3,7 +3,7 @@ import "./PageHelp.css";
 
 const DISMISSED_KEY = "pomas:getting-started-dismissed";
 
-export default function GettingStartedChecklist({ houses = [], batches = [], feedTypes = [], feedInventory = [] }) {
+export default function GettingStartedChecklist({ houses = [], batches = [], feedTypes = [], feedInventory = [], onTaskAction }) {
   const [dismissed, setDismissed] = useState(() => localStorage.getItem(DISMISSED_KEY) === "true");
   const hasPurchaseHistory = feedInventory.some(item => Number(item.purchasedQuantityMilli || 0) > 0);
   const tasks = [
@@ -42,7 +42,7 @@ export default function GettingStartedChecklist({ houses = [], batches = [], fee
               <p>{task.description}</p>
               {task.done
                 ? <span className="muted">Completed</span>
-                : <button type="button" onClick={() => { window.location.hash = task.route; }}>{task.action}</button>}
+                : <button type="button" onClick={() => { onTaskAction?.(task.route); window.location.hash = task.route; }}>{task.action}</button>}
             </div>
           </li>
         ))}

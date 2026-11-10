@@ -1,5 +1,9 @@
 import { useContext } from "react";
+// eslint-disable-next-line no-unused-vars -- JSX component usage is not detected by the core rule
+import ValidatedForm from "../components/ValidatedForm.jsx";
 import { FarmManagerContext } from "../components/FarmManagerContext.jsx";
+// eslint-disable-next-line no-unused-vars -- JSX component usage is not detected by the core rule
+import { ModalForm } from "../components/Modal.jsx";
 // eslint-disable-next-line no-unused-vars
 import PageSection from "../components/PageSection.jsx";
 // eslint-disable-next-line no-unused-vars
@@ -10,22 +14,25 @@ import EmptyState from "../components/EmptyState.jsx";
 import DataTable from "../components/DataTable.jsx";
 
 export default function HealthPage() {
-  const { formatMoney, farm, batches, healthForm, setHealthForm, drugForm, setDrugForm, vaccinationForm, setVaccinationForm, healthRecords, drugRecords, vaccinationRecords, saving, saveHealth, saveDrug, saveVaccination, loadHealthForBatch } = useContext(FarmManagerContext);
+  const { error } = useContext(FarmManagerContext);
+  const { formatMoney, farm, batches, healthForm, setHealthForm, drugForm, setDrugForm, vaccinationForm, setVaccinationForm, emptyHealth, emptyDrug, emptyVaccination, healthRecords, drugRecords, vaccinationRecords, saving, saveHealth, saveDrug, saveVaccination, loadHealthForBatch } = useContext(FarmManagerContext);
   const batchOptions = <><option value="">Batch</option>{batches.map(batch => <option key={batch.id} value={batch.id}>{batch.code}</option>)}</>;
 
   return (
-    <PageTemplate className="grid">
+    <PageTemplate className="grid pomas-page page-health">
       {batches.length === 0 && <EmptyState className="empty-state" role="status">No batches yet. Create a batch in <a href="#flocks/flocks">Flocks → Batches</a> before recording health, treatment, or vaccination details.</EmptyState>}
       <PageSection page="health" tab="health-record">
         <section id="health" className="card full"><div className="section-head"><h2>Health records</h2><p className="muted">Record symptoms, conditions, and action taken. Treatments and vaccinations are tracked separately.</p></div>
-          <form className="form-grid" onSubmit={saveHealth}>
+          <ModalForm title="Health record" description="Record a health condition and the action taken." triggerLabel="Add health record" loading={saving} error={error} onDiscard={() => setHealthForm(form => ({ ...emptyHealth, batchId: form.batchId }))}>
+<ValidatedForm className="form-grid" onSubmit={saveHealth}>
             <label>Batch<select required value={healthForm.batchId} onChange={event => {setHealthForm({...healthForm,batchId:event.target.value});loadHealthForBatch(event.target.value);}}>{batchOptions}</select></label>
             <label>Date<input required type="date" value={healthForm.date} onChange={event => setHealthForm({...healthForm,date:event.target.value})}/></label>
             <label>Condition / problem<input required value={healthForm.conditionProblem} onChange={event => setHealthForm({...healthForm,conditionProblem:event.target.value})}/></label>
             <label>Description<input required value={healthForm.description} onChange={event => setHealthForm({...healthForm,description:event.target.value})}/></label>
             <label className="full">Action taken<input required value={healthForm.action} onChange={event => setHealthForm({...healthForm,action:event.target.value})}/></label>
             <button disabled={saving}>Record health issue</button>
-          </form>
+          </ValidatedForm>
+</ModalForm>
           <DataTable caption="Health records" columns={[
               { key: "recordDate", label: "Date" }, { key: "conditionProblem", label: "Condition" },
               { key: "description", label: "Description" }, { key: "action", label: "Action" },
@@ -35,7 +42,8 @@ export default function HealthPage() {
 
       <PageSection page="health" tab="drugs">
         <section className="card full"><div className="section-head"><h2>Drugs & treatments</h2><p className="muted">Each drug record creates one shared DRUGS expense. Do not record the same cost again as a separate expense.</p></div>
-          <form className="form-grid" onSubmit={saveDrug}>
+          <ModalForm title="Drug record" description="Record treatment details and associated cost." triggerLabel="Record drug use" loading={saving} error={error} onDiscard={() => setDrugForm(form => ({ ...emptyDrug, batchId: form.batchId }))}>
+<ValidatedForm className="form-grid" onSubmit={saveDrug}>
             <label>Batch<select required value={drugForm.batchId} onChange={event => {setDrugForm({...drugForm,batchId:event.target.value});loadHealthForBatch(event.target.value);}}>{batchOptions}</select></label>
             <label>Date<input required type="date" value={drugForm.date} onChange={event => setDrugForm({...drugForm,date:event.target.value})}/></label>
             <label>Drug<input required value={drugForm.drug} onChange={event => setDrugForm({...drugForm,drug:event.target.value})}/></label>
@@ -43,7 +51,8 @@ export default function HealthPage() {
             <label>Cost (₦)<input required type="text" inputMode="decimal" value={drugForm.costMinor} onChange={event => setDrugForm({...drugForm,costMinor:event.target.value})}/></label>
             <label>Reason<input required value={drugForm.reason} onChange={event => setDrugForm({...drugForm,reason:event.target.value})}/></label>
             <button disabled={saving}>Record drug</button>
-          </form>
+          </ValidatedForm>
+</ModalForm>
           <DataTable caption="Drug and treatment records" columns={[
               { key: "recordDate", label: "Date" }, { key: "drug", label: "Drug" }, { key: "quantity", label: "Quantity" },
               { key: "costMinor", label: "Cost", render: row => formatMoney(row.costMinor, farm.currency) }, { key: "reason", label: "Reason" },
@@ -53,7 +62,8 @@ export default function HealthPage() {
 
       <PageSection page="health" tab="vaccination">
         <section className="card full"><div className="section-head"><h2>Vaccination</h2><p className="muted">Keep vaccine schedule and administration history separate from illness and drug records.</p></div>
-          <form className="form-grid" onSubmit={saveVaccination}>
+          <ModalForm title="Vaccination record" description="Record vaccination details for the selected batch." triggerLabel="Record vaccination" loading={saving} error={error} onDiscard={() => setVaccinationForm(form => ({ ...emptyVaccination, batchId: form.batchId }))}>
+<ValidatedForm className="form-grid" onSubmit={saveVaccination}>
             <label>Batch<select required value={vaccinationForm.batchId} onChange={event => {setVaccinationForm({...vaccinationForm,batchId:event.target.value});loadHealthForBatch(event.target.value);}}>{batchOptions}</select></label>
             <label>Date<input required type="date" value={vaccinationForm.date} onChange={event => setVaccinationForm({...vaccinationForm,date:event.target.value})}/></label>
             <label>Vaccine<input required value={vaccinationForm.vaccine} onChange={event => setVaccinationForm({...vaccinationForm,vaccine:event.target.value})}/></label>
@@ -61,7 +71,8 @@ export default function HealthPage() {
             <label>Quantity<input required min="1" step="1" type="number" value={vaccinationForm.quantity} onChange={event => setVaccinationForm({...vaccinationForm,quantity:event.target.value})}/></label>
             <label>Notes<input value={vaccinationForm.notes} onChange={event => setVaccinationForm({...vaccinationForm,notes:event.target.value})}/></label>
             <button disabled={saving}>Record vaccination</button>
-          </form>
+          </ValidatedForm>
+</ModalForm>
           <DataTable caption="Vaccination records" columns={[
               { key: "recordDate", label: "Date" }, { key: "vaccine", label: "Vaccine" }, { key: "dose", label: "Dose" },
               { key: "quantity", label: "Quantity" }, { key: "notes", label: "Notes", render: row => row.notes || "—" },

@@ -147,7 +147,7 @@ export default function ImportExportPage() {
   }
 
   return (
-    <PageTemplate title="Import / Export" description="Move supported data into Pomas or export the reports the application currently provides." className="grid">
+    <PageTemplate title="Import / Export" description="Move supported data into Pomas or export the reports the application currently provides." className="grid pomas-page page-import-export">
       <section className="card full">
         <div className="section-head">
           <div>

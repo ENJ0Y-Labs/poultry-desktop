@@ -24,6 +24,7 @@
 - Supplier records are loaded and managed through the existing supplier API; feed purchases can reference a registered supplier.
 - The connection indicator probes the backend health endpoint and refreshes periodically. It reports healthy status only when the backend responds successfully and reports a valid database schema.
 - The API base can be configured with `VITE_API_BASE_URL` or the desktop bridge's `getApiBaseUrl`; the local loopback address is only the development fallback.
+- Keyboard navigation shortcuts follow the ten-destination sidebar order: Ctrl+1 through Ctrl+8 open Dashboard through Reports, Ctrl+9 opens Import / Export, and Ctrl+0 opens Settings (the tenth destination, since keyboards have no 10 key). The sidebar displays the matching shortcut beside each destination.
 - Navigation is fully local and adds no package dependency.
 - Only the active page/tab sections are mounted. The backend remains the source of truth for farm calculations and records.
 
@@ -46,6 +47,8 @@ The top-level page components live under `app/renderer/src/pages/`. Shared form 
 - Batch creation and feed purchases select registered suppliers by name instead of asking operators to type database IDs.
 - Tables, table headings, navigation labels, and keyboard shortcut hints use readable text sizes intended for the 1366×768 desktop target.
 - The shell name and initials are derived from the saved farm profile.
+- Signed-in theme preferences are changed in Settings → App, appearance & account. The top bar shows connection and local-first status without duplicating appearance controls; the pre-authentication screens retain their theme selector.
+- All ten page templates use shared hierarchy, spacing, table, form, and interactive-state styles. Page-specific layouts preserve each module's existing backend-driven content and do not synthesize report or chart data.
 
 
 ## Single collapsible navigation
@@ -92,7 +95,7 @@ The top-level page components live under `app/renderer/src/pages/`. Shared form 
 
 ## Light-theme IDE shell tokens
 
-- The activity bar, sidebar, workspace, cards, hover states, focus ring, tabs, and scrollbar use dedicated semantic IDE tokens.
+- The sidebar, workspace, cards, hover states, focus ring, tabs, and scrollbar use dedicated semantic tokens.
 - Every shell token used by navigation and page tabs has an explicit light-theme value. Keep these values readable against the light surfaces and preserve a visible keyboard focus indicator.
 - CSS tests verify token presence and selector usage without depending on formatting or whitespace.
 
