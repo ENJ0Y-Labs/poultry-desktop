@@ -59,13 +59,16 @@ export default function ReportsPage() {
 
       <PageSection page="reports" tab="batch-report"><section id="batch-reports" className="card full">
           <div className="section-head"><div><p className="eyebrow">REPORTING</p><h2>Batch reports</h2></div>
-            <div className="inline-form">
+            <div className="report-range-actions">
+              <DateRangeFilter value={dateRange} timezone={farm?.timezone} onChange={setDateRange} />
+              <div className="inline-form">
               <select aria-label="Batch report" value={selectedBatchId} onChange={e => { setSelectedBatchId(e.target.value); rememberLastBatchId(e.target.value); }}>
                 <option value="">Select a batch</option>{batches.map(batch => <option key={batch.id} value={batch.id}>{batch.code} · {batch.type === "LAYER" ? "Layer" : batch.type === "BROILER" ? "Broiler" : batch.type === "TURKEY" ? "Turkey" : "Unknown type"}</option>)}
               </select>
               <button type="button" onClick={() => loadBatchReport(selectedBatchId, dateRange.from, dateRange.to)}>Refresh</button>
               <button type="button" disabled={!selectedBatchId} onClick={() => exportCsv(() => reportApi.batchCsv(selectedBatchId, null, dateRange.from, dateRange.to), "batch-report.csv")}>Export CSV</button>
               <button type="button" disabled={!selectedBatchId} onClick={() => exportPdf(() => reportApi.batchPdf(selectedBatchId, null, dateRange.from, dateRange.to), "batch-report.pdf")}>Export PDF</button>
+              </div>
             </div>
           </div>
           {batchReport ? <>
@@ -88,7 +91,7 @@ export default function ReportsPage() {
               <div className="subsection"><h3>Production</h3>
                 {batchReport.production?.type === "LAYER" ? <>
                   <div className="dashboard-list">
-                    <div><span>Good eggs</span><strong>{batchReport.production.eggInventory?.goodCollected ?? "—"}</strong></div>
+                    <div><span>Good eggs collected (period)</span><strong>{batchReport.period?.eggsGood ?? "—"}</strong></div>
                     <div><span>Egg inventory</span><strong>{batchReport.production.eggInventory?.goodRemaining ?? "—"}</strong></div>
                     <div><span>Good egg rate</span><strong>{formatPercent(batchReport.production.eggQuality?.goodRatePercent)}</strong></div>
                   </div>
@@ -108,7 +111,7 @@ export default function ReportsPage() {
                 </div>
               </div>
             </div>
-            <p className="muted">Activity period: {batchReport.from || dateRange.from} to {batchReport.to || dateRange.to}. Current population and feed balances remain snapshot values. Water quantities use {batchReport.waterUnitLabel || "litres"}.</p>
+            <p className="muted">Activity period: {batchReport.from || dateRange.from} to {batchReport.to || dateRange.to}. Current population, feed cost, egg inventory, average weight and FCR remain snapshot or batch-to-date values. Water quantities use {batchReport.waterUnitLabel || "litres"}.</p>
           </> : <p className="muted">{selectedBatchId ? "Batch report is loading…" : "Select a batch to inspect its report."}</p>}
           {selectedBatchId && batches.find(batch => batch.id === selectedBatchId)?.type === "LAYER" && (
             <ProductionTrendChart
