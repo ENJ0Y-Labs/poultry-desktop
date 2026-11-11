@@ -1326,6 +1326,8 @@ Validate the renderer with the backend available, during startup, and with the b
 - Inventory reorder level `0` disables low-stock alerts for that item. Positive reorder levels are active thresholds: stock at or below the threshold alerts, with zero stock critical and positive stock warning.
 - Archived inventory items are excluded from alerts. Never rewrite existing reorder levels to suppress an alert.
 - Farm dashboard inventory-alert counts must use the same positive-threshold rule as the attention list.
+- Keep all attention rules backend-owned in `AttentionService`. Every insight must expose detection date, affected metric, rule ID/description, explicit threshold context, suggested action, and batch/house attribution when applicable. Recompute from source records so resolved alerts clear; do not persist duplicate/stale alert rows.
+- Trend alerts must compare like-for-like windows and require sufficient non-zero baseline data. Never invent zeros for missing records. Do not alert on poor FCR until an approved farm-configurable or bird-type/age benchmark exists.
 
 ## 39. Report exports and date scope
 
