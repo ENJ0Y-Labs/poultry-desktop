@@ -169,12 +169,16 @@ public class DashboardService {
             period.put("feedQuantityMilli", feedPeriod.consumedQuantityMilli());
             period.put("feedCostMinor", feedPeriod.feedCostMinor());
             period.put("feedKnownCostMinor", feedPeriod.knownFeedCostMinor());
-            period.put("feedQuantityUnit", "recorded feed units; feed products may use different units");
+            List<String> feedUnits = feed.batchUsageUnits(batchId, range.from(), range.to());
+            period.put("feedQuantityUnit", feedUnits.isEmpty() ? "Unknown feed unit"
+                    : feedUnits.size() == 1 ? feedUnits.get(0) : "Mixed units: " + String.join(", ", feedUnits));
+            period.put("feedQuantityComparable", feedUnits.size() == 1);
         } else {
             period.put("feedQuantityMilli", null);
             period.put("feedCostMinor", null);
             period.put("feedKnownCostMinor", null);
             period.put("feedQuantityUnit", "No feed usage records in this period");
+            period.put("feedQuantityComparable", false);
         }
         period.put("healthRecordCount", rangeTotal("""
                 SELECT COUNT(*) FROM health_records h JOIN batches b ON b.id=h.batch_id
