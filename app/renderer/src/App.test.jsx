@@ -402,7 +402,7 @@ describe("App", () => {
     expect(screen.getByText("Dashboard as of")).toBeInTheDocument();
 
     const primaryMetric = screen.getByText("Total birds").closest(".dashboard-kpi-card");
-    const secondaryMetric = screen.getByText("Mortality").closest(".dashboard-kpi-card");
+    const secondaryMetric = screen.getByText("Layer birds").closest(".dashboard-kpi-card");
     expect(primaryMetric).toHaveClass("dashboard-kpi-card-primary");
     expect(secondaryMetric).not.toHaveClass("dashboard-kpi-card-primary");
   });
