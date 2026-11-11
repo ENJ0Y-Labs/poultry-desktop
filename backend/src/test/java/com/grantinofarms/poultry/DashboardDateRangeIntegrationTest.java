@@ -73,6 +73,7 @@ class DashboardDateRangeIntegrationTest {
         assertThat(period)
                 .containsEntry("mortality", 3L)
                 .containsEntry("eggsGood", 30L)
+                .containsEntry("eggsCracked", 3L)
                 .containsEntry("revenueMinor", 3_000L)
                 .containsEntry("expensesMinor", 1_000L)
                 .containsEntry("salesCount", 2L)
@@ -80,6 +81,13 @@ class DashboardDateRangeIntegrationTest {
         assertThat(result.get("totalBirds")).isEqualTo(92L);
         assertThat(result.get("from")).isEqualTo(LocalDate.of(2026, 2, 28));
         assertThat(result.get("to")).isEqualTo(LocalDate.of(2026, 3, 1));
+        Map<String, Object> batchResult = dashboard.batchRange(
+                batch.id(), LocalDate.of(2026, 2, 28), LocalDate.of(2026, 3, 1));
+        @SuppressWarnings("unchecked")
+        Map<String, Object> batchPeriod = (Map<String, Object>) batchResult.get("period");
+        assertThat(batchPeriod.get("mortality")).isEqualTo(3L);
+        assertThat(batchPeriod.get("revenueMinor")).isEqualTo(3_000L);
+        assertThat(batchPeriod.get("expensesMinor")).isEqualTo(1_000L);
     }
 
     private String firstHouseId() {
