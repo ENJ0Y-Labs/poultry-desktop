@@ -277,6 +277,30 @@ class AttentionServiceIntegrationTest {
     }
 
     @Test
+    void lowFeedStockRuleIncludesOpeningBalancesWithoutInventingPurchaseHistory() {
+        setupFarm();
+        var house = houseService.create(new HouseCreateRequest("Layer House", "LH1", null));
+        var layer = batchService.create(new BatchCreateRequest(
+                "LAYER", LocalDate.of(2026, 8, 1), house.id(), 100, null, 1_000_000L));
+        var feedType = feedService.createType(new FeedTypeCreateRequest("Opening Layer Mash", "kg", "LAYER"));
+        String farmId = jdbc.queryForObject("SELECT id FROM farms LIMIT 1", String.class);
+        jdbc.update("""
+                INSERT INTO feed_opening_balances(id,farm_id,feed_type_id,effective_date,quantity_milli,unit,reason,created_at)
+                VALUES(?,?,?,?,?,?,?,?)
+                """, UUID.randomUUID().toString(), farmId, feedType.id(), AS_OF.minusDays(2).toString(),
+                10_000L, "kg", "Opening stock for attention test", AS_OF.minusDays(2).atStartOfDay().toString());
+        feedService.use(layer.id(), new FeedUsageRequest(
+                feedType.id(), AS_OF.minusDays(1), new BigDecimal("9"), "kg"));
+
+        Map<String, Object> insight = attentionService.list(AS_OF).stream()
+                .filter(row -> "LOW_FEED_STOCK".equals(row.get("type"))
+                        && feedType.id().equals(row.get("feedTypeId")))
+                .findFirst().orElseThrow();
+        assertThat(insight.get("severity")).isEqualTo("WARNING");
+        assertThat(insight.get("stockQuantityMilli")).isEqualTo(-0L + 1000L);
+    }
+
+    @Test
     void depletedPreviouslyStockedFeedRemainsCriticalAndPositiveReorderThresholdStillAlerts() {
         setupFarm();
         var feedType = feedService.createType(new FeedTypeCreateRequest("Layer Mash", "bag", "LAYER"));
