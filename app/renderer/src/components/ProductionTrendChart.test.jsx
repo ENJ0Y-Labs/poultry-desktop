@@ -56,7 +56,7 @@ describe("ProductionTrendChart", () => {
       to: "2026-10-02",
       points: [{ date: "2026-10-01", value: 12.5, recorded: true }],
     });
-    render(<ProductionTrendChart batchId="batch-1" title="Layer HDP%" description="Layer trend" unit="percent" loadTrend={loadTrend} />);
+    render(<ProductionTrendChart batchId="batch-1" title="Layer HDP%" description="Layer trend" unit="percent" loadTrend={loadTrend} dateRange={{ from: "2026-10-01", to: "2026-10-02" }} />);
     await waitFor(() => expect(loadTrend).toHaveBeenCalledTimes(1));
 
     window.dispatchEvent(new CustomEvent("pomas:data-mutated", {
