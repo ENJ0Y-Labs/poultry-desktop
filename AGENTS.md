@@ -88,7 +88,7 @@ The installer ID (`appId`), repository name, Java packages, and database file na
 - Do not add an ORM such as Hibernate/JPA unless the owner explicitly approves it.
 - Do not add cloud services, telemetry, or another server/process without owner approval.
 - Spring Boot is the backend source of truth for business rules and persistence.
-- React is responsible for presentation and user interaction, not authoritative farm calculations.
+- React is responsible for presentation, interaction, and display-level analytics derivations from raw backend aggregates. Spring Boot remains authoritative for transactional domain rules, validation, persistence, audit, and persisted business calculations. Renderer-derived reporting values are presentation-only and must never be stored or used to bypass backend validation.
 - Keep the backend capable of running locally on the same PC as the Electron application.
 - Prefer a packaged/local Spring Boot process launched and supervised by Electron for the desktop distribution.
 - The jlink runtime shipped with the desktop app must include `java.desktop` and the backend's required modules; `package:verify` checks the generated runtime before packaging.
@@ -1325,11 +1325,16 @@ Validate the renderer with the backend available, during startup, and with the b
 
 ## 39. Report exports and date scope
 
-- Farm and batch reports must use the selected as-of date for the report preview and CSV/PDF exports; do not silently export the current date when the user selected a historical date.
-- CSV exports use a stable, documented column order with report type, as-of date, section, record, field, value, and unit. Do not regress to a path,value-only dump.
-- PDF exports include the report title and as-of date, readable column headings, row separation, and repeated table headers when a report spans pages.
-- Values come from ReportService and its existing dashboard/domain calculation services. Export formatting may format values but must not recalculate farm metrics.
-- Test date scope, empty sections, CSV escaping/headers, money/unit formatting, and generated PDF text/output.
+- Farm dashboard and farm/batch reports share one inclusive date range with Today, Yesterday, Last 7 days, Last 30 days, Last 90 days, This month, Last month, This year, and Custom range presets.
+- Preset boundaries use the farm's IANA timezone, not the computer's timezone. Date-only values remain calendar dates through the API. Audit timestamps are filtered using farm-local day boundaries converted to instants.
+- Custom ranges require both dates and start date <= end date. Reject invalid ranges before requesting data and show clear feedback.
+- Compatible activity metrics, records, report previews, exports, audit activity, and production charts use the same selected from/to range. Range changes must never write or mutate farm records.
+- Current/lifetime snapshots such as current live population, house occupancy, feed stock, egg inventory, and batch-to-date values remain snapshots. Do not silently filter them as period activity; label the distinction in the UI.
+- Backend period responses expose raw period totals and range-filtered source rows. React may derive presentation-only period metrics, including profit from integer minor-unit revenue minus expenses. Do not persist these derived display values.
+- CSV exports use stable documented columns with report type, period start, period end, snapshot date, section, record, field, value, and unit. PDF exports include the report title and selected period, readable column headings, row separation, and repeated table headers when a report spans pages.
+- Export formatting may serialize renderer-derived display metrics supplied by the request, but must not independently recalculate farm metrics.
+- Production trend endpoints retain their 366-day maximum. A longer custom range may still filter other report panels; the chart must show a clear range-limit state.
+- Test month/year boundaries, leap day, custom and invalid ranges, farm-local dates, inclusive boundaries, range filtering, current-snapshot preservation, export metadata, and backend reconciliation.
 
 ## 40. Production trend charts
 
