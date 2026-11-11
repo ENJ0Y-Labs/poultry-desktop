@@ -353,6 +353,13 @@ async function downloadBlob(path) {
 export const reportApi = {
   farm: (asOf, from, to) => request("/reports/farm" + (from || to ? dateRangeQuery(from, to) : (asOf ? "?asOf=" + encodeURIComponent(asOf) : ""))),
   batch: (id, asOf, from, to) => request("/reports/batches/" + id + (from || to ? dateRangeQuery(from, to) : (asOf ? "?asOf=" + encodeURIComponent(asOf) : ""))),
+  compare: (ids, from, to) => {
+    const params = new URLSearchParams();
+    ids.forEach(id => params.append("batchIds", id));
+    if (from) params.set("from", from);
+    if (to) params.set("to", to);
+    return request("/reports/batches/compare?" + params.toString());
+  },
   farmCsv: (asOf, from, to, periodProfitMinor) => downloadText("/reports/farm.csv" + (from || to ? dateRangeExportQuery(from, to, periodProfitMinor) : (asOf ? "?asOf=" + encodeURIComponent(asOf) : ""))),
   batchCsv: (id, asOf, from, to, periodProfitMinor) => downloadText("/reports/batches/" + id + ".csv" + (from || to ? dateRangeExportQuery(from, to, periodProfitMinor) : (asOf ? "?asOf=" + encodeURIComponent(asOf) : ""))),
   farmPdf: (asOf, from, to, periodProfitMinor) => downloadBlob("/reports/farm.pdf" + (from || to ? dateRangeExportQuery(from, to, periodProfitMinor) : (asOf ? "?asOf=" + encodeURIComponent(asOf) : ""))),
