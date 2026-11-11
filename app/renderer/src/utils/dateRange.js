@@ -105,15 +105,15 @@ export function isValidDateRange(range) {
   return Boolean(from && to && from.getTime() <= to.getTime());
 }
 
-export function formatDateRange(range) {
+export function formatDateRange(range, dateFormat = "YYYY-MM-DD") {
   if (!isValidDateRange(range)) return "Invalid date range";
-  const formatter = new Intl.DateTimeFormat("en-GB", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    timeZone: "UTC",
-  });
-  const from = formatter.format(parseDate(range.from));
-  const to = formatter.format(parseDate(range.to));
+  const formatDate = value => {
+    const [year, month, day] = value.split("-");
+    if (dateFormat === "DD/MM/YYYY") return `${day}/${month}/${year}`;
+    if (dateFormat === "DD-MM-YYYY") return `${day}-${month}-${year}`;
+    return `${year}-${month}-${day}`;
+  };
+  const from = formatDate(range.from);
+  const to = formatDate(range.to);
   return range.from === range.to ? from : `${from} – ${to}`;
 }
