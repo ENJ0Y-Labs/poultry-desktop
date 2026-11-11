@@ -2,6 +2,12 @@
 
 The backend is the authoritative calculation engine. The renderer displays API results and does not implement independent farm formulas.
 
+## Reporting-period presentation values
+
+For date-range analytics, the backend returns raw period totals and filtered source records. React may derive presentation-only values from those raw totals. Period profit is calculated in the shared renderer reporting utility as integer minor-unit revenue minus integer minor-unit expenses, only when both inputs are safe integers. It is not persisted and does not replace the backend's authoritative financial ledger or domain calculations. Report export formatting receives the same renderer-derived display value so the file matches the screen; it does not recalculate it.
+
+Current/lifetime snapshots remain separate from activity-period totals. Current population, stock balances, and batch-to-date values are not filtered merely because a user selects a historical activity range.
+
 All historical calculations accept an `asOf` business date where the underlying operation supports historical reporting.
 
 ## Bird population
