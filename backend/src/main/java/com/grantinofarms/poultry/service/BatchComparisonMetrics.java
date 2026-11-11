@@ -3,7 +3,6 @@ package com.grantinofarms.poultry.service;
 import com.grantinofarms.poultry.dto.BatchResponse;
 import com.grantinofarms.poultry.dto.BirdPopulationResponse;
 import com.grantinofarms.poultry.dto.BroilerGrowthResponse;
-import com.grantinofarms.poultry.dto.EggInventoryResponse;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -29,15 +28,15 @@ public final class BatchComparisonMetrics {
 
         long mortality = number(period.get("mortality"));
         metrics.put("mortality", mortality);
-        metrics.put("mortalityRatePercent", population.initialBirds() > 0
+        metrics.put("mortalityRatePercent", number(period.get("mortalityEventCount")) > 0 && population.initialBirds() > 0
                 ? BigDecimal.valueOf(mortality).multiply(BigDecimal.valueOf(100))
                     .divide(BigDecimal.valueOf(population.initialBirds()), 2, RoundingMode.HALF_UP)
                 : null);
 
-        metrics.put("feedQuantityMilli", period.get("feedQuantityMilli"));
+        metrics.put("feedQuantityMilli", number(period.get("feedUsageCount")) > 0 ? period.get("feedQuantityMilli") : null);
         metrics.put("feedQuantityUnit", period.getOrDefault("feedQuantityUnit",
                 "recorded feed units; feed products may use different units"));
-        metrics.put("feedCostMinor", period.get("feedCostMinor"));
+        metrics.put("feedCostMinor", number(period.get("feedUsageCount")) > 0 ? period.get("feedCostMinor") : null);
 
         metrics.put("averageWeightKg", null);
         metrics.put("fcr", null);
@@ -45,7 +44,7 @@ public final class BatchComparisonMetrics {
         if ("LAYER".equals(batch.type())) {
             long good = number(period.get("eggsGood"));
             long cracked = number(period.get("eggsCracked"));
-            metrics.put("eggProduction", Math.addExact(good, cracked));
+            metrics.put("eggProduction", number(period.get("eggCollectionCount")) > 0 ? Math.addExact(good, cracked) : null);
         } else {
             Object growthValue = dashboard.get("broilerGrowth");
             BroilerGrowthResponse growth = growthValue instanceof BroilerGrowthResponse value ? value : null;
