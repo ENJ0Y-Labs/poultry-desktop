@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createDateRange, formatDateRange, isValidDateRange } from "./dateRange.js";
+import { createDateRange, filterRowsByDateRange, formatDateRange, isValidDateRange } from "./dateRange.js";
 
 const fixedNow = new Date("2024-03-01T12:00:00.000Z");
 
@@ -29,6 +29,19 @@ describe("date range presets", () => {
     expect(isValidDateRange({ from: "2024-03-02", to: "2024-03-01" })).toBe(false);
     expect(isValidDateRange({ from: "2024-02-30", to: "2024-03-01" })).toBe(false);
     expect(isValidDateRange({ from: "", to: "2024-03-01" })).toBe(false);
+  });
+
+  it("filters records inclusively and ignores missing dates", () => {
+    const rows = [
+      { id: "before", recordDate: "2024-02-28" },
+      { id: "start", recordDate: "2024-02-29" },
+      { id: "end", recordDate: "2024-03-01" },
+      { id: "after", recordDate: "2024-03-02" },
+      { id: "missing" },
+    ];
+    expect(filterRowsByDateRange(rows, { from: "2024-02-29", to: "2024-03-01" }).map(row => row.id))
+      .toEqual(["start", "end"]);
+    expect(filterRowsByDateRange(rows, { from: "2024-03-02", to: "2024-03-01" })).toEqual([]);
   });
 
   it("formats an inclusive range for display", () => {
