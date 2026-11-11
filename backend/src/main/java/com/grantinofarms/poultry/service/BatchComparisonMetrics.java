@@ -37,6 +37,7 @@ public final class BatchComparisonMetrics {
         metrics.put("feedQuantityMilli", number(period.get("feedUsageCount")) > 0 ? period.get("feedQuantityMilli") : null);
         metrics.put("feedQuantityUnit", period.getOrDefault("feedQuantityUnit",
                 "recorded feed units; feed products may use different units"));
+        metrics.put("feedQuantityComparable", Boolean.TRUE.equals(period.get("feedQuantityComparable")));
         metrics.put("feedCostMinor", number(period.get("feedUsageCount")) > 0 ? period.get("feedCostMinor") : null);
 
         metrics.put("averageWeightKg", null);
