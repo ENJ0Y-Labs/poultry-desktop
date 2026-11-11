@@ -130,7 +130,6 @@ public class DashboardService {
         period.put("eggsGood", eggsGood);
         period.put("revenueMinor", revenue);
         period.put("expensesMinor", expenses);
-        period.put("profitMinor", revenue - expenses);
         period.put("salesCount", rangeTotal("""
                 SELECT COUNT(*) FROM sales
                 WHERE farm_id=? AND sale_date BETWEEN ? AND ?
