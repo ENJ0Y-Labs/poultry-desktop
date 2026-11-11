@@ -1,5 +1,7 @@
 import { useContext } from "react";
 import { productionTrendApi } from "../services/api.js";
+import DateRangeFilter from "../components/DateRangeFilter.jsx";
+import { filterRowsByDateRange } from "../utils/dateRange.js";
 // eslint-disable-next-line no-unused-vars
 import ProductionTrendChart from "../components/ProductionTrendChart.jsx";
 import { FarmManagerContext } from "../components/FarmManagerContext.jsx";
@@ -13,14 +15,21 @@ import PageTemplate from "../components/PageTemplate.jsx";
 import MetricHelp from "../components/MetricHelp.jsx";
 
 export default function ProductionPage() {
-  const { formatMoney, farm, batches, customers, eggBatchId, setEggBatchId, broilerBatchId, setBroilerBatchId, broilerGrowth, broilerWeights, broilerSales, weightForm, setWeightForm, birdSaleForm, setBirdSaleForm, pricing, pricingForm, setPricingForm, eggInventory, eggCollections, eggSales, eggCollectionForm, setEggCollectionForm, eggSaleForm, setEggSaleForm, crateSize, saving, loadPricingForBatch, loadBroilerForBatch, saveWeight, saveBirdSale, loadEggsForBatch, saveEggCollection, saveEggSale } = useContext(FarmManagerContext);
+  const { formatMoney, farm, applicationSettings, dateRange, setDateRange, batches, customers, eggBatchId, setEggBatchId, broilerBatchId, setBroilerBatchId, broilerGrowth, broilerWeights, broilerSales, weightForm, setWeightForm, birdSaleForm, setBirdSaleForm, pricing, pricingForm, setPricingForm, eggInventory, eggCollections, eggSales, eggCollectionForm, setEggCollectionForm, eggSaleForm, setEggSaleForm, crateSize, saving, loadPricingForBatch, loadBroilerForBatch, saveWeight, saveBirdSale, loadEggsForBatch, saveEggCollection, saveEggSale } = useContext(FarmManagerContext);
+  const periodEggCollections = filterRowsByDateRange(eggCollections, dateRange);
+  const periodEggSales = filterRowsByDateRange(eggSales, dateRange);
+  const periodBroilerWeights = filterRowsByDateRange(broilerWeights, dateRange);
+  const periodBroilerSales = filterRowsByDateRange(broilerSales, dateRange);
 
   return (
     <PageTemplate className="grid">
       <PageSection page="production" tab="eggs"><section id="eggs" className="card full">
           <div className="section-head">
-            <h2>Layer egg production <MetricHelp id="hdp-formula-help" label="HDP formula">Hen-day production (HDP) is calculated for each date: total eggs collected that day (good + cracked) ÷ live layer birds on that date × 100. The numerator is in eggs and the denominator is birds, so the result is a percentage for that day. For example, 850 eggs from 1,000 live hens = 85%. The backend calculates the historical live-bird count; missing egg records are shown as gaps, not zero.</MetricHelp></h2>
-            <p className="muted">Only LAYER batches can record eggs. Good and cracked eggs are stored as individual eggs. Cracked eggs remain historical and are never sellable.</p>
+            <div>
+              <h2>Layer egg production <MetricHelp id="hdp-formula-help" label="HDP formula">Hen-day production (HDP) is calculated for each date: total eggs collected that day (good + cracked) ÷ live layer birds on that date × 100. The numerator is in eggs and the denominator is birds, so the result is a percentage for that day. For example, 850 eggs from 1,000 live hens = 85%. The backend calculates the historical live-bird count; missing egg records are shown as gaps, not zero.</MetricHelp></h2>
+              <p className="muted">Only LAYER batches can record eggs. Good and cracked eggs are stored as individual eggs. Cracked eggs remain historical and are never sellable.</p>
+            </div>
+            <DateRangeFilter value={dateRange} timezone={farm?.timezone} dateFormat={applicationSettings?.dateFormat} onChange={setDateRange} />
           </div>
 
           <div className="subsection">
@@ -48,7 +57,7 @@ export default function ProductionPage() {
                 loadTrend={productionTrendApi.layerHdp}
               />
               <div className="subsection">
-                <h3>Egg inventory</h3>
+                <h3>Egg inventory</h3>\n                <p className="muted">Current egg balances are a live snapshot and are not rewound by the selected activity period.</p>
                 <DataTable caption="Egg inventory" columns={[
                     { key: "goodCollected", label: "Good collected" }, { key: "goodSold", label: "Good sold" },
                     { key: "goodRemaining", label: "Good remaining" }, { key: "crackedCollected", label: "Cracked" },
@@ -68,7 +77,7 @@ export default function ProductionPage() {
                 <DataTable caption="Egg collections" columns={[
                     { key: "recordDate", label: "Date" }, { key: "good", label: "Good" }, { key: "cracked", label: "Cracked" },
                     { key: "total", label: "Total" }, { key: "notes", label: "Notes", render: row => row.notes || "—" },
-                  ]} rows={eggCollections} emptyMessage="No egg collections recorded." />
+                  ]} rows={periodEggCollections} emptyMessage="No egg collections in this period." />
               </div>
 
               <div className="subsection">
@@ -90,7 +99,7 @@ export default function ProductionPage() {
                     { key: "crates", label: "Crates", render: row => row.crates.toString() }, { key: "soldEggs", label: "Eggs" },
                     { key: "pricePerCrateMinor", label: "Price / crate", render: row => formatMoney(row.pricePerCrateMinor, farm.currency) },
                     { key: "totalAmountMinor", label: "Total", render: row => formatMoney(row.totalAmountMinor, farm.currency) },
-                  ]} rows={eggSales} emptyMessage="No egg sales recorded." />
+                  ]} rows={periodEggSales} emptyMessage="No egg sales in this period." />
               </div>
             </>
           )}
@@ -98,8 +107,11 @@ export default function ProductionPage() {
 
       <PageSection page="production" tab="broiler"><section className="card full">
           <div className="section-head">
-            <h2>Meat-bird production</h2>
-            <p className="muted">BROILER and TURKEY batches expose weight, growth, FCR, and bird sales. FCR is calculated by the backend from feed consumed and live-weight gain.</p>
+            <div>
+              <h2>Meat-bird production</h2>
+              <p className="muted">BROILER and TURKEY batches expose weight, growth, FCR, and bird sales. FCR is a batch-to-date snapshot; the weight trend follows the selected reporting period.</p>
+            </div>
+            <DateRangeFilter value={dateRange} timezone={farm?.timezone} dateFormat={applicationSettings?.dateFormat} onChange={setDateRange} />
           </div>
 
           <div className="subsection">
@@ -136,7 +148,7 @@ export default function ProductionPage() {
                     { key: "feedConsumedKg", label: "Feed consumed (converted)", render: row => row.feedConsumedKg == null ? "—" : `${row.feedConsumedKg} kg` },
                     { key: "fcr", label: "FCR", render: row => row.fcr ?? "—" }, { key: "trend", label: "Trend records", render: row => row.trend?.length ?? 0 },
                   ]} rows={[{ id: "growth-summary", ...(broilerGrowth || {}) }]} emptyMessage="No growth summary available." />
-                <p className="muted">FCR uses converted kilograms of all recorded feed divided by live-weight gain. Configure each non-kg feed type’s kg-per-unit factor in Feed management. If any consumed feed type has an unknown conversion, feed consumed and FCR display — until the factor is configured.</p>
+                <p className="muted">Growth summary and FCR remain batch-to-date snapshots. FCR uses converted kilograms of all recorded feed divided by live-weight gain. Configure each non-kg feed type’s kg-per-unit factor in Feed management. If any consumed feed type has an unknown conversion, feed consumed and FCR display — until the factor is configured.</p>
               </div>
 
               <div className="subsection">
@@ -151,7 +163,7 @@ export default function ProductionPage() {
                 <DataTable caption="Meat-bird weight records" columns={[
                     { key: "recordDate", label: "Date" }, { key: "sampleQuantity", label: "Sample" }, { key: "totalWeightKg", label: "Total kg" },
                     { key: "averageWeightKg", label: "Average kg" }, { key: "weightGainKg", label: "Gain kg/bird" },
-                  ]} rows={broilerWeights} emptyMessage="No weight records yet." />
+                  ]} rows={periodBroilerWeights} emptyMessage="No weight records in this period." />
               </div>
 
               <div className="subsection">
@@ -189,7 +201,7 @@ export default function ProductionPage() {
                     { key: "pricePerBirdMinor", label: "Price / bird", render: row => formatMoney(row.pricePerBirdMinor, farm.currency) },
                     { key: "totalAmountMinor", label: "Total", render: row => formatMoney(row.totalAmountMinor, farm.currency) },
                     { key: "customer", label: "Customer" },
-                  ]} rows={broilerSales} emptyMessage="No bird sales recorded." />
+                  ]} rows={periodBroilerSales} emptyMessage="No bird sales in this period." />
               </div>
             </>
           )}
