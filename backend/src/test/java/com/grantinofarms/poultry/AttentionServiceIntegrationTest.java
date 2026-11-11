@@ -223,20 +223,16 @@ class AttentionServiceIntegrationTest {
                 "TEST", UUID.randomUUID().toString(), AS_OF.minusDays(2).atStartOfDay().toString());
 
         List<Map<String, Object>> attention = attentionService.list(AS_OF);
-        assertThat(attention).anySatisfy(row -> {
-            if ("MORTALITY_INCREASE".equals(row.get("type"))) {
-                assertThat(row).containsEntry("batchId", layer.id())
+        assertThat(attention).filteredOn(row -> "MORTALITY_INCREASE".equals(row.get("type")))
+                .singleElement().satisfies(row -> assertThat(row)
+                        .containsEntry("batchId", layer.id())
                         .containsEntry("houseId", house.id())
-                        .containsEntry("thresholdContext", "7-day mortality >= 2% of initial birds; critical at 5%.");
-            }
-        });
-        assertThat(attention).anySatisfy(row -> {
-            if ("FALLING_REVENUE".equals(row.get("type"))) {
-                assertThat(row).containsEntry("decreasePercent", 50.0)
+                        .containsEntry("thresholdContext", "7-day mortality >= 2% of initial birds; critical at 5%."));
+        assertThat(attention).filteredOn(row -> "FALLING_REVENUE".equals(row.get("type")))
+                .singleElement().satisfies(row -> assertThat(row)
+                        .containsEntry("decreasePercent", 50.0)
                         .containsEntry("affectedMetric", "Sales revenue")
-                        .containsKey("suggestedAction");
-            }
-        });
+                        .containsKey("suggestedAction"));
     }
 
     @Test
