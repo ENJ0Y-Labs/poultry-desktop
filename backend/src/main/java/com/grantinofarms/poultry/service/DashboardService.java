@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 @Service
@@ -131,8 +132,20 @@ public class DashboardService {
                   AND (? IS NULL OR batch_id=?)
                 """, farmId, range, batchId);
         period.put("mortality", mortality);
+        period.put("mortalityEventCount", rangeTotal("""
+                SELECT COUNT(*)
+                FROM bird_population_events e JOIN batches b ON b.id=e.batch_id
+                WHERE b.farm_id=? AND e.event_type='MORTALITY' AND e.event_date BETWEEN ? AND ?
+                  AND (? IS NULL OR b.id=?)
+                """, farmId, range, batchId));
         period.put("eggsGood", eggsGood);
         period.put("eggsCracked", eggsCracked);
+        period.put("eggCollectionCount", rangeTotal("""
+                SELECT COUNT(*)
+                FROM egg_collections e JOIN batches b ON b.id=e.batch_id
+                WHERE b.farm_id=? AND e.record_date BETWEEN ? AND ?
+                  AND (? IS NULL OR b.id=?)
+                """, farmId, range, batchId));
         period.put("revenueMinor", revenue);
         period.put("expensesMinor", expenses);
         period.put("salesCount", rangeTotal("""
@@ -151,6 +164,24 @@ public class DashboardService {
                 WHERE b.farm_id=? AND u.usage_date BETWEEN ? AND ?
                   AND (? IS NULL OR b.id=?)
                 """, farmId, range, batchId));
+        long feedUsageCount = ((Number) period.get("feedUsageCount")).longValue();
+        if (feedUsageCount > 0) {
+            BatchFeedCostResponse feedPeriod = feed.batchCost(batchId, range.from(), range.to());
+            List<String> feedUnits = feed.batchUsageUnits(batchId, range.from(), range.to());
+            boolean feedQuantityComparable = feedUnits.size() == 1;
+            period.put("feedQuantityMilli", feedQuantityComparable ? feedPeriod.consumedQuantityMilli() : null);
+            period.put("feedCostMinor", feedPeriod.feedCostMinor());
+            period.put("feedKnownCostMinor", feedPeriod.knownFeedCostMinor());
+            period.put("feedQuantityUnit", feedUnits.isEmpty() ? "Unknown feed unit"
+                    : feedUnits.size() == 1 ? feedUnits.get(0) : "Mixed units: " + String.join(", ", feedUnits));
+            period.put("feedQuantityComparable", feedQuantityComparable);
+        } else {
+            period.put("feedQuantityMilli", null);
+            period.put("feedCostMinor", null);
+            period.put("feedKnownCostMinor", null);
+            period.put("feedQuantityUnit", "No feed usage records in this period");
+            period.put("feedQuantityComparable", false);
+        }
         period.put("healthRecordCount", rangeTotal("""
                 SELECT COUNT(*) FROM health_records h JOIN batches b ON b.id=h.batch_id
                 WHERE b.farm_id=? AND h.record_date BETWEEN ? AND ?

@@ -2,6 +2,8 @@ package com.grantinofarms.poultry.service;
 
 import com.grantinofarms.poultry.dto.BatchResponse;
 import com.grantinofarms.poultry.dto.BirdPopulationResponse;
+import com.grantinofarms.poultry.exception.ApiException;
+import org.springframework.http.HttpStatus;
 import com.grantinofarms.poultry.dto.ExpenseResponse;
 import com.grantinofarms.poultry.dto.SaleResponse;
 import com.grantinofarms.poultry.dto.HealthRecordResponse;
@@ -191,6 +193,49 @@ public class ReportService {
         }
         report.put("production", filteredProduction);
         return report;
+    }
+
+    public Map<String, Object> compare(List<String> batchIds, LocalDate from, LocalDate to) {
+        ReportDateRange range = ReportDateRange.require(from, to);
+        if (batchIds == null || batchIds.size() < 2 || batchIds.size() > 8) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_COMPARISON_BATCH_COUNT",
+                    "Select between 2 and 8 batches to compare.");
+        }
+        if (batchIds.stream().anyMatch(id -> id == null || id.isBlank())
+                || new java.util.HashSet<>(batchIds).size() != batchIds.size()) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_COMPARISON_BATCH_IDS",
+                    "Batch selections must be non-empty and unique.");
+        }
+
+        List<Map<String, Object>> reports = new java.util.ArrayList<>();
+        for (String batchId : batchIds) {
+            BatchResponse selectedBatch = batches.get(batchId);
+            if (range.to().isBefore(selectedBatch.placementDate())) {
+                throw new ApiException(HttpStatus.BAD_REQUEST, "COMPARISON_END_BEFORE_PLACEMENT",
+                        "The comparison end date cannot be before batch " + selectedBatch.code() + " was placed.");
+            }
+            Map<String, Object> report = batch(batchId, range.to());
+            Map<String, Object> rangeDashboard = dashboard.batchRange(batchId, range.from(), range.to());
+            @SuppressWarnings("unchecked")
+            Map<String, Object> period = (Map<String, Object>) rangeDashboard.get("period");
+            report.put("from", range.from());
+            report.put("to", range.to());
+            report.put("period", period);
+            BatchResponse batch = selectedBatch;
+            report.put("batch", batch);
+            BirdPopulationResponse populationData = (BirdPopulationResponse) report.get("population");
+            @SuppressWarnings("unchecked")
+            Map<String, Object> dashboardData = (Map<String, Object>) report.get("dashboard");
+            report.put("comparisonMetrics", BatchComparisonMetrics.from(
+                    batch, populationData, dashboardData, period, range.from(), range.to()));
+            reports.add(report);
+        }
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("from", range.from());
+        result.put("to", range.to());
+        result.put("reports", reports);
+        return result;
     }
 
     private <T> List<T> filterDates(List<T> rows, ReportDateRange range, Function<T, LocalDate> date) {

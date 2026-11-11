@@ -296,3 +296,8 @@ These thresholds are centralized in the backend attention service. The frontend 
 Settings that affect calculations are audited. Historical records preserve values needed to interpret the record at the time it was created, such as the crate size used for an egg sale.
 
 Changing configuration must not rewrite historical transactions.
+
+
+## Batch comparison periods
+
+Batch comparison activity metrics use one inclusive reporting range for every selected batch. Feed usage quantities and FIFO costs are calculated only for usage events inside that range, but FIFO valuation must use all purchases, opening lots, and feed usages up to the range end so historical lot consumption remains correct. Unknown costs remain null. Feed quantities may be compared only when every selected batch used the same single configured unit; if one batch used multiple units, its aggregate quantity remains null while its FIFO cost can still be shown. Population and average weight are end-date snapshots; FCR remains the existing batch-to-date backend calculation and must be labeled accordingly. If the period contains no mortality event, egg collection, or feed usage, the corresponding rate/production/feed metric is missing rather than an invented zero.

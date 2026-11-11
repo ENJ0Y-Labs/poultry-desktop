@@ -374,6 +374,47 @@ public class FeedService {
                 totalCost, perBird, knownTotalCost);
     }
 
+    public List<String> batchUsageUnits(String batchId, LocalDate from, LocalDate to) {
+        requireBatch(batchId);
+        com.grantinofarms.poultry.domain.ReportDateRange range =
+                com.grantinofarms.poultry.domain.ReportDateRange.require(from, to);
+        return repository.findBatchUsageUnits(batchId, range.from(), range.to());
+    }
+
+    public BatchFeedCostResponse batchCost(String batchId, LocalDate from, LocalDate to) {
+        requireBatch(batchId);
+        com.grantinofarms.poultry.domain.ReportDateRange range =
+                com.grantinofarms.poultry.domain.ReportDateRange.require(from, to);
+        List<FeedUsageEvent> usages = repository.findBatchUsages(batchId, range.from(), range.to());
+        long totalQuantity = 0L;
+        long knownTotalCost = 0L;
+        boolean totalCostUnknown = false;
+        List<String> feedTypeIds = usages.stream().map(FeedUsageEvent::feedTypeId).distinct().toList();
+
+        for (String feedTypeId : feedTypeIds) {
+            List<FeedPurchaseLot> purchases = repository.findPurchases(feedTypeId, range.to());
+            List<FeedOpeningStockLot> openingLots = repository.findOpeningLots(feedTypeId, range.to());
+            List<FeedUsageEvent> allUsages = repository.findUsages(feedTypeId, range.to());
+            FeedCostCalculator.FifoSnapshot snapshot =
+                    FeedCostCalculator.calculate(purchases, openingLots, allUsages, range.to());
+            for (FeedUsageEvent usage : usages) {
+                if (feedTypeId.equals(usage.feedTypeId())) {
+                    totalQuantity = Math.addExact(totalQuantity, usage.quantityMilli());
+                    if (snapshot.usageCostsMinor().get(usage.id()) == null) totalCostUnknown = true;
+                    knownTotalCost = Math.addExact(knownTotalCost,
+                            snapshot.usageKnownCostsMinor().getOrDefault(usage.id(), 0L));
+                }
+            }
+        }
+
+        int currentBirds = populationService.get(batchId, range.to()).currentBirds();
+        Long totalCost = totalCostUnknown ? null : knownTotalCost;
+        Long perBird = totalQuantity > 0 && currentBirds > 0 && totalCost != null
+                ? totalCost / currentBirds : null;
+        return new BatchFeedCostResponse(batchId, range.to(), currentBirds, totalQuantity,
+                totalCost, perBird, knownTotalCost);
+    }
+
     private FeedTypeResponse requireType(String id) {
         FeedTypeResponse type = repository.findType(id);
         if (type == null) throw new ApiException(HttpStatus.NOT_FOUND, "FEED_TYPE_NOT_FOUND", "Feed type not found.");
