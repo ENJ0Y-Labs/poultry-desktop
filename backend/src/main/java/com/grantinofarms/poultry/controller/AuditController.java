@@ -28,7 +28,7 @@ public class AuditController {
         ReportDateRange range = ReportDateRange.require(from, to);
         ZoneId zone = ZoneId.of(farm.timezone());
         String start = range.from().atStartOfDay(zone).toInstant().toString();
-        String end = range.to().atTime(java.time.LocalTime.MAX).atZone(zone).toInstant().toString();
+        String end = range.to().plusDays(1).atStartOfDay(zone).toInstant().toString();
         return Map.of("ok", true, "data", audit.find(farm.id(), limit, start, end));
     }
 }
