@@ -193,7 +193,8 @@ export function BatchComparison({ batches, houses, dateRange, setDateRange, farm
   const filteredBatches = useMemo(() => batches.filter(batch =>
     (typeFilter === "ALL" || batch.type === typeFilter)
     && (houseFilter === "ALL" || batch.houseId === houseFilter)
-  ), [batches, typeFilter, houseFilter]);
+    && (!dateRange?.to || batch.placementDate <= dateRange.to)
+  ), [batches, typeFilter, houseFilter, dateRange?.to]);
   const filteredIds = useMemo(() => selectedIds.filter(id => filteredBatches.some(batch => batch.id === id)), [selectedIds, filteredBatches]);
   const idsKey = filteredIds.join(",");
   const selectedReports = useMemo(() => reports.filter(report => filteredIds.includes(report.batch?.id)), [reports, filteredIds]);
@@ -321,7 +322,7 @@ export function BatchComparison({ batches, houses, dateRange, setDateRange, farm
             <div className="table-scroll" role="region" aria-label="Batch comparison table" tabIndex={0}>
               <table className="data-table comparison-table">
                 <caption>Batch performance metrics for {dateRange.from} to {dateRange.to}</caption>
-                <thead><tr><th scope="col">Metric and unit</th>{selectedReports.map(report => <th scope="col" key={report.batch.id}>{report.batch.code}<small>{report.batch.type} · placed {report.batch.placementDate}</small></th>)}</tr></thead>
+                <thead><tr><th scope="col">Metric and unit</th>{selectedReports.map(report => <th scope="col" key={report.batch.id}>{report.batch.code}<small>{report.batch.type} · {houses.find(house => house.id === report.batch.houseId)?.name || "House not recorded"} · placed {report.batch.placementDate} · {report.population?.countStatus || "Unknown"} count</small></th>)}</tr></thead>
                 <tbody>{metricDefinitions.map(metric => <tr key={metric.key}>
                   <th scope="row">{metric.label}<small>{metric.unit}</small></th>
                   {selectedReports.map(report => <td key={report.batch.id}>{formatValue(metric, report.comparisonMetrics?.[metric.key])}</td>)}
