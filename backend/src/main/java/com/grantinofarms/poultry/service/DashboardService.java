@@ -131,8 +131,20 @@ public class DashboardService {
                   AND (? IS NULL OR batch_id=?)
                 """, farmId, range, batchId);
         period.put("mortality", mortality);
+        period.put("mortalityEventCount", rangeTotal("""
+                SELECT COUNT(*)
+                FROM bird_population_events e JOIN batches b ON b.id=e.batch_id
+                WHERE b.farm_id=? AND e.event_type='MORTALITY' AND e.event_date BETWEEN ? AND ?
+                  AND (? IS NULL OR b.id=?)
+                """, farmId, range, batchId));
         period.put("eggsGood", eggsGood);
         period.put("eggsCracked", eggsCracked);
+        period.put("eggCollectionCount", rangeTotal("""
+                SELECT COUNT(*)
+                FROM egg_collections e JOIN batches b ON b.id=e.batch_id
+                WHERE b.farm_id=? AND e.record_date BETWEEN ? AND ?
+                  AND (? IS NULL OR b.id=?)
+                """, farmId, range, batchId));
         period.put("revenueMinor", revenue);
         period.put("expensesMinor", expenses);
         period.put("salesCount", rangeTotal("""
@@ -151,6 +163,19 @@ public class DashboardService {
                 WHERE b.farm_id=? AND u.usage_date BETWEEN ? AND ?
                   AND (? IS NULL OR b.id=?)
                 """, farmId, range, batchId));
+        long feedUsageCount = ((Number) period.get("feedUsageCount")).longValue();
+        if (feedUsageCount > 0) {
+            BatchFeedCostResponse feedPeriod = feed.batchCost(batchId, range.from(), range.to());
+            period.put("feedQuantityMilli", feedPeriod.consumedQuantityMilli());
+            period.put("feedCostMinor", feedPeriod.feedCostMinor());
+            period.put("feedKnownCostMinor", feedPeriod.knownFeedCostMinor());
+            period.put("feedQuantityUnit", "recorded feed units; feed products may use different units");
+        } else {
+            period.put("feedQuantityMilli", null);
+            period.put("feedCostMinor", null);
+            period.put("feedKnownCostMinor", null);
+            period.put("feedQuantityUnit", "No feed usage records in this period");
+        }
         BatchFeedCostResponse feedPeriod = feed.batchCost(batchId, range.from(), range.to());
         period.put("feedQuantityMilli", feedPeriod.consumedQuantityMilli());
         period.put("feedCostMinor", feedPeriod.feedCostMinor());
