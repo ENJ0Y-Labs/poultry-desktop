@@ -102,8 +102,6 @@ public class DashboardService {
 
     private Map<String, Object> periodSummary(String farmId, String batchId, ReportDateRange range) {
         Map<String, Object> period = new LinkedHashMap<>();
-        period.put("from", range.from());
-        period.put("to", range.to());
         long mortality = rangeTotal("""
                 SELECT COALESCE(SUM(e.quantity), 0)
                 FROM bird_population_events e JOIN batches b ON b.id=e.batch_id
