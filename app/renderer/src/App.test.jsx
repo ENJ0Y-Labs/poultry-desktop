@@ -692,7 +692,10 @@ describe("App", () => {
       type: "LOW_FEED_STOCK",
       severity: "WARNING",
       title: "Low feed stock",
-      message: "Layer Mash has about 2.0 days of stock."
+      message: "Layer Mash has about 2.0 days of stock.",
+      affectedMetric: "Feed",
+      thresholdContext: "Warning at 3 days of cover or less.",
+      suggestedAction: "Review feed stock and arrange a purchase if required."
     }]);
 
     render(<App />);
@@ -700,6 +703,9 @@ describe("App", () => {
     await waitFor(() => expect(screen.getByRole("heading", { name: "Farm dashboard" })).toBeInTheDocument());
     expect(await screen.findByText("Low feed stock")).toBeInTheDocument();
     expect(screen.getByText("Layer Mash has about 2.0 days of stock.")).toBeInTheDocument();
+    expect(screen.getByText("Feed")).toBeInTheDocument();
+    expect(screen.getByText("Rule: Warning at 3 days of cover or less.")).toBeInTheDocument();
+    expect(screen.getByText(/Suggested action: Review feed stock/)).toBeInTheDocument();
   });
 
   it("opens a missing daily-record alert with batch and date prefilled", async () => {
