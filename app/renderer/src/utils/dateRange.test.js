@@ -30,6 +30,7 @@ describe("date range presets", () => {
   });
 
   it("formats an inclusive range for display", () => {
-    expect(formatDateRange({ from: "2024-02-29", to: "2024-03-01" })).toBe("29 Feb 2024 – 01 Mar 2024");
+    expect(formatDateRange({ from: "2024-02-29", to: "2024-03-01" })).toBe("2024-02-29 – 2024-03-01");
+    expect(formatDateRange({ from: "2024-02-29", to: "2024-03-01" }, "DD/MM/YYYY")).toBe("29/02/2024 – 01/03/2024");
   });
 });
