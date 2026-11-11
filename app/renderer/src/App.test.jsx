@@ -694,6 +694,8 @@ describe("App", () => {
       title: "Low feed stock",
       message: "Layer Mash has about 2.0 days of stock.",
       affectedMetric: "Feed",
+      detectedAt: "2026-11-11",
+      ruleDescription: "Feed stock cover is 3 days or less at the recent usage rate.",
       thresholdContext: "Warning at 3 days of cover or less.",
       suggestedAction: "Review feed stock and arrange a purchase if required."
     }]);
@@ -704,7 +706,9 @@ describe("App", () => {
     expect(await screen.findByText("Low feed stock")).toBeInTheDocument();
     expect(screen.getByText("Layer Mash has about 2.0 days of stock.")).toBeInTheDocument();
     expect(screen.getByText("Feed")).toBeInTheDocument();
-    expect(screen.getByText("Rule: Warning at 3 days of cover or less.")).toBeInTheDocument();
+    expect(screen.getByText("Detected: 2026-11-11")).toBeInTheDocument();
+    expect(screen.getByText("Feed stock cover is 3 days or less at the recent usage rate.")).toBeInTheDocument();
+    expect(screen.getByText("Threshold: Warning at 3 days of cover or less.")).toBeInTheDocument();
     expect(screen.getByText(/Suggested action: Review feed stock/)).toBeInTheDocument();
   });
 
