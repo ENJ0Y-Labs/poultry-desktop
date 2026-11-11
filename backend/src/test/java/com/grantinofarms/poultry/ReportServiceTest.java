@@ -149,8 +149,8 @@ class ReportServiceTest {
         List<SaleResponse> returnedSales = (List<SaleResponse>) report.get("sales");
         assertThat(returnedExpenses).containsExactly(expenseFrom, expenseTo);
         assertThat(returnedSales).containsExactly(saleFrom, saleTo);
-        assertThat(period.get("expenseCount")).isEqualTo(returnedExpenses.size());
-        assertThat(period.get("salesCount")).isEqualTo(returnedSales.size());
+        assertThat(period.get("expenseCount")).isEqualTo((long) returnedExpenses.size());
+        assertThat(period.get("salesCount")).isEqualTo((long) returnedSales.size());
         assertThat(report.get("period")).isSameAs(period);
         verify(dashboard).farmRange(from, to);
     }
