@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import Button from "./Button.jsx";
-import { CheckboxInput, DateInput, NumberInput, SearchInput, SelectInput, SwitchInput, TextInput, TextareaInput } from "./FormControls.jsx";
+import { CheckboxInput, CurrencyInput, DateInput, NumberInput, RadioInput, SearchInput, SelectInput, SwitchInput, TextInput, TextareaInput } from "./FormControls.jsx";
 
 describe("shared Button", () => {
   it.each(["primary", "secondary", "outline", "ghost", "destructive"])("supports the %s variant", variant => {
@@ -27,15 +27,17 @@ describe("shared form controls", () => {
   it.each([
     ["Text", <TextInput label="Farm name" />],
     ["Number", <NumberInput label="Bird count" />],
+    ["Currency", <CurrencyInput label="Unit price" />],
     ["Date", <DateInput label="Record date" />],
     ["Search", <SearchInput label="Search records" />],
     ["Select", <SelectInput label="House"><option>House A</option></SelectInput>],
     ["Textarea", <TextareaInput label="Notes" />],
     ["Checkbox", <CheckboxInput label="Confirm" />],
+    ["Radio", <RadioInput label="Layer" name="batch-type" />],
     ["Switch", <SwitchInput label="Enable alerts" />],
   ])("renders an accessible %s control", (_kind, control) => {
     render(control);
-    expect(screen.getByLabelText(/Farm name|Bird count|Record date|Search records|House|Notes|Confirm|Enable alerts/)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Farm name|Bird count|Unit price|Record date|Search records|House|Notes|Confirm|Layer|Enable alerts/)).toBeInTheDocument();
   });
   it("connects helper and validation text to the control", () => {
     render(<TextInput label="Farm name" hint="Use the registered name" error="Name is required" />);
