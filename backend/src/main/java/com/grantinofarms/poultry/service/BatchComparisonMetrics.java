@@ -34,7 +34,7 @@ public final class BatchComparisonMetrics {
                     .divide(BigDecimal.valueOf(population.initialBirds()), 2, RoundingMode.HALF_UP)
                 : null);
 
-        metrics.put("feedQuantityMilli", number(period.get("feedUsageCount")) > 0 ? period.get("feedQuantityMilli") : null);
+        metrics.put("feedQuantityMilli", number(period.get("feedUsageCount")) > 0 && Boolean.TRUE.equals(period.get("feedQuantityComparable")) ? period.get("feedQuantityMilli") : null);
         metrics.put("feedQuantityUnit", period.getOrDefault("feedQuantityUnit",
                 "recorded feed units; feed products may use different units"));
         metrics.put("feedQuantityComparable", Boolean.TRUE.equals(period.get("feedQuantityComparable")));
