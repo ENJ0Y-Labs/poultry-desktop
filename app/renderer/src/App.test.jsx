@@ -417,10 +417,10 @@ describe("App", () => {
     await waitFor(() => expect(screen.getByText("03/10/2026")).toBeInTheDocument());
     expect(screen.getByText("Dashboard as of")).toBeInTheDocument();
 
-    const primaryMetric = screen.getByText("Total birds").closest(".metric-card");
-    const secondaryMetric = screen.getByText("Layer birds").closest(".metric-card");
-    expect(primaryMetric).toHaveClass("metric-card-primary");
-    expect(secondaryMetric).not.toHaveClass("metric-card-primary");
+    const primaryMetric = screen.getByText("Total birds").closest(".dashboard-kpi-card");
+    const secondaryMetric = screen.getByText("Layer birds").closest(".dashboard-kpi-card");
+    expect(primaryMetric).toHaveClass("dashboard-kpi-card-primary");
+    expect(secondaryMetric).not.toHaveClass("dashboard-kpi-card-primary");
   });
 
   it("formats expense history and inventory remaining cost as naira", async () => {
