@@ -19,17 +19,20 @@ class ReportExportServiceTest {
     void csvUsesStableStructuredHeadersAndIncludesDateScope() {
         Map<String, Object> report = Map.of(
                 "reportType", "FARM_SUMMARY",
+                "from", "2026-10-01",
+                "to", "2026-10-03",
                 "asOf", "2026-10-03",
                 "waterUnitLabel", "gallons",
+                "period", Map.of("revenueMinor", 500000, "expensesMinor", 100000, "profitMinor", 400000),
                 "dashboard", Map.of("totalBirds", 5000, "profitMinor", 300000),
                 "sales", List.of(Map.of("saleDate", "2026-10-03", "totalAmountMinor", 125000))
         );
 
         String csv = service.csv(report);
 
-        assertThat(csv).startsWith("\uFEFF\"report_type\",\"as_of\",\"section\",\"record\",\"field\",\"value\",\"unit\"");
-        assertThat(csv).contains("\"FARM_SUMMARY\",\"2026-10-03\",\"Dashboard\",\"—\",\"Total birds\",\"5000\",\"count\"");
-        assertThat(csv).contains("₦3,000.00");
+        assertThat(csv).startsWith("\uFEFF\"report_type\",\"period_from\",\"period_to\",\"snapshot_as_of\",\"section\",\"record\",\"field\",\"value\",\"unit\"");
+        assertThat(csv).contains("\"FARM_SUMMARY\",\"2026-10-01\",\"2026-10-03\",\"2026-10-03\",\"Dashboard\",\"—\",\"Total birds\",\"5000\",\"count\"");
+        assertThat(csv).contains("₦3,000.00", "₦4,000.00");
         assertThat(csv).contains("\"Sales\",\"2026-10-03\",\"Sale date\",\"2026-10-03\"");
         assertThat(csv).contains("\"Water unit label\",\"gallons\"");
     }
@@ -54,7 +57,7 @@ class ReportExportServiceTest {
         assertThat(pdf).contains("%EOF".getBytes(StandardCharsets.US_ASCII));
         try (var document = Loader.loadPDF(pdf)) {
             String text = new PDFTextStripper().getText(document);
-            assertThat(text).contains("Batch Report", "As of: 2026-10-03", "Section", "Record", "Field", "Value", "Unit", "₦5,000.00", "Water unit label", "litres");
+            assertThat(text).contains("Batch Report", "Reporting period / snapshot: 2026-10-01 to 2026-10-03", "Section", "Record", "Field", "Value", "Unit", "₦5,000.00", "Water unit label", "litres");
         }
     }
 }
