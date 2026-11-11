@@ -1247,9 +1247,7 @@ export default function App() {
         <h1 id="pomas-loading-title">Pomas</h1>
         <p className="pomas-loading-description">Poultry management, made clear.</p>
         <p className="pomas-loading-detail">Preparing your farm workspace and records.</p>
-        <div className="pomas-loading-spinner" role="status" aria-label="Loading">
-          <span className="visually-hidden">Loading</span>
-        </div>
+        <div className="pomas-loading-spinner" role="status" aria-label="Loading" />
       </section>
     </main>
   );
