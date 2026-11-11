@@ -310,6 +310,7 @@ export function BatchComparison({ batches, houses, dateRange, setDateRange, farm
                 {chartMetricDefinitions.map(metric => <option key={metric.key} value={metric.key}>{metric.label}</option>)}
               </select></label>
             </div>
+            {activeMetric && <p className="muted">Unit: {activeMetric.key === "feedQuantityMilli" ? selectedReports[0]?.comparisonMetrics?.feedQuantityUnit : activeMetric.unit}</p>}
             {activeMetric && <div role="img" aria-label={activeMetric.label + " comparison across selected batches"} style={{ width: "100%", height: 280 }}>
               <ResponsiveContainer>
                 <BarChart data={chartData} margin={{ top: 12, right: 20, bottom: 12, left: 8 }}>
