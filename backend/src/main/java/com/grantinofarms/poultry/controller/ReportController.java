@@ -45,9 +45,11 @@ public class ReportController {
     public ResponseEntity<byte[]> farmCsv(
             @RequestParam(required = false) LocalDate asOf,
             @RequestParam(required = false) LocalDate from,
-            @RequestParam(required = false) LocalDate to
+            @RequestParam(required = false) LocalDate to,
+            @RequestParam(required = false) Long periodProfitMinor
     ) {
-        return csvResponse(from != null || to != null ? service.farm(from, to) : service.farm(asOf), "farm-report.csv");
+        Map<String, Object> report = from != null || to != null ? service.farm(from, to) : service.farm(asOf);
+        return csvResponse(withPeriodProfit(report, periodProfitMinor), "farm-report.csv");
     }
 
     @GetMapping(value = "/batches/{id}.csv", produces = "text/csv")
@@ -55,18 +57,22 @@ public class ReportController {
             @PathVariable String id,
             @RequestParam(required = false) LocalDate asOf,
             @RequestParam(required = false) LocalDate from,
-            @RequestParam(required = false) LocalDate to
+            @RequestParam(required = false) LocalDate to,
+            @RequestParam(required = false) Long periodProfitMinor
     ) {
-        return csvResponse(from != null || to != null ? service.batch(id, from, to) : service.batch(id, asOf), "batch-report.csv");
+        Map<String, Object> report = from != null || to != null ? service.batch(id, from, to) : service.batch(id, asOf);
+        return csvResponse(withPeriodProfit(report, periodProfitMinor), "batch-report.csv");
     }
 
     @GetMapping(value = "/farm.pdf", produces = MediaType.APPLICATION_PDF_VALUE)
     public ResponseEntity<byte[]> farmPdf(
             @RequestParam(required = false) LocalDate asOf,
             @RequestParam(required = false) LocalDate from,
-            @RequestParam(required = false) LocalDate to
+            @RequestParam(required = false) LocalDate to,
+            @RequestParam(required = false) Long periodProfitMinor
     ) {
-        return pdfResponse(from != null || to != null ? service.farm(from, to) : service.farm(asOf), "Farm Report", "farm-report.pdf");
+        Map<String, Object> report = from != null || to != null ? service.farm(from, to) : service.farm(asOf);
+        return pdfResponse(withPeriodProfit(report, periodProfitMinor), "Farm Report", "farm-report.pdf");
     }
 
     @GetMapping(value = "/batches/{id}.pdf", produces = MediaType.APPLICATION_PDF_VALUE)
@@ -74,9 +80,21 @@ public class ReportController {
             @PathVariable String id,
             @RequestParam(required = false) LocalDate asOf,
             @RequestParam(required = false) LocalDate from,
-            @RequestParam(required = false) LocalDate to
+            @RequestParam(required = false) LocalDate to,
+            @RequestParam(required = false) Long periodProfitMinor
     ) {
-        return pdfResponse(from != null || to != null ? service.batch(id, from, to) : service.batch(id, asOf), "Batch Report", "batch-report.pdf");
+        Map<String, Object> report = from != null || to != null ? service.batch(id, from, to) : service.batch(id, asOf);
+        return pdfResponse(withPeriodProfit(report, periodProfitMinor), "Batch Report", "batch-report.pdf");
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> withPeriodProfit(Map<String, Object> report, Long periodProfitMinor) {
+        if (periodProfitMinor == null) return report;
+        Object period = report.get("period");
+        if (period instanceof Map<?, ?> values) {
+            ((Map<String, Object>) values).put("profitMinor", periodProfitMinor);
+        }
+        return report;
     }
 
     private ResponseEntity<byte[]> csvResponse(Map<String, Object> report, String filename) {
