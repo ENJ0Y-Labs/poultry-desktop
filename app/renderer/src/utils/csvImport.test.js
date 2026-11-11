@@ -42,6 +42,21 @@ describe("parseCsv", () => {
   });
 });
 
+describe("batch opening template", () => {
+  it("defines a versioned batch template using human-readable house and supplier references", async () => {
+    expect(CSV_TEMPLATES.batches.version).toBe("1.0");
+    expect(CSV_TEMPLATES.batches.headers).toEqual([
+      "type", "placement_date", "house_code", "initial_bird_count", "population_count_status",
+      "supplier_name", "purchase_cost_recorded", "purchase_cost_naira",
+    ]);
+    const result = await inspectCsvFile(csvFile(
+      "type,placement_date,house_code,initial_bird_count,population_count_status,supplier_name,purchase_cost_recorded,purchase_cost_naira\nBROILER,2026-01-15,H-001,1000,ESTIMATED,Daystar Chicks,true,250000.00\n",
+    ), "batches");
+    expect(result.validRows).toBe(1);
+    expect(result.rows[0].record.house_code).toBe("H-001");
+  });
+});
+
 describe("historical operational templates", () => {
   it("defines versioned daily-record, mortality, and culling templates using stable batch codes", async () => {
     expect(CSV_TEMPLATES["daily-records"].version).toBe("1.0");
@@ -130,7 +145,7 @@ describe("inspectCsvFile", () => {
   it("rejects oversized files and unknown modules", async () => {
     await expect(inspectCsvFile({ size: 2 * 1024 * 1024 + 1 }, "customers"))
       .rejects.toThrow(/2 MB limit/);
-    await expect(inspectCsvFile(csvFile("name\nAda\n"), "batches"))
+    await expect(inspectCsvFile(csvFile("name\nAda\n"), "unknown-module"))
       .rejects.toThrow(/supported import module/);
   });
 });

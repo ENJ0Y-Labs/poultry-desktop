@@ -40,23 +40,37 @@ describe("AppShell", () => {
       </AppShell>
     );
 
-    expect(screen.getAllByText("Riverbend Poultry").length).toBeGreaterThanOrEqual(2);
+    expect(screen.getAllByText("Riverbend Poultry")).toHaveLength(1);
+    expect(screen.queryByLabelText("Active farm")).not.toBeInTheDocument();
     expect(within(screen.getByRole("button", { name: "Account" })).getByText("RP")).toBeInTheDocument();
   });
 
-  it("offers Auto, Light, and Dark theme preferences", () => {
+  it("uses the Pomas logo as the collapsed expand control", () => {
     render(
       <AppShell farm={{ name: "Grantino", location: "", currency: "NGN", timezone: "Africa/Lagos" }}>
         <section id="dashboard">Dashboard</section>
       </AppShell>
     );
-    const selector = screen.getByRole("combobox", { name: "Theme" });
-    expect(selector).toHaveValue("auto");
-    expect(within(selector).getByRole("option", { name: "Teal Light" })).toBeInTheDocument();
-    expect(within(selector).getByRole("option", { name: "Dark (Gold)" })).toBeInTheDocument();
-    fireEvent.change(selector, { target: { value: "light" } });
-    expect(localStorage.getItem("pomas:theme")).toBe("light");
-    expect(document.documentElement.dataset.theme).toBe("light");
+
+    fireEvent.click(screen.getByRole("button", { name: "Collapse sidebar" }));
+    const expandButton = screen.getByRole("button", { name: "Expand sidebar" });
+    expect(expandButton).toHaveAttribute("title", "Expand sidebar");
+    expect(expandButton.querySelector("img")).toHaveAttribute("src", expect.stringContaining("pomas-logo.png"));
+    expect(expandButton.querySelector(".brand-hover-icon svg")).toHaveClass("sidebar-toggle-icon");
+    expect(expandButton).toHaveClass("brand-mark-button");
+
+    fireEvent.click(expandButton);
+    expect(screen.getByRole("button", { name: "Collapse sidebar" })).toHaveAttribute("aria-expanded", "true");
+  });
+
+  it("keeps appearance controls out of the top bar", () => {
+    render(
+      <AppShell farm={{ name: "Grantino", location: "", currency: "NGN", timezone: "Africa/Lagos" }}>
+        <section id="dashboard">Dashboard</section>
+      </AppShell>
+    );
+    expect(screen.queryByRole("switch", { name: "Follow system appearance" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("switch", { name: "Dark appearance" })).not.toBeInTheDocument();
   });
 
   it("navigates to a page and tab through the URL hash", () => {
@@ -84,6 +98,27 @@ describe("AppShell", () => {
     fireEvent.click(screen.getByRole("button", { name: "Suppliers" }));
     expect(window.location.hash).toBe("#feed-stock/suppliers");
   });
+  it("uses Ctrl+9 for Import / Export and Ctrl+0 for the tenth destination, Settings", () => {
+    render(
+      <AppShell farm={{ name: "Grantino", location: "", currency: "NGN", timezone: "Africa/Lagos" }}>
+        <PageSection page="import-export"><section>Import / Export content</section></PageSection>
+        <PageSection page="settings"><section>Settings content</section></PageSection>
+      </AppShell>
+    );
+
+    const navigation = screen.getByRole("navigation", { name: "Main navigation" });
+    expect(within(navigation).getByRole("button", { name: "Import / Export" })).toHaveTextContent("⌃+9");
+    expect(within(navigation).getByRole("button", { name: "Settings" })).toHaveTextContent("⌃+0");
+
+    fireEvent.keyDown(window, { key: "9", ctrlKey: true });
+    expect(window.location.hash).toBe("#import-export/overview");
+    expect(within(navigation).getByRole("button", { name: "Import / Export" })).toHaveAttribute("aria-current", "page");
+
+    fireEvent.keyDown(window, { key: "0", ctrlKey: true });
+    expect(window.location.hash).toBe("#settings/farm");
+    expect(within(navigation).getByRole("button", { name: "Settings" })).toHaveAttribute("aria-current", "page");
+  });
+
   it("does not accept Import / Export as a saved start page", () => {
     render(
       <AppShell farm={{ name: "Grantino", location: "", currency: "NGN", timezone: "Africa/Lagos" }} startPage="import-export">
@@ -175,6 +210,10 @@ describe("AppShell", () => {
     fireEvent.click(screen.getByRole("button", { name: "Flocks" }));
     expect(window.location.hash).toBe("#flocks/batch-dashboard");
 
+    const collapseButton = screen.getByRole("button", { name: "Collapse sidebar" });
+    expect(collapseButton).toHaveAttribute("title", "Collapse sidebar");
+    expect(collapseButton).toHaveAttribute("aria-expanded", "true");
+    expect(collapseButton.querySelector(".sidebar-toggle-icon")).toHaveAttribute("data-mode", "expanded");
     fireEvent.click(screen.getByRole("button", { name: "Collapse sidebar" }));
     expect(window.location.hash).toBe("#flocks/batch-dashboard");
     expect(localStorage.getItem("pomas:sidebar-collapsed")).toBe("true");

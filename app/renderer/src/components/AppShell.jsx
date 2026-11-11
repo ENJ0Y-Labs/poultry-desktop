@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 // eslint-disable-next-line no-unused-vars
 import { NavigationContext } from "./NavigationContext.jsx";
-import { getThemePreference, setThemePreference } from "../utils/theme.js";
 import { connectionApi } from "../services/api.js";
 import { appVersionLabel } from "../utils/appInfo.js";
 import pomasLogo from "../assets/pomas-logo.png";
@@ -20,8 +19,8 @@ const groups = [
     { label: "Production", target: "production", icon: "eggs", shortcut: "Ctrl+6" },
     { label: "Sales & Money", target: "sales-money", icon: "sales", shortcut: "Ctrl+7" },
     { label: "Reports", target: "reports", icon: "reports", shortcut: "Ctrl+8" },
-    { label: "Import / Export", target: "import-export", icon: "importExport" },
-    { label: "Settings", target: "settings", icon: "settings", shortcut: "Ctrl+9" },
+    { label: "Import / Export", target: "import-export", icon: "importExport", shortcut: "Ctrl+9" },
+    { label: "Settings", target: "settings", icon: "settings", shortcut: "Ctrl+0" },
   ]},
 ];
 
@@ -138,10 +137,30 @@ function localDateLabel() {
   return new Intl.DateTimeFormat("en-NG", { day: "2-digit", month: "short", year: "numeric" }).format(new Date());
 }
 
+// eslint-disable-next-line no-unused-vars
+function SidebarToggleIcon({ expanded }) {
+  return (
+    <svg
+      className="sidebar-toggle-icon"
+      data-mode={expanded ? "expanded" : "collapsed"}
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <rect x="3" y="4" width="18" height="16" rx="2" />
+      <path d="M9 4v16" />
+      {expanded ? <path d="m15 9-3 3 3 3" /> : <path d="m13 9 3 3-3 3" />}
+    </svg>
+  );
+}
+
 export default function AppShell({ farm, error, appInfo, onRetry, children, startPage = "dashboard", startPageReady = true }) {
   const [active, setActive] = useState(() => resolvePage(window.location.hash, startPage));
   const [activeTab, setActiveTab] = useState(() => resolveTab(window.location.hash, resolvePage(window.location.hash, startPage)));
-  const [theme, setTheme] = useState(getThemePreference);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => localStorage.getItem("pomas:sidebar-collapsed") === "true");
   const [backendConnected, setBackendConnected] = useState(null);
   const [recoveryNeeded, setRecoveryNeeded] = useState(false);
@@ -161,10 +180,6 @@ export default function AppShell({ farm, error, appInfo, onRetry, children, star
     }
   }
 
-  function changeTheme(event) {
-    const nextTheme = setThemePreference(event.target.value);
-    setTheme(nextTheme);
-  }
   const today = useMemo(localDateLabel, []);
 
   useEffect(() => {
@@ -242,7 +257,7 @@ export default function AppShell({ farm, error, appInfo, onRetry, children, star
   useEffect(() => {
     const onKeyDown = (event) => {
       if (!event.ctrlKey || event.altKey || event.shiftKey) return;
-      const shortcuts = { "1": "dashboard", "2": "flocks", "3": "daily-work", "4": "feed-stock", "5": "health", "6": "production", "7": "sales-money", "8": "reports", "9": "settings" };
+      const shortcuts = { "1": "dashboard", "2": "flocks", "3": "daily-work", "4": "feed-stock", "5": "health", "6": "production", "7": "sales-money", "8": "reports", "9": "import-export", "0": "settings" };
       const target = shortcuts[event.key];
       if (!target) return;
       event.preventDefault();
@@ -270,27 +285,41 @@ export default function AppShell({ farm, error, appInfo, onRetry, children, star
       </a>
       <aside className={sidebarCollapsed ? "sidebar collapsed" : "sidebar"}>
         <div className="brand" data-tour="brand">
-          <div className="brand-mark" aria-hidden="true"><img src={pomasLogo} alt="" draggable="false" /></div>
+          {sidebarCollapsed ? (
+            <button
+              type="button"
+              className="brand-mark-button"
+              aria-label="Expand sidebar"
+              aria-expanded="false"
+              title="Expand sidebar"
+              onClick={() => setSidebarCollapsed(false)}
+            >
+              <img className="brand-logo" src={pomasLogo} alt="" draggable="false" />
+              <span className="brand-hover-icon" aria-hidden="true">
+                <SidebarToggleIcon expanded={false} />
+              </span>
+            </button>
+          ) : (
+            <div className="brand-mark" aria-hidden="true">
+              <img src={pomasLogo} alt="" draggable="false" />
+            </div>
+          )}
           <div className="brand-copy">
             <strong>Pomas</strong>
             <small>Farm management</small>
           </div>
-          <button
-            type="button"
-            className="sidebar-toggle"
-            aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-            aria-expanded={!sidebarCollapsed}
-            title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-            onClick={() => setSidebarCollapsed(value => !value)}
-          >
-            <span aria-hidden="true">{sidebarCollapsed ? "›" : "‹"}</span>
-          </button>
-        </div>
-
-        <div className="workspace-summary" aria-label="Active farm" data-tour="farm-summary">
-          <span className="workspace-kicker">ACTIVE FARM</span>
-          <span className="workspace-name">{farm.name || "Local farm"}</span>
-          <span className="workspace-status">Local data · single farm</span>
+          {!sidebarCollapsed && (
+            <button
+              type="button"
+              className="sidebar-toggle"
+              aria-label="Collapse sidebar"
+              aria-expanded="true"
+              title="Collapse sidebar"
+              onClick={() => setSidebarCollapsed(true)}
+            >
+              <SidebarToggleIcon expanded />
+            </button>
+          )}
         </div>
 
         <nav className="sidebar-nav" aria-label="Main navigation">
@@ -340,7 +369,6 @@ export default function AppShell({ farm, error, appInfo, onRetry, children, star
               <p className="muted">{farm.location || "Farm profile"} · {farm.currency} · {farm.timezone}</p>
             </div>
             <div className="topbar-actions">
-              <label className="theme-control">Theme<select value={theme} onChange={changeTheme}><option value="auto">System</option><option value="light">Teal Light</option><option value="dark">Dark (Gold)</option></select></label>
               <div className={backendConnected === true && !recoveryNeeded ? "system-pill connected" : backendConnected === false || recoveryNeeded ? "system-pill disconnected" : "system-pill"} role="status" aria-live="polite">
                 <span className={backendConnected === true && !recoveryNeeded ? "status-dot online" : backendConnected === false || recoveryNeeded ? "status-dot offline" : "status-dot"} />
                 {connectionLabel}

@@ -1,10 +1,16 @@
 import { useEffect, useState } from "react";
+import { useToast } from "./components/ToastProvider.jsx";
 import pomasLogo from "./assets/pomas-logo.png";
+// eslint-disable-next-line no-unused-vars -- JSX component usage is not detected by the core rule
+import ValidatedForm from "./components/ValidatedForm.jsx";
 import { todayLocalDate, getLastBatchId, rememberLastBatchId } from "./utils/farmUx.js";
 import { parseNairaToKobo } from "./utils/moneyInput.js";
+import { getActiveValidationForm } from "./utils/formValidation.js";
 import { formatMoney } from "./utils/money.js";
 import { appVersionLabel } from "./utils/appInfo.js";
 import { getThemePreference, setThemePreference } from "./utils/theme.js";
+// eslint-disable-next-line no-unused-vars -- JSX component usage is not detected by the core rule
+import ThemePreferenceSwitches from "./components/ThemePreferenceSwitches.jsx";
 import { parseAttentionContext } from "./utils/attentionNavigation.js";
 // eslint-disable-next-line no-unused-vars
 import AppShell from "./components/AppShell.jsx";
@@ -39,8 +45,12 @@ function formatMetric(value) { return value == null ? "—" : Number(value).toFi
 function formatCount(value) { return value == null ? "—" : Number(value).toLocaleString("en-NG"); }
 function displayApiError(err) {
   if (!err) return "";
-  if (err.details && typeof err.details === "object") {
-    const messages = Object.entries(err.details)
+  if ((err.details && typeof err.details === "object") || err.code === "SUPPLIER_DUPLICATE") {
+    const details = err.details || { fields: { name: err.message } };
+    const activeForm = getActiveValidationForm();
+    if (activeForm) window.dispatchEvent(new CustomEvent("pomas:form-validation-error", { detail: { form: activeForm, details } }));
+    const fieldDetails = details.fields && typeof details.fields === "object" ? details.fields : details;
+    const messages = Object.entries(fieldDetails)
       .map(([field, message]) => `${field}: ${Array.isArray(message) ? message.join(", ") : message}`)
       .filter(Boolean);
     if (messages.length) return messages.join(" • ");
@@ -154,6 +164,7 @@ const emptyInventoryMovement = {
 };
 
 export default function App() {
+  const notify = useToast();
   const [themePreference, setThemePreferenceState] = useState(getThemePreference);
   const [farm, setFarm] = useState(null);
   const [farmForm, setFarmForm] = useState(emptyFarm);
@@ -172,7 +183,11 @@ export default function App() {
   const [dailyForm, setDailyForm] = useState(emptyDaily);
   const [dailyRecord, setDailyRecord] = useState(null);
   const [dailyRecordLoading, setDailyRecordLoading] = useState(false);
+  const [dailyRecordReloadKey, setDailyRecordReloadKey] = useState(0);
   const [mortalityForm, setMortalityForm] = useState(emptyPopulationEvent);
+  const [mortalityModalSignal, setMortalityModalSignal] = useState(0);
+  const [feedUsageModalSignal, setFeedUsageModalSignal] = useState(0);
+  const [feedPurchaseModalSignal, setFeedPurchaseModalSignal] = useState(0);
   const [cullingForm, setCullingForm] = useState(emptyPopulationEvent);
   const [populationAdjustmentForm, setPopulationAdjustmentForm] = useState(emptyPopulationAdjustment);
   const [populationAdjustments, setPopulationAdjustments] = useState([]);
@@ -226,7 +241,7 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const [successMessage, setSuccessMessage] = useState("");
+  const [dataLoadError, setDataLoadError] = useState("");
   const [authStatus, setAuthStatus] = useState(null);
   const [showAuthPassword, setShowAuthPassword] = useState(false);
   const [authForm, setAuthForm] = useState({ username: "", identifier: "", email: "", fullName: "", password: "", rememberMe: false });
@@ -241,8 +256,11 @@ export default function App() {
   const [backupSettings, setBackupSettings] = useState({ enabled: false, directory: "", intervalMs: 86400000 });
   const [selectedBatchId, setSelectedBatchId] = useState(() => getLastBatchId() || "");
   const [batchDashboard, setBatchDashboard] = useState(null);
+  const [batchDashboardLoading, setBatchDashboardLoading] = useState(false);
   const [farmReport, setFarmReport] = useState(null);
   const [batchReport, setBatchReport] = useState(null);
+  const [reportLoading, setReportLoading] = useState(false);
+  const [batchReportLoading, setBatchReportLoading] = useState(false);
   const [reportAsOf, setReportAsOf] = useState(todayLocalDate());
   const [appInfo, setAppInfo] = useState({ version: null, architecture: null, isPackaged: !import.meta.env.DEV });
 
@@ -254,13 +272,14 @@ export default function App() {
     return () => { active = false; };
   }, []);
 
-  function changeAuthTheme(event) {
-    const nextTheme = setThemePreference(event.target.value);
+  function changeThemePreference(preference) {
+    const nextTheme = setThemePreference(preference);
     setThemePreferenceState(nextTheme);
   }
 
   async function load({ showLoading = true, preserveForms = false } = {}) {
     if (showLoading) setLoading(true);
+    setDataLoadError("");
     setError("");
     try {
       const currentFarm = await farmApi.get();
@@ -325,6 +344,7 @@ export default function App() {
       if (err.code === "UNAUTHENTICATED") {
         setAuthStatus({ authenticated: false, setupRequired: false });
       } else if (err.message !== "No farm has been created yet.") {
+        setDataLoadError(displayApiError(err));
         setError(displayApiError(err));
       }
       return false;
@@ -344,11 +364,19 @@ export default function App() {
       if (!preserveScreen) setLoading(false);
       return true;
     } catch (err) {
+      setDataLoadError(displayApiError(err));
       setError(displayApiError(err));
       if (!preserveScreen) setLoading(false);
       return false;
     }
   }
+  async function retryData() {
+    setDataLoadError("");
+    setError("");
+    setDailyRecordReloadKey(value => value + 1);
+    return initialize({ preserveScreen: true });
+  }
+
   async function signOut() {
     setSaving(true);
     setError("");
@@ -411,15 +439,19 @@ export default function App() {
     }
   }
   async function loadReport(asOf = reportAsOf) {
+    setReportLoading(true);
     try {
       setFarmReport(await reportApi.farm(asOf));
       if (selectedBatchId) setBatchReport(await reportApi.batch(selectedBatchId, asOf));
-    } catch (err) { setError(displayApiError(err)); }
+    } catch (err) { setDataLoadError(displayApiError(err)); setError(displayApiError(err)); }
+    finally { setReportLoading(false); }
   }
 
   async function loadBatchReport(id = selectedBatchId, asOf = reportAsOf) {
-    if (!id) { setBatchReport(null); return; }
-    try { setBatchReport(await reportApi.batch(id, asOf)); } catch (err) { setError(displayApiError(err)); }
+    if (!id) { setBatchReport(null); setBatchReportLoading(false); return; }
+    setBatchReportLoading(true);
+    try { setBatchReport(await reportApi.batch(id, asOf)); } catch (err) { setDataLoadError(displayApiError(err)); setError(displayApiError(err)); }
+    finally { setBatchReportLoading(false); }
   }
 
   async function exportCsv(loader, filename) {
@@ -451,12 +483,14 @@ export default function App() {
   }
 
   async function loadBatchDashboard(id = selectedBatchId) {
-    if (!id) { setBatchDashboard(null); return; }
+    if (!id) { setBatchDashboard(null); setBatchDashboardLoading(false); return; }
+    setBatchDashboardLoading(true);
     try {
       const [summary, adjustments] = await Promise.all([dashboardApi.batch(id), populationApi.adjustments(id)]);
       setBatchDashboard(summary);
       setPopulationAdjustments(adjustments);
-    } catch (err) { setError(displayApiError(err)); }
+    } catch (err) { setDataLoadError(displayApiError(err)); setError(displayApiError(err)); }
+    finally { setBatchDashboardLoading(false); }
   }
 
   async function loadDashboard() {
@@ -470,9 +504,7 @@ export default function App() {
       setDashboard(summary);
       setAttention(attentionRows);
       setAuditRows(audit);
-    } catch (err) {
-      setError(displayApiError(err));
-    }
+    } catch (err) { setDataLoadError(displayApiError(err)); setError(displayApiError(err)); }
   }
 
   useEffect(() => {
@@ -553,11 +585,11 @@ export default function App() {
       .catch(err => {
         if (!current) return;
         if (err.status === 404) setDailyRecord(null);
-        else setError(displayApiError(err));
+        else { setDataLoadError(displayApiError(err)); setError(displayApiError(err)); }
       })
       .finally(() => { if (current) setDailyRecordLoading(false); });
     return () => { current = false; };
-  }, [dailyForm.batchId, dailyForm.date]);
+  }, [dailyForm.batchId, dailyForm.date, dailyRecordReloadKey]);
 
   async function submitFarm(event) {
     event.preventDefault(); setSaving(true); setError("");
@@ -626,12 +658,13 @@ export default function App() {
       const directory = window.poultryDesktop?.chooseBackupDirectory ? await window.poultryDesktop.chooseBackupDirectory() : null;
       if (!directory) return;
       await backupApi.create(directory);
+      notify.success("Backup completed successfully.");
     } catch (err) { setError(displayApiError(err)); } finally { setSaving(false); }
   }
 
   async function restoreBackup() {
     setSaving(true); setError("");
-    try { await window.poultryDesktop?.restoreBackup?.(); await load(); } catch (err) { setError(displayApiError(err)); } finally { setSaving(false); }
+    try { await window.poultryDesktop?.restoreBackup?.(); await load(); notify.success("Backup restored successfully."); } catch (err) { setError(displayApiError(err)); } finally { setSaving(false); }
   }
 
   async function saveSettings(event) {
@@ -654,11 +687,11 @@ export default function App() {
   async function loadExpenses(batchId = expenseBatchFilter) {
     try {
       setExpenses(await expenseApi.list(batchId || null));
-    } catch (err) { setError(displayApiError(err)); }
+    } catch (err) { setDataLoadError(displayApiError(err)); setError(displayApiError(err)); }
   }
   async function loadSales() {
     try { setSales(await salesApi.list()); }
-    catch (err) { setError(displayApiError(err)); }
+    catch (err) { setDataLoadError(displayApiError(err)); setError(displayApiError(err)); }
   }
 
   async function saveSupplier(event) {
@@ -737,7 +770,7 @@ export default function App() {
   async function loadInventoryMovements(itemId = inventoryMovementForm.itemId) {
     if (!itemId) { setInventoryMovements([]); return; }
     try { setInventoryMovements(await inventoryApi.listMovements(itemId)); }
-    catch (err) { setError(displayApiError(err)); }
+    catch (err) { setDataLoadError(displayApiError(err)); setError(displayApiError(err)); }
   }
 
   async function saveInventoryMovement(event) {
@@ -758,7 +791,7 @@ export default function App() {
   }
 
   async function saveExpense(event) {
-    event.preventDefault(); setSaving(true); setError(""); setSuccessMessage("");
+    event.preventDefault(); setSaving(true); setError("");
     try {
       const created = await expenseApi.create({
         occurredDate: expenseForm.occurredDate,
@@ -769,7 +802,7 @@ export default function App() {
       });
       setExpenses(current => [created, ...current]);
       setExpenseForm(form => ({ ...emptyExpense, batchId: form.batchId }));
-      setSuccessMessage("Expense recorded successfully.");
+      notify.success("Expense recorded successfully.");
       await Promise.all([loadDashboard(), loadBatchDashboard(expenseForm.batchId || selectedBatchId)]);
     } catch (err) { setError(displayApiError(err)); } finally { setSaving(false); }
   }
@@ -802,7 +835,7 @@ export default function App() {
     setSaving(true); setError("");
     try {
       await populationApi.markEstimated(batchId, reason.trim());
-      setSuccessMessage("Batch population marked as estimated.");
+      notify.success("Batch population marked as estimated.");
       await Promise.all([loadBatchDashboard(batchId), loadDashboard()]);
       setBatches(await batchApi.list());
     } catch (err) { setError(displayApiError(err)); } finally { setSaving(false); }
@@ -811,7 +844,7 @@ export default function App() {
   async function savePopulationAdjustment(event) {
     event.preventDefault();
     if (!selectedBatchId) return;
-    setSaving(true); setError(""); setSuccessMessage("");
+    setSaving(true); setError("");
     try {
       await populationApi.adjust(selectedBatchId, {
         effectiveDate: populationAdjustmentForm.effectiveDate,
@@ -819,7 +852,7 @@ export default function App() {
         reason: populationAdjustmentForm.reason.trim(),
       });
       setPopulationAdjustmentForm(emptyPopulationAdjustment);
-      setSuccessMessage("Physical bird count recorded. The batch count is now verified.");
+      notify.success("Physical bird count recorded. The batch count is now verified.");
       await Promise.all([loadBatchDashboard(selectedBatchId), loadDashboard()]);
       const refreshed = await batchApi.list();
       setBatches(refreshed);
@@ -878,7 +911,7 @@ export default function App() {
   }
 
   async function useFeed(event) {
-    event.preventDefault(); setSaving(true); setError(""); setSuccessMessage("");
+    event.preventDefault(); setSaving(true); setError("");
     try {
       const type = feedTypes.find(item => item.id === feedUsageForm.feedTypeId);
       await feedApi.use(feedUsageForm.batchId, {
@@ -898,7 +931,7 @@ export default function App() {
           else throw err;
         }
       }
-      setSuccessMessage("Feed usage recorded successfully.");
+      notify.success("Feed usage recorded successfully.");
       await Promise.all([loadDashboard(), loadBatchDashboard(feedUsageForm.batchId)]);
     } catch (err) { setError(displayApiError(err)); } finally { setSaving(false); }
   }
@@ -933,7 +966,7 @@ export default function App() {
   }
 
   async function recordPopulationEvent(event, type) {
-    event.preventDefault(); setSaving(true); setError(""); setSuccessMessage("");
+    event.preventDefault(); setSaving(true); setError("");
     try {
       const form = type === "MORTALITY" ? mortalityForm : cullingForm;
       const save = type === "MORTALITY" ? populationApi.mortality : populationApi.culling;
@@ -947,7 +980,7 @@ export default function App() {
       setDailyRecord(record);
       if (type === "MORTALITY") setMortalityForm({ ...emptyPopulationEvent, batchId: form.batchId });
       else setCullingForm({ ...emptyPopulationEvent, batchId: form.batchId });
-      setSuccessMessage(type === "MORTALITY" ? "Mortality recorded successfully." : "Culling recorded successfully.");
+      notify.success(type === "MORTALITY" ? "Mortality recorded successfully." : "Culling recorded successfully.");
       await Promise.all([loadDashboard(), loadBatchDashboard(form.batchId)]);
     } catch (err) { setError(displayApiError(err)); } finally { setSaving(false); }
   }
@@ -956,7 +989,7 @@ export default function App() {
   async function loadPricingForBatch(batchId, quantity, date) {
     if (!batchId || !quantity) { setPricing(null); return; }
     try { setPricing(await pricingApi.price(batchId, Number(quantity), date || undefined)); }
-    catch (err) { setError(displayApiError(err)); }
+    catch (err) { setDataLoadError(displayApiError(err)); setError(displayApiError(err)); }
   }
 
   async function savePricingSettings(event) {
@@ -983,7 +1016,7 @@ export default function App() {
       setBroilerGrowth(growth);
       setBroilerWeights(weights);
       setBroilerSales(sales);
-    } catch (err) { setError(displayApiError(err)); }
+    } catch (err) { setDataLoadError(displayApiError(err)); setError(displayApiError(err)); }
   }
 
   async function saveWeight(event) {
@@ -1002,7 +1035,7 @@ export default function App() {
   }
 
   async function saveBirdSale(event) {
-    event.preventDefault(); setSaving(true); setError(""); setSuccessMessage("");
+    event.preventDefault(); setSaving(true); setError("");
     try {
       const batchId = birdSaleForm.batchId;
       const sale = {
@@ -1023,7 +1056,7 @@ export default function App() {
       setBatches(await batchApi.list());
       setBirdSaleForm(form => ({ ...form, quantity: "", pricePerBirdMinor: "", customer: "", customerId: "" }));
       await loadSales();
-      setSuccessMessage("Bird sale recorded successfully.");
+      notify.success("Bird sale recorded successfully.");
       await Promise.all([loadDashboard(), loadBatchDashboard(batchId)]);
     } catch (err) { setError(displayApiError(err)); } finally { setSaving(false); }
   }
@@ -1042,11 +1075,11 @@ export default function App() {
       setEggInventory(inventory);
       setEggCollections(collections);
       setEggSales(sales);
-    } catch (err) { setError(displayApiError(err)); }
+    } catch (err) { setDataLoadError(displayApiError(err)); setError(displayApiError(err)); }
   }
 
   async function saveEggCollection(event) {
-    event.preventDefault(); setSaving(true); setError(""); setSuccessMessage("");
+    event.preventDefault(); setSaving(true); setError("");
     try {
       const batchId = eggCollectionForm.batchId;
       await eggApi.addCollection(batchId, {
@@ -1057,13 +1090,13 @@ export default function App() {
       });
       await loadEggsForBatch(batchId);
       setEggCollectionForm(form => ({ ...form, good: "", cracked: "", notes: "" }));
-      setSuccessMessage("Egg collection recorded successfully.");
+      notify.success("Egg collection recorded successfully.");
       await Promise.all([loadDashboard(), loadBatchDashboard(batchId)]);
     } catch (err) { setError(displayApiError(err)); } finally { setSaving(false); }
   }
 
   async function saveEggSale(event) {
-    event.preventDefault(); setSaving(true); setError(""); setSuccessMessage("");
+    event.preventDefault(); setSaving(true); setError("");
     try {
       const batchId = eggSaleForm.batchId;
       await eggApi.addSale(batchId, {
@@ -1076,7 +1109,7 @@ export default function App() {
       await loadEggsForBatch(batchId);
       setEggSaleForm(form => ({ ...form, customer: "", customerId: "", crates: "", pricePerCrateMinor: "" }));
       await loadSales();
-      setSuccessMessage("Egg sale recorded successfully.");
+      notify.success("Egg sale recorded successfully.");
       await Promise.all([loadDashboard(), loadBatchDashboard(batchId)]);
     } catch (err) { setError(displayApiError(err)); } finally { setSaving(false); }
   }
@@ -1136,7 +1169,7 @@ export default function App() {
       setHealthRecords(health);
       setDrugRecords(drugs);
       setVaccinationRecords(vaccinations);
-    } catch (err) { setError(displayApiError(err)); }
+    } catch (err) { setDataLoadError(displayApiError(err)); setError(displayApiError(err)); }
   }
 
   function editBatchSetup(batch) {
@@ -1297,11 +1330,7 @@ export default function App() {
       <section className="auth-panel" aria-labelledby="auth-form-title">
         <div className="auth-panel-topline">
           <span className="auth-panel-access"><span className="auth-lock" aria-hidden="true">▣</span>LOCAL WORKSPACE ACCESS</span>
-          <label className="auth-theme-control">Theme
-            <select aria-label="Theme" value={themePreference} onChange={changeAuthTheme}>
-              <option value="auto">System</option><option value="light">Teal Light</option><option value="dark">Dark (Gold)</option>
-            </select>
-          </label>
+          <ThemePreferenceSwitches value={themePreference} onChange={changeThemePreference} className="auth-theme-control" />
         </div>
         <div className="auth-card">
           <div className="auth-mobile-brand"><img className="auth-brand-mark" src={pomasLogo} alt="Pomas logo" /><strong>Pomas</strong></div>
@@ -1322,7 +1351,7 @@ export default function App() {
                     <input id="auth-full-name" name="fullName" required maxLength="120" autoComplete="name" placeholder="e.g. Noble Ekwere" value={authForm.fullName} onChange={e => setAuthForm({...authForm, fullName:e.target.value})}/>
                   </label>
                   <label className="auth-field" htmlFor="auth-username">Username
-                    <input id="auth-username" name="username" required minLength="3" maxLength="32" autoComplete="username" pattern="[A-Za-z0-9][A-Za-z0-9._-]{2,31}" placeholder="Choose a username" value={authForm.username} onChange={e => setAuthForm({...authForm, username:e.target.value})}/>
+                    <input id="auth-username" name="username" required minLength="3" maxLength="32" autoComplete="username" pattern="[A-Za-z0-9][A-Za-z0-9._\-]{2,31}" placeholder="Choose a username" value={authForm.username} onChange={e => setAuthForm({...authForm, username:e.target.value})}/>
                     <small>3–32 characters. Letters, numbers, dots, underscores, and hyphens.</small>
                   </label>
                   <label className="auth-field" htmlFor="auth-email">Email <span className="auth-optional">(optional)</span>
@@ -1370,22 +1399,21 @@ export default function App() {
     <main className="shell narrow">
       <header className="hero"><p className="eyebrow">POMAS · FARM MANAGEMENT</p><h1>Set up your farm</h1><p className="muted">Create the local farm profile first. Everything else hangs from it.</p></header>
       {error && <div className="error">{error}</div>}
-      <form className="card form-grid" onSubmit={submitFarm}>
+      <ValidatedForm className="card form-grid" onSubmit={submitFarm}>
         <label>Farm name<input required value={farmForm.name} onChange={e=>setFarmForm({...farmForm,name:e.target.value})}/></label>
         <label>Location<input value={farmForm.location} onChange={e=>setFarmForm({...farmForm,location:e.target.value})}/></label>
         <label>Timezone<input required value={farmForm.timezone} onChange={e=>setFarmForm({...farmForm,timezone:e.target.value})}/></label>
         <label>Currency<input required maxLength="3" value={farmForm.currency} onChange={e=>setFarmForm({...farmForm,currency:e.target.value.toUpperCase()})}/></label>
         <button disabled={saving} type="submit">{saving ? "Creating..." : "Create farm"}</button>
-      </form>
+      </ValidatedForm>
     </main>
   );
 
-  const pageModel = { signOut, dailyRecordLoading, suppliers, supplierForm, setSupplierForm, saveSupplier, archiveSupplier, editingSupplierId, editSupplier, cancelSupplierEdit, editingCustomerId, editCustomer, cancelCustomerEdit, editingInventoryItemId, editInventoryItem, cancelInventoryItemEdit, editingFeedTypeId, editFeedType, cancelFeedTypeEdit, editingBatchId, setEditingBatchId, batchSetupForm, setBatchSetupForm, saveBatchSetup, editBatchSetup, cancelBatchSetup, formatMoney, formatQuantity, formatPercent, formatKg, formatMetric, formatCount, displayApiError, emptyWeight, emptyBirdSale, emptyPricing, emptyFarm, emptyHouse, emptyBatch, emptyCost, emptyFeedType, emptyFeedPurchase, emptyFeedUsage, emptyDaily, emptyPopulationEvent, emptyHealth, emptyDrug, emptyVaccination, emptyExpense, emptyCustomer, emptyInventoryItem, emptyInventoryMovement, farm, setFarm, farmForm, setFarmForm, houses, setHouses, batches, setBatches, batchForm, setBatchForm, costForm, setCostForm, feedTypes, setFeedTypes, feedInventory, setFeedInventory, feedTypeForm, setFeedTypeForm, feedPurchaseForm, setFeedPurchaseForm, feedUsageForm, setFeedUsageForm, dailyForm, setDailyForm, dailyRecord, setDailyRecord, mortalityForm, setMortalityForm, cullingForm, setCullingForm, healthForm, setHealthForm, drugForm, setDrugForm, vaccinationForm, setVaccinationForm, healthRecords, setHealthRecords, drugRecords, setDrugRecords, vaccinationRecords, setVaccinationRecords, expenseForm, setExpenseForm, expenses, setExpenses, expenseBatchFilter, setExpenseBatchFilter, inventoryItems, setInventoryItems, inventoryItemForm, setInventoryItemForm, inventoryMovementForm, setInventoryMovementForm, inventoryMovements, setInventoryMovements, customers, setCustomers, customerForm, setCustomerForm, sales, setSales, eggBatchId, setEggBatchId, broilerBatchId, setBroilerBatchId, broilerGrowth, setBroilerGrowth, broilerWeights, setBroilerWeights, broilerSales, setBroilerSales, weightForm, setWeightForm, birdSaleForm, setBirdSaleForm, pricingSettings, setPricingSettings, pricing, setPricing, pricingForm, setPricingForm, eggInventory, setEggInventory, eggCollections, setEggCollections, eggSales, setEggSales, eggCollectionForm, setEggCollectionForm, eggSaleForm, setEggSaleForm, houseForm, setHouseForm, crateSize, setCrateSize, defaultWater, setDefaultWater, waterSizes, setWaterSizes, waterUnitLabel, setWaterUnitLabel, loading, setLoading, saving, setSaving, error, setError, dashboard, setDashboard, attention, setAttention, auditRows, setAuditRows, expenseCategories, setExpenseCategories, expenseCategoryForm, setExpenseCategoryForm, account, setAccount, accountForm, setAccountForm, applicationSettings, setApplicationSettings, backupSettings, setBackupSettings, selectedBatchId, setSelectedBatchId, batchDashboard, setBatchDashboard, farmReport, setFarmReport, batchReport, setBatchReport, reportAsOf, setReportAsOf, load, loadReport, loadBatchReport, exportCsv, exportPdf, loadBatchDashboard, loadDashboard, submitFarm, saveFarm, createExpenseCategory, archiveExpenseCategory, saveAccount, saveApplicationSettings, chooseBackupSettingsDirectory, saveBackupSettings, createBackup, restoreBackup, saveSettings, loadExpenses, loadSales, saveCustomer, saveInventoryItem, loadInventoryMovements, saveInventoryMovement, saveExpense, createBatch, addBirdCost, createFeedType, purchaseFeed, useFeed, feedQuantity, parseWaterEntries, saveDailyRecord, recordPopulationEvent, loadPricingForBatch, savePricingSettings, loadBroilerForBatch, saveWeight, saveBirdSale, loadEggsForBatch, saveEggCollection, saveEggSale, saveHealth, saveDrug, saveVaccination, loadHealthForBatch, markBatchSold, reopenBatch, addHouse: saveHouse, editHouse, editingHouseId, cancelHouseEdit, populationAdjustmentForm, setPopulationAdjustmentForm, populationAdjustments, savePopulationAdjustment, markPopulationEstimated };
+  const pageModel = { signOut, themePreference, dataLoadError, retryData, batchDashboardLoading, reportLoading, batchReportLoading, changeThemePreference, dailyRecordLoading, suppliers, supplierForm, setSupplierForm, saveSupplier, archiveSupplier, editingSupplierId, editSupplier, cancelSupplierEdit, editingCustomerId, editCustomer, cancelCustomerEdit, editingInventoryItemId, editInventoryItem, cancelInventoryItemEdit, editingFeedTypeId, editFeedType, cancelFeedTypeEdit, editingBatchId, setEditingBatchId, batchSetupForm, setBatchSetupForm, saveBatchSetup, editBatchSetup, cancelBatchSetup, formatMoney, formatQuantity, formatPercent, formatKg, formatMetric, formatCount, displayApiError, notify, emptyWeight, emptyBirdSale, emptyPricing, emptyFarm, emptyHouse, emptyBatch, emptyCost, emptyFeedType, emptyFeedPurchase, emptyFeedUsage, emptyDaily, emptyPopulationEvent, emptyHealth, emptyDrug, emptyVaccination, emptyExpense, emptyCustomer, emptyInventoryItem, emptyInventoryMovement, farm, setFarm, farmForm, setFarmForm, houses, setHouses, batches, setBatches, batchForm, setBatchForm, costForm, setCostForm, feedTypes, setFeedTypes, feedInventory, setFeedInventory, feedTypeForm, setFeedTypeForm, feedPurchaseForm, setFeedPurchaseForm, feedUsageForm, setFeedUsageForm, dailyForm, setDailyForm, dailyRecord, setDailyRecord, mortalityForm, setMortalityForm, mortalityModalSignal, setMortalityModalSignal, feedUsageModalSignal, setFeedUsageModalSignal, feedPurchaseModalSignal, setFeedPurchaseModalSignal, cullingForm, setCullingForm, healthForm, setHealthForm, drugForm, setDrugForm, vaccinationForm, setVaccinationForm, healthRecords, setHealthRecords, drugRecords, setDrugRecords, vaccinationRecords, setVaccinationRecords, expenseForm, setExpenseForm, expenses, setExpenses, expenseBatchFilter, setExpenseBatchFilter, inventoryItems, setInventoryItems, inventoryItemForm, setInventoryItemForm, inventoryMovementForm, setInventoryMovementForm, inventoryMovements, setInventoryMovements, customers, setCustomers, customerForm, setCustomerForm, sales, setSales, eggBatchId, setEggBatchId, broilerBatchId, setBroilerBatchId, broilerGrowth, setBroilerGrowth, broilerWeights, setBroilerWeights, broilerSales, setBroilerSales, weightForm, setWeightForm, birdSaleForm, setBirdSaleForm, pricingSettings, setPricingSettings, pricing, setPricing, pricingForm, setPricingForm, eggInventory, setEggInventory, eggCollections, setEggCollections, eggSales, setEggSales, eggCollectionForm, setEggCollectionForm, eggSaleForm, setEggSaleForm, houseForm, setHouseForm, crateSize, setCrateSize, defaultWater, setDefaultWater, waterSizes, setWaterSizes, waterUnitLabel, setWaterUnitLabel, loading, setLoading, saving, setSaving, error, setError, dashboard, setDashboard, attention, setAttention, auditRows, setAuditRows, expenseCategories, setExpenseCategories, expenseCategoryForm, setExpenseCategoryForm, account, setAccount, accountForm, setAccountForm, applicationSettings, setApplicationSettings, backupSettings, setBackupSettings, selectedBatchId, setSelectedBatchId, batchDashboard, setBatchDashboard, farmReport, setFarmReport, batchReport, setBatchReport, reportAsOf, setReportAsOf, load, loadReport, loadBatchReport, exportCsv, exportPdf, loadBatchDashboard, loadDashboard, submitFarm, saveFarm, createExpenseCategory, archiveExpenseCategory, saveAccount, saveApplicationSettings, chooseBackupSettingsDirectory, saveBackupSettings, createBackup, restoreBackup, saveSettings, loadExpenses, loadSales, saveCustomer, saveInventoryItem, loadInventoryMovements, saveInventoryMovement, saveExpense, createBatch, addBirdCost, purchaseFeed, useFeed, feedQuantity, parseWaterEntries, saveDailyRecord, recordPopulationEvent, loadPricingForBatch, savePricingSettings, loadBroilerForBatch, saveWeight, saveBirdSale, loadEggsForBatch, saveEggCollection, saveEggSale, saveHealth, saveDrug, saveVaccination, loadHealthForBatch, markBatchSold, reopenBatch, addHouse: saveHouse, editHouse, editingHouseId, cancelHouseEdit, populationAdjustmentForm, setPopulationAdjustmentForm, populationAdjustments, savePopulationAdjustment, markPopulationEstimated };
 
   return (
-    <AppShell farm={farm} error={error} appInfo={appInfo} onRetry={() => initialize({ preserveScreen: true })} startPage={applicationSettings.startPage} startPageReady={settingsReady}>
-      <FarmManagerContext.Provider value={pageModel}>
-        {successMessage && <p className="success-message" role="status">{successMessage}</p>}
+    <AppShell farm={farm} error={error} appInfo={appInfo} onRetry={retryData} startPage={applicationSettings.startPage} startPageReady={settingsReady}>
+      <FarmManagerContext.Provider value={{ ...pageModel, createFeedType }}>
         <PageSection page="dashboard"><DashboardPage /></PageSection>
         <PageSection page="flocks"><FlocksPage /></PageSection>
         <PageSection page="daily-work"><DailyWorkPage /></PageSection>

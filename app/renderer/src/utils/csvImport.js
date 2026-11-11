@@ -3,6 +3,13 @@ const MAX_DATA_ROWS = 5000;
 const MAX_CELL_CHARS = 10_000;
 
 export const CSV_TEMPLATES = {
+  batches: {
+    label: "Batches / Flocks",
+    version: "1.0",
+    headers: ["type", "placement_date", "house_code", "initial_bird_count", "population_count_status", "supplier_name", "purchase_cost_recorded", "purchase_cost_naira"],
+    required: ["type", "placement_date", "house_code", "initial_bird_count", "purchase_cost_recorded"],
+    example: ["BROILER", "2026-01-15", "H-001", "1000", "ESTIMATED", "Example Chick Supplier", "true", "250000.00"],
+  },
   houses: {
     label: "Houses / Pens",
     version: "1.0",
