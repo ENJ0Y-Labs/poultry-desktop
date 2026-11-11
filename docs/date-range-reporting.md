@@ -59,8 +59,9 @@ Use a disposable test farm only. Never reset or seed a real farm database.
 3. Select Custom range and set 2026-02-28 through 2026-03-01. Confirm both boundary dates are included in mortality, good/cracked eggs, revenue, expenses, sales, health, and audit results.
 4. In the same test data, add activity on 2026-03-02. Confirm it is excluded from the selected period.
 5. Confirm current live birds still reflect all events through the current farm date, not only events inside the selected range. Confirm house occupancy and feed stock remain current snapshots.
-6. Open Farm reports and Batch reports. Confirm both use the same selected range, filtered record tables/counts, and current snapshot notes.
-7. Confirm layer HDP and meat-bird weight charts request the shared range. For a custom range longer than 366 days, confirm only the trend chart shows its documented limit message.
+6. Open Production. Confirm egg collection/sales and meat-bird weight/sales tables use the same selected range; confirm egg inventory and growth/FCR remain current or batch-to-date snapshots.
+7. Open Farm reports and Batch reports. Confirm both use the same selected range, filtered record tables/counts, and current snapshot notes.
+8. Confirm layer HDP and meat-bird weight charts request the shared range. For a custom range longer than 366 days, confirm only the trend chart shows its documented limit message.
 9. Export farm and batch CSV/PDF. Confirm the selected range and separate current snapshot date appear in export metadata/title and period profit matches the screen.
 10. Set the custom start date later than the end date. Confirm the error is visible, affected views clear, and no request is sent until the range becomes valid.
 11. Record database row counts before and after changing presets/custom dates. Confirm no farm record was inserted, updated, or deleted.
