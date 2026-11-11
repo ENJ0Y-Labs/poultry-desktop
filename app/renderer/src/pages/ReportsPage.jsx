@@ -8,6 +8,7 @@ import { reportApi, productionTrendApi } from "../services/api.js";
 // eslint-disable-next-line no-unused-vars
 import ProductionTrendChart from "../components/ProductionTrendChart.jsx";
 import { rememberLastBatchId } from "../utils/farmUx.js";
+import { calculatePeriodProfitMinor } from "../utils/reportMetrics.js";
 // eslint-disable-next-line no-unused-vars
 import DateRangeFilter from "../components/DateRangeFilter.jsx";
 // eslint-disable-next-line no-unused-vars -- JSX component usage is not detected by the core rule
@@ -18,10 +19,10 @@ import MetricHelp from "../components/MetricHelp.jsx";
 export default function ReportsPage() {
   const { formatMoney, formatQuantity, formatPercent, formatKg, formatMetric, formatCount, feedQuantity, farm, applicationSettings, batches, selectedBatchId, setSelectedBatchId, farmReport, batchReport, dateRange, setDateRange, loadReport, loadBatchReport, exportCsv, exportPdf } = useContext(FarmManagerContext);
   const farmPeriodProfitMinor = farmReport?.period
-    ? Number(farmReport.period.revenueMinor || 0) - Number(farmReport.period.expensesMinor || 0)
+    ? calculatePeriodProfitMinor(farmReport.period.revenueMinor, farmReport.period.expensesMinor)
     : farmReport?.dashboard?.profitMinor;
   const batchPeriodProfitMinor = batchReport?.period
-    ? Number(batchReport.period.revenueMinor || 0) - Number(batchReport.period.expensesMinor || 0)
+    ? calculatePeriodProfitMinor(batchReport.period.revenueMinor, batchReport.period.expensesMinor)
     : batchReport?.profitMinor;
 
   return (
