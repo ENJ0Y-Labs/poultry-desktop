@@ -32,8 +32,6 @@ function formatBusinessDate(value, pattern = "YYYY-MM-DD") {
   return pattern.replace(/YYYY|MM|DD/g, token => parts[token]);
 }
 
-const primaryMetrics = new Set(["Total birds", "Revenue", "Profit"]);
-
 export default function DashboardPage() {
   const {
     formatMoney,
@@ -177,6 +175,21 @@ export default function DashboardPage() {
                 <DashboardKpiCard label="Expenses" value={formatMoney(dashboard.expensesMinor, farm.currency)} href="#sales-money/expenses" description="Review recorded farm expenses" />
                 <DashboardKpiCard label="Active batches" value={formatCount(dashboard.activeBatches)} href="#flocks/flocks" description="View active flocks" />
                 <DashboardKpiCard label="Inventory alerts" value={formatCount(dashboard.inventoryAlerts)} href="#feed-stock/inventory" description="Review low and insufficient stock alerts" />
+              </div>
+              <div className="dashboard-kpi-detail-group" aria-label="Additional farm metrics">
+                <p className="eyebrow">FLOCK & FACILITY BREAKDOWN</p>
+                <div className="dashboard-kpi-detail-grid">
+                  <DashboardKpiCard label="Estimated birds" value={formatCount(dashboard.estimatedBirds)} href="#flocks/batch-dashboard" description="View estimated flock populations" />
+                  <DashboardKpiCard label="Estimated batches" value={formatCount(dashboard.estimatedBatches)} href="#flocks/flocks" description="View batches with estimated populations" />
+                  <DashboardKpiCard label="Layer birds" value={formatCount(dashboard.layerBirds)} href="#flocks/batch-dashboard" description="View layer flock populations" />
+                  <DashboardKpiCard label="Broiler birds" value={formatCount(dashboard.broilerBirds)} href="#flocks/batch-dashboard" description="View broiler flock populations" />
+                  <DashboardKpiCard label="Turkey birds" value={formatCount(dashboard.turkeyBirds)} href="#flocks/batch-dashboard" description="View turkey flock populations" />
+                  <DashboardKpiCard label="Total houses" value={formatCount(dashboard.totalHouses)} href="#flocks/houses" description="View farm houses and pens" />
+                  <DashboardKpiCard label="Permanent houses" value={formatCount(dashboard.permanentHouses)} href="#flocks/houses" description="View permanent houses" />
+                  <DashboardKpiCard label="Temporary houses" value={formatCount(dashboard.temporaryHouses)} href="#flocks/houses" description="View temporary houses" />
+                  <DashboardKpiCard label="Occupied houses" value={formatCount(dashboard.occupiedHouses)} href="#flocks/houses" description="View occupied houses" />
+                  <DashboardKpiCard label="Empty houses" value={formatCount(dashboard.emptyHouses)} href="#flocks/houses" description="View empty houses" />
+                </div>
               </div>
             </section>
             <div className="dashboard-columns">
