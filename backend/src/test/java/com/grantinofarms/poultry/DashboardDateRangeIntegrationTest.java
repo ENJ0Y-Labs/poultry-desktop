@@ -1,5 +1,8 @@
 package com.grantinofarms.poultry;
 
+import com.grantinofarms.poultry.controller.AuditController;
+import com.grantinofarms.poultry.repository.AuditRepository;
+import com.grantinofarms.poultry.repository.FarmRepository;
 import com.grantinofarms.poultry.dto.BatchCreateRequest;
 import com.grantinofarms.poultry.dto.FarmCreateRequest;
 import com.grantinofarms.poultry.dto.HouseCreateRequest;
@@ -31,6 +34,8 @@ class DashboardDateRangeIntegrationTest {
     @Autowired HouseService houseService;
     @Autowired BatchService batchService;
     @Autowired DashboardService dashboard;
+    @Autowired AuditRepository auditRepository;
+    @Autowired FarmRepository farmRepository;
 
     @BeforeEach
     void setUpFarm() {
@@ -88,6 +93,31 @@ class DashboardDateRangeIntegrationTest {
         assertThat(batchPeriod.get("mortality")).isEqualTo(3L);
         assertThat(batchPeriod.get("revenueMinor")).isEqualTo(3_000L);
         assertThat(batchPeriod.get("expensesMinor")).isEqualTo(1_000L);
+    }
+
+    @Test
+    void auditRangeUsesInclusiveFarmLocalCalendarDays() {
+        var farm = farmService.get();
+        insertAudit("audit-before", farm.id(), "2026-02-27T22:59:00Z");
+        insertAudit("audit-start", farm.id(), "2026-02-27T23:00:00.123456Z");
+        insertAudit("audit-middle", farm.id(), "2026-02-28T12:00:00.000000Z");
+        insertAudit("audit-end", farm.id(), "2026-03-01T22:59:59.000000Z");
+        insertAudit("audit-after", farm.id(), "2026-03-01T23:00:00.000000Z");
+
+        @SuppressWarnings("unchecked")
+        java.util.List<Map<String, Object>> rows = (java.util.List<Map<String, Object>>) new AuditController(
+                auditRepository, farmRepository).list(20,
+                LocalDate.of(2026, 2, 28), LocalDate.of(2026, 3, 1)).get("data");
+
+        assertThat(rows).extracting(row -> row.get("id"))
+                .containsExactlyInAnyOrder("audit-start", "audit-middle", "audit-end");
+    }
+
+    private void insertAudit(String id, String farmId, String occurredAt) {
+        jdbc.update("""
+                INSERT INTO audit_logs (id, farm_id, occurred_at, action, entity_type, entity_id)
+                VALUES (?, ?, ?, 'CREATE', 'DATE_RANGE_TEST', ?)
+                """, id, farmId, occurredAt, id);
     }
 
     private String firstHouseId() {
