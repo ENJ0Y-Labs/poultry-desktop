@@ -209,6 +209,11 @@ public class ReportService {
 
         List<Map<String, Object>> reports = new java.util.ArrayList<>();
         for (String batchId : batchIds) {
+            BatchResponse selectedBatch = batches.get(batchId);
+            if (range.to().isBefore(selectedBatch.placementDate())) {
+                throw new ApiException(HttpStatus.BAD_REQUEST, "COMPARISON_END_BEFORE_PLACEMENT",
+                        "The comparison end date cannot be before batch " + selectedBatch.code() + " was placed.");
+            }
             Map<String, Object> report = batch(batchId, range.to());
             Map<String, Object> rangeDashboard = dashboard.batchRange(batchId, range.from(), range.to());
             @SuppressWarnings("unchecked")
@@ -216,7 +221,7 @@ public class ReportService {
             report.put("from", range.from());
             report.put("to", range.to());
             report.put("period", period);
-            BatchResponse batch = batches.get(batchId);
+            BatchResponse batch = selectedBatch;
             report.put("batch", batch);
             BirdPopulationResponse populationData = (BirdPopulationResponse) report.get("population");
             @SuppressWarnings("unchecked")
