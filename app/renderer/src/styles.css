@@ -1176,3 +1176,65 @@ body { min-width: 0; }
 @keyframes toast-enter{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
 @media(prefers-reduced-motion:reduce){.toast{animation:none}}
 @media(max-width:600px){.toast-viewport{inset-block-start:12px;inset-inline:12px;width:auto}}
+
+
+/* Branded first-run/startup screen. Colors inherit the active light/dark theme. */
+.pomas-loading-screen {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 32px 20px;
+  background: var(--bg);
+  color: var(--text);
+  text-align: center;
+}
+.pomas-loading-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: min(100%, 360px);
+}
+.pomas-loading-logo {
+  display: block;
+  width: 104px;
+  height: 104px;
+  object-fit: contain;
+  margin-bottom: 18px;
+}
+.pomas-loading-content h1 {
+  margin: 0;
+  color: var(--text);
+  font-size: clamp(28px, 4vw, 34px);
+  font-weight: 750;
+  letter-spacing: -.045em;
+}
+.pomas-loading-description {
+  margin: 7px 0 0;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: .19em;
+  text-transform: uppercase;
+}
+.pomas-loading-detail {
+  margin: 12px 0 28px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+.pomas-loading-spinner {
+  width: 34px;
+  height: 34px;
+  border: 3px solid var(--border);
+  border-top-color: var(--brand-gold, #f4b41a);
+  border-right-color: var(--brand-gold, #f4b41a);
+  border-radius: 50%;
+  animation: pomas-loading-spin .85s linear infinite;
+}
+@keyframes pomas-loading-spin {
+  to { transform: rotate(360deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pomas-loading-spinner { animation-duration: 2.5s; }
+}
