@@ -56,9 +56,11 @@ export default function ProductionPage() {
                 description="Daily eggs collected (good + cracked) as a percentage of the historical live-bird population."
                 unit="percent"
                 loadTrend={productionTrendApi.layerHdp}
+                dateRange={dateRange}
               />
               <div className="subsection">
-                <h3>Egg inventory</h3>\n                <p className="muted">Current egg balances are a live snapshot and are not rewound by the selected activity period.</p>
+                <h3>Egg inventory</h3>
+                <p className="muted">Current egg balances are a live snapshot and are not rewound by the selected activity period.</p>
                 <DataTable caption="Egg inventory" columns={[
                     { key: "goodCollected", label: "Good collected" }, { key: "goodSold", label: "Good sold" },
                     { key: "goodRemaining", label: "Good remaining" }, { key: "crackedCollected", label: "Cracked" },
@@ -142,6 +144,7 @@ export default function ProductionPage() {
                 description="Average sampled bird weight by record date, in kilograms. Days without weight records appear as gaps."
                 unit="kg"
                 loadTrend={productionTrendApi.broilerAverageWeight}
+                dateRange={dateRange}
               />
               <div className="subsection">
                 <h3>Growth summary</h3>
