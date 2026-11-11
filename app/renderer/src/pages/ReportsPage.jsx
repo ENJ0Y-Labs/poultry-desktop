@@ -17,6 +17,12 @@ import MetricHelp from "../components/MetricHelp.jsx";
 
 export default function ReportsPage() {
   const { formatMoney, formatQuantity, formatPercent, formatKg, formatMetric, formatCount, feedQuantity, farm, batches, selectedBatchId, setSelectedBatchId, farmReport, batchReport, dateRange, setDateRange, loadReport, loadBatchReport, exportCsv, exportPdf } = useContext(FarmManagerContext);
+  const farmPeriodProfitMinor = farmReport?.period
+    ? Number(farmReport.period.revenueMinor || 0) - Number(farmReport.period.expensesMinor || 0)
+    : farmReport?.dashboard?.profitMinor;
+  const batchPeriodProfitMinor = batchReport?.period
+    ? Number(batchReport.period.revenueMinor || 0) - Number(batchReport.period.expensesMinor || 0)
+    : batchReport?.profitMinor;
 
   return (
     <PageTemplate className="grid">
@@ -32,7 +38,7 @@ export default function ReportsPage() {
                 ["Feed types", formatCount(farmReport.feed?.length)],
                 ["Expenses", formatMoney(farmReport.period?.expensesMinor ?? farmReport.dashboard?.expensesMinor, farm.currency)],
                 ["Revenue", formatMoney(farmReport.period?.revenueMinor ?? farmReport.dashboard?.revenueMinor, farm.currency)],
-                ["Profit", formatMoney(farmReport.period?.profitMinor ?? farmReport.dashboard?.profitMinor, farm.currency)],
+                ["Profit", formatMoney(farmPeriodProfitMinor, farm.currency)],
                 ["Egg batches", formatCount(farmReport.eggProduction?.length)],
                 ["Broiler batches", formatCount(farmReport.broilerGrowth?.length)],
                 ["Turkey batches", formatCount(farmReport.meatBirdGrowth?.filter(row => row.batch?.type === "TURKEY").length)],
@@ -82,7 +88,7 @@ export default function ReportsPage() {
                 ["Known feed cost", formatMoney(batchReport.feed?.knownFeedCostMinor, farm.currency)],
                 ["Costs", formatMoney(batchReport.period?.expensesMinor ?? batchReport.costs?.expensesMinor, farm.currency)],
                 ["Revenue", formatMoney(batchReport.period?.revenueMinor ?? batchReport.revenueMinor, farm.currency)],
-                ["Profit", formatMoney(batchReport.period?.profitMinor ?? batchReport.profitMinor, farm.currency)],
+                ["Profit", formatMoney(batchPeriodProfitMinor, farm.currency)],
                 ["Health records", batchReport.period?.healthRecordCount ?? batchReport.health?.healthRecords?.length],
                 ["Sales records", batchReport.period?.salesCount ?? batchReport.sales?.length]
               ].map(([label,value]) => <div className="metric-card" key={label}><span>{label}</span><strong>{value ?? "—"}</strong></div>)}
