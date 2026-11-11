@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useToast } from "./components/ToastProvider.jsx";
 import pomasLogo from "./assets/pomas-logo.png";
 // eslint-disable-next-line no-unused-vars -- JSX component usage is not detected by the core rule
@@ -12,6 +12,7 @@ import { getThemePreference, setThemePreference } from "./utils/theme.js";
 // eslint-disable-next-line no-unused-vars -- JSX component usage is not detected by the core rule
 import ThemePreferenceSwitches from "./components/ThemePreferenceSwitches.jsx";
 import { parseAttentionContext } from "./utils/attentionNavigation.js";
+import { createDateRange, isValidDateRange } from "./utils/dateRange.js";
 // eslint-disable-next-line no-unused-vars
 import AppShell from "./components/AppShell.jsx";
 // eslint-disable-next-line no-unused-vars
@@ -262,6 +263,10 @@ export default function App() {
   const [reportLoading, setReportLoading] = useState(false);
   const [batchReportLoading, setBatchReportLoading] = useState(false);
   const [reportAsOf, setReportAsOf] = useState(todayLocalDate());
+  const [dateRange, setDateRange] = useState(() => createDateRange("LAST_30_DAYS", "Africa/Lagos"));
+  const dashboardRequestSequence = useRef(0);
+  const farmReportRequestSequence = useRef(0);
+  const batchReportRequestSequence = useRef(0);
   const [appInfo, setAppInfo] = useState({ version: null, architecture: null, isPackaged: !import.meta.env.DEV });
 
   useEffect(() => {
@@ -275,6 +280,20 @@ export default function App() {
   function changeThemePreference(preference) {
     const nextTheme = setThemePreference(preference);
     setThemePreferenceState(nextTheme);
+  }
+
+  function updateDateRange(nextRange) {
+    const boundariesChanged = nextRange.from !== dateRange.from || nextRange.to !== dateRange.to;
+    setDateRange(nextRange);
+    if (boundariesChanged || !isValidDateRange(nextRange)) {
+      dashboardRequestSequence.current += 1;
+      farmReportRequestSequence.current += 1;
+      batchReportRequestSequence.current += 1;
+      setDashboard(null);
+      setFarmReport(null);
+      setBatchReport(null);
+      setAuditRows([]);
+    }
   }
 
   async function load({ showLoading = true, preserveForms = false } = {}) {
@@ -438,20 +457,42 @@ export default function App() {
       setSaving(false);
     }
   }
-  async function loadReport(asOf = reportAsOf) {
+  async function loadReport(from = dateRange.from, to = dateRange.to) {
+    if (!isValidDateRange({ from, to })) return;
+    const requestId = ++farmReportRequestSequence.current;
     setReportLoading(true);
     try {
-      setFarmReport(await reportApi.farm(asOf));
-      if (selectedBatchId) setBatchReport(await reportApi.batch(selectedBatchId, asOf));
-    } catch (err) { setDataLoadError(displayApiError(err)); setError(displayApiError(err)); }
-    finally { setReportLoading(false); }
+      const report = await reportApi.farm(null, from, to);
+      if (requestId === farmReportRequestSequence.current) setFarmReport(report);
+    } catch (err) {
+      if (requestId === farmReportRequestSequence.current) {
+        setDataLoadError(displayApiError(err));
+        setError(displayApiError(err));
+      }
+    } finally {
+      if (requestId === farmReportRequestSequence.current) setReportLoading(false);
+    }
   }
 
-  async function loadBatchReport(id = selectedBatchId, asOf = reportAsOf) {
-    if (!id) { setBatchReport(null); setBatchReportLoading(false); return; }
+  async function loadBatchReport(id = selectedBatchId, from = dateRange.from, to = dateRange.to) {
+    if (!id || !isValidDateRange({ from, to })) {
+      setBatchReport(null);
+      setBatchReportLoading(false);
+      return;
+    }
+    const requestId = ++batchReportRequestSequence.current;
     setBatchReportLoading(true);
-    try { setBatchReport(await reportApi.batch(id, asOf)); } catch (err) { setDataLoadError(displayApiError(err)); setError(displayApiError(err)); }
-    finally { setBatchReportLoading(false); }
+    try {
+      const report = await reportApi.batch(id, null, from, to);
+      if (requestId === batchReportRequestSequence.current) setBatchReport(report);
+    } catch (err) {
+      if (requestId === batchReportRequestSequence.current) {
+        setDataLoadError(displayApiError(err));
+        setError(displayApiError(err));
+      }
+    } finally {
+      if (requestId === batchReportRequestSequence.current) setBatchReportLoading(false);
+    }
   }
 
   async function exportCsv(loader, filename) {
@@ -493,14 +534,16 @@ export default function App() {
     finally { setBatchDashboardLoading(false); }
   }
 
-  async function loadDashboard() {
-    if (!farm) return;
+  async function loadDashboard(from = dateRange.from, to = dateRange.to) {
+    if (!farm || !isValidDateRange({ from, to })) return;
+    const requestId = ++dashboardRequestSequence.current;
     try {
       const [summary, attentionRows, audit] = await Promise.all([
-        dashboardApi.farm(),
+        dashboardApi.farm(null, from, to),
         attentionApi.list(),
-        auditApi.list(20),
+        auditApi.list(20, from, to),
       ]);
+      if (requestId !== dashboardRequestSequence.current) return;
       setDashboard(summary);
       setAttention(attentionRows);
       setAuditRows(audit);
@@ -537,11 +580,26 @@ export default function App() {
 
   useEffect(() => { initialize(); }, []);
   useEffect(() => {
-    if (farm) {
-      void loadDashboard();
-      void loadReport();
+    if (farm && isValidDateRange(dateRange)) {
+      void loadDashboard(dateRange.from, dateRange.to);
+      void loadReport(dateRange.from, dateRange.to);
     }
-  }, [farm]);
+  }, [farm, dateRange.from, dateRange.to]);
+
+  useEffect(() => {
+    if (!farm?.timezone || dateRange.preset === "CUSTOM") return;
+    const next = createDateRange(dateRange.preset, farm.timezone);
+    if (next.from !== dateRange.from || next.to !== dateRange.to) {
+      dashboardRequestSequence.current += 1;
+      farmReportRequestSequence.current += 1;
+      batchReportRequestSequence.current += 1;
+      setDashboard(null);
+      setFarmReport(null);
+      setBatchReport(null);
+      setAuditRows([]);
+      setDateRange(next);
+    }
+  }, [farm?.timezone, dateRange.preset, dateRange.from, dateRange.to]);
   useEffect(() => {
     if (!farm) return undefined;
 
@@ -560,15 +618,20 @@ export default function App() {
 
     window.addEventListener("pomas:data-mutated", refreshAfterMutation);
     return () => window.removeEventListener("pomas:data-mutated", refreshAfterMutation);
-  }, [farm, selectedBatchId, batches]);
+  }, [farm, selectedBatchId, batches, dateRange.from, dateRange.to]);
   useEffect(() => {
     if (selectedBatchId && batches.some(batch => batch.id === selectedBatchId)) {
       loadBatchDashboard(selectedBatchId);
-      loadBatchReport(selectedBatchId);
+    }
+  }, [selectedBatchId, batches]);
+
+  useEffect(() => {
+    if (selectedBatchId && batches.some(batch => batch.id === selectedBatchId)) {
+      loadBatchReport(selectedBatchId, dateRange.from, dateRange.to);
     } else {
       setBatchReport(null);
     }
-  }, [selectedBatchId]);
+  }, [selectedBatchId, batches, dateRange.from, dateRange.to]);
 
   useEffect(() => {
     let current = true;
@@ -1419,7 +1482,7 @@ export default function App() {
     </main>
   );
 
-  const pageModel = { signOut, themePreference, dataLoadError, retryData, batchDashboardLoading, reportLoading, batchReportLoading, changeThemePreference, dailyRecordLoading, suppliers, supplierForm, setSupplierForm, saveSupplier, archiveSupplier, editingSupplierId, editSupplier, cancelSupplierEdit, editingCustomerId, editCustomer, cancelCustomerEdit, editingInventoryItemId, editInventoryItem, cancelInventoryItemEdit, editingFeedTypeId, editFeedType, cancelFeedTypeEdit, editingBatchId, setEditingBatchId, batchSetupForm, setBatchSetupForm, saveBatchSetup, editBatchSetup, cancelBatchSetup, formatMoney, formatQuantity, formatPercent, formatKg, formatMetric, formatCount, displayApiError, notify, emptyWeight, emptyBirdSale, emptyPricing, emptyFarm, emptyHouse, emptyBatch, emptyCost, emptyFeedType, emptyFeedPurchase, emptyFeedUsage, emptyDaily, emptyPopulationEvent, emptyHealth, emptyDrug, emptyVaccination, emptyExpense, emptyCustomer, emptyInventoryItem, emptyInventoryMovement, farm, setFarm, farmForm, setFarmForm, houses, setHouses, batches, setBatches, batchForm, setBatchForm, costForm, setCostForm, feedTypes, setFeedTypes, feedInventory, setFeedInventory, feedTypeForm, setFeedTypeForm, feedPurchaseForm, setFeedPurchaseForm, feedUsageForm, setFeedUsageForm, dailyForm, setDailyForm, dailyRecord, setDailyRecord, mortalityForm, setMortalityForm, mortalityModalSignal, setMortalityModalSignal, feedUsageModalSignal, setFeedUsageModalSignal, feedPurchaseModalSignal, setFeedPurchaseModalSignal, cullingForm, setCullingForm, healthForm, setHealthForm, drugForm, setDrugForm, vaccinationForm, setVaccinationForm, healthRecords, setHealthRecords, drugRecords, setDrugRecords, vaccinationRecords, setVaccinationRecords, expenseForm, setExpenseForm, expenses, setExpenses, expenseBatchFilter, setExpenseBatchFilter, inventoryItems, setInventoryItems, inventoryItemForm, setInventoryItemForm, inventoryMovementForm, setInventoryMovementForm, inventoryMovements, setInventoryMovements, customers, setCustomers, customerForm, setCustomerForm, sales, setSales, eggBatchId, setEggBatchId, broilerBatchId, setBroilerBatchId, broilerGrowth, setBroilerGrowth, broilerWeights, setBroilerWeights, broilerSales, setBroilerSales, weightForm, setWeightForm, birdSaleForm, setBirdSaleForm, pricingSettings, setPricingSettings, pricing, setPricing, pricingForm, setPricingForm, eggInventory, setEggInventory, eggCollections, setEggCollections, eggSales, setEggSales, eggCollectionForm, setEggCollectionForm, eggSaleForm, setEggSaleForm, houseForm, setHouseForm, crateSize, setCrateSize, defaultWater, setDefaultWater, waterSizes, setWaterSizes, waterUnitLabel, setWaterUnitLabel, loading, setLoading, saving, setSaving, error, setError, dashboard, setDashboard, attention, setAttention, auditRows, setAuditRows, expenseCategories, setExpenseCategories, expenseCategoryForm, setExpenseCategoryForm, account, setAccount, accountForm, setAccountForm, applicationSettings, setApplicationSettings, backupSettings, setBackupSettings, selectedBatchId, setSelectedBatchId, batchDashboard, setBatchDashboard, farmReport, setFarmReport, batchReport, setBatchReport, reportAsOf, setReportAsOf, load, loadReport, loadBatchReport, exportCsv, exportPdf, loadBatchDashboard, loadDashboard, submitFarm, saveFarm, createExpenseCategory, archiveExpenseCategory, saveAccount, saveApplicationSettings, chooseBackupSettingsDirectory, saveBackupSettings, createBackup, restoreBackup, saveSettings, loadExpenses, loadSales, saveCustomer, saveInventoryItem, loadInventoryMovements, saveInventoryMovement, saveExpense, createBatch, addBirdCost, purchaseFeed, useFeed, feedQuantity, parseWaterEntries, saveDailyRecord, recordPopulationEvent, loadPricingForBatch, savePricingSettings, loadBroilerForBatch, saveWeight, saveBirdSale, loadEggsForBatch, saveEggCollection, saveEggSale, saveHealth, saveDrug, saveVaccination, loadHealthForBatch, markBatchSold, reopenBatch, addHouse: saveHouse, editHouse, editingHouseId, cancelHouseEdit, populationAdjustmentForm, setPopulationAdjustmentForm, populationAdjustments, savePopulationAdjustment, markPopulationEstimated };
+  const pageModel = { signOut, themePreference, dataLoadError, retryData, dateRange, setDateRange: updateDateRange, batchDashboardLoading, reportLoading, batchReportLoading, changeThemePreference, dailyRecordLoading, suppliers, supplierForm, setSupplierForm, saveSupplier, archiveSupplier, editingSupplierId, editSupplier, cancelSupplierEdit, editingCustomerId, editCustomer, cancelCustomerEdit, editingInventoryItemId, editInventoryItem, cancelInventoryItemEdit, editingFeedTypeId, editFeedType, cancelFeedTypeEdit, editingBatchId, setEditingBatchId, batchSetupForm, setBatchSetupForm, saveBatchSetup, editBatchSetup, cancelBatchSetup, formatMoney, formatQuantity, formatPercent, formatKg, formatMetric, formatCount, displayApiError, notify, emptyWeight, emptyBirdSale, emptyPricing, emptyFarm, emptyHouse, emptyBatch, emptyCost, emptyFeedType, emptyFeedPurchase, emptyFeedUsage, emptyDaily, emptyPopulationEvent, emptyHealth, emptyDrug, emptyVaccination, emptyExpense, emptyCustomer, emptyInventoryItem, emptyInventoryMovement, farm, setFarm, farmForm, setFarmForm, houses, setHouses, batches, setBatches, batchForm, setBatchForm, costForm, setCostForm, feedTypes, setFeedTypes, feedInventory, setFeedInventory, feedTypeForm, setFeedTypeForm, feedPurchaseForm, setFeedPurchaseForm, feedUsageForm, setFeedUsageForm, dailyForm, setDailyForm, dailyRecord, setDailyRecord, mortalityForm, setMortalityForm, mortalityModalSignal, setMortalityModalSignal, feedUsageModalSignal, setFeedUsageModalSignal, feedPurchaseModalSignal, setFeedPurchaseModalSignal, cullingForm, setCullingForm, healthForm, setHealthForm, drugForm, setDrugForm, vaccinationForm, setVaccinationForm, healthRecords, setHealthRecords, drugRecords, setDrugRecords, vaccinationRecords, setVaccinationRecords, expenseForm, setExpenseForm, expenses, setExpenses, expenseBatchFilter, setExpenseBatchFilter, inventoryItems, setInventoryItems, inventoryItemForm, setInventoryItemForm, inventoryMovementForm, setInventoryMovementForm, inventoryMovements, setInventoryMovements, customers, setCustomers, customerForm, setCustomerForm, sales, setSales, eggBatchId, setEggBatchId, broilerBatchId, setBroilerBatchId, broilerGrowth, setBroilerGrowth, broilerWeights, setBroilerWeights, broilerSales, setBroilerSales, weightForm, setWeightForm, birdSaleForm, setBirdSaleForm, pricingSettings, setPricingSettings, pricing, setPricing, pricingForm, setPricingForm, eggInventory, setEggInventory, eggCollections, setEggCollections, eggSales, setEggSales, eggCollectionForm, setEggCollectionForm, eggSaleForm, setEggSaleForm, houseForm, setHouseForm, crateSize, setCrateSize, defaultWater, setDefaultWater, waterSizes, setWaterSizes, waterUnitLabel, setWaterUnitLabel, loading, setLoading, saving, setSaving, error, setError, dashboard, setDashboard, attention, setAttention, auditRows, setAuditRows, expenseCategories, setExpenseCategories, expenseCategoryForm, setExpenseCategoryForm, account, setAccount, accountForm, setAccountForm, applicationSettings, setApplicationSettings, backupSettings, setBackupSettings, selectedBatchId, setSelectedBatchId, batchDashboard, setBatchDashboard, farmReport, setFarmReport, batchReport, setBatchReport, reportAsOf, setReportAsOf, load, loadReport, loadBatchReport, exportCsv, exportPdf, loadBatchDashboard, loadDashboard, submitFarm, saveFarm, createExpenseCategory, archiveExpenseCategory, saveAccount, saveApplicationSettings, chooseBackupSettingsDirectory, saveBackupSettings, createBackup, restoreBackup, saveSettings, loadExpenses, loadSales, saveCustomer, saveInventoryItem, loadInventoryMovements, saveInventoryMovement, saveExpense, createBatch, addBirdCost, purchaseFeed, useFeed, feedQuantity, parseWaterEntries, saveDailyRecord, recordPopulationEvent, loadPricingForBatch, savePricingSettings, loadBroilerForBatch, saveWeight, saveBirdSale, loadEggsForBatch, saveEggCollection, saveEggSale, saveHealth, saveDrug, saveVaccination, loadHealthForBatch, markBatchSold, reopenBatch, addHouse: saveHouse, editHouse, editingHouseId, cancelHouseEdit, populationAdjustmentForm, setPopulationAdjustmentForm, populationAdjustments, savePopulationAdjustment, markPopulationEstimated };
 
   return (
     <AppShell farm={farm} error={error} appInfo={appInfo} onRetry={retryData} startPage={applicationSettings.startPage} startPageReady={settingsReady}>

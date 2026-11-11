@@ -2,6 +2,9 @@ package com.grantinofarms.poultry.controller;
 
 import com.grantinofarms.poultry.repository.AuditRepository;
 import com.grantinofarms.poultry.repository.FarmRepository;
+import com.grantinofarms.poultry.domain.ReportDateRange;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -14,8 +17,18 @@ public class AuditController {
     public AuditController(AuditRepository audit, FarmRepository farms) { this.audit = audit; this.farms = farms; }
 
     @GetMapping
-    public Map<String, Object> list(@RequestParam(defaultValue = "100") int limit) {
+    public Map<String, Object> list(
+            @RequestParam(defaultValue = "100") int limit,
+            @RequestParam(required = false) LocalDate from,
+            @RequestParam(required = false) LocalDate to
+    ) {
         var farm = farms.findActive();
-        return Map.of("ok", true, "data", farm == null ? java.util.List.of() : audit.find(farm.id(), limit));
+        if (farm == null) return Map.of("ok", true, "data", java.util.List.of());
+        if (from == null && to == null) return Map.of("ok", true, "data", audit.find(farm.id(), limit));
+        ReportDateRange range = ReportDateRange.require(from, to);
+        ZoneId zone = ZoneId.of(farm.timezone());
+        String start = range.from().atStartOfDay(zone).toInstant().toString();
+        String end = range.to().plusDays(1).atStartOfDay(zone).toInstant().toString();
+        return Map.of("ok", true, "data", audit.find(farm.id(), limit, start, end));
     }
 }

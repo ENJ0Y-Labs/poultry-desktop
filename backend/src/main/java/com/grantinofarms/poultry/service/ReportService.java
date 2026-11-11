@@ -3,9 +3,20 @@ package com.grantinofarms.poultry.service;
 import com.grantinofarms.poultry.dto.BatchResponse;
 import com.grantinofarms.poultry.dto.BirdPopulationResponse;
 import com.grantinofarms.poultry.dto.ExpenseResponse;
+import com.grantinofarms.poultry.dto.SaleResponse;
+import com.grantinofarms.poultry.dto.HealthRecordResponse;
+import com.grantinofarms.poultry.dto.DrugRecordResponse;
+import com.grantinofarms.poultry.dto.VaccinationRecordResponse;
+import com.grantinofarms.poultry.dto.EggCollectionResponse;
+import com.grantinofarms.poultry.dto.EggSaleResponse;
+import com.grantinofarms.poultry.dto.WeightRecordResponse;
+import com.grantinofarms.poultry.dto.BirdSaleResponse;
+import com.grantinofarms.poultry.domain.ReportDateRange;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.ZoneId;
+import java.util.function.Function;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -120,6 +131,72 @@ public class ReportService {
         return report;
     }
 
+    public Map<String, Object> farm(LocalDate from, LocalDate to) {
+        ReportDateRange range = ReportDateRange.require(from, to);
+        Map<String, Object> report = farm((LocalDate) null);
+        Map<String, Object> rangeDashboard = dashboard.farmRange(range.from(), range.to());
+        report.put("from", range.from());
+        report.put("to", range.to());
+        report.put("period", rangeDashboard.get("period"));
+        @SuppressWarnings("unchecked")
+        List<ExpenseResponse> expenseRows = (List<ExpenseResponse>) report.get("expenses");
+        report.put("expenses", expenseRows.stream()
+                .filter(row -> range.includes(row.occurredDate()))
+                .toList());
+        @SuppressWarnings("unchecked")
+        List<SaleResponse> salesRows = (List<SaleResponse>) report.get("sales");
+        report.put("sales", salesRows.stream()
+                .filter(row -> range.includes(row.saleDate()))
+                .toList());
+        return report;
+    }
+
+    public Map<String, Object> batch(String id, LocalDate from, LocalDate to) {
+        ReportDateRange range = ReportDateRange.require(from, to);
+        Map<String, Object> report = batch(id, (LocalDate) null);
+        Map<String, Object> rangeDashboard = dashboard.batchRange(id, range.from(), range.to());
+        report.put("from", range.from());
+        report.put("to", range.to());
+        @SuppressWarnings("unchecked")
+        Map<String, Object> period = (Map<String, Object>) rangeDashboard.get("period");
+        report.put("period", period);
+        @SuppressWarnings("unchecked")
+        List<SaleResponse> salesRows = (List<SaleResponse>) report.get("sales");
+        report.put("sales", salesRows.stream()
+                .filter(row -> range.includes(row.saleDate()))
+                .toList());
+        @SuppressWarnings("unchecked")
+        Map<String, Object> healthRows = (Map<String, Object>) report.get("health");
+        Map<String, Object> filteredHealth = new LinkedHashMap<>(healthRows);
+        filteredHealth.put("healthRecords", filterDates(
+                (List<HealthRecordResponse>) healthRows.get("healthRecords"), range, HealthRecordResponse::recordDate));
+        filteredHealth.put("drugs", filterDates(
+                (List<DrugRecordResponse>) healthRows.get("drugs"), range, DrugRecordResponse::recordDate));
+        filteredHealth.put("vaccinations", filterDates(
+                (List<VaccinationRecordResponse>) healthRows.get("vaccinations"), range, VaccinationRecordResponse::recordDate));
+        report.put("health", filteredHealth);
+        @SuppressWarnings("unchecked")
+        Map<String, Object> productionRows = (Map<String, Object>) report.get("production");
+        Map<String, Object> filteredProduction = new LinkedHashMap<>(productionRows);
+        if ("LAYER".equals(productionRows.get("type"))) {
+            filteredProduction.put("collections", filterDates(
+                    (List<EggCollectionResponse>) productionRows.get("collections"), range, EggCollectionResponse::recordDate));
+            filteredProduction.put("sales", filterDates(
+                    (List<EggSaleResponse>) productionRows.get("sales"), range, EggSaleResponse::recordDate));
+        } else {
+            filteredProduction.put("weights", filterDates(
+                    (List<WeightRecordResponse>) productionRows.get("weights"), range, WeightRecordResponse::recordDate));
+            filteredProduction.put("sales", filterDates(
+                    (List<BirdSaleResponse>) productionRows.get("sales"), range, BirdSaleResponse::recordDate));
+        }
+        report.put("production", filteredProduction);
+        return report;
+    }
+
+    private <T> List<T> filterDates(List<T> rows, ReportDateRange range, Function<T, LocalDate> date) {
+        return rows.stream().filter(row -> range.includes(date.apply(row))).toList();
+    }
+
     public Map<String, Object> batch(String id, LocalDate asOf) {
         LocalDate date = effectiveDate(asOf);
         Map<String, Object> dashboardData = dashboard.batch(id, date);
@@ -179,6 +256,6 @@ public class ReportService {
     }
 
     private LocalDate effectiveDate(LocalDate asOf) {
-        return asOf == null ? LocalDate.now() : asOf;
+        return asOf == null ? LocalDate.now(ZoneId.of(farmService.get().timezone())) : asOf;
     }
 }

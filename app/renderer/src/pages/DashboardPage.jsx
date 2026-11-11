@@ -10,6 +10,9 @@ import { formatAuditAction, formatAuditEntity, formatAuditTimestamp } from "../u
 // eslint-disable-next-line no-unused-vars -- JSX component usage is not detected by the core rule
 import ContextDrawer, { DrawerDetails } from "../components/ContextDrawer.jsx";
 import { attentionTarget } from "../utils/attentionNavigation.js";
+import { calculatePeriodProfitMinor } from "../utils/reportMetrics.js";
+// eslint-disable-next-line no-unused-vars
+import DateRangeFilter from "../components/DateRangeFilter.jsx";
 import { formatEggQuantity } from "../utils/eggFormatting.js";
 // eslint-disable-next-line no-unused-vars
 import GettingStartedChecklist from "../components/GettingStartedChecklist.jsx";
@@ -50,6 +53,8 @@ export default function DashboardPage() {
     attention,
     auditRows,
     applicationSettings,
+    dateRange,
+    setDateRange,
     selectedBatchId,
     setMortalityForm,
     setMortalityModalSignal,
@@ -121,15 +126,23 @@ export default function DashboardPage() {
     setChecklistDismissed(true);
   }
 
+  const periodProfitMinor = dashboard?.period
+    ? calculatePeriodProfitMinor(dashboard.period.revenueMinor, dashboard.period.expensesMinor)
+    : dashboard?.profitMinor;
+
   return (
     <PageTemplate className="grid pomas-page page-dashboard">
       <PageSection page="dashboard" tab="overview"><section id="dashboard" className="card full dashboard-page">
         <div className="section-head">
           <div><p className="eyebrow">OVERVIEW</p><h2>Farm dashboard</h2></div>
-          <p className="dashboard-as-of muted">
-            <span>Dashboard as of</span>
-            <strong>{dashboard ? formatBusinessDate(dashboard.asOf, applicationSettings?.dateFormat) : "Loading..."}</strong>
-          </p>
+          <div className="dashboard-range-controls">
+            <DateRangeFilter value={dateRange} timezone={farm?.timezone} dateFormat={applicationSettings?.dateFormat} onChange={setDateRange} />
+            <p className="dashboard-as-of muted">
+              <span>Dashboard as of</span>
+              <small className="muted">Current snapshot</small>
+              <strong>{dashboard ? formatBusinessDate(dashboard.asOf, applicationSettings?.dateFormat) : "Loading..."}</strong>
+            </p>
+          </div>
         </div>
 
         {dashboard ? isFirstRunEmpty && !checklistDismissed ? (
@@ -203,7 +216,7 @@ export default function DashboardPage() {
               <div className="dashboard-kpi-primary">
                 <DashboardKpiCard label="Total birds" value={formatCount(dashboard.totalBirds)} primary href="#flocks/batch-dashboard" description="View flock populations and batch details" />
                 <DashboardKpiCard label="Revenue" value={formatMoney(dashboard.revenueMinor, farm.currency)} primary href="#sales-money/sales" description="View recorded farm sales" />
-                <DashboardKpiCard label="Profit" value={formatMoney(dashboard.profitMinor, farm.currency)} primary href="#reports/farm-report" description="Review the farm financial report" />
+                <DashboardKpiCard label="Profit" value={formatMoney(periodProfitMinor, farm.currency)} primary href="#reports/farm-report" description="Review the farm financial report" />
               </div>
               <div className="dashboard-kpi-secondary">
                 <DashboardKpiCard label="Mortality" value={formatCount(dashboard.mortality)} unit="birds" href="#daily-work/mortality" description="Review mortality records" />

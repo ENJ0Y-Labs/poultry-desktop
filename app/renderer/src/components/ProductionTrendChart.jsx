@@ -14,21 +14,19 @@ import {
 } from "recharts";
 /* eslint-enable no-unused-vars */
 
-function defaultTo() {
-  const now = new Date();
-  const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
-  return local.toISOString().slice(0, 10);
-}
-
 function formatValue(value, unit) {
   if (value == null || !Number.isFinite(Number(value))) return "No record";
   const numeric = Number(value);
   return unit === "percent" ? `${numeric.toFixed(2)}%` : `${numeric.toFixed(3)} kg`;
 }
 
-export default function ProductionTrendChart({ batchId, title, titleHelp, description, unit, loadTrend }) {
-  const [from, setFrom] = useState("");
-  const [to, setTo] = useState(defaultTo);
+export default function ProductionTrendChart({ batchId, title, titleHelp, description, unit, loadTrend, dateRange }) {
+  const from = dateRange?.from || "";
+  const to = dateRange?.to || "";
+  const rangeDays = from && to
+    ? Math.round((Date.parse(to + "T00:00:00Z") - Date.parse(from + "T00:00:00Z")) / 86400000) + 1
+    : 0;
+  const rangeSupported = rangeDays > 0 && rangeDays <= 366;
   const [trend, setTrend] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -54,15 +52,21 @@ export default function ProductionTrendChart({ batchId, title, titleHelp, descri
       setTrend(null);
       return undefined;
     }
+    if (!rangeSupported) {
+      setTrend(null);
+      setError("Choose a valid date range of 366 days or fewer to view this production chart.");
+      setLoading(false);
+      return undefined;
+    }
     let active = true;
     setLoading(true);
     setError("");
-    loadTrend(batchId, from || undefined, to || undefined)
+    loadTrend(batchId, from, to)
       .then(data => { if (active) setTrend(data); })
       .catch(err => { if (active) { setTrend(null); setError(err.message || "Could not load production trend."); } })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
-  }, [batchId, from, to, loadTrend, refreshKey]);
+  }, [batchId, from, to, rangeSupported, loadTrend, refreshKey]);
 
   const points = trend?.points || [];
   const hasValues = points.some(point => point.value != null);
@@ -74,10 +78,6 @@ export default function ProductionTrendChart({ batchId, title, titleHelp, descri
           <h3>{title}{titleHelp ? <> {titleHelp}</> : null}</h3>
           <p className="muted">{description}</p>
         </div>
-      </div>
-      <div className="inline-form production-trend-filters">
-        <label className="field"><span>From</span><input type="date" aria-label={title + " start date"} value={from} max={to || undefined} onChange={event => setFrom(event.target.value)} /></label>
-        <label className="field"><span>To</span><input type="date" aria-label={title + " end date"} value={to} min={from || undefined} onChange={event => setTo(event.target.value)} /></label>
       </div>
       {loading ? <EmptyState variant="loading" heading={`Loading ${title.toLowerCase()}`} compact /> :
         error ? <EmptyState variant="error" description={error} onRetry={() => setRefreshKey(key => key + 1)} compact /> :

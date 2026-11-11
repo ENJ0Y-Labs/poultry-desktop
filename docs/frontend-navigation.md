@@ -34,8 +34,9 @@ The top-level page components live under `app/renderer/src/pages/`. Shared form 
 ## Farm dashboard presentation
 - The dashboard “Record feed usage” quick action opens Daily Work / Daily record and preselects the active batch, compatible feed type, and current farm-local date. Keep this aligned with the feed-usage form location.
 
-- The farm dashboard labels its business date as “Dashboard as of” so it is not mistaken for the computer's current date or a date-range selector.
-- The dashboard formats that date using the saved application date-format preference. Business dates are parsed as calendar components, not as UTC instants.
+- The farm dashboard provides the shared reporting-period selector used by farm and batch reports. Preset dates are derived from the farm's IANA timezone and the active application date-format preference.
+- The dashboard labels its current population/stock date separately from the selected activity period. Current birds, house occupancy, and feed stock are not filtered by a historical activity range.
+- Business dates are parsed as calendar components, not as UTC instants.
 - Total birds, revenue, and profit are primary metrics. Other KPIs remain visible but use a quieter visual treatment.
 - Feed and attention panels share the available dashboard width and stack at narrower supported widths; neither panel truncates its content to force equal heights.
 - Dashboard currency values use the existing `formatMoney` utility and farm currency. This presentation change must not alter backend calculations or financial values.

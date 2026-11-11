@@ -4,12 +4,14 @@ import com.grantinofarms.poultry.dto.BatchFeedCostResponse;
 import com.grantinofarms.poultry.dto.BroilerGrowthResponse;
 import com.grantinofarms.poultry.dto.EggInventoryResponse;
 import com.grantinofarms.poultry.dto.FarmResponse;
+import com.grantinofarms.poultry.domain.ReportDateRange;
 import com.grantinofarms.poultry.exception.ApiException;
 import com.grantinofarms.poultry.repository.FarmRepository;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -32,7 +34,7 @@ public class DashboardService {
 
     public Map<String, Object> farm(LocalDate asOf) {
         FarmResponse farm = requireFarm();
-        LocalDate date = asOf == null ? LocalDate.now() : asOf;
+        LocalDate date = asOf == null ? LocalDate.now(ZoneId.of(farm.timezone())) : asOf;
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("asOf", date);
         out.put("farm", farm);
@@ -73,8 +75,109 @@ public class DashboardService {
         return out;
     }
 
+    public Map<String, Object> farmRange(LocalDate from, LocalDate to) {
+        ReportDateRange range = ReportDateRange.require(from, to);
+        FarmResponse farm = requireFarm();
+        Map<String, Object> result = farm(null);
+        result.put("from", range.from());
+        result.put("to", range.to());
+        result.put("period", periodSummary(farm.id(), null, range));
+        return result;
+    }
+
+    public Map<String, Object> batchRange(String batchId, LocalDate from, LocalDate to) {
+        ReportDateRange range = ReportDateRange.require(from, to);
+        FarmResponse farm = requireFarm();
+        Map<String, Object> result = batch(batchId, null);
+        @SuppressWarnings("unchecked")
+        Map<String, Object> batch = (Map<String, Object>) result.get("batch");
+        if (batch == null || !farm.id().equals(batch.get("farmId"))) {
+            throw new ApiException(org.springframework.http.HttpStatus.NOT_FOUND, "BATCH_NOT_FOUND", "Batch not found.");
+        }
+        result.put("from", range.from());
+        result.put("to", range.to());
+        result.put("period", periodSummary(farm.id(), batchId, range));
+        return result;
+    }
+
+    private Map<String, Object> periodSummary(String farmId, String batchId, ReportDateRange range) {
+        Map<String, Object> period = new LinkedHashMap<>();
+        long mortality = rangeTotal("""
+                SELECT COALESCE(SUM(e.quantity), 0)
+                FROM bird_population_events e JOIN batches b ON b.id=e.batch_id
+                WHERE b.farm_id=? AND e.event_type='MORTALITY' AND e.event_date BETWEEN ? AND ?
+                  AND (? IS NULL OR b.id=?)
+                """, farmId, range, batchId);
+        long eggsGood = rangeTotal("""
+                SELECT COALESCE(SUM(e.good_eggs), 0)
+                FROM egg_collections e JOIN batches b ON b.id=e.batch_id
+                WHERE b.farm_id=? AND e.record_date BETWEEN ? AND ?
+                  AND (? IS NULL OR b.id=?)
+                """, farmId, range, batchId);
+        long eggsCracked = rangeTotal("""
+                SELECT COALESCE(SUM(e.cracked_eggs), 0)
+                FROM egg_collections e JOIN batches b ON b.id=e.batch_id
+                WHERE b.farm_id=? AND e.record_date BETWEEN ? AND ?
+                  AND (? IS NULL OR b.id=?)
+                """, farmId, range, batchId);
+        long revenue = rangeTotal("""
+                SELECT COALESCE(SUM(total_amount_minor), 0) FROM sales
+                WHERE farm_id=? AND sale_date BETWEEN ? AND ?
+                  AND (? IS NULL OR batch_id=?)
+                """, farmId, range, batchId);
+        long expenses = rangeTotal("""
+                SELECT COALESCE(SUM(amount_minor), 0) FROM expenses
+                WHERE farm_id=? AND occurred_date BETWEEN ? AND ?
+                  AND (? IS NULL OR batch_id=?)
+                """, farmId, range, batchId);
+        period.put("mortality", mortality);
+        period.put("eggsGood", eggsGood);
+        period.put("eggsCracked", eggsCracked);
+        period.put("revenueMinor", revenue);
+        period.put("expensesMinor", expenses);
+        period.put("salesCount", rangeTotal("""
+                SELECT COUNT(*) FROM sales
+                WHERE farm_id=? AND sale_date BETWEEN ? AND ?
+                  AND (? IS NULL OR batch_id=?)
+                """, farmId, range, batchId));
+        period.put("expenseCount", rangeTotal("""
+                SELECT COUNT(*) FROM expenses
+                WHERE farm_id=? AND occurred_date BETWEEN ? AND ?
+                  AND (? IS NULL OR batch_id=?)
+                """, farmId, range, batchId));
+        period.put("feedUsageCount", rangeTotal("""
+                SELECT COUNT(*)
+                FROM feed_usage u JOIN batches b ON b.id=u.batch_id
+                WHERE b.farm_id=? AND u.usage_date BETWEEN ? AND ?
+                  AND (? IS NULL OR b.id=?)
+                """, farmId, range, batchId));
+        period.put("healthRecordCount", rangeTotal("""
+                SELECT COUNT(*) FROM health_records h JOIN batches b ON b.id=h.batch_id
+                WHERE b.farm_id=? AND h.record_date BETWEEN ? AND ?
+                  AND (? IS NULL OR b.id=?)
+                """, farmId, range, batchId));
+        period.put("drugRecordCount", rangeTotal("""
+                SELECT COUNT(*) FROM drug_records d JOIN batches b ON b.id=d.batch_id
+                WHERE b.farm_id=? AND d.record_date BETWEEN ? AND ?
+                  AND (? IS NULL OR b.id=?)
+                """, farmId, range, batchId));
+        period.put("vaccinationRecordCount", rangeTotal("""
+                SELECT COUNT(*) FROM vaccination_records v JOIN batches b ON b.id=v.batch_id
+                WHERE b.farm_id=? AND v.record_date BETWEEN ? AND ?
+                  AND (? IS NULL OR b.id=?)
+                """, farmId, range, batchId));
+        return period;
+    }
+
+    private long rangeTotal(String sql, String farmId, ReportDateRange range, String batchId) {
+        Long value = jdbc.queryForObject(sql, Long.class,
+                farmId, range.from().toString(), range.to().toString(), batchId, batchId);
+        return value == null ? 0L : value;
+    }
+
     public Map<String, Object> batch(String batchId, LocalDate asOf) {
-        LocalDate date = asOf == null ? LocalDate.now() : asOf;
+        FarmResponse farm = requireFarm();
+        LocalDate date = asOf == null ? LocalDate.now(ZoneId.of(farm.timezone())) : asOf;
         Map<String,Object> batch = jdbc.query("""
                 SELECT id, farm_id, code, batch_type, placement_date, initial_bird_count, status
                 FROM batches WHERE id=?

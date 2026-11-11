@@ -31,6 +31,10 @@ Keyboard-only smoke test:
 4. Press `Tab` again and confirm focus continues from the main content rather than restarting at the primary navigation.
 5. Repeat on Dashboard and Flocks (including a nested tab if useful). Confirm the link remains visually hidden when it is not focused and does not occupy layout space.
 
+## Date-range control accessibility
+
+The shared reporting-period control exposes a labeled preset selector, labeled start/end date inputs, an announced active-range summary, and an alert for invalid custom boundaries. Verify it with keyboard-only navigation: focus the preset selector, change a preset, tab through the start/end inputs, and confirm the invalid-range message is announced and remains visible when start date is after end date. The range selector must remain usable at the supported 1100×650 and 1366×768 desktop sizes.
+
 ## Required manual rendered review
 
 The token check does not measure every live text node. To re-measure actual rendered text counts and computed styles, open DevTools in the running desktop app and paste the contents of `scripts/audit-rendered-ui.js` into the Console. Run it once with Light selected and again with Dark selected. Repeat at 1366×768 and 1100×700. Save the returned summary/counts with the release checklist. Do not reuse counts from a previous build.

@@ -26,6 +26,7 @@ describe("ProductionTrendChart", () => {
         description="Layer trend"
         unit="percent"
         loadTrend={vi.fn().mockResolvedValue({ points: [] })}
+        dateRange={{ from: "2026-10-01", to: "2026-10-02" }}
       />
     );
 
@@ -41,12 +42,12 @@ describe("ProductionTrendChart", () => {
         { date: "2026-10-02", value: null, recorded: false },
       ],
     });
-    render(<ProductionTrendChart batchId="batch-1" title="Layer HDP%" description="Layer trend" unit="percent" loadTrend={loadTrend} />);
+    render(<ProductionTrendChart batchId="batch-1" title="Layer HDP%" description="Layer trend" unit="percent" loadTrend={loadTrend} dateRange={{ from: "2026-10-01", to: "2026-10-02" }} />);
 
     expect(screen.getByRole("status")).toHaveTextContent("Loading layer hdp%");
     expect(await screen.findByRole("img", { name: /Layer HDP% line chart from 2026-10-01 to 2026-10-02/ })).toBeInTheDocument();
     expect(screen.getByTestId("line-chart")).toBeInTheDocument();
-    expect(loadTrend).toHaveBeenCalledWith("batch-1", undefined, expect.any(String));
+    expect(loadTrend).toHaveBeenCalledWith("batch-1", "2026-10-01", "2026-10-02");
   });
 
   it("reloads the selected batch trend after a relevant successful write event", async () => {
@@ -55,7 +56,7 @@ describe("ProductionTrendChart", () => {
       to: "2026-10-02",
       points: [{ date: "2026-10-01", value: 12.5, recorded: true }],
     });
-    render(<ProductionTrendChart batchId="batch-1" title="Layer HDP%" description="Layer trend" unit="percent" loadTrend={loadTrend} />);
+    render(<ProductionTrendChart batchId="batch-1" title="Layer HDP%" description="Layer trend" unit="percent" loadTrend={loadTrend} dateRange={{ from: "2026-10-01", to: "2026-10-02" }} />);
     await waitFor(() => expect(loadTrend).toHaveBeenCalledTimes(1));
 
     window.dispatchEvent(new CustomEvent("pomas:data-mutated", {
@@ -79,7 +80,7 @@ describe("ProductionTrendChart", () => {
         { date: "2026-10-02", value: null, recorded: false },
       ],
     });
-    render(<ProductionTrendChart batchId="batch-1" title="Average weight" description="Broiler trend" unit="kg" loadTrend={loadTrend} />);
+    render(<ProductionTrendChart batchId="batch-1" title="Average weight" description="Broiler trend" unit="kg" loadTrend={loadTrend} dateRange={{ from: "2026-10-01", to: "2026-10-02" }} />);
 
     expect(await screen.findByText(/No production records in this period/)).toBeInTheDocument();
     expect(screen.queryByTestId("line-chart")).not.toBeInTheDocument();
@@ -87,7 +88,7 @@ describe("ProductionTrendChart", () => {
 
   it("shows backend failures without crashing the production page", async () => {
     const loadTrend = vi.fn().mockRejectedValue(new Error("Trend endpoint unavailable"));
-    render(<ProductionTrendChart batchId="batch-1" title="Layer HDP%" description="Layer trend" unit="percent" loadTrend={loadTrend} />);
+    render(<ProductionTrendChart batchId="batch-1" title="Layer HDP%" description="Layer trend" unit="percent" loadTrend={loadTrend} dateRange={{ from: "2026-10-01", to: "2026-10-02" }} />);
 
     expect(await screen.findByRole("alert")).toHaveTextContent("Trend endpoint unavailable");
   });

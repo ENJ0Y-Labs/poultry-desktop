@@ -31,6 +31,8 @@ A 360px browser viewport is not a supported layout width. The supported-width ac
 - Page templates share consistent card, heading, table, tab, and form treatments while retaining their domain-specific layout and existing data/actions.
 - The existing `.table` container uses `overflow: auto`, so wide row content should scroll within the table instead of forcing the entire page wider. This behavior still requires runtime confirmation.
 
+The shared reporting-period control is part of the Dashboard and Reports desktop layouts. At supported sizes, keep the preset and both date inputs visible without pushing the primary report actions off-screen. The date control may wrap internally; it must not create page-level horizontal overflow.
+
 ## Runtime validation checklist
 
 The source change has been made, but **browser emulation and packaged Electron resizing have not been executed in this environment**. Do not mark the following checks passed until they are performed on the branch.
