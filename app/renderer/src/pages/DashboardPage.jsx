@@ -105,7 +105,8 @@ export default function DashboardPage() {
           <div className="dashboard-range-controls">
             <DateRangeFilter value={dateRange} timezone={farm?.timezone} dateFormat={applicationSettings?.dateFormat} onChange={setDateRange} />
             <p className="dashboard-as-of muted">
-              <span>Current snapshot as of</span>
+              <span>Dashboard as of</span>
+              <small className="muted">Current snapshot</small>
               <strong>{dashboard ? formatBusinessDate(dashboard.asOf, applicationSettings?.dateFormat) : "Loading..."}</strong>
             </p>
           </div>
