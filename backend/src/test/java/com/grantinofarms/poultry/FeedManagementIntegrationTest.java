@@ -532,6 +532,8 @@ class FeedManagementIntegrationTest {
 
         assertThat(january.consumedQuantityMilli()).isEqualTo(2_000L);
         assertThat(january.feedCostMinor()).isEqualTo(20_000L);
+        assertThat(feedService.batchUsageUnits(batch.id(), LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 31)))
+                .containsExactly("bag");
         assertThat(february.consumedQuantityMilli()).isEqualTo(3_000L);
         assertThat(february.feedCostMinor()).isEqualTo(30_000L);
     }
