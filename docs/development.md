@@ -419,3 +419,30 @@ Manual validation:
 3. Set Appearance to Dark and restart. Confirm the screen has a dark background, readable light text, and a visible gold-accent spinner.
 4. Confirm the loading indicator rotates continuously and the screen disappears as soon as the initial application bootstrap completes.
 5. Repeat with a delayed/unavailable backend. Confirm the app's existing connection/error handling remains intact and no artificial loading timeout is introduced.
+
+
+## Transparent dashboard attention insights (Issue #233)
+
+Run focused backend and renderer coverage:
+
+```powershell
+npm test -- attentionNavigation
+npm test -- App.test.jsx
+npm run backend:test -- --tests com.grantinofarms.poultry.AttentionServiceIntegrationTest
+npm run lint
+npm run backend:verify
+npm run build
+```
+
+Use a disposable database for manual rule checks. Create separate layer and meat-bird batches and seed dated records so the selected `asOf` date has both a latest 7-day period and a preceding 7-day period.
+
+1. Record mortality below and at the recent 2% warning boundary; confirm the recent-mortality insight appears only at/above the threshold. Separately verify cumulative mortality retains its existing 5% warning / 10% critical behavior.
+2. For the same batch and feed type, compare 7-day feed usage against the preceding 7 days. Confirm a 25% increase warns and 50% increase is critical. A feed type or period without usage history must not trigger this rule.
+3. Record two meat-bird weight measurements. Confirm a 10% or larger decline is shown only when the latest measurement is within 7 days. A stale latest measurement and missing second measurement must not trigger it.
+4. Compare farm expenses and common-ledger sales in the latest 7 days against the preceding 7 days. Confirm a 25% adverse change warns and 50% is critical. A zero prior-period baseline must not trigger a trend alert.
+5. Confirm egg production comparison includes good and cracked eggs, while a missing prior-period baseline does not alert.
+6. Confirm each insight shows severity, metric, date, rule/threshold and suggested action. Batch insights should identify the current house. Selecting each card should open its existing module; stock and batch IDs must be passed as IDs, not names.
+7. Correct the underlying test data so the condition is resolved, refresh attention, and confirm the alert disappears. Repeated refreshes must not create duplicate entries.
+8. Confirm no poor-FCR alert is emitted: a universal target is not defined. FCR alerting remains deferred until an approved farm/type/age benchmark exists.
+
+Inspect the dashboard at 1100×650 and 1366×768 in both Light and Dark themes. Automated tests do not replace these manual navigation, contrast, and layout checks. Never use the real Grantino farm database for seeded tests.
