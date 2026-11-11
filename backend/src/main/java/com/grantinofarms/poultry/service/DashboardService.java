@@ -166,13 +166,14 @@ public class DashboardService {
         long feedUsageCount = ((Number) period.get("feedUsageCount")).longValue();
         if (feedUsageCount > 0) {
             BatchFeedCostResponse feedPeriod = feed.batchCost(batchId, range.from(), range.to());
-            period.put("feedQuantityMilli", feedPeriod.consumedQuantityMilli());
+            List<String> feedUnits = feed.batchUsageUnits(batchId, range.from(), range.to());
+            boolean feedQuantityComparable = feedUnits.size() == 1;
+            period.put("feedQuantityMilli", feedQuantityComparable ? feedPeriod.consumedQuantityMilli() : null);
             period.put("feedCostMinor", feedPeriod.feedCostMinor());
             period.put("feedKnownCostMinor", feedPeriod.knownFeedCostMinor());
-            List<String> feedUnits = feed.batchUsageUnits(batchId, range.from(), range.to());
             period.put("feedQuantityUnit", feedUnits.isEmpty() ? "Unknown feed unit"
                     : feedUnits.size() == 1 ? feedUnits.get(0) : "Mixed units: " + String.join(", ", feedUnits));
-            period.put("feedQuantityComparable", feedUnits.size() == 1);
+            period.put("feedQuantityComparable", feedQuantityComparable);
         } else {
             period.put("feedQuantityMilli", null);
             period.put("feedCostMinor", null);
