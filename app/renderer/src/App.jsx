@@ -558,7 +558,12 @@ export default function App() {
   useEffect(() => {
     if (selectedBatchId && batches.some(batch => batch.id === selectedBatchId)) {
       loadBatchDashboard(selectedBatchId);
-      loadBatchReport(selectedBatchId);
+    }
+  }, [selectedBatchId]);
+
+  useEffect(() => {
+    if (selectedBatchId && batches.some(batch => batch.id === selectedBatchId)) {
+      loadBatchReport(selectedBatchId, dateRange.from, dateRange.to);
     } else {
       setBatchReport(null);
     }
