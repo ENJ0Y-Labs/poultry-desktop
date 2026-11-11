@@ -25,6 +25,7 @@ public final class BatchComparisonMetrics {
         Map<String, Object> metrics = new LinkedHashMap<>();
         metrics.put("initialBirds", population.initialBirds());
         metrics.put("currentBirds", population.currentBirds());
+        metrics.put("populationCountStatus", population.countStatus());
 
         long mortality = number(period.get("mortality"));
         metrics.put("mortality", mortality);
