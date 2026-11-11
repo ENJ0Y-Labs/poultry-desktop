@@ -16,7 +16,7 @@ The backend currently evaluates:
 
 | Type | Rule |
 | --- | --- |
-| `LOW_FEED_STOCK` | Remaining feed covers 3 days or less at the recent 7-day usage rate |
+| `LOW_FEED_STOCK` | Remaining feed (purchases + dated opening balances - usage) covers 3 days or less at the recent 7-day usage rate |
 | `INSUFFICIENT_INVENTORY` | Active inventory item has zero or negative calculated stock |
 | `LOW_INVENTORY` | Active inventory item is at or below its configured reorder level |
 | `HIGH_MORTALITY` | Active batch cumulative mortality is at least 5% of initial birds |
