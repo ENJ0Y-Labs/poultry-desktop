@@ -88,7 +88,7 @@ describe("ProductionTrendChart", () => {
 
   it("shows backend failures without crashing the production page", async () => {
     const loadTrend = vi.fn().mockRejectedValue(new Error("Trend endpoint unavailable"));
-    render(<ProductionTrendChart batchId="batch-1" title="Layer HDP%" description="Layer trend" unit="percent" loadTrend={loadTrend} />);
+    render(<ProductionTrendChart batchId="batch-1" title="Layer HDP%" description="Layer trend" unit="percent" loadTrend={loadTrend} dateRange={{ from: "2026-10-01", to: "2026-10-02" }} />);
 
     expect(await screen.findByRole("alert")).toHaveTextContent("Trend endpoint unavailable");
   });
