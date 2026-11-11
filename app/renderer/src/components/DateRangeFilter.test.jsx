@@ -31,6 +31,6 @@ describe("DateRangeFilter", () => {
 
   it("shows the selected inclusive range", () => {
     render(<DateRangeFilter value={{ preset: "CUSTOM", from: "2024-02-29", to: "2024-03-01" }} timezone="UTC" onChange={() => {}} />);
-    expect(screen.getByText("Showing 29 Feb 2024 – 01 Mar 2024 (inclusive)")).toBeInTheDocument();
+    expect(screen.getByText("Showing 2024-02-29 – 2024-03-01 (inclusive)")).toBeInTheDocument();
   });
 });
