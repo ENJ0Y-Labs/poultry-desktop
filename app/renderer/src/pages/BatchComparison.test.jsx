@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { reportApi } from "../services/api.js";
+// eslint-disable-next-line no-unused-vars -- BatchComparison is rendered as JSX.
 import { BatchComparison } from "./ReportsPage.jsx";
 
 vi.mock("recharts", () => ({
