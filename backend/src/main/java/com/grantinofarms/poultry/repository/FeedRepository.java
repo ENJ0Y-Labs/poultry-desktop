@@ -198,6 +198,16 @@ public class FeedRepository {
                 ), batchId, asOf.toString());
     }
 
+    public List<String> findBatchUsageUnits(String batchId, LocalDate from, LocalDate to) {
+        return jdbc.queryForList("""
+                SELECT DISTINCT t.unit
+                FROM feed_usage u
+                JOIN feed_types t ON t.id=u.feed_type_id
+                WHERE u.batch_id=? AND u.usage_date BETWEEN ? AND ?
+                ORDER BY t.unit
+                """, String.class, batchId, from.toString(), to.toString());
+    }
+
     public List<FeedUsageEvent> findBatchUsages(String batchId, LocalDate from, LocalDate to) {
         return jdbc.query("""
                 SELECT id, batch_id, feed_type_id, usage_date, quantity_milli, created_at
