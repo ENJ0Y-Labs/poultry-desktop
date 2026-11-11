@@ -264,8 +264,9 @@ export default function App() {
   }
 
   function updateDateRange(nextRange) {
+    const boundariesChanged = nextRange.from !== dateRange.from || nextRange.to !== dateRange.to;
     setDateRange(nextRange);
-    if (!isValidDateRange(nextRange)) {
+    if (boundariesChanged || !isValidDateRange(nextRange)) {
       dashboardRequestSequence.current += 1;
       farmReportRequestSequence.current += 1;
       batchReportRequestSequence.current += 1;
@@ -542,13 +543,19 @@ export default function App() {
   }, [farm, dateRange.from, dateRange.to]);
 
   useEffect(() => {
-    if (!farm?.timezone) return;
-    setDateRange(current => {
-      if (current.preset === "CUSTOM") return current;
-      const next = createDateRange(current.preset, farm.timezone);
-      return next.from === current.from && next.to === current.to ? current : next;
-    });
-  }, [farm?.timezone]);
+    if (!farm?.timezone || dateRange.preset === "CUSTOM") return;
+    const next = createDateRange(dateRange.preset, farm.timezone);
+    if (next.from !== dateRange.from || next.to !== dateRange.to) {
+      dashboardRequestSequence.current += 1;
+      farmReportRequestSequence.current += 1;
+      batchReportRequestSequence.current += 1;
+      setDashboard(null);
+      setFarmReport(null);
+      setBatchReport(null);
+      setAuditRows([]);
+      setDateRange(next);
+    }
+  }, [farm?.timezone, dateRange.preset, dateRange.from, dateRange.to]);
   useEffect(() => {
     if (!farm) return undefined;
 
