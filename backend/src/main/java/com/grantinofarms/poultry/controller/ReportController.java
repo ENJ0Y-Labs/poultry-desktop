@@ -23,39 +23,60 @@ public class ReportController {
     }
 
     @GetMapping("/farm")
-    public Map<String, Object> farm(@RequestParam(required = false) LocalDate asOf) {
-        return Map.of("ok", true, "data", service.farm(asOf));
+    public Map<String, Object> farm(
+            @RequestParam(required = false) LocalDate asOf,
+            @RequestParam(required = false) LocalDate from,
+            @RequestParam(required = false) LocalDate to
+    ) {
+        return Map.of("ok", true, "data", from != null || to != null ? service.farm(from, to) : service.farm(asOf));
     }
 
     @GetMapping("/batches/{id}")
-    public Map<String, Object> batch(@PathVariable String id, @RequestParam(required = false) LocalDate asOf) {
-        return Map.of("ok", true, "data", service.batch(id, asOf));
+    public Map<String, Object> batch(
+            @PathVariable String id,
+            @RequestParam(required = false) LocalDate asOf,
+            @RequestParam(required = false) LocalDate from,
+            @RequestParam(required = false) LocalDate to
+    ) {
+        return Map.of("ok", true, "data", from != null || to != null ? service.batch(id, from, to) : service.batch(id, asOf));
     }
 
     @GetMapping(value = "/farm.csv", produces = "text/csv")
-    public ResponseEntity<byte[]> farmCsv(@RequestParam(required = false) LocalDate asOf) {
-        return csvResponse(service.farm(asOf), "farm-report.csv");
+    public ResponseEntity<byte[]> farmCsv(
+            @RequestParam(required = false) LocalDate asOf,
+            @RequestParam(required = false) LocalDate from,
+            @RequestParam(required = false) LocalDate to
+    ) {
+        return csvResponse(from != null || to != null ? service.farm(from, to) : service.farm(asOf), "farm-report.csv");
     }
 
     @GetMapping(value = "/batches/{id}.csv", produces = "text/csv")
     public ResponseEntity<byte[]> batchCsv(
             @PathVariable String id,
-            @RequestParam(required = false) LocalDate asOf
+            @RequestParam(required = false) LocalDate asOf,
+            @RequestParam(required = false) LocalDate from,
+            @RequestParam(required = false) LocalDate to
     ) {
-        return csvResponse(service.batch(id, asOf), "batch-report.csv");
+        return csvResponse(from != null || to != null ? service.batch(id, from, to) : service.batch(id, asOf), "batch-report.csv");
     }
 
     @GetMapping(value = "/farm.pdf", produces = MediaType.APPLICATION_PDF_VALUE)
-    public ResponseEntity<byte[]> farmPdf(@RequestParam(required = false) LocalDate asOf) {
-        return pdfResponse(service.farm(asOf), "Farm Report", "farm-report.pdf");
+    public ResponseEntity<byte[]> farmPdf(
+            @RequestParam(required = false) LocalDate asOf,
+            @RequestParam(required = false) LocalDate from,
+            @RequestParam(required = false) LocalDate to
+    ) {
+        return pdfResponse(from != null || to != null ? service.farm(from, to) : service.farm(asOf), "Farm Report", "farm-report.pdf");
     }
 
     @GetMapping(value = "/batches/{id}.pdf", produces = MediaType.APPLICATION_PDF_VALUE)
     public ResponseEntity<byte[]> batchPdf(
             @PathVariable String id,
-            @RequestParam(required = false) LocalDate asOf
+            @RequestParam(required = false) LocalDate asOf,
+            @RequestParam(required = false) LocalDate from,
+            @RequestParam(required = false) LocalDate to
     ) {
-        return pdfResponse(service.batch(id, asOf), "Batch Report", "batch-report.pdf");
+        return pdfResponse(from != null || to != null ? service.batch(id, from, to) : service.batch(id, asOf), "Batch Report", "batch-report.pdf");
     }
 
     private ResponseEntity<byte[]> csvResponse(Map<String, Object> report, String filename) {
