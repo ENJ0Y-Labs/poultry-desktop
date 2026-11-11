@@ -8,6 +8,8 @@ import PageSection from "../components/PageSection.jsx";
 import PageTemplate from "../components/PageTemplate.jsx";
 import { formatAuditAction, formatAuditEntity, formatAuditTimestamp } from "../utils/auditFormatting.js";
 import { attentionTarget } from "../utils/attentionNavigation.js";
+// eslint-disable-next-line no-unused-vars
+import DateRangeFilter from "../components/DateRangeFilter.jsx";
 import { formatEggQuantity } from "../utils/eggFormatting.js";
 // eslint-disable-next-line no-unused-vars
 import GettingStartedChecklist from "../components/GettingStartedChecklist.jsx";
@@ -48,6 +50,8 @@ export default function DashboardPage() {
     attention,
     auditRows,
     applicationSettings,
+    dateRange,
+    setDateRange,
     selectedBatchId,
     setMortalityForm,
     setEggBatchId,
@@ -93,10 +97,13 @@ export default function DashboardPage() {
       <PageSection page="dashboard" tab="overview"><section id="dashboard" className="card full dashboard-page">
         <div className="section-head">
           <div><p className="eyebrow">OVERVIEW</p><h2>Farm dashboard</h2></div>
-          <p className="dashboard-as-of muted">
-            <span>Dashboard as of</span>
-            <strong>{dashboard ? formatBusinessDate(dashboard.asOf, applicationSettings?.dateFormat) : "Loading..."}</strong>
-          </p>
+          <div className="dashboard-range-controls">
+            <DateRangeFilter value={dateRange} timezone={farm?.timezone} onChange={setDateRange} />
+            <p className="dashboard-as-of muted">
+              <span>Current snapshot as of</span>
+              <strong>{dashboard ? formatBusinessDate(dashboard.asOf, applicationSettings?.dateFormat) : "Loading..."}</strong>
+            </p>
+          </div>
         </div>
 
         {dashboard ? isFirstRunEmpty && !checklistDismissed ? (
@@ -164,6 +171,7 @@ export default function DashboardPage() {
                 }}>Record an expense</button>
               </div>
             </section>
+            <p className="muted dashboard-range-note">Mortality, egg collections and money totals cover the selected period. Bird population, houses, feed stock and attention remain current.</p>
             <div className="metric-grid">
               {[
                 ["Total birds", formatCount(dashboard.totalBirds), ""],
@@ -178,11 +186,11 @@ export default function DashboardPage() {
                 ["Temporary houses", formatCount(dashboard.temporaryHouses), ""],
                 ["Occupied houses", formatCount(dashboard.occupiedHouses), ""],
                 ["Empty houses", formatCount(dashboard.emptyHouses), ""],
-                ["Mortality", formatCount(dashboard.mortality), "birds"],
-                ["Good eggs", formatEggQuantity(dashboard.eggsGood, crateSize), ""],
-                ["Revenue", formatMoney(dashboard.revenueMinor, farm.currency), ""],
-                ["Expenses", formatMoney(dashboard.expensesMinor, farm.currency), ""],
-                ["Profit", formatMoney(dashboard.profitMinor, farm.currency), ""],
+                ["Mortality", formatCount(dashboard.period?.mortality ?? dashboard.mortality), "birds"],
+                ["Good eggs", formatEggQuantity(dashboard.period?.eggsGood ?? dashboard.eggsGood, crateSize), ""],
+                ["Revenue", formatMoney(dashboard.period?.revenueMinor ?? dashboard.revenueMinor, farm.currency), ""],
+                ["Expenses", formatMoney(dashboard.period?.expensesMinor ?? dashboard.expensesMinor, farm.currency), ""],
+                ["Profit", formatMoney(dashboard.period?.profitMinor ?? dashboard.profitMinor, farm.currency), ""],
                 ["Inventory alerts", dashboard.inventoryAlerts, ""],
               ].map(([label, value, unit]) => (
                 <div
