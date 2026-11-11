@@ -200,6 +200,10 @@ Turkey is an independent `TURKEY` batch type, not a Broiler subtype. Farm dashbo
 
 The Import / Export screen supports versioned CSV imports for layer egg collections (`egg-collections`) and broiler weight records (`broiler-weights`) for existing ACTIVE batches. Batch references use human-readable batch codes. Egg imports must use LAYER batches and preserve good/cracked separation; weight imports must use BROILER batches and store sample count plus total sample weight in kilograms. All writes go through `EggManagementService` or `BroilerProductionService` in a single transaction so existing validation and audit behavior remain authoritative. Do not import derived averages, growth, sellable cracked eggs, or synthetic zero records for missing dates. See `docs/csv-bulk-import.md`.
 
+## Toast notifications
+
+Use the single app-wide React `ToastProvider` mounted in `app/renderer/src/main.jsx` and its `useToast()` API for routine success, warning, informational, and non-blocking error feedback. Do not create page-local toast providers or restore page-local success banners. Keep field validation inline and destructive confirmations / decisions in dialogs. Never display raw SQL, stack traces, filesystem paths, or raw backend exceptions. Follow `docs/toast-notifications.md` for API, accessibility, placement, and verification requirements.
+
 ## 5. Electron security
 
 Use:
@@ -1375,3 +1379,33 @@ Validate the renderer with the backend available, during startup, and with the b
 Opening feed stock is stored in the existing `feed_opening_balances` table. Do not create a duplicate feed ledger or a purchase, supplier, invoice, or expense for opening stock. Opening balances enter the same FIFO sequence as purchased lots, ordered by effective date and then creation timestamp. Opening lots are unvalued: never assign zero or estimated cost. If a usage consumes any unvalued opening quantity, its total feed cost is unknown (`null`). Preserve and allocate the known cost portion consumed from purchased lots to the batch bird-cost pool, exposing it as `knownFeedCostMinor`; never invent cost for the unvalued portion. A usage consuming only opening stock has no known purchased-feed cost and creates no bird additional-cost event. Remaining or consumed inventory cost, batch feed cost, and per-bird feed cost must remain unknown whenever their included quantities contain unvalued stock. Render unknown as “Unknown”, never as currency zero.
 
 An opening balance may be dated before a later purchase, but cannot be dated before the latest existing usage or latest opening-balance entry for the same feed type. This prevents retroactive changes to FIFO allocations. Preserve the existing purchase rule that an actual purchase creates exactly one feed expense. See `docs/decisions/2026-10-02-feed-management.md`.
+
+
+## Contextual side drawer (Issue #224)
+
+- Use the shared renderer primitive `app/renderer/src/components/ContextDrawer.jsx` for contextual inspection/editing of existing records. Keep short creation and confirmation flows in the shared modal system.
+- Opening a drawer must not navigate, remount the active page, clear filters, change selection, or reset list scroll. Keep the underlying page mounted and render the drawer in a portal.
+- Keep API access, validation, calculations, transaction rules and persistence in existing page/context and Spring Boot layers. The drawer is presentation-only.
+- Support small/medium/large sizes, read-only/editable modes, loading/error states, safe backdrop close, Escape, focus trapping/restoration, body-scroll locking and explicit discard confirmation for dirty edits.
+- Do not invent fields or fetch additional detail data unless the existing workflow supports it. Feed purchase detail remains out of scope until purchase history is exposed to the renderer.
+- Add Vitest coverage and update `docs/contextual-drawer.md` plus relevant manual test instructions when the drawer contract changes.
+
+
+## Client-side form validation
+
+- Use the shared `ValidatedForm` component and `app/renderer/src/utils/formValidation.js` for farm workflow form validation. Authentication keeps its existing sign-in validation feedback. Keep field labels visible, mark required fields, show field-level errors and a multi-error summary, and focus the first invalid field.
+- Preserve entered values after client validation and API failures. Disable submit while pending and prevent duplicate requests.
+- Validate only rules supported by existing field attributes and API/domain contracts. Negative quantities are invalid unless the field explicitly permits them; respect `min`, `max`, and `step`.
+- Parse naira inputs with `parseNairaToKobo` and retain integer kobo in API payloads. Never introduce floating-point money arithmetic or display raw minor units.
+- Map backend Bean Validation field details to controls when supplied. The backend remains authoritative for population, FIFO, lifecycle, duplicate, financial and all other domain invariants.
+- Do not invent phone-number formats: customer phone is optional without a format constraint; supplier phone is optional and capped at 40 characters by the current API contract. A client-side supplier-name duplicate check may improve feedback because the backend enforces that unique name; the backend remains authoritative. Do not pre-check customer names because the customer create API does not enforce uniqueness.
+- Update `docs/form-validation.md` and its manual mock-data steps when validation behavior changes. Run focused renderer tests, then the full test, lint, backend verification and build commands. Do not claim manual desktop checks unless performed with a disposable database.
+
+## Branded startup loading screen
+
+- While the initial authentication and farm-data bootstrap is pending, show the Pomas startup screen rather than a plain text loading message.
+- Use the existing local Pomas logo asset; do not load remote images, fonts, scripts, or other network resources.
+- The startup screen includes the Pomas name, a short product description, and an accessible continuously rotating loading indicator.
+- Background, text, muted text, and spinner colors must follow the active `data-theme` tokens so the screen works in both light and dark mode.
+- Keep the loading state presentation-only. Do not add artificial delays, block startup on animation, or change authentication/backend readiness behavior.
+- Cover the startup screen in renderer tests and manually verify both light and dark appearance plus transition into sign-in, farm setup, and the dashboard.

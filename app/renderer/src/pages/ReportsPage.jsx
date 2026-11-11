@@ -8,25 +8,18 @@ import { reportApi, productionTrendApi } from "../services/api.js";
 // eslint-disable-next-line no-unused-vars
 import ProductionTrendChart from "../components/ProductionTrendChart.jsx";
 import { rememberLastBatchId } from "../utils/farmUx.js";
-import { calculatePeriodProfitMinor } from "../utils/reportMetrics.js";
 // eslint-disable-next-line no-unused-vars
-import DateRangeFilter from "../components/DateRangeFilter.jsx";
+import EmptyState from "../components/EmptyState.jsx";
 // eslint-disable-next-line no-unused-vars -- JSX component usage is not detected by the core rule
 import DataTable from "../components/DataTable.jsx";
 // eslint-disable-next-line no-unused-vars
 import MetricHelp from "../components/MetricHelp.jsx";
 
 export default function ReportsPage() {
-  const { formatMoney, formatQuantity, formatPercent, formatKg, formatMetric, formatCount, feedQuantity, farm, applicationSettings, batches, selectedBatchId, setSelectedBatchId, farmReport, batchReport, dateRange, setDateRange, loadReport, loadBatchReport, exportCsv, exportPdf } = useContext(FarmManagerContext);
-  const farmPeriodProfitMinor = farmReport?.period
-    ? calculatePeriodProfitMinor(farmReport.period.revenueMinor, farmReport.period.expensesMinor)
-    : farmReport?.dashboard?.profitMinor;
-  const batchPeriodProfitMinor = batchReport?.period
-    ? calculatePeriodProfitMinor(batchReport.period.revenueMinor, batchReport.period.expensesMinor)
-    : batchReport?.profitMinor;
+  const { formatMoney, formatQuantity, formatPercent, formatKg, formatMetric, formatCount, feedQuantity, farm, batches, selectedBatchId, setSelectedBatchId, farmReport, batchReport, reportAsOf, setReportAsOf, loadReport, loadBatchReport, exportCsv, exportPdf, reportLoading, batchReportLoading, dataLoadError, retryData } = useContext(FarmManagerContext);
 
   return (
-    <PageTemplate className="grid">
+    <PageTemplate className="grid pomas-page page-reports">
       <PageSection page="reports" tab="farm-report"><section id="reports" className="card full">
           <div className="section-head"><div><p className="eyebrow">REPORTING</p><h2>Farm reports</h2></div>
             <div className="report-range-actions"><DateRangeFilter value={dateRange} timezone={farm?.timezone} dateFormat={applicationSettings?.dateFormat} onChange={setDateRange} /><div className="inline-form"><button type="button" onClick={() => loadReport(dateRange.from, dateRange.to)}>Refresh</button><button type="button" onClick={() => exportCsv(() => reportApi.farmCsv(null, dateRange.from, dateRange.to, farmPeriodProfitMinor), "farm-report.csv")}>Export CSV</button><button type="button" onClick={() => exportPdf(() => reportApi.farmPdf(null, dateRange.from, dateRange.to, farmPeriodProfitMinor), "farm-report.pdf")}>Export PDF</button></div></div>
@@ -61,7 +54,7 @@ export default function ReportsPage() {
                 { key: "remainingCostMinor", label: "Remaining cost", render: item => item.remainingCostMinor == null ? "Unknown" : formatMoney(item.remainingCostMinor, farm.currency) },
               ]} rows={farmReport.feed || []} emptyMessage="No feed products recorded." />
             </div>
-          </> : <p className="muted">Report is loading…</p>}
+          </> : reportLoading ? <EmptyState variant="loading" heading="Loading farm report" compact /> : dataLoadError ? <EmptyState variant="error" description={dataLoadError} onRetry={retryData} compact /> : <EmptyState variant="no-records" heading="Farm report is not available" description="Refresh the report to retrieve the latest farm summary." compact />}
         </section></PageSection>
 
       <PageSection page="reports" tab="batch-report"><section id="batch-reports" className="card full">
@@ -118,8 +111,8 @@ export default function ReportsPage() {
                 </div>
               </div>
             </div>
-            <p className="muted">Activity period: {batchReport.from || dateRange.from} to {batchReport.to || dateRange.to} (inclusive). Current population, feed cost, egg inventory, average weight and FCR remain snapshot or batch-to-date values as of {batchReport.asOf}. Water quantities use {batchReport.waterUnitLabel || "litres"}.</p>
-          </> : <p className="muted">{selectedBatchId ? "Batch report is loading…" : "Select a batch to inspect its report."}</p>}
+            <p className="muted">As of {batchReport.asOf}. Water quantities use the farm display label: {batchReport.waterUnitLabel || "litres"}. Population, feed, production, costs, revenue and profit reuse the dashboard calculation services.</p>
+          </> : !selectedBatchId ? <EmptyState variant="not-applicable" heading="Select a batch" description="Choose a batch above to view its report." compact /> : (batchReportLoading || reportLoading) ? <EmptyState variant="loading" heading="Loading batch report" compact /> : dataLoadError ? <EmptyState variant="error" description={dataLoadError} onRetry={retryData} compact /> : <EmptyState variant="no-records" heading="Batch report is not available" description="Refresh the report to retrieve this batch summary." compact />}
           {selectedBatchId && batches.find(batch => batch.id === selectedBatchId)?.type === "LAYER" && (
             <ProductionTrendChart
               batchId={selectedBatchId}

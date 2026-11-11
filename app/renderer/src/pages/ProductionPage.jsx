@@ -1,4 +1,6 @@
 import { useContext } from "react";
+// eslint-disable-next-line no-unused-vars -- JSX component usage is not detected by the core rule
+import ValidatedForm from "../components/ValidatedForm.jsx";
 import { productionTrendApi } from "../services/api.js";
 // eslint-disable-next-line no-unused-vars
 import DateRangeFilter from "../components/DateRangeFilter.jsx";
@@ -6,6 +8,11 @@ import { filterRowsByDateRange } from "../utils/dateRange.js";
 // eslint-disable-next-line no-unused-vars
 import ProductionTrendChart from "../components/ProductionTrendChart.jsx";
 import { FarmManagerContext } from "../components/FarmManagerContext.jsx";
+// eslint-disable-next-line no-unused-vars -- JSX component usage is not detected by the core rule
+import { ModalForm } from "../components/Modal.jsx";
+import { todayLocalDate } from "../utils/farmUx.js";
+// eslint-disable-next-line no-unused-vars
+import EmptyState from "../components/EmptyState.jsx";
 // eslint-disable-next-line no-unused-vars
 import DataTable from "../components/DataTable.jsx";
 // eslint-disable-next-line no-unused-vars
@@ -16,14 +23,11 @@ import PageTemplate from "../components/PageTemplate.jsx";
 import MetricHelp from "../components/MetricHelp.jsx";
 
 export default function ProductionPage() {
-  const { formatMoney, farm, applicationSettings, dateRange, setDateRange, batches, customers, eggBatchId, setEggBatchId, broilerBatchId, setBroilerBatchId, broilerGrowth, broilerWeights, broilerSales, weightForm, setWeightForm, birdSaleForm, setBirdSaleForm, pricing, pricingForm, setPricingForm, eggInventory, eggCollections, eggSales, eggCollectionForm, setEggCollectionForm, eggSaleForm, setEggSaleForm, crateSize, saving, loadPricingForBatch, loadBroilerForBatch, saveWeight, saveBirdSale, loadEggsForBatch, saveEggCollection, saveEggSale } = useContext(FarmManagerContext);
-  const periodEggCollections = filterRowsByDateRange(eggCollections, dateRange);
-  const periodEggSales = filterRowsByDateRange(eggSales, dateRange);
-  const periodBroilerWeights = filterRowsByDateRange(broilerWeights, dateRange);
-  const periodBroilerSales = filterRowsByDateRange(broilerSales, dateRange);
+  const { error } = useContext(FarmManagerContext);
+  const { formatMoney, farm, batches, customers, eggBatchId, setEggBatchId, broilerBatchId, setBroilerBatchId, broilerGrowth, broilerWeights, broilerSales, weightForm, setWeightForm, birdSaleForm, setBirdSaleForm, emptyWeight, emptyBirdSale, pricing, pricingForm, setPricingForm, eggInventory, eggCollections, eggSales, eggCollectionForm, setEggCollectionForm, eggSaleForm, setEggSaleForm, crateSize, saving, loadPricingForBatch, loadBroilerForBatch, saveWeight, saveBirdSale, loadEggsForBatch, saveEggCollection, saveEggSale } = useContext(FarmManagerContext);
 
   return (
-    <PageTemplate className="grid">
+    <PageTemplate className="grid pomas-page page-production">
       <PageSection page="production" tab="eggs"><section id="eggs" className="card full">
           <div className="section-head">
             <div>
@@ -46,6 +50,7 @@ export default function ProductionPage() {
               {batches.filter(b => b.type === "LAYER").map(b => <option key={b.id} value={b.id}>{b.code}</option>)}
             </select></label>
           </div>
+          {!batches.some(batch => batch.type === "LAYER") && <EmptyState variant="not-applicable" heading="No layer batches available" description="Create a LAYER batch in Flocks before recording egg production." compact />}
 
           {eggBatchId && (
             <>
@@ -70,24 +75,26 @@ export default function ProductionPage() {
 
               <div className="subsection">
                 <h3>Record egg production</h3>
-                <form className="inline-form" onSubmit={saveEggCollection}>
+                <ModalForm title="Egg collection" description="Record good and cracked eggs collected from this layer batch." triggerLabel="Record collection" loading={saving} error={error} onDiscard={() => setEggCollectionForm(form => ({ batchId: form.batchId, date: todayLocalDate(), good: "", cracked: "", notes: "" }))}>
+<ValidatedForm className="inline-form" onSubmit={saveEggCollection}>
                   <label className="field"><span>Collection date</span><input required type="date" value={eggCollectionForm.date} onChange={e=>setEggCollectionForm({...eggCollectionForm,date:e.target.value})}/></label>
                   <label className="field"><span>Good eggs</span><input required min="0" step="1" type="number" value={eggCollectionForm.good} onChange={e=>setEggCollectionForm({...eggCollectionForm,good:e.target.value})}/></label>
                   <label className="field"><span>Cracked eggs</span><input required min="0" step="1" type="number" value={eggCollectionForm.cracked} onChange={e=>setEggCollectionForm({...eggCollectionForm,cracked:e.target.value})}/></label>
                   <label className="field"><span>Notes</span><input value={eggCollectionForm.notes} onChange={e=>setEggCollectionForm({...eggCollectionForm,notes:e.target.value})}/></label>
                   <button disabled={saving}>Record collection</button>
-                </form>
-                <p className="muted">Showing collection records within the selected reporting period.</p>
+                </ValidatedForm>
+</ModalForm>
                 <DataTable caption="Egg collections" columns={[
                     { key: "recordDate", label: "Date" }, { key: "good", label: "Good" }, { key: "cracked", label: "Cracked" },
                     { key: "total", label: "Total" }, { key: "notes", label: "Notes", render: row => row.notes || "—" },
-                  ]} rows={periodEggCollections} emptyMessage="No egg collections in this period." />
+                  ]} rows={eggCollections} emptyMessage="No egg collections recorded for this layer batch. Record the first collection above." />
               </div>
 
               <div className="subsection">
                 <h3>Egg sales</h3>
                 <p className="muted">Current crate size: {crateSize} eggs. The sale stores the crate size used at the time, so changing settings does not rewrite history.</p>
-                <form className="inline-form" onSubmit={saveEggSale}>
+                <ModalForm title="Egg sale" description="Record a sale from the available good-egg inventory." triggerLabel="Record egg sale" loading={saving} error={error} onDiscard={() => setEggSaleForm(form => ({ batchId: form.batchId, date: todayLocalDate(), customer: "", customerId: "", crates: "", pricePerCrateMinor: "" }))}>
+<ValidatedForm className="inline-form" onSubmit={saveEggSale}>
                   <label className="field"><span>Sale date</span><input required type="date" value={eggSaleForm.date} onChange={e=>setEggSaleForm({...eggSaleForm,date:e.target.value})}/></label>
                   <label className="field"><span>Saved customer</span><select value={eggSaleForm.customerId} onChange={e=>{const id=e.target.value;const customer=customers.find(c=>c.id===id);setEggSaleForm({...eggSaleForm,customerId:id,customer:customer?.name||""});}}>
                     <option value="">Walk-in sale / no saved customer</option>
@@ -97,14 +104,14 @@ export default function ProductionPage() {
                   <label className="field"><span>Crates e.g. 0.5 or 2.5</span><input required min="0.001" step="0.001" type="number" value={eggSaleForm.crates} onChange={e=>setEggSaleForm({...eggSaleForm,crates:e.target.value})}/></label>
                   <label className="field"><span>Price per crate (₦)</span><input required type="text" inputMode="decimal" value={eggSaleForm.pricePerCrateMinor} onChange={e=>setEggSaleForm({...eggSaleForm,pricePerCrateMinor:e.target.value})}/></label>
                   <button disabled={saving}>Record sale</button>
-                </form>
-                <p className="muted">Showing sale records within the selected reporting period.</p>
+                </ValidatedForm>
+</ModalForm>
                 <DataTable caption="Egg sales" columns={[
                     { key: "recordDate", label: "Date" }, { key: "customer", label: "Customer" },
                     { key: "crates", label: "Crates", render: row => row.crates.toString() }, { key: "soldEggs", label: "Eggs" },
                     { key: "pricePerCrateMinor", label: "Price / crate", render: row => formatMoney(row.pricePerCrateMinor, farm.currency) },
                     { key: "totalAmountMinor", label: "Total", render: row => formatMoney(row.totalAmountMinor, farm.currency) },
-                  ]} rows={periodEggSales} emptyMessage="No egg sales in this period." />
+                  ]} rows={eggSales} emptyMessage="No egg sales recorded for this layer batch yet." />
               </div>
             </>
           )}
@@ -120,7 +127,6 @@ export default function ProductionPage() {
           </div>
 
           <div className="subsection">
-            <h3>Meat-production batch</h3>
             <label className="field"><span>Meat-production batch</span><select value={broilerBatchId} onChange={e => {
               const id = e.target.value;
               setBroilerBatchId(id);
@@ -135,6 +141,7 @@ export default function ProductionPage() {
               )}
             </select></label>
           </div>
+          {!batches.some(batch => batch.type === "BROILER" || batch.type === "TURKEY") && <EmptyState variant="not-applicable" heading="No meat-bird batches available" description="Create a BROILER or TURKEY batch in Flocks before recording weights and bird sales." compact />}
 
           {broilerBatchId && (
             <>
@@ -153,34 +160,35 @@ export default function ProductionPage() {
                     { key: "weightGainKg", label: "Weight gain", render: row => row.weightGainKg == null ? "—" : `${row.weightGainKg} kg` },
                     { key: "feedConsumedKg", label: "Feed consumed (converted)", render: row => row.feedConsumedKg == null ? "—" : `${row.feedConsumedKg} kg` },
                     { key: "fcr", label: "FCR", render: row => row.fcr ?? "—" }, { key: "trend", label: "Trend records", render: row => row.trend?.length ?? 0 },
-                  ]} rows={[{ id: "growth-summary", ...(broilerGrowth || {}) }]} emptyMessage="No growth summary available." />
-                <p className="muted">Growth summary and FCR remain batch-to-date snapshots. FCR uses converted kilograms of all recorded feed divided by live-weight gain. Configure each non-kg feed type’s kg-per-unit factor in Feed management. If any consumed feed type has an unknown conversion, feed consumed and FCR display — until the factor is configured.</p>
+                  ]} rows={broilerGrowth ? [{ id: "growth-summary", ...broilerGrowth }] : []} emptyMessage="No growth summary available until weight records have been entered." notApplicable={!broilerBatchId} />
+                <p className="muted">FCR uses converted kilograms of all recorded feed divided by live-weight gain. Configure each non-kg feed type’s kg-per-unit factor in Feed management. If any consumed feed type has an unknown conversion, feed consumed and FCR display — until the factor is configured.</p>
               </div>
 
               <div className="subsection">
                 <h3>Record weight</h3>
-                <form className="inline-form" onSubmit={saveWeight}>
+                <ModalForm title="Weight record" description="Record the sampled bird count and total sample weight." triggerLabel="Record weight" loading={saving} error={error} onDiscard={() => setWeightForm(form => ({ ...emptyWeight, batchId: form.batchId }))}>
+<ValidatedForm className="inline-form" onSubmit={saveWeight}>
                   <label className="field"><span>Record date</span><input required type="date" value={weightForm.date} onChange={e=>setWeightForm({...weightForm,date:e.target.value})}/></label>
                   <label className="field"><span>Sampled birds</span><input required min="1" type="number" value={weightForm.sampleQuantity} onChange={e=>setWeightForm({...weightForm,sampleQuantity:e.target.value})}/></label>
                   <label className="field"><span>Total sample weight (kg)</span><input required min="0.001" step="0.001" type="number" value={weightForm.totalWeightKg} onChange={e=>setWeightForm({...weightForm,totalWeightKg:e.target.value})}/></label>
                   <label className="field"><span>Notes</span><input value={weightForm.notes} onChange={e=>setWeightForm({...weightForm,notes:e.target.value})}/></label>
                   <button disabled={saving}>Record weight</button>
-                </form>
-                <p className="muted">Showing weight records within the selected reporting period.</p>
+                </ValidatedForm>
+</ModalForm>
                 <DataTable caption="Meat-bird weight records" columns={[
                     { key: "recordDate", label: "Date" }, { key: "sampleQuantity", label: "Sample" }, { key: "totalWeightKg", label: "Total kg" },
                     { key: "averageWeightKg", label: "Average kg" }, { key: "weightGainKg", label: "Gain kg/bird" },
-                  ]} rows={periodBroilerWeights} emptyMessage="No weight records in this period." />
+                  ]} rows={broilerWeights} emptyMessage="No weight records yet. Record a sample above to start the growth trend." />
               </div>
 
               <div className="subsection">
                 <h3>Cost-based pricing</h3>
                 <p className="muted">Actual cost comes from the backend bird-cost ledger. Prices are calculated by Spring Boot.</p>
-                <form className="inline-form" onSubmit={e=>{e.preventDefault(); loadPricingForBatch(broilerBatchId, pricingForm.quantity, pricingForm.date);}}>
+                <ValidatedForm className="inline-form" onSubmit={async e=>{e.preventDefault(); await loadPricingForBatch(broilerBatchId, pricingForm.quantity, pricingForm.date);}}>
                   <label className="field"><span>Bird quantity</span><input required min="1" type="number" value={pricingForm.quantity} onChange={e=>setPricingForm({...pricingForm,quantity:e.target.value})}/></label>
                   <label className="field"><span>Pricing date</span><input required type="date" value={pricingForm.date} onChange={e=>setPricingForm({...pricingForm,date:e.target.value})}/></label>
                   <button disabled={saving}>Calculate price</button>
-                </form>
+                </ValidatedForm>
                 {pricing && <DataTable caption="Cost-based pricing calculation" columns={[
                     { key: "actualCostMinor", label: "Actual cost", render: row => formatMoney(row.actualCostMinor, farm.currency) },
                     { key: "targetMarginPercent", label: "Target margin", render: row => `${row.targetMarginPercent ?? "—"}%` },
@@ -192,7 +200,8 @@ export default function ProductionPage() {
 
               <div className="subsection">
                 <h3>Bird sales</h3>
-                <form className="inline-form" onSubmit={saveBirdSale}>
+                <ModalForm title="Bird sale" description="Record a partial or full sale of birds from this batch." triggerLabel="Record bird sale" loading={saving} error={error} onDiscard={() => setBirdSaleForm(form => ({ ...emptyBirdSale, batchId: form.batchId }))}>
+<ValidatedForm className="inline-form" onSubmit={saveBirdSale}>
                   <label className="field"><span>Sale date</span><input required type="date" value={birdSaleForm.date} onChange={e=>setBirdSaleForm({...birdSaleForm,date:e.target.value})}/></label>
                   <label className="field"><span>Quantity</span><input required min="1" type="number" value={birdSaleForm.quantity} onChange={e=>setBirdSaleForm({...birdSaleForm,quantity:e.target.value})}/></label>
                   <label className="field"><span>Price per bird (₦)</span><input required type="text" inputMode="decimal" value={birdSaleForm.pricePerBirdMinor} onChange={e=>setBirdSaleForm({...birdSaleForm,pricePerBirdMinor:e.target.value})}/></label>
@@ -202,14 +211,14 @@ export default function ProductionPage() {
                   </select></label>
                   {!birdSaleForm.customerId && <label className="field"><span>Walk-in customer name</span><input required maxLength="120" value={birdSaleForm.customer} onChange={e=>setBirdSaleForm({...birdSaleForm,customer:e.target.value})} placeholder="Enter buyer name"/></label>}
                   <button disabled={saving}>Record bird sale</button>
-                </form>
-                <p className="muted">Showing sale records within the selected reporting period.</p>
+                </ValidatedForm>
+</ModalForm>
                 <DataTable caption="Meat-bird sales" columns={[
                     { key: "recordDate", label: "Date" }, { key: "quantity", label: "Quantity" },
                     { key: "pricePerBirdMinor", label: "Price / bird", render: row => formatMoney(row.pricePerBirdMinor, farm.currency) },
                     { key: "totalAmountMinor", label: "Total", render: row => formatMoney(row.totalAmountMinor, farm.currency) },
                     { key: "customer", label: "Customer" },
-                  ]} rows={periodBroilerSales} emptyMessage="No bird sales in this period." />
+                  ]} rows={broilerSales} emptyMessage="No bird sales recorded for this meat-bird batch yet." />
               </div>
             </>
           )}

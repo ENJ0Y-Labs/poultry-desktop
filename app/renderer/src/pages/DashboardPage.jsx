@@ -7,6 +7,8 @@ import PageSection from "../components/PageSection.jsx";
 // eslint-disable-next-line no-unused-vars
 import PageTemplate from "../components/PageTemplate.jsx";
 import { formatAuditAction, formatAuditEntity, formatAuditTimestamp } from "../utils/auditFormatting.js";
+// eslint-disable-next-line no-unused-vars -- JSX component usage is not detected by the core rule
+import ContextDrawer, { DrawerDetails } from "../components/ContextDrawer.jsx";
 import { attentionTarget } from "../utils/attentionNavigation.js";
 import { calculatePeriodProfitMinor } from "../utils/reportMetrics.js";
 // eslint-disable-next-line no-unused-vars
@@ -14,6 +16,8 @@ import DateRangeFilter from "../components/DateRangeFilter.jsx";
 import { formatEggQuantity } from "../utils/eggFormatting.js";
 // eslint-disable-next-line no-unused-vars
 import GettingStartedChecklist from "../components/GettingStartedChecklist.jsx";
+// eslint-disable-next-line no-unused-vars
+import DashboardKpiCard from "../components/DashboardKpiCard.jsx";
 
 function todayLocalDate() {
   const now = new Date();
@@ -34,8 +38,6 @@ function formatBusinessDate(value, pattern = "YYYY-MM-DD") {
   return pattern.replace(/YYYY|MM|DD/g, token => parts[token]);
 }
 
-const primaryMetrics = new Set(["Total birds", "Revenue", "Profit"]);
-
 export default function DashboardPage() {
   const {
     formatMoney,
@@ -55,6 +57,8 @@ export default function DashboardPage() {
     setDateRange,
     selectedBatchId,
     setMortalityForm,
+    setMortalityModalSignal,
+    setFeedUsageModalSignal,
     setEggBatchId,
     setEggCollectionForm,
     setFeedUsageForm,
@@ -63,9 +67,12 @@ export default function DashboardPage() {
     setBirdSaleForm,
     setEggSaleForm,
     setExpenseForm,
+    setFeedPurchaseModalSignal,
     loadEggsForBatch,
     loadBroilerForBatch,
   } = useContext(FarmManagerContext);
+
+  const [drawerRecord, setDrawerRecord] = useState(null);
 
   const isFirstRunEmpty = dashboard
     && houses.length === 0
@@ -83,6 +90,32 @@ export default function DashboardPage() {
     window.location.hash = target;
   }
 
+  function openAuditDetails(row) {
+    let changedFields = row.changedFields;
+    if (typeof changedFields === "string") {
+      try { changedFields = JSON.parse(changedFields); } catch { /* Preserve the recorded value. */ }
+    }
+    const changedFieldsLabel = Array.isArray(changedFields) ? changedFields.join(", ") : changedFields;
+    const snapshotText = value => {
+      if (value == null || value === "") return "";
+      if (typeof value !== "string") return JSON.stringify(value, null, 2);
+      try { return JSON.stringify(JSON.parse(value), null, 2); } catch { return value; }
+    };
+    setDrawerRecord({
+      title: formatAuditAction(row.action),
+      description: "Immutable audit activity. The recorded values are displayed without changing audit history.",
+      fields: [
+        ["Entity ID", row.entityId],
+        ["User ID", row.userId],
+        ["Batch ID", row.batchId],
+        ["Changed fields", changedFieldsLabel],
+        ["Audit record ID", row.id],
+      ].filter(([, value]) => value !== null && value !== undefined && value !== ""),
+      before: snapshotText(row.before),
+      after: snapshotText(row.after),
+    });
+  }
+
 
 
   const [checklistDismissed, setChecklistDismissed] = useState(
@@ -98,7 +131,7 @@ export default function DashboardPage() {
     : dashboard?.profitMinor;
 
   return (
-    <PageTemplate className="grid">
+    <PageTemplate className="grid pomas-page page-dashboard">
       <PageSection page="dashboard" tab="overview"><section id="dashboard" className="card full dashboard-page">
         <div className="section-head">
           <div><p className="eyebrow">OVERVIEW</p><h2>Farm dashboard</h2></div>
@@ -127,13 +160,14 @@ export default function DashboardPage() {
           </section>
         ) : (
           <>
-            <GettingStartedChecklist houses={houses} batches={batches} feedTypes={feedTypes} feedInventory={feedInventory} />
+            <GettingStartedChecklist houses={houses} batches={batches} feedTypes={feedTypes} feedInventory={feedInventory} onTaskAction={route => { if (route === "feed-stock/purchases") setFeedPurchaseModalSignal(value => value + 1); }} />
             <section className="subsection quick-actions" aria-labelledby="quick-actions-title">
               <div className="section-head"><div><p className="eyebrow">DAILY WORK</p><h3 id="quick-actions-title">Quick actions</h3></div><p className="muted">Jump straight to a validated entry form.</p></div>
               <div className="quick-action-grid">
                 <button type="button" onClick={() => {
                   const batch = batches.find(item => item.id === selectedBatchId && item.status === "ACTIVE") || batches.find(item => item.status === "ACTIVE");
                   setMortalityForm(form => ({ ...form, batchId: batch?.id || form.batchId, date: todayLocalDate() }));
+                  setMortalityModalSignal(value => value + 1);
                   navigateTo("daily-work/mortality");
                 }}>Record mortality</button>
                 <button type="button" onClick={() => {
@@ -151,6 +185,7 @@ export default function DashboardPage() {
                   const batchId = batch?.id || "";
                   setDailyForm(form => ({ ...form, batchId, date: todayLocalDate() }));
                   setFeedUsageForm(form => ({ ...form, batchId, feedTypeId: type?.id || form.feedTypeId, unit: type?.unit || form.unit, usageDate: todayLocalDate() }));
+                  setFeedUsageModalSignal(value => value + 1);
                   navigateTo("daily-work/daily-record");
                 }}>Record feed usage</button>
                 <button type="button" onClick={() => {
@@ -177,38 +212,35 @@ export default function DashboardPage() {
                 }}>Record an expense</button>
               </div>
             </section>
-            <p className="muted dashboard-range-note">Mortality, egg collections and money totals cover the selected period. Bird population, houses, feed stock and attention remain current.</p>
-            <div className="metric-grid">
-              {[
-                ["Total birds", formatCount(dashboard.totalBirds), ""],
-                ["Estimated birds", formatCount(dashboard.estimatedBirds), ""],
-                ["Estimated batches", formatCount(dashboard.estimatedBatches), ""],
-                ["Layer birds", formatCount(dashboard.layerBirds), ""],
-                ["Broiler birds", formatCount(dashboard.broilerBirds), ""],
-                ["Turkey birds", formatCount(dashboard.turkeyBirds), ""],
-                ["Active batches", formatCount(dashboard.activeBatches), ""],
-                ["Total houses", formatCount(dashboard.totalHouses), ""],
-                ["Permanent houses", formatCount(dashboard.permanentHouses), ""],
-                ["Temporary houses", formatCount(dashboard.temporaryHouses), ""],
-                ["Occupied houses", formatCount(dashboard.occupiedHouses), ""],
-                ["Empty houses", formatCount(dashboard.emptyHouses), ""],
-                ["Mortality", formatCount(dashboard.period?.mortality ?? dashboard.mortality), "birds"],
-                ["Good eggs", formatEggQuantity(dashboard.period?.eggsGood ?? dashboard.eggsGood, crateSize), ""],
-                ["Revenue", formatMoney(dashboard.period?.revenueMinor ?? dashboard.revenueMinor, farm.currency), ""],
-                ["Expenses", formatMoney(dashboard.period?.expensesMinor ?? dashboard.expensesMinor, farm.currency), ""],
-                ["Profit", formatMoney(periodProfitMinor, farm.currency), ""],
-                ["Inventory alerts", dashboard.inventoryAlerts, ""],
-              ].map(([label, value, unit]) => (
-                <div
-                  className={"metric-card" + (primaryMetrics.has(label) ? " metric-card-primary" : "")}
-                  key={label}
-                >
-                  <span>{label}</span>
-                  <strong>{value ?? "—"}</strong>
-                  {unit && <small>{unit}</small>}
+            <section className="dashboard-kpi-section" aria-label="Farm key performance indicators">
+              <div className="dashboard-kpi-primary">
+                <DashboardKpiCard label="Total birds" value={formatCount(dashboard.totalBirds)} primary href="#flocks/batch-dashboard" description="View flock populations and batch details" />
+                <DashboardKpiCard label="Revenue" value={formatMoney(dashboard.revenueMinor, farm.currency)} primary href="#sales-money/sales" description="View recorded farm sales" />
+                <DashboardKpiCard label="Profit" value={formatMoney(dashboard.profitMinor, farm.currency)} primary href="#reports/farm-report" description="Review the farm financial report" />
+              </div>
+              <div className="dashboard-kpi-secondary">
+                <DashboardKpiCard label="Mortality" value={formatCount(dashboard.mortality)} unit="birds" href="#daily-work/mortality" description="Review mortality records" />
+                <DashboardKpiCard label="Good eggs" value={formatEggQuantity(dashboard.eggsGood, crateSize)} href="#production/eggs" description="Review layer egg production" />
+                <DashboardKpiCard label="Expenses" value={formatMoney(dashboard.expensesMinor, farm.currency)} href="#sales-money/expenses" description="Review recorded farm expenses" />
+                <DashboardKpiCard label="Active batches" value={formatCount(dashboard.activeBatches)} href="#flocks/flocks" description="View active flocks" />
+                <DashboardKpiCard label="Inventory alerts" value={formatCount(dashboard.inventoryAlerts)} href="#feed-stock/inventory" description="Review low and insufficient stock alerts" />
+              </div>
+              <div className="dashboard-kpi-detail-group" aria-label="Additional farm metrics">
+                <p className="eyebrow">FLOCK & FACILITY BREAKDOWN</p>
+                <div className="dashboard-kpi-detail-grid">
+                  <DashboardKpiCard label="Estimated birds" value={formatCount(dashboard.estimatedBirds)} href="#flocks/batch-dashboard" description="View estimated flock populations" />
+                  <DashboardKpiCard label="Estimated batches" value={formatCount(dashboard.estimatedBatches)} href="#flocks/flocks" description="View batches with estimated populations" />
+                  <DashboardKpiCard label="Layer birds" value={formatCount(dashboard.layerBirds)} href="#flocks/batch-dashboard" description="View layer flock populations" />
+                  <DashboardKpiCard label="Broiler birds" value={formatCount(dashboard.broilerBirds)} href="#flocks/batch-dashboard" description="View broiler flock populations" />
+                  <DashboardKpiCard label="Turkey birds" value={formatCount(dashboard.turkeyBirds)} href="#flocks/batch-dashboard" description="View turkey flock populations" />
+                  <DashboardKpiCard label="Total houses" value={formatCount(dashboard.totalHouses)} href="#flocks/houses" description="View farm houses and pens" />
+                  <DashboardKpiCard label="Permanent houses" value={formatCount(dashboard.permanentHouses)} href="#flocks/houses" description="View permanent houses" />
+                  <DashboardKpiCard label="Temporary houses" value={formatCount(dashboard.temporaryHouses)} href="#flocks/houses" description="View temporary houses" />
+                  <DashboardKpiCard label="Occupied houses" value={formatCount(dashboard.occupiedHouses)} href="#flocks/houses" description="View occupied houses" />
+                  <DashboardKpiCard label="Empty houses" value={formatCount(dashboard.emptyHouses)} href="#flocks/houses" description="View empty houses" />
                 </div>
-              ))}
-            </div>
+              </div>
+            </section>
             <div className="dashboard-columns">
               <div className="subsection dashboard-feed-panel"><h3>Feed</h3><div className="dashboard-list">
                 <div><span>Feed types</span><strong>{dashboard.feedSummary?.typeCount ?? 0}</strong></div>
@@ -233,10 +265,22 @@ export default function DashboardPage() {
                 { key: "action", label: "Action", render: row => formatAuditAction(row.action) },
                 { key: "entityType", label: "Entity", render: row => formatAuditEntity(row.entityType) },
                 { key: "reason", label: "Reason", render: row => typeof row.reason === "string" && row.reason.trim() ? row.reason : "—" },
+                { key: "details", label: "Details", render: row => <button type="button" className="secondary-button" onClick={() => openAuditDetails(row)}>View</button> },
               ]} rows={auditRows.slice(0, 8)} emptyMessage="No audit records yet." />}</div>
           </>
         ) : <p className="muted">Dashboard is loading…</p>}
       </section></PageSection>
+      <ContextDrawer open={Boolean(drawerRecord)} onClose={() => setDrawerRecord(null)} title={drawerRecord?.title || "Audit details"} description={drawerRecord?.description} size="large">
+        {drawerRecord && <DrawerDetails fields={drawerRecord.fields} />}
+        {drawerRecord?.before && <section className="subsection">
+          <h3>Before</h3>
+          <pre className="pomas-audit-snapshot">{drawerRecord.before}</pre>
+        </section>}
+        {drawerRecord?.after && <section className="subsection">
+          <h3>After</h3>
+          <pre className="pomas-audit-snapshot">{drawerRecord.after}</pre>
+        </section>}
+      </ContextDrawer>
     </PageTemplate>
   );
 }

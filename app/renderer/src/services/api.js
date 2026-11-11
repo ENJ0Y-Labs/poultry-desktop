@@ -370,6 +370,8 @@ export const backupApi = {
 
 
 export const csvImportApi = {
+  previewBatchRecords: (records) => request("/imports/csv/batches/preview", { method: "POST", body: JSON.stringify({ module: "batches", records }) }),
+  importBatchRecords: (records) => request("/imports/csv/batches", { method: "POST", body: JSON.stringify({ module: "batches", records }) }),
   importRecords: (module, records) => request("/imports/csv", { method: "POST", body: JSON.stringify({ module, records }) }),
   previewOperationalRecords: (module, records) => request("/imports/csv/operational/preview", { method: "POST", body: JSON.stringify({ module, records }) }),
   importOperationalRecords: (module, records) => request("/imports/csv/operational", { method: "POST", body: JSON.stringify({ module, records }) }),

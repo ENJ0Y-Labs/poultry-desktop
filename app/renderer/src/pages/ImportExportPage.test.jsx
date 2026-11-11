@@ -4,18 +4,17 @@ import { describe, expect, it } from "vitest";
 import ImportExportPage from "./ImportExportPage.jsx";
 
 describe("ImportExportPage", () => {
-  it("marks historical batch import as unavailable and provides a manual batch workflow", () => {
+  it("offers a working batch opening import path", () => {
     render(<ImportExportPage />);
-    expect(screen.getByRole("heading", { name: "Existing batch opening records" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Batch import unavailable" })).toBeDisabled();
-    fireEvent.click(screen.getByRole("button", { name: "Open batch management" }));
-    expect(window.location.hash).toBe("#flocks/flocks");
+    expect(screen.getByRole("heading", { name: "Batch / flock opening records" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Prepare batch import" }));
+    expect(screen.getByRole("combobox", { name: "Import module" })).toHaveValue("batches");
   });
   it("exposes house/pen, feed, production, health, drug, vaccination, customer, and supplier CSV import modules", () => {
     render(<ImportExportPage />);
     const selector = screen.getByRole("combobox", { name: "Import module" });
     expect(selector).toHaveValue("customers");
-    expect(Array.from(selector.options).map(option => option.value)).toEqual(["houses", "feed-purchases", "feed-usage", "egg-collections", "broiler-weights", "health", "drugs", "vaccinations", "customers", "suppliers"]);
+    expect(Array.from(selector.options).map(option => option.value)).toEqual(["houses", "batches", "feed-purchases", "feed-usage", "egg-collections", "broiler-weights", "health", "drugs", "vaccinations", "customers", "suppliers"]);
   });
   it("links to the existing supported report export workflow", () => {
     render(<ImportExportPage />);

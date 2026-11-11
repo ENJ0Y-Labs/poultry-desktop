@@ -39,7 +39,6 @@
 
 /* Navigation, labels, state, and data labels are essential UI text. */
 .nav-group p,
-.workspace-kicker,
 .eyebrow {
   color: var(--a11y-secondary);
   font-size: 11px;
@@ -55,11 +54,9 @@
   color: var(--a11y-accent-text);
 }
 
-.workspace-status,
 .brand-copy small,
 .topbar-title .muted,
 .date-chip,
-.theme-control,
 .node-status small,
 .dashboard-list span,
 .attention-item p,
@@ -68,12 +65,10 @@
   color: var(--a11y-secondary);
 }
 
-.theme-control,
 label {
   font-size: 12px;
 }
 
-.workspace-status,
 .node-status small {
   font-size: 11px;
 }
@@ -168,7 +163,6 @@ textarea::placeholder {
 }
 
 :root[data-theme="light"] .eyebrow,
-:root[data-theme="light"] .workspace-kicker,
 :root[data-theme="light"] .nav-group p,
 :root[data-theme="light"] .row.header,
 :root[data-theme="light"] .metric-card span {
@@ -272,11 +266,11 @@ button:focus-visible {
 }
 
 /* Primary actions use teal with white text; gold remains an accent, not body text. */
-button:not(.secondary):not(.danger):not(.nav-item):not(.page-tab):not(.activity-button):not(.attention-item) {
+button:not(.secondary):not(.danger):not(.nav-item):not(.page-tab):not(.sidebar-toggle):not(.brand-mark-button):not(.attention-item) {
   background: var(--brand-teal);
   color: #ffffff;
 }
-button:not(.secondary):not(.danger):not(.nav-item):not(.page-tab):not(.activity-button):not(.attention-item):hover:not(:disabled) {
+button:not(.secondary):not(.danger):not(.nav-item):not(.page-tab):not(.sidebar-toggle):not(.brand-mark-button):not(.attention-item):hover:not(:disabled) {
   background: #246779;
   color: #ffffff;
 }
@@ -372,12 +366,12 @@ button:focus-visible {
 }
 
 .app-shell, .app-main, .app-topbar, .sidebar, .card, .metric-card,
-.subsection, .workspace-summary, .sidebar-footer, .table,
+.subsection, .sidebar-footer, .table,
 .table-container, .activity-table-container {
   color: var(--a11y-text);
 }
 .app-shell, .app-main { background: var(--pomas-page-bg); }
-.sidebar, .card, .metric-card, .subsection, .workspace-summary,
+.sidebar, .card, .metric-card, .subsection,
 .sidebar-footer, .app-topbar {
   background-color: var(--pomas-panel-bg);
   border-color: var(--pomas-border);
@@ -394,15 +388,15 @@ button:focus-visible {
   color: var(--brand-teal);
   background: var(--a11y-nav-active-bg);
 }
-button:not(.secondary):not(.danger):not(.nav-item):not(.page-tab):not(.activity-button):not(.attention-item) {
+button:not(.secondary):not(.danger):not(.nav-item):not(.page-tab):not(.sidebar-toggle):not(.brand-mark-button):not(.attention-item) {
   background: var(--pomas-primary-action-bg);
   color: var(--pomas-primary-action-text);
 }
-button:not(.secondary):not(.danger):not(.nav-item):not(.page-tab):not(.activity-button):not(.attention-item):hover:not(:disabled) {
+button:not(.secondary):not(.danger):not(.nav-item):not(.page-tab):not(.sidebar-toggle):not(.brand-mark-button):not(.attention-item):hover:not(:disabled) {
   background: var(--pomas-primary-action-hover);
   color: var(--pomas-primary-action-text);
 }
-:root[data-theme="light"] button:not(.secondary):not(.danger):not(.nav-item):not(.page-tab):not(.activity-button):not(.attention-item) {
+:root[data-theme="light"] button:not(.secondary):not(.danger):not(.nav-item):not(.page-tab):not(.sidebar-toggle):not(.brand-mark-button):not(.attention-item) {
   background: var(--pomas-primary-action-bg);
   color: var(--pomas-primary-action-text);
 }
@@ -527,7 +521,6 @@ input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-
 :root:not([data-theme="light"]) .card,
 :root:not([data-theme="light"]) .metric-card,
 :root:not([data-theme="light"]) .subsection,
-:root:not([data-theme="light"]) .workspace-summary,
 :root:not([data-theme="light"]) .sidebar-footer,
 :root:not([data-theme="light"]) .table-container,
 :root:not([data-theme="light"]) .table-scroll,
@@ -543,7 +536,6 @@ input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-
 :root:not([data-theme="light"]) .card,
 :root:not([data-theme="light"]) .metric-card,
 :root:not([data-theme="light"]) .subsection,
-:root:not([data-theme="light"]) .workspace-summary,
 :root:not([data-theme="light"]) .data-table th {
   background-color: var(--pomas-panel-raised);
 }
@@ -566,7 +558,6 @@ input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-
 :root[data-theme="light"] .card,
 :root[data-theme="light"] .metric-card,
 :root[data-theme="light"] .subsection,
-:root[data-theme="light"] .workspace-summary,
 :root[data-theme="light"] .sidebar-footer,
 :root[data-theme="light"] .table-container,
 :root[data-theme="light"] .table-scroll,
