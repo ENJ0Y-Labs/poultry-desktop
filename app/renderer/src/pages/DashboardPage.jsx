@@ -8,6 +8,7 @@ import PageSection from "../components/PageSection.jsx";
 import PageTemplate from "../components/PageTemplate.jsx";
 import { formatAuditAction, formatAuditEntity, formatAuditTimestamp } from "../utils/auditFormatting.js";
 import { attentionTarget } from "../utils/attentionNavigation.js";
+import { calculatePeriodProfitMinor } from "../utils/reportMetrics.js";
 // eslint-disable-next-line no-unused-vars
 import DateRangeFilter from "../components/DateRangeFilter.jsx";
 import { formatEggQuantity } from "../utils/eggFormatting.js";
@@ -93,7 +94,7 @@ export default function DashboardPage() {
   }
 
   const periodProfitMinor = dashboard?.period
-    ? Number(dashboard.period.revenueMinor || 0) - Number(dashboard.period.expensesMinor || 0)
+    ? calculatePeriodProfitMinor(dashboard.period.revenueMinor, dashboard.period.expensesMinor)
     : dashboard?.profitMinor;
 
   return (
