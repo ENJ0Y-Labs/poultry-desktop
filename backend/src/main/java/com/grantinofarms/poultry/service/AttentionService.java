@@ -291,7 +291,7 @@ public class AttentionService {
                              AND e.record_date <= ?
                        ), 0) AS recent_eggs,
                        COALESCE((
-                           SELECT SUM(e.good_eggs)
+                           SELECT SUM(e.good_eggs + e.cracked_eggs)
                            FROM egg_collections e
                            WHERE e.batch_id = b.id
                              AND e.record_date > date(?, '-14 day')
