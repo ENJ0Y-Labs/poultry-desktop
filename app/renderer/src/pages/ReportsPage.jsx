@@ -5,6 +5,7 @@ import PageSection from "../components/PageSection.jsx";
 // eslint-disable-next-line no-unused-vars
 import PageTemplate from "../components/PageTemplate.jsx";
 import { reportApi, productionTrendApi } from "../services/api.js";
+// eslint-disable-next-line no-unused-vars -- Recharts components are used in JSX.
 import { BarChart, Bar, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 // eslint-disable-next-line no-unused-vars
 import DateRangeFilter from "../components/DateRangeFilter.jsx";
