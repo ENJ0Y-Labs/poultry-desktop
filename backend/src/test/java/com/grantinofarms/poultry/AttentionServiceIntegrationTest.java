@@ -122,6 +122,93 @@ class AttentionServiceIntegrationTest {
                 .filter(row -> "INSUFFICIENT_INVENTORY".equals(row.get("type")))
                 .findFirst().orElseThrow()
                 .get("itemId")).isEqualTo(emptyInventory.id());
+
+        Map<String, Object> mortalityInsight = attention.stream()
+                .filter(row -> "HIGH_MORTALITY".equals(row.get("type")))
+                .findFirst().orElseThrow();
+        assertThat(mortalityInsight)
+                .containsEntry("detectedAt", AS_OF)
+                .containsEntry("affectedMetric", "Mortality")
+                .containsEntry("ruleId", "HIGH_MORTALITY")
+                .containsEntry("thresholdContext", "Warning at 5%; critical at 10% of initial birds.")
+                .containsKey("suggestedAction")
+                .containsEntry("houseId", layerHouse.id())
+                .containsEntry("houseName", "Layer House");
+    }
+
+    @Test
+    void detectsRecentFeedIncreaseWeightDeclineAndRisingExpensesWithRuleContext() {
+        setupFarm();
+        var house = houseService.create(new HouseCreateRequest("Broiler House", "BH1", null));
+        var broiler = batchService.create(new BatchCreateRequest(
+                "BROILER", LocalDate.of(2026, 8, 1), house.id(), 500, null, 5_000_000L));
+
+        var feedType = feedService.createType(new FeedTypeCreateRequest("Broiler Grower", "kg", "BROILER"));
+        feedService.purchase(new FeedPurchaseRequest(
+                feedType.id(), null, LocalDate.of(2026, 8, 1), new BigDecimal("100"), "kg", 500_000L));
+        feedService.use(broiler.id(), new FeedUsageRequest(
+                feedType.id(), AS_OF.minusDays(10), new BigDecimal("10"), "kg"));
+        feedService.use(broiler.id(), new FeedUsageRequest(
+                feedType.id(), AS_OF.minusDays(3), new BigDecimal("15"), "kg"));
+
+        jdbc.update("""
+                INSERT INTO weight_records(id,batch_id,record_date,sample_quantity,total_weight_grams,notes,created_at)
+                VALUES(?,?,?,?,?,?,?)
+                """, UUID.randomUUID().toString(), broiler.id(), AS_OF.minusDays(10).toString(),
+                10, 15_000, "Earlier weight", AS_OF.minusDays(10).atStartOfDay().toString());
+        jdbc.update("""
+                INSERT INTO weight_records(id,batch_id,record_date,sample_quantity,total_weight_grams,notes,created_at)
+                VALUES(?,?,?,?,?,?,?)
+                """, UUID.randomUUID().toString(), broiler.id(), AS_OF.minusDays(2).toString(),
+                10, 12_000, "Latest weight", AS_OF.minusDays(2).atStartOfDay().toString());
+
+        String farmId = jdbc.queryForObject("SELECT id FROM farms LIMIT 1", String.class);
+        jdbc.update("""
+                INSERT INTO expenses(id,farm_id,category,amount_minor,occurred_date,description,created_at)
+                VALUES(?,?,?,?,?,?,?)
+                """, UUID.randomUUID().toString(), farmId, "OTHER", 10_000L,
+                AS_OF.minusDays(10).toString(), "Earlier expense", AS_OF.minusDays(10).atStartOfDay().toString());
+        jdbc.update("""
+                INSERT INTO expenses(id,farm_id,category,amount_minor,occurred_date,description,created_at)
+                VALUES(?,?,?,?,?,?,?)
+                """, UUID.randomUUID().toString(), farmId, "OTHER", 15_000L,
+                AS_OF.minusDays(2).toString(), "Recent expense", AS_OF.minusDays(2).atStartOfDay().toString());
+
+        List<Map<String, Object>> attention = attentionService.list(AS_OF);
+        Set<String> types = attention.stream().map(row -> String.valueOf(row.get("type"))).collect(Collectors.toSet());
+
+        assertThat(types).contains("UNUSUAL_FEED_CONSUMPTION", "DECLINING_WEIGHT", "RISING_EXPENSES");
+        assertThat(attention.stream().filter(row -> "UNUSUAL_FEED_CONSUMPTION".equals(row.get("type")))
+                .findFirst().orElseThrow())
+                .containsEntry("batchId", broiler.id())
+                .containsEntry("feedTypeId", feedType.id())
+                .containsEntry("houseId", house.id())
+                .containsEntry("detectedAt", AS_OF);
+        assertThat(attention.stream().filter(row -> "DECLINING_WEIGHT".equals(row.get("type")))
+                .findFirst().orElseThrow().get("declinePercent")).isEqualTo(20.0);
+        assertThat(attention.stream().filter(row -> "RISING_EXPENSES".equals(row.get("type")))
+                .findFirst().orElseThrow()).containsEntry("increasePercent", 50.0)
+                .containsEntry("affectedMetric", "Expenses");
+    }
+
+    @Test
+    void ignoresDecliningWeightWhenLatestMeasurementIsStale() {
+        setupFarm();
+        var house = houseService.create(new HouseCreateRequest("Broiler House", "BH1", null));
+        var broiler = batchService.create(new BatchCreateRequest(
+                "BROILER", LocalDate.of(2026, 8, 1), house.id(), 500, null, 5_000_000L));
+        jdbc.update("""
+                INSERT INTO weight_records(id,batch_id,record_date,sample_quantity,total_weight_grams,notes,created_at)
+                VALUES(?,?,?,?,?,?,?)
+                """, UUID.randomUUID().toString(), broiler.id(), AS_OF.minusDays(20).toString(),
+                10, 15_000, "Earlier weight", AS_OF.minusDays(20).atStartOfDay().toString());
+        jdbc.update("""
+                INSERT INTO weight_records(id,batch_id,record_date,sample_quantity,total_weight_grams,notes,created_at)
+                VALUES(?,?,?,?,?,?,?)
+                """, UUID.randomUUID().toString(), broiler.id(), AS_OF.minusDays(15).toString(),
+                10, 12_000, "Stale lower weight", AS_OF.minusDays(15).atStartOfDay().toString());
+
+        assertThat(attentionService.list(AS_OF)).noneMatch(row -> "DECLINING_WEIGHT".equals(row.get("type")));
     }
 
     @Test
