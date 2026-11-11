@@ -335,7 +335,10 @@ public class AttentionService {
                     int initial = rs.getInt("initial_bird_count");
                     long recent = rs.getLong("recent_mortality");
                     double percent = initial <= 0 ? 0 : recent * 100.0 / initial;
-                    if (percent >= 2.0) {
+                    boolean cumulativeMortalityAlreadyShown = result.stream().anyMatch(item ->
+                            "HIGH_MORTALITY".equals(item.get("type"))
+                                    && rs.getString("id").equals(item.get("batchId")));
+                    if (percent >= 2.0 && !cumulativeMortalityAlreadyShown) {
                         result.add(alert(
                                 "MORTALITY_INCREASE", percent >= 5.0 ? "CRITICAL" : "WARNING",
                                 "Recent mortality increase",
