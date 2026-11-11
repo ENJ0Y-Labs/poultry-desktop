@@ -118,6 +118,9 @@ public class AttentionService {
     private void addFeedAlerts(List<Map<String, Object>> result, String farmId, LocalDate date) {
         jdbc.query("""
                 SELECT f.id, f.name, f.unit,
+                       COALESCE((SELECT SUM(o.quantity_milli)
+                                 FROM feed_opening_balances o
+                                 WHERE o.feed_type_id = f.id AND o.effective_date <= ?), 0) AS opening,
                        COALESCE((SELECT SUM(p.quantity_milli)
                                  FROM feed_purchases p
                                  WHERE p.feed_type_id = f.id AND p.purchase_date <= ?), 0) AS purchased,
@@ -133,13 +136,14 @@ public class AttentionService {
                 WHERE f.farm_id = ? AND f.status = 'ACTIVE'
                 """,
                 rs -> {
+                    long opening = rs.getLong("opening");
                     long purchased = rs.getLong("purchased");
                     long used = rs.getLong("used");
-                    long remaining = purchased - used;
+                    long remaining = opening + purchased - used;
                     long usedLast7 = rs.getLong("used_last_7_days");
                     // A feed type with no purchase or usage history is configured, not stocked.
                     // Do not create an empty-stock alert until records show it is expected to be used.
-                    if (purchased == 0 && used == 0) return;
+                    if (opening == 0 && purchased == 0 && used == 0) return;
                     double averageDaily = usedLast7 / 7.0;
                     double daysCover = averageDaily <= 0 ? (remaining <= 0 ? 0 : Double.POSITIVE_INFINITY)
                             : remaining / averageDaily;
@@ -157,7 +161,7 @@ public class AttentionService {
                                 feedDetails(rs.getString("id"), rs.getString("name"), remaining, rs.getString("unit"), daysCover)
                         ));
                     }
-                }, date.toString(), date.toString(), date.toString(), date.toString(), farmId);
+                }, date.toString(), date.toString(), date.toString(), date.toString(), date.toString(), farmId);
     }
 
     private void addMortalityAlerts(List<Map<String, Object>> result, String farmId, LocalDate date) {
