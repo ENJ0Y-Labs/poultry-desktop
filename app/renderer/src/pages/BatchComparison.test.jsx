@@ -3,6 +3,16 @@ import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/re
 import { reportApi } from "../services/api.js";
 import { BatchComparison } from "./ReportsPage.jsx";
 
+vi.mock("recharts", () => ({
+  BarChart: ({ children }) => <div>{children}</div>,
+  Bar: () => null,
+  CartesianGrid: () => null,
+  ResponsiveContainer: ({ children }) => <div>{children}</div>,
+  Tooltip: () => null,
+  XAxis: () => null,
+  YAxis: () => null,
+}));
+
 vi.mock("../services/api.js", () => ({
   reportApi: { compare: vi.fn() },
   productionTrendApi: { layerHdp: vi.fn(), broilerAverageWeight: vi.fn() },
