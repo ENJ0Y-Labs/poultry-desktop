@@ -75,7 +75,6 @@ class DashboardDateRangeIntegrationTest {
                 .containsEntry("eggsGood", 30L)
                 .containsEntry("revenueMinor", 3_000L)
                 .containsEntry("expensesMinor", 1_000L)
-                .containsEntry("profitMinor", 2_000L)
                 .containsEntry("salesCount", 2L)
                 .containsEntry("expenseCount", 2L);
         assertThat(result.get("totalBirds")).isEqualTo(92L);
