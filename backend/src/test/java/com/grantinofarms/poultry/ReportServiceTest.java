@@ -114,7 +114,7 @@ class ReportServiceTest {
                 "revenueMinor", 9000L, "expensesMinor", 7000L, "profitMinor", 2000L));
         Map<String, Object> period = Map.of(
                 "from", from, "to", to, "mortality", 3L, "eggsGood", 30L,
-                "revenueMinor", 3000L, "expensesMinor", 1000L, "profitMinor", 2000L,
+                "revenueMinor", 3000L, "expensesMinor", 1000L,
                 "salesCount", 2L, "expenseCount", 2L);
         when(dashboard.farmRange(from, to)).thenReturn(Map.of("period", period));
         when(batches.list()).thenReturn(List.of());
