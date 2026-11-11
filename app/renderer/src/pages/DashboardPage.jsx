@@ -92,6 +92,10 @@ export default function DashboardPage() {
     setChecklistDismissed(true);
   }
 
+  const periodProfitMinor = dashboard?.period
+    ? Number(dashboard.period.revenueMinor || 0) - Number(dashboard.period.expensesMinor || 0)
+    : dashboard?.profitMinor;
+
   return (
     <PageTemplate className="grid">
       <PageSection page="dashboard" tab="overview"><section id="dashboard" className="card full dashboard-page">
@@ -190,7 +194,7 @@ export default function DashboardPage() {
                 ["Good eggs", formatEggQuantity(dashboard.period?.eggsGood ?? dashboard.eggsGood, crateSize), ""],
                 ["Revenue", formatMoney(dashboard.period?.revenueMinor ?? dashboard.revenueMinor, farm.currency), ""],
                 ["Expenses", formatMoney(dashboard.period?.expensesMinor ?? dashboard.expensesMinor, farm.currency), ""],
-                ["Profit", formatMoney(dashboard.period?.profitMinor ?? dashboard.profitMinor, farm.currency), ""],
+                ["Profit", formatMoney(periodProfitMinor, farm.currency), ""],
                 ["Inventory alerts", dashboard.inventoryAlerts, ""],
               ].map(([label, value, unit]) => (
                 <div
