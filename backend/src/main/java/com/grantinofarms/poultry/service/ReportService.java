@@ -7,6 +7,10 @@ import com.grantinofarms.poultry.dto.SaleResponse;
 import com.grantinofarms.poultry.dto.HealthRecordResponse;
 import com.grantinofarms.poultry.dto.DrugRecordResponse;
 import com.grantinofarms.poultry.dto.VaccinationRecordResponse;
+import com.grantinofarms.poultry.dto.EggCollectionResponse;
+import com.grantinofarms.poultry.dto.EggSaleResponse;
+import com.grantinofarms.poultry.dto.WeightRecordResponse;
+import com.grantinofarms.poultry.dto.BirdSaleResponse;
 import com.grantinofarms.poultry.domain.ReportDateRange;
 import org.springframework.stereotype.Service;
 
@@ -171,6 +175,21 @@ public class ReportService {
         filteredHealth.put("vaccinations", filterDates(
                 (List<VaccinationRecordResponse>) healthRows.get("vaccinations"), range, VaccinationRecordResponse::recordDate));
         report.put("health", filteredHealth);
+        @SuppressWarnings("unchecked")
+        Map<String, Object> productionRows = (Map<String, Object>) report.get("production");
+        Map<String, Object> filteredProduction = new LinkedHashMap<>(productionRows);
+        if ("LAYER".equals(productionRows.get("type"))) {
+            filteredProduction.put("collections", filterDates(
+                    (List<EggCollectionResponse>) productionRows.get("collections"), range, EggCollectionResponse::recordDate));
+            filteredProduction.put("sales", filterDates(
+                    (List<EggSaleResponse>) productionRows.get("sales"), range, EggSaleResponse::recordDate));
+        } else {
+            filteredProduction.put("weights", filterDates(
+                    (List<WeightRecordResponse>) productionRows.get("weights"), range, WeightRecordResponse::recordDate));
+            filteredProduction.put("sales", filterDates(
+                    (List<BirdSaleResponse>) productionRows.get("sales"), range, BirdSaleResponse::recordDate));
+        }
+        report.put("production", filteredProduction);
         return report;
     }
 
