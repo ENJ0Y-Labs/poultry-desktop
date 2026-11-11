@@ -14,6 +14,15 @@ function dateRangeQuery(from, to) {
   return query ? "?" + query : "";
 }
 
+function dateRangeExportQuery(from, to, periodProfitMinor) {
+  const params = new URLSearchParams();
+  if (from) params.set("from", from);
+  if (to) params.set("to", to);
+  if (periodProfitMinor != null) params.set("periodProfitMinor", String(periodProfitMinor));
+  const query = params.toString();
+  return query ? "?" + query : "";
+}
+
 // Error codes for classifying backend communication failures.
 export const BackendErrorCode = Object.freeze({
   URL_UNAVAILABLE: "BACKEND_URL_UNAVAILABLE",
@@ -344,10 +353,10 @@ async function downloadBlob(path) {
 export const reportApi = {
   farm: (asOf, from, to) => request("/reports/farm" + (from || to ? dateRangeQuery(from, to) : (asOf ? "?asOf=" + encodeURIComponent(asOf) : ""))),
   batch: (id, asOf, from, to) => request("/reports/batches/" + id + (from || to ? dateRangeQuery(from, to) : (asOf ? "?asOf=" + encodeURIComponent(asOf) : ""))),
-  farmCsv: (asOf, from, to) => downloadText("/reports/farm.csv" + (from || to ? dateRangeQuery(from, to) : (asOf ? "?asOf=" + encodeURIComponent(asOf) : ""))),
-  batchCsv: (id, asOf, from, to) => downloadText("/reports/batches/" + id + ".csv" + (from || to ? dateRangeQuery(from, to) : (asOf ? "?asOf=" + encodeURIComponent(asOf) : ""))),
-  farmPdf: (asOf, from, to) => downloadBlob("/reports/farm.pdf" + (from || to ? dateRangeQuery(from, to) : (asOf ? "?asOf=" + encodeURIComponent(asOf) : ""))),
-  batchPdf: (id, asOf, from, to) => downloadBlob("/reports/batches/" + id + ".pdf" + (from || to ? dateRangeQuery(from, to) : (asOf ? "?asOf=" + encodeURIComponent(asOf) : ""))),
+  farmCsv: (asOf, from, to, periodProfitMinor) => downloadText("/reports/farm.csv" + (from || to ? dateRangeExportQuery(from, to, periodProfitMinor) : (asOf ? "?asOf=" + encodeURIComponent(asOf) : ""))),
+  batchCsv: (id, asOf, from, to, periodProfitMinor) => downloadText("/reports/batches/" + id + ".csv" + (from || to ? dateRangeExportQuery(from, to, periodProfitMinor) : (asOf ? "?asOf=" + encodeURIComponent(asOf) : ""))),
+  farmPdf: (asOf, from, to, periodProfitMinor) => downloadBlob("/reports/farm.pdf" + (from || to ? dateRangeExportQuery(from, to, periodProfitMinor) : (asOf ? "?asOf=" + encodeURIComponent(asOf) : ""))),
+  batchPdf: (id, asOf, from, to, periodProfitMinor) => downloadBlob("/reports/batches/" + id + ".pdf" + (from || to ? dateRangeExportQuery(from, to, periodProfitMinor) : (asOf ? "?asOf=" + encodeURIComponent(asOf) : ""))),
 };
 
 export const auditApi = {
