@@ -8,37 +8,39 @@ import { reportApi, productionTrendApi } from "../services/api.js";
 // eslint-disable-next-line no-unused-vars
 import ProductionTrendChart from "../components/ProductionTrendChart.jsx";
 import { rememberLastBatchId } from "../utils/farmUx.js";
+// eslint-disable-next-line no-unused-vars
+import DateRangeFilter from "../components/DateRangeFilter.jsx";
 // eslint-disable-next-line no-unused-vars -- JSX component usage is not detected by the core rule
 import DataTable from "../components/DataTable.jsx";
 // eslint-disable-next-line no-unused-vars
 import MetricHelp from "../components/MetricHelp.jsx";
 
 export default function ReportsPage() {
-  const { formatMoney, formatQuantity, formatPercent, formatKg, formatMetric, formatCount, feedQuantity, farm, batches, selectedBatchId, setSelectedBatchId, farmReport, batchReport, reportAsOf, setReportAsOf, loadReport, loadBatchReport, exportCsv, exportPdf } = useContext(FarmManagerContext);
+  const { formatMoney, formatQuantity, formatPercent, formatKg, formatMetric, formatCount, feedQuantity, farm, batches, selectedBatchId, setSelectedBatchId, farmReport, batchReport, dateRange, setDateRange, loadReport, loadBatchReport, exportCsv, exportPdf } = useContext(FarmManagerContext);
 
   return (
     <PageTemplate className="grid">
       <PageSection page="reports" tab="farm-report"><section id="reports" className="card full">
           <div className="section-head"><div><p className="eyebrow">REPORTING</p><h2>Farm reports</h2></div>
-            <div className="inline-form"><label>As of <input aria-label="Report as-of date" type="date" value={reportAsOf} onChange={e => setReportAsOf(e.target.value)} /></label><button type="button" onClick={() => loadReport(reportAsOf)}>Refresh</button><button type="button" onClick={() => exportCsv(() => reportApi.farmCsv(reportAsOf), "farm-report.csv")}>Export CSV</button><button type="button" onClick={() => exportPdf(() => reportApi.farmPdf(reportAsOf), "farm-report.pdf")}>Export PDF</button></div>
+            <div className="report-range-actions"><DateRangeFilter value={dateRange} timezone={farm?.timezone} onChange={setDateRange} /><div className="inline-form"><button type="button" onClick={() => loadReport(dateRange.from, dateRange.to)}>Refresh</button><button type="button" onClick={() => exportCsv(() => reportApi.farm(null, dateRange.from, dateRange.to) && reportApi.farmCsv(null, dateRange.from, dateRange.to), "farm-report.csv")}>Export CSV</button><button type="button" onClick={() => exportPdf(() => reportApi.farmPdf(null, dateRange.from, dateRange.to), "farm-report.pdf")}>Export PDF</button></div></div>
           </div>
           {farmReport ? <>
             <div className="metric-grid">
               {[
                 ["Total birds", formatCount(farmReport.dashboard?.totalBirds)],
-                ["Mortality", formatCount(farmReport.dashboard?.mortality)],
+                ["Mortality", formatCount(farmReport.period?.mortality ?? farmReport.dashboard?.mortality)],
                 ["Feed types", formatCount(farmReport.feed?.length)],
-                ["Expenses", formatMoney(farmReport.dashboard?.expensesMinor, farm.currency)],
-                ["Revenue", formatMoney(farmReport.dashboard?.revenueMinor, farm.currency)],
-                ["Profit", formatMoney(farmReport.dashboard?.profitMinor, farm.currency)],
+                ["Expenses", formatMoney(farmReport.period?.expensesMinor ?? farmReport.dashboard?.expensesMinor, farm.currency)],
+                ["Revenue", formatMoney(farmReport.period?.revenueMinor ?? farmReport.dashboard?.revenueMinor, farm.currency)],
+                ["Profit", formatMoney(farmReport.period?.profitMinor ?? farmReport.dashboard?.profitMinor, farm.currency)],
                 ["Egg batches", formatCount(farmReport.eggProduction?.length)],
                 ["Broiler batches", formatCount(farmReport.broilerGrowth?.length)],
                 ["Turkey batches", formatCount(farmReport.meatBirdGrowth?.filter(row => row.batch?.type === "TURKEY").length)],
-                ["Sales records", formatCount(farmReport.sales?.length)],
+                ["Sales records", formatCount(farmReport.period?.salesCount ?? farmReport.sales?.length)],
                 ["Inventory items", formatCount(farmReport.inventory?.length)]
               ].map(([label,value]) => <div className="metric-card" key={label}><span>{label}</span><strong>{value ?? "—"}</strong></div>)}
             </div>
-            <p className="muted">As of {farmReport.asOf}. Water quantities use the farm display label: {farmReport.waterUnitLabel || "litres"}. All report metrics are assembled from the same calculation services used by the dashboards.</p>
+            <p className="muted">Activity period: {farmReport.from || dateRange.from} to {farmReport.to || dateRange.to}. Bird population and feed inventory are current snapshots; activity totals include both selected boundary dates. Water quantities use {farmReport.waterUnitLabel || "litres"}.</p>
             <div className="subsection">
               <h3>Feed inventory by product</h3>
               <DataTable caption="Feed inventory by product" columns={[
@@ -61,9 +63,9 @@ export default function ReportsPage() {
               <select aria-label="Batch report" value={selectedBatchId} onChange={e => { setSelectedBatchId(e.target.value); rememberLastBatchId(e.target.value); }}>
                 <option value="">Select a batch</option>{batches.map(batch => <option key={batch.id} value={batch.id}>{batch.code} · {batch.type === "LAYER" ? "Layer" : batch.type === "BROILER" ? "Broiler" : batch.type === "TURKEY" ? "Turkey" : "Unknown type"}</option>)}
               </select>
-              <button type="button" onClick={() => loadBatchReport(selectedBatchId, reportAsOf)}>Refresh</button>
-              <button type="button" disabled={!selectedBatchId} onClick={() => exportCsv(() => reportApi.batchCsv(selectedBatchId, reportAsOf), "batch-report.csv")}>Export CSV</button>
-              <button type="button" disabled={!selectedBatchId} onClick={() => exportPdf(() => reportApi.batchPdf(selectedBatchId, reportAsOf), "batch-report.pdf")}>Export PDF</button>
+              <button type="button" onClick={() => loadBatchReport(selectedBatchId, dateRange.from, dateRange.to)}>Refresh</button>
+              <button type="button" disabled={!selectedBatchId} onClick={() => exportCsv(() => reportApi.batchCsv(selectedBatchId, null, dateRange.from, dateRange.to), "batch-report.csv")}>Export CSV</button>
+              <button type="button" disabled={!selectedBatchId} onClick={() => exportPdf(() => reportApi.batchPdf(selectedBatchId, null, dateRange.from, dateRange.to), "batch-report.pdf")}>Export PDF</button>
             </div>
           </div>
           {batchReport ? <>
@@ -71,15 +73,15 @@ export default function ReportsPage() {
               {[
                 ["Initial birds", batchReport.population?.initialBirds],
                 ["Current birds", batchReport.population?.currentBirds],
-                ["Mortality", batchReport.mortality],
+                ["Mortality", batchReport.period?.mortality ?? batchReport.mortality],
                 ["Feed", formatQuantity(batchReport.feed?.totalQuantityMilli)],
                 ["Feed cost", batchReport.feed?.feedCostMinor == null ? "Unknown" : formatMoney(batchReport.feed.feedCostMinor, farm.currency)],
                 ["Known feed cost", formatMoney(batchReport.feed?.knownFeedCostMinor, farm.currency)],
-                ["Costs", formatMoney(batchReport.costs?.expensesMinor, farm.currency)],
-                ["Revenue", formatMoney(batchReport.revenueMinor, farm.currency)],
-                ["Profit", formatMoney(batchReport.profitMinor, farm.currency)],
-                ["Health records", batchReport.health?.healthRecords?.length],
-                ["Sales records", batchReport.sales?.length]
+                ["Costs", formatMoney(batchReport.period?.expensesMinor ?? batchReport.costs?.expensesMinor, farm.currency)],
+                ["Revenue", formatMoney(batchReport.period?.revenueMinor ?? batchReport.revenueMinor, farm.currency)],
+                ["Profit", formatMoney(batchReport.period?.profitMinor ?? batchReport.profitMinor, farm.currency)],
+                ["Health records", batchReport.period?.healthRecordCount ?? batchReport.health?.healthRecords?.length],
+                ["Sales records", batchReport.period?.salesCount ?? batchReport.sales?.length]
               ].map(([label,value]) => <div className="metric-card" key={label}><span>{label}</span><strong>{value ?? "—"}</strong></div>)}
             </div>
             <div className="dashboard-columns">
@@ -100,13 +102,13 @@ export default function ReportsPage() {
               </div>
               <div className="subsection"><h3>Health</h3>
                 <div className="dashboard-list">
-                  <div><span>Health records</span><strong>{batchReport.health?.healthRecords?.length ?? 0}</strong></div>
-                  <div><span>Drug records</span><strong>{batchReport.health?.drugs?.length ?? 0}</strong></div>
-                  <div><span>Vaccinations</span><strong>{batchReport.health?.vaccinations?.length ?? 0}</strong></div>
+                  <div><span>Health records</span><strong>{batchReport.period?.healthRecordCount ?? batchReport.health?.healthRecords?.length ?? 0}</strong></div>
+                  <div><span>Drug records</span><strong>{batchReport.period?.drugRecordCount ?? batchReport.health?.drugs?.length ?? 0}</strong></div>
+                  <div><span>Vaccinations</span><strong>{batchReport.period?.vaccinationRecordCount ?? batchReport.health?.vaccinations?.length ?? 0}</strong></div>
                 </div>
               </div>
             </div>
-            <p className="muted">As of {batchReport.asOf}. Water quantities use the farm display label: {batchReport.waterUnitLabel || "litres"}. Population, feed, production, costs, revenue and profit reuse the dashboard calculation services.</p>
+            <p className="muted">Activity period: {batchReport.from || dateRange.from} to {batchReport.to || dateRange.to}. Current population and feed balances remain snapshot values. Water quantities use {batchReport.waterUnitLabel || "litres"}.</p>
           </> : <p className="muted">{selectedBatchId ? "Batch report is loading…" : "Select a batch to inspect its report."}</p>}
           {selectedBatchId && batches.find(batch => batch.id === selectedBatchId)?.type === "LAYER" && (
             <ProductionTrendChart
