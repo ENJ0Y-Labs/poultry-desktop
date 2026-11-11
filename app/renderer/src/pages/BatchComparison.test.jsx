@@ -113,6 +113,26 @@ describe("BatchComparison", () => {
     expect(screen.queryByText("Comparison table")).not.toBeInTheDocument();
   });
 
+  it("keeps feed quantities in the table but removes the chart metric when units differ", async () => {
+    reportApi.compare.mockResolvedValue({
+      reports: [
+        report(batches[0], { feedQuantityMilli: 12000, feedQuantityUnit: "bag", feedQuantityComparable: true }),
+        report(batches[1], { feedQuantityMilli: 8500, feedQuantityUnit: "kg", feedQuantityComparable: true }),
+      ],
+    });
+    render(<BatchComparison {...commonProps} />);
+
+    fireEvent.click(screen.getByLabelText(/L-001/));
+    fireEvent.click(screen.getByLabelText(/L-002/));
+    await screen.findByText("Comparison table");
+
+    const chartMetric = screen.getByLabelText("Comparison chart metric");
+    expect(chartMetric.querySelector('option[value="feedQuantityMilli"]')).toBeNull();
+    expect(screen.getByRole("rowheader", { name: /Feed quantity/ })).toBeInTheDocument();
+    expect(screen.getByText("bag", { exact: false })).toBeInTheDocument();
+    expect(screen.getByText("kg", { exact: false })).toBeInTheDocument();
+  });
+
   it("removes a selected batch and reapplies the comparison filter", async () => {
     reportApi.compare.mockResolvedValue({
       reports: [
