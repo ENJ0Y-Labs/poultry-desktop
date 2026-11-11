@@ -282,14 +282,18 @@ Backend-derived attention rules currently include:
 - Low feed stock: roughly three days of recent usage cover or less
 - Insufficient inventory: zero/negative stock
 - Low inventory: stock at or below reorder level
-- High mortality: 5% warning, 10% critical
+- High mortality: cumulative 5% warning, 10% critical; recent 7-day mortality 2% warning, 5% critical
+- Unusual feed consumption: same batch/feed type, latest 7 days at least 25% above preceding 7 days; critical at 50%
+- Declining meat-bird average weight: latest measurement at least 10% below the preceding measurement, provided the latest is no older than 7 days; critical at 20%
+- Rising farm expenses: latest 7 days at least 25% above preceding 7 days; critical at 50%
+- Falling farm sales revenue: latest 7 days at least 25% below preceding 7 days; critical at 50%
 - Missing daily record: active batch has no record for the requested date
 - Vaccination due: active batch is at least 14 days old with no vaccination in the prior 28 days
-- Unusual production drop: 20% warning, 30% critical compared with the previous seven-day production period
+- Unusual production drop: 20% warning, 30% critical compared with the previous seven-day production period, using good + cracked eggs
 - Broiler nearing sale: warning at 35 days, target sale age 42 days, critical at 49 days
 - Backup overdue: automatic backup enabled and no recent backup within seven days
 
-These thresholds are centralized in the backend attention service. The frontend does not invent alerts.
+These thresholds are centralized in the backend attention service. Each returned insight carries its detection date, affected metric, rule ID/description, explicit threshold context, suggested action, and batch/house attribution when applicable. The renderer does not invent alerts. Financial trends require a non-zero prior-period baseline. Poor FCR is not alerted until a farm-approved age/type benchmark exists; an arbitrary universal FCR target would be misleading.
 
 ## Settings and calculation integrity
 
