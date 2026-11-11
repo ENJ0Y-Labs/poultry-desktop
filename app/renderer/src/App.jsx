@@ -572,7 +572,7 @@ export default function App() {
     if (selectedBatchId && batches.some(batch => batch.id === selectedBatchId)) {
       loadBatchDashboard(selectedBatchId);
     }
-  }, [selectedBatchId]);
+  }, [selectedBatchId, batches]);
 
   useEffect(() => {
     if (selectedBatchId && batches.some(batch => batch.id === selectedBatchId)) {
@@ -580,7 +580,7 @@ export default function App() {
     } else {
       setBatchReport(null);
     }
-  }, [selectedBatchId, dateRange.from, dateRange.to]);
+  }, [selectedBatchId, batches, dateRange.from, dateRange.to]);
 
   useEffect(() => {
     let current = true;
