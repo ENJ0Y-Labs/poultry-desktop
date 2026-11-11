@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -18,7 +19,7 @@ class BatchComparisonMetricsTest {
 
     @Test
     void layerComparisonUsesPeriodEggsAndExcludesMeatBirdMetrics() {
-        Map<String, Object> period = Map.of(
+        Map<String, Object> period = map(
                 "mortality", 10L, "mortalityEventCount", 2L,
                 "eggCollectionCount", 4L, "eggsGood", 1000L, "eggsCracked", 25L,
                 "feedUsageCount", 3L, "feedQuantityMilli", 45000L, "feedQuantityComparable", true, "feedCostMinor", 120000L,
@@ -46,7 +47,7 @@ class BatchComparisonMetricsTest {
                 new BroilerGrowthResponse("broiler-1", TO, new BigDecimal("1.35"),
                         new BigDecimal("0.70"), new BigDecimal("320.00"),
                         new BigDecimal("1.75"), List.of()));
-        Map<String, Object> period = Map.of(
+        Map<String, Object> period = map(
                 "mortality", 5L, "mortalityEventCount", 1L,
                 "eggCollectionCount", 0L, "eggsGood", 0L, "eggsCracked", 0L,
                 "feedUsageCount", 2L, "feedQuantityMilli", 18000L, "feedQuantityComparable", true, "feedCostMinor", 80000L,
@@ -66,7 +67,7 @@ class BatchComparisonMetricsTest {
 
     @Test
     void absentActivityRecordsRemainNullRatherThanInventingZero() {
-        Map<String, Object> period = Map.of(
+        Map<String, Object> period = map(
                 "mortality", 0L, "mortalityEventCount", 0L,
                 "eggCollectionCount", 0L, "eggsGood", 0L, "eggsCracked", 0L,
                 "feedUsageCount", 0L, "revenueMinor", 0L, "expensesMinor", 0L
@@ -86,7 +87,7 @@ class BatchComparisonMetricsTest {
 
     @Test
     void mixedFeedUnitsKeepCostButDoNotExposeAnAggregatedQuantity() {
-        Map<String, Object> period = Map.of(
+        Map<String, Object> period = map(
                 "mortality", 0L, "mortalityEventCount", 0L,
                 "eggCollectionCount", 0L, "eggsGood", 0L, "eggsCracked", 0L,
                 "feedUsageCount", 2L, "feedQuantityMilli", 15000L,
@@ -103,6 +104,14 @@ class BatchComparisonMetricsTest {
         assertEquals("Mixed units: bag, kg", metrics.get("feedQuantityUnit"));
         assertEquals(42_000L, metrics.get("feedCostMinor"));
         assertEquals(false, metrics.get("feedQuantityComparable"));
+    }
+
+    private static Map<String, Object> map(Object... entries) {
+        Map<String, Object> values = new LinkedHashMap<>();
+        for (int index = 0; index < entries.length; index += 2) {
+            values.put((String) entries[index], entries[index + 1]);
+        }
+        return values;
     }
 
     private static BatchResponse batch(String type, String id, LocalDate placement) {
