@@ -11,6 +11,7 @@ import { attentionTarget } from "../utils/attentionNavigation.js";
 import { formatEggQuantity } from "../utils/eggFormatting.js";
 // eslint-disable-next-line no-unused-vars
 import GettingStartedChecklist from "../components/GettingStartedChecklist.jsx";
+import DashboardKpiCard from "../components/DashboardKpiCard.jsx";
 
 function todayLocalDate() {
   const now = new Date();
@@ -164,37 +165,20 @@ export default function DashboardPage() {
                 }}>Record an expense</button>
               </div>
             </section>
-            <div className="metric-grid">
-              {[
-                ["Total birds", formatCount(dashboard.totalBirds), ""],
-                ["Estimated birds", formatCount(dashboard.estimatedBirds), ""],
-                ["Estimated batches", formatCount(dashboard.estimatedBatches), ""],
-                ["Layer birds", formatCount(dashboard.layerBirds), ""],
-                ["Broiler birds", formatCount(dashboard.broilerBirds), ""],
-                ["Turkey birds", formatCount(dashboard.turkeyBirds), ""],
-                ["Active batches", formatCount(dashboard.activeBatches), ""],
-                ["Total houses", formatCount(dashboard.totalHouses), ""],
-                ["Permanent houses", formatCount(dashboard.permanentHouses), ""],
-                ["Temporary houses", formatCount(dashboard.temporaryHouses), ""],
-                ["Occupied houses", formatCount(dashboard.occupiedHouses), ""],
-                ["Empty houses", formatCount(dashboard.emptyHouses), ""],
-                ["Mortality", formatCount(dashboard.mortality), "birds"],
-                ["Good eggs", formatEggQuantity(dashboard.eggsGood, crateSize), ""],
-                ["Revenue", formatMoney(dashboard.revenueMinor, farm.currency), ""],
-                ["Expenses", formatMoney(dashboard.expensesMinor, farm.currency), ""],
-                ["Profit", formatMoney(dashboard.profitMinor, farm.currency), ""],
-                ["Inventory alerts", dashboard.inventoryAlerts, ""],
-              ].map(([label, value, unit]) => (
-                <div
-                  className={"metric-card" + (primaryMetrics.has(label) ? " metric-card-primary" : "")}
-                  key={label}
-                >
-                  <span>{label}</span>
-                  <strong>{value ?? "—"}</strong>
-                  {unit && <small>{unit}</small>}
-                </div>
-              ))}
-            </div>
+            <section className="dashboard-kpi-section" aria-label="Farm key performance indicators">
+              <div className="dashboard-kpi-primary">
+                <DashboardKpiCard label="Total birds" value={formatCount(dashboard.totalBirds)} primary href="#flocks/batch-dashboard" description="View flock populations and batch details" />
+                <DashboardKpiCard label="Revenue" value={formatMoney(dashboard.revenueMinor, farm.currency)} primary href="#sales-money/sales" description="View recorded farm sales" />
+                <DashboardKpiCard label="Profit" value={formatMoney(dashboard.profitMinor, farm.currency)} primary href="#reports/farm-report" description="Review the farm financial report" />
+              </div>
+              <div className="dashboard-kpi-secondary">
+                <DashboardKpiCard label="Mortality" value={formatCount(dashboard.mortality)} unit="birds" href="#daily-work/mortality" description="Review mortality records" />
+                <DashboardKpiCard label="Good eggs" value={formatEggQuantity(dashboard.eggsGood, crateSize)} href="#production/eggs" description="Review layer egg production" />
+                <DashboardKpiCard label="Expenses" value={formatMoney(dashboard.expensesMinor, farm.currency)} href="#sales-money/expenses" description="Review recorded farm expenses" />
+                <DashboardKpiCard label="Active batches" value={formatCount(dashboard.activeBatches)} href="#flocks/flocks" description="View active flocks" />
+                <DashboardKpiCard label="Inventory alerts" value={formatCount(dashboard.inventoryAlerts)} href="#feed-stock/inventory" description="Review low and insufficient stock alerts" />
+              </div>
+            </section>
             <div className="dashboard-columns">
               <div className="subsection dashboard-feed-panel"><h3>Feed</h3><div className="dashboard-list">
                 <div><span>Feed types</span><strong>{dashboard.feedSummary?.typeCount ?? 0}</strong></div>
