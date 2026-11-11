@@ -216,7 +216,8 @@ public class ReportService {
             report.put("from", range.from());
             report.put("to", range.to());
             report.put("period", period);
-            BatchResponse batch = (BatchResponse) report.get("batch");
+            BatchResponse batch = batches.get(batchId);
+            report.put("batch", batch);
             BirdPopulationResponse populationData = (BirdPopulationResponse) report.get("population");
             @SuppressWarnings("unchecked")
             Map<String, Object> dashboardData = (Map<String, Object>) report.get("dashboard");
@@ -244,7 +245,6 @@ public class ReportService {
 
         Map<String, Object> report = new LinkedHashMap<>();
         report.put("reportType", "BATCH_SUMMARY");
-        report.put("batch", batch);
         report.put("asOf", date);
         report.put("waterUnitLabel", farmService.getWaterUnitLabel());
         report.put("dashboard", dashboardData);
