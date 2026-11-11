@@ -68,7 +68,7 @@ describe("BatchComparison", () => {
     await waitFor(() => expect(reportApi.compare).toHaveBeenCalledWith(
       ["layer-1", "layer-2"], "2026-10-01", "2026-10-31"
     ));
-    expect(await screen.findByText("Eggs collected")).toBeInTheDocument();
+    expect(await screen.findByRole("rowheader", { name: /Eggs collected/ })).toBeInTheDocument();
     expect(screen.queryByText("Average weight at period end")).not.toBeInTheDocument();
     expect(screen.queryByText("FCR (batch-to-date)")).not.toBeInTheDocument();
   });
