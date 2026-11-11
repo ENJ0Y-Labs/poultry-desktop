@@ -252,7 +252,10 @@ export default function DashboardPage() {
                 {attention.length === 0 ? <p className="muted">Nothing currently requires attention.</p> :
                   <div className="attention-list">{attention.map((item, index) => {
                     const target = attentionTarget(item);
-                    const content = <><span className={"severity " + String(item.severity).toLowerCase()}>{item.severity}</span><span className="attention-item-copy"><strong>{item.title}</strong><span>{item.message}</span></span>{target && <span className="attention-item-action" aria-hidden="true">Open <span>→</span></span>}</>;
+                    const contextLabel = item.batchCode
+                      ? `${item.batchCode}${item.houseName ? ` · ${item.houseName}` : ""}`
+                      : item.item || "";
+                    const content = <><span className={"severity " + String(item.severity).toLowerCase()}>{item.severity}</span><span className="attention-item-copy"><strong>{item.title}</strong><span>{item.message}</span>{(item.affectedMetric || contextLabel) && <span className="attention-item-meta">{[item.affectedMetric, contextLabel].filter(Boolean).join(" · ")}</span>}{item.thresholdContext && <span className="attention-item-rule">Rule: {item.thresholdContext}</span>}{item.suggestedAction && <span className="attention-item-action-copy">Suggested action: {item.suggestedAction}</span>}</span>{target && <span className="attention-item-action" aria-hidden="true">Open <span>→</span></span>}</>;
                     return target
                       ? <button type="button" className="attention-item attention-item-clickable" key={item.type + index} onClick={() => { window.location.hash = target; }} aria-label={`${item.title}. ${item.message}. Open related record`}>{content}</button>
                       : <div className="attention-item" key={item.type + index}>{content}</div>;
