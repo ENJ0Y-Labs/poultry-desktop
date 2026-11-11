@@ -5,6 +5,8 @@ import PageSection from "../components/PageSection.jsx";
 // eslint-disable-next-line no-unused-vars
 import PageTemplate from "../components/PageTemplate.jsx";
 import { reportApi, productionTrendApi } from "../services/api.js";
+import DateRangeFilter from "../components/DateRangeFilter.jsx";
+import { calculatePeriodProfitMinor } from "../utils/reportMetrics.js";
 // eslint-disable-next-line no-unused-vars
 import ProductionTrendChart from "../components/ProductionTrendChart.jsx";
 import { rememberLastBatchId } from "../utils/farmUx.js";
@@ -16,7 +18,14 @@ import DataTable from "../components/DataTable.jsx";
 import MetricHelp from "../components/MetricHelp.jsx";
 
 export default function ReportsPage() {
-  const { formatMoney, formatQuantity, formatPercent, formatKg, formatMetric, formatCount, feedQuantity, farm, batches, selectedBatchId, setSelectedBatchId, farmReport, batchReport, reportAsOf, setReportAsOf, loadReport, loadBatchReport, exportCsv, exportPdf, reportLoading, batchReportLoading, dataLoadError, retryData } = useContext(FarmManagerContext);
+  const { formatMoney, formatQuantity, formatPercent, formatKg, formatMetric, formatCount, feedQuantity, farm, batches, selectedBatchId, setSelectedBatchId, farmReport, batchReport, dateRange, setDateRange, applicationSettings, loadReport, loadBatchReport, exportCsv, exportPdf, reportLoading, batchReportLoading, dataLoadError, retryData } = useContext(FarmManagerContext);
+
+  const farmPeriodProfitMinor = farmReport?.period
+    ? calculatePeriodProfitMinor(farmReport.period.revenueMinor, farmReport.period.expensesMinor)
+    : null;
+  const batchPeriodProfitMinor = batchReport?.period
+    ? calculatePeriodProfitMinor(batchReport.period.revenueMinor, batchReport.period.expensesMinor)
+    : null;
 
   return (
     <PageTemplate className="grid pomas-page page-reports">
