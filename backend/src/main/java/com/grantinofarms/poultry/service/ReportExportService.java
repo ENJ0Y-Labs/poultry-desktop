@@ -52,7 +52,10 @@ public class ReportExportService {
             PdfTable writer = new PdfTable(document);
             String from = text(report.get("from"));
             String to = text(report.get("to"));
-            String period = !from.isBlank() && !to.isBlank() ? from + " to " + to : text(report.get("asOf"));
+            String snapshotAsOf = text(report.get("asOf"));
+            String period = !from.isBlank() && !to.isBlank()
+                    ? from + " to " + to + " | Snapshot as of " + snapshotAsOf
+                    : snapshotAsOf;
             writer.title(title, period);
             writer.header();
             for (ExportRow row : rows) {
