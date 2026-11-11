@@ -192,6 +192,54 @@ class AttentionServiceIntegrationTest {
     }
 
     @Test
+    void detectsRecentMortalitySpikeAndFallingRevenueWithoutInventingBaseline() {
+        setupFarm();
+        var house = houseService.create(new HouseCreateRequest("Layer House", "LH1", null));
+        var layer = batchService.create(new BatchCreateRequest(
+                "LAYER", LocalDate.of(2026, 8, 1), house.id(), 1000, null, 10_000_000L));
+        populationService.addMortality(layer.id(), new BirdPopulationEventRequest(
+                AS_OF.minusDays(1), 25, "Attention test", "Recent mortality spike"));
+
+        String farmId = jdbc.queryForObject("SELECT id FROM farms LIMIT 1", String.class);
+        String customerId = UUID.randomUUID().toString();
+        jdbc.update("""
+                INSERT INTO customers(id,farm_id,name,created_at,updated_at)
+                VALUES(?,?,?,?,?)
+                """, customerId, farmId, "Attention Test Customer",
+                AS_OF.atStartOfDay().toString(), AS_OF.atStartOfDay().toString());
+        jdbc.update("""
+                INSERT INTO sales(id,farm_id,batch_id,customer_id,sale_date,sale_type,quantity,unit,
+                                  unit_price_minor,total_amount_minor,reference_type,reference_id,created_at)
+                VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)
+                """, UUID.randomUUID().toString(), farmId, layer.id(), customerId,
+                AS_OF.minusDays(10).toString(), "EGG", 100, "CRATE", 1_000L, 100_000L,
+                "TEST", UUID.randomUUID().toString(), AS_OF.minusDays(10).atStartOfDay().toString());
+        jdbc.update("""
+                INSERT INTO sales(id,farm_id,batch_id,customer_id,sale_date,sale_type,quantity,unit,
+                                  unit_price_minor,total_amount_minor,reference_type,reference_id,created_at)
+                VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)
+                """, UUID.randomUUID().toString(), farmId, layer.id(), customerId,
+                AS_OF.minusDays(2).toString(), "EGG", 50, "CRATE", 1_000L, 50_000L,
+                "TEST", UUID.randomUUID().toString(), AS_OF.minusDays(2).atStartOfDay().toString());
+
+        List<Map<String, Object>> attention = attentionService.list(AS_OF);
+        assertThat(attention).anySatisfy(row -> {
+            if ("MORTALITY_INCREASE".equals(row.get("type"))) {
+                assertThat(row).containsEntry("batchId", layer.id())
+                        .containsEntry("houseId", house.id())
+                        .containsEntry("thresholdContext", "7-day mortality >= 2% of initial birds; critical at 5%.");
+            }
+        });
+        assertThat(attention).anySatisfy(row -> {
+            if ("FALLING_REVENUE".equals(row.get("type"))) {
+                assertThat(row).containsEntry("decreasePercent", 50.0)
+                        .containsEntry("affectedMetric", "Sales revenue")
+                        .containsKey("suggestedAction");
+            }
+        });
+    }
+
+    @Test
     void ignoresDecliningWeightWhenLatestMeasurementIsStale() {
         setupFarm();
         var house = houseService.create(new HouseCreateRequest("Broiler House", "BH1", null));
