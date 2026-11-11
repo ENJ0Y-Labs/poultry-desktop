@@ -61,10 +61,10 @@ Use a disposable test farm only. Never reset or seed a real farm database.
 5. Confirm current live birds still reflect all events through the current farm date, not only events inside the selected range. Confirm house occupancy and feed stock remain current snapshots.
 6. Open Farm reports and Batch reports. Confirm both use the same selected range, filtered record tables/counts, and current snapshot notes.
 7. Confirm layer HDP and meat-bird weight charts request the shared range. For a custom range longer than 366 days, confirm only the trend chart shows its documented limit message.
-8. Export farm and batch CSV/PDF. Confirm the range appears in export metadata/title and period profit matches the screen.
-9. Set the custom start date later than the end date. Confirm the error is visible, affected views clear, and no request is sent until the range becomes valid.
-10. Record database row counts before and after changing presets/custom dates. Confirm no farm record was inserted, updated, or deleted.
-11. Repeat with a second farm timezone to confirm preset dates and audit-day boundaries follow that timezone.
-12. At the supported 1100×650 and 1366×768 window sizes, keyboard through the preset selector and both date inputs. Confirm the control and error summary remain visible and usable.
+9. Export farm and batch CSV/PDF. Confirm the range appears in export metadata/title and period profit matches the screen.
+10. Set the custom start date later than the end date. Confirm the error is visible, affected views clear, and no request is sent until the range becomes valid.
+11. Record database row counts before and after changing presets/custom dates. Confirm no farm record was inserted, updated, or deleted.
+12. Repeat with a second farm timezone to confirm preset dates and audit-day boundaries follow that timezone.
+13. At the supported 1100×650 and 1366×768 window sizes, keyboard through the preset selector and both date inputs. Confirm the control and error summary remain visible and usable.
 
 Runtime and packaged-Electron checks must be recorded as not run unless actually executed.
