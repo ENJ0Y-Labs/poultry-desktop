@@ -81,6 +81,27 @@ describe("BatchComparison", () => {
     expect(screen.queryByText("FCR (batch-to-date)")).not.toBeInTheDocument();
   });
 
+  it("applies bird-type filters to both the selected comparison and visible table", async () => {
+    reportApi.compare.mockResolvedValue({
+      reports: [
+        report(batches[0], { currentBirds: 900 }),
+        report(batches[1], { currentBirds: 850 }),
+      ],
+    });
+    render(<BatchComparison {...commonProps} />);
+
+    fireEvent.click(screen.getByLabelText(/L-001/));
+    fireEvent.click(screen.getByLabelText(/L-002/));
+    await screen.findByText("Comparison table");
+
+    fireEvent.change(screen.getByLabelText("Filter batches by bird type"), {
+      target: { value: "BROILER" },
+    });
+
+    await waitFor(() => expect(screen.getByText(/Select at least two batches/)).toBeInTheDocument());
+    expect(screen.queryByText("Comparison table")).not.toBeInTheDocument();
+  });
+
   it("removes a selected batch and reapplies the comparison filter", async () => {
     reportApi.compare.mockResolvedValue({
       reports: [
