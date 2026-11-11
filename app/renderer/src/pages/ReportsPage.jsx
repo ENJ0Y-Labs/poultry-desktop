@@ -5,6 +5,7 @@ import PageSection from "../components/PageSection.jsx";
 // eslint-disable-next-line no-unused-vars
 import PageTemplate from "../components/PageTemplate.jsx";
 import { reportApi, productionTrendApi } from "../services/api.js";
+// eslint-disable-next-line no-unused-vars
 import DateRangeFilter from "../components/DateRangeFilter.jsx";
 import { calculatePeriodProfitMinor } from "../utils/reportMetrics.js";
 // eslint-disable-next-line no-unused-vars
@@ -130,6 +131,7 @@ export default function ReportsPage() {
               description="Daily eggs collected (good + cracked) as a percentage of the historical live-bird population."
               unit="percent"
               loadTrend={productionTrendApi.layerHdp}
+              dateRange={dateRange}
             />
           )}
           {selectedBatchId && ["BROILER", "TURKEY"].includes(batches.find(batch => batch.id === selectedBatchId)?.type) && (
@@ -139,6 +141,7 @@ export default function ReportsPage() {
               description="Daily average sampled bird weight in kilograms, calculated by the backend."
               unit="kg"
               loadTrend={productionTrendApi.broilerAverageWeight}
+              dateRange={dateRange}
             />
           )}
         </section></PageSection>
