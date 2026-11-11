@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import pomasLogo from "./assets/pomas-logo.png";
 import { todayLocalDate, getLastBatchId, rememberLastBatchId } from "./utils/farmUx.js";
 import { parseNairaToKobo } from "./utils/moneyInput.js";
@@ -245,6 +245,9 @@ export default function App() {
   const [farmReport, setFarmReport] = useState(null);
   const [batchReport, setBatchReport] = useState(null);
   const [dateRange, setDateRange] = useState(() => createDateRange("LAST_30_DAYS", "Africa/Lagos"));
+  const dashboardRequestSequence = useRef(0);
+  const farmReportRequestSequence = useRef(0);
+  const batchReportRequestSequence = useRef(0);
   const [appInfo, setAppInfo] = useState({ version: null, architecture: null, isPackaged: !import.meta.env.DEV });
 
   useEffect(() => {
@@ -263,6 +266,9 @@ export default function App() {
   function updateDateRange(nextRange) {
     setDateRange(nextRange);
     if (!isValidDateRange(nextRange)) {
+      dashboardRequestSequence.current += 1;
+      farmReportRequestSequence.current += 1;
+      batchReportRequestSequence.current += 1;
       setDashboard(null);
       setFarmReport(null);
       setBatchReport(null);
@@ -423,20 +429,25 @@ export default function App() {
   }
   async function loadReport(from = dateRange.from, to = dateRange.to) {
     if (!isValidDateRange({ from, to })) return;
+    const requestId = ++farmReportRequestSequence.current;
     try {
-      const [farmData, batchData] = await Promise.all([
-        reportApi.farm(null, from, to),
-        selectedBatchId ? reportApi.batch(selectedBatchId, null, from, to) : Promise.resolve(null),
-      ]);
-      setFarmReport(farmData);
-      setBatchReport(batchData);
-    } catch (err) { setError(displayApiError(err)); }
+      const farmData = await reportApi.farm(null, from, to);
+      if (requestId === farmReportRequestSequence.current) setFarmReport(farmData);
+    } catch (err) {
+      if (requestId === farmReportRequestSequence.current) setError(displayApiError(err));
+    }
   }
 
   async function loadBatchReport(id = selectedBatchId, from = dateRange.from, to = dateRange.to) {
+    const requestId = ++batchReportRequestSequence.current;
     if (!id) { setBatchReport(null); return; }
     if (!isValidDateRange({ from, to })) return;
-    try { setBatchReport(await reportApi.batch(id, null, from, to)); } catch (err) { setError(displayApiError(err)); }
+    try {
+      const report = await reportApi.batch(id, null, from, to);
+      if (requestId === batchReportRequestSequence.current) setBatchReport(report);
+    } catch (err) {
+      if (requestId === batchReportRequestSequence.current) setError(displayApiError(err));
+    }
   }
 
   async function exportCsv(loader, filename) {
@@ -478,17 +489,19 @@ export default function App() {
 
   async function loadDashboard(from = dateRange.from, to = dateRange.to) {
     if (!farm || !isValidDateRange({ from, to })) return;
+    const requestId = ++dashboardRequestSequence.current;
     try {
       const [summary, attentionRows, audit] = await Promise.all([
         dashboardApi.farm(null, from, to),
         attentionApi.list(),
         auditApi.list(20, from, to),
       ]);
+      if (requestId !== dashboardRequestSequence.current) return;
       setDashboard(summary);
       setAttention(attentionRows);
       setAuditRows(audit);
     } catch (err) {
-      setError(displayApiError(err));
+      if (requestId === dashboardRequestSequence.current) setError(displayApiError(err));
     }
   }
 
