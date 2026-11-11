@@ -137,3 +137,15 @@ The top-level page components live under `app/renderer/src/pages/`. Shared form 
 - Daily Work feed usage options are filtered to active feed types whose `applicableTypes` contains the selected batch type. Changing the batch clears a previously selected feed type if it is no longer applicable.
 - The backend remains authoritative and rejects incompatible feed usage even if a client submits a forged or stale selection.
 - Farm feed inventory report rows include each feed type's applicability set.
+
+
+## Dashboard KPI cards (issue #229)
+
+- Use one shared KPI card component for consistent labels, values, optional units, period comparisons, trend/status metadata, and navigation.
+- The visual hierarchy is three primary cards (total birds, revenue, profit), followed by quieter operational/financial cards.
+- KPI values are display-only projections of the farm dashboard API. The renderer must not calculate totals, rates, or trends.
+- Only show a comparison when the backend explicitly supplies both comparable values and the actual period labels. Never compare lifetime totals with daily values or infer a trend from the current value.
+- Undefined/null values render as an em dash, not zero. Optional comparison/status metadata is omitted when absent.
+- Navigable cards are keyboard-accessible buttons and route to the existing destination; non-navigable cards remain non-interactive.
+- Current dashboard response does not expose comparable previous-period values. Therefore no percentage/direction comparison is displayed until an authoritative backend contract is added. The aggregate feed quantity is also not a valid farm-wide KPI because feed types may use different units; show feed stock per type in the existing Feed panel instead.
+- Dashboard date remains the backend asOf business date, formatted using the saved date preference. Successful writes continue to refresh dashboard data through the existing mutation invalidation flow.
