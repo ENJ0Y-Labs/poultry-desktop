@@ -20,6 +20,8 @@ describe("date range presets", () => {
     expect(createDateRange("THIS_MONTH", "UTC", fixedNow)).toMatchObject({ from: "2024-03-01", to: "2024-03-01" });
     expect(createDateRange("LAST_MONTH", "UTC", fixedNow)).toMatchObject({ from: "2024-02-01", to: "2024-02-29" });
     expect(createDateRange("THIS_YEAR", "UTC", new Date("2025-01-01T12:00:00.000Z"))).toMatchObject({ from: "2025-01-01", to: "2025-01-01" });
+    expect(createDateRange("LAST_MONTH", "UTC", new Date("2025-01-01T12:00:00.000Z"))).toMatchObject({ from: "2024-12-01", to: "2024-12-31" });
+    expect(createDateRange("LAST_7_DAYS", "UTC", new Date("2025-01-01T12:00:00.000Z"))).toMatchObject({ from: "2024-12-26", to: "2025-01-01" });
   });
 
   it("rejects incomplete, impossible and reversed custom ranges", () => {
