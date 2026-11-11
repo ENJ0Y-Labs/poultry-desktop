@@ -1140,3 +1140,20 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .ui-switch input:checked { background: var(--cyan); border-color: var(--cyan); }
 .ui-switch input:checked::before { transform: translateX(16px); background: #101010; }
 @media (prefers-reduced-motion: reduce) { .ui-button, .ui-control, .ui-switch input::before { transition: none; } .ui-button__spinner { animation-duration: 1.5s; } }
+
+/* Dashboard KPI hierarchy and navigation */
+.dashboard-kpi-section{display:grid;gap:10px;margin:16px 0 18px}
+.dashboard-kpi-primary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.dashboard-kpi-secondary{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:9px}
+.dashboard-kpi-card{display:flex;width:100%;min-width:0;min-height:88px;flex-direction:column;align-items:flex-start;justify-content:flex-start;gap:7px;padding:14px;text-align:left;color:var(--text);background:var(--palette-151920);border:1px solid var(--border-soft);border-radius:9px;font:inherit;position:relative;overflow:hidden}
+.dashboard-kpi-card-primary{min-height:112px;padding:17px;background:var(--panel-raised);border-color:color-mix(in srgb,var(--cyan) 34%,var(--border))}
+.dashboard-kpi-card-label{color:var(--muted);font-size:11px;font-weight:750;letter-spacing:.045em;text-transform:uppercase}
+.dashboard-kpi-card-value{font-size:clamp(19px,2vw,25px);font-weight:800;line-height:1.15;letter-spacing:-.035em;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.dashboard-kpi-card-primary .dashboard-kpi-card-value{font-size:clamp(24px,2.4vw,32px)}
+.dashboard-kpi-card-unit{color:var(--muted);font-size:11px}
+.dashboard-kpi-card-hint{display:flex;align-items:center;gap:5px;margin-top:auto;color:var(--muted);font-size:11px}
+.dashboard-kpi-card[type="button"]{cursor:pointer}
+.dashboard-kpi-card[type="button"]:hover{border-color:var(--cyan);transform:translateY(-1px)}
+.dashboard-kpi-card:focus-visible{outline:2px solid var(--focus-ring);outline-offset:2px}
+@media(max-width:1100px){.dashboard-kpi-secondary{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:720px){.dashboard-kpi-primary{grid-template-columns:1fr}.dashboard-kpi-secondary{grid-template-columns:repeat(2,minmax(0,1fr))}}
