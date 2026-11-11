@@ -16,7 +16,7 @@ import DataTable from "../components/DataTable.jsx";
 import MetricHelp from "../components/MetricHelp.jsx";
 
 export default function ReportsPage() {
-  const { formatMoney, formatQuantity, formatPercent, formatKg, formatMetric, formatCount, feedQuantity, farm, batches, selectedBatchId, setSelectedBatchId, farmReport, batchReport, dateRange, setDateRange, loadReport, loadBatchReport, exportCsv, exportPdf } = useContext(FarmManagerContext);
+  const { formatMoney, formatQuantity, formatPercent, formatKg, formatMetric, formatCount, feedQuantity, farm, applicationSettings, batches, selectedBatchId, setSelectedBatchId, farmReport, batchReport, dateRange, setDateRange, loadReport, loadBatchReport, exportCsv, exportPdf } = useContext(FarmManagerContext);
   const farmPeriodProfitMinor = farmReport?.period
     ? Number(farmReport.period.revenueMinor || 0) - Number(farmReport.period.expensesMinor || 0)
     : farmReport?.dashboard?.profitMinor;
@@ -28,7 +28,7 @@ export default function ReportsPage() {
     <PageTemplate className="grid">
       <PageSection page="reports" tab="farm-report"><section id="reports" className="card full">
           <div className="section-head"><div><p className="eyebrow">REPORTING</p><h2>Farm reports</h2></div>
-            <div className="report-range-actions"><DateRangeFilter value={dateRange} timezone={farm?.timezone} onChange={setDateRange} /><div className="inline-form"><button type="button" onClick={() => loadReport(dateRange.from, dateRange.to)}>Refresh</button><button type="button" onClick={() => exportCsv(() => reportApi.farmCsv(null, dateRange.from, dateRange.to, farmPeriodProfitMinor), "farm-report.csv")}>Export CSV</button><button type="button" onClick={() => exportPdf(() => reportApi.farmPdf(null, dateRange.from, dateRange.to, farmPeriodProfitMinor), "farm-report.pdf")}>Export PDF</button></div></div>
+            <div className="report-range-actions"><DateRangeFilter value={dateRange} timezone={farm?.timezone} dateFormat={applicationSettings?.dateFormat} onChange={setDateRange} /><div className="inline-form"><button type="button" onClick={() => loadReport(dateRange.from, dateRange.to)}>Refresh</button><button type="button" onClick={() => exportCsv(() => reportApi.farmCsv(null, dateRange.from, dateRange.to, farmPeriodProfitMinor), "farm-report.csv")}>Export CSV</button><button type="button" onClick={() => exportPdf(() => reportApi.farmPdf(null, dateRange.from, dateRange.to, farmPeriodProfitMinor), "farm-report.pdf")}>Export PDF</button></div></div>
           </div>
           {farmReport ? <>
             <div className="metric-grid">
