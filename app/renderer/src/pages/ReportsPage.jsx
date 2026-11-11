@@ -332,7 +332,7 @@ export function BatchComparison({ batches, houses, dateRange, setDateRange, farm
                   <th scope="row">{metric.label}<small>{metric.unit}</small></th>
                   {selectedReports.map(report => {
                     const value = report.comparisonMetrics?.[metric.key];
-                    const unit = metric.key === "feedQuantityMilli" && value != null
+                    const unit = metric.key === "feedQuantityMilli"
                       ? " · " + (report.comparisonMetrics?.feedQuantityUnit || "unit unknown") : "";
                     return <td key={report.batch.id}>{formatValue(metric, value)}{unit}</td>;
                   })}
