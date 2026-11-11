@@ -2,7 +2,7 @@
 
 ## Shared control and state
 
-The farm dashboard and farm/batch reports share one renderer date-range state. The same range is passed to compatible dashboard requests, report previews, report exports, audit activity, and production trend charts. Changing a range never writes to farm records.
+The farm dashboard and farm/batch reports share one renderer date-range state. The same range is passed to compatible dashboard requests, report previews, report exports, audit activity, production record tables, and production trend charts. Changing a range never writes to farm records.
 
 The default is **Last 30 days**. Supported presets are Today, Yesterday, Last 7 days, Last 30 days, Last 90 days, This month, Last month, This year, and Custom range. Every preset uses inclusive calendar-date boundaries.
 
