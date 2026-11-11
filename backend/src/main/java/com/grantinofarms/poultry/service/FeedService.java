@@ -374,6 +374,13 @@ public class FeedService {
                 totalCost, perBird, knownTotalCost);
     }
 
+    public List<String> batchUsageUnits(String batchId, LocalDate from, LocalDate to) {
+        requireBatch(batchId);
+        com.grantinofarms.poultry.domain.ReportDateRange range =
+                com.grantinofarms.poultry.domain.ReportDateRange.require(from, to);
+        return repository.findBatchUsageUnits(batchId, range.from(), range.to());
+    }
+
     public BatchFeedCostResponse batchCost(String batchId, LocalDate from, LocalDate to) {
         requireBatch(batchId);
         com.grantinofarms.poultry.domain.ReportDateRange range =
