@@ -24,7 +24,12 @@ import MetricHelp from "../components/MetricHelp.jsx";
 
 export default function ProductionPage() {
   const { error } = useContext(FarmManagerContext);
-  const { formatMoney, farm, batches, customers, eggBatchId, setEggBatchId, broilerBatchId, setBroilerBatchId, broilerGrowth, broilerWeights, broilerSales, weightForm, setWeightForm, birdSaleForm, setBirdSaleForm, emptyWeight, emptyBirdSale, pricing, pricingForm, setPricingForm, eggInventory, eggCollections, eggSales, eggCollectionForm, setEggCollectionForm, eggSaleForm, setEggSaleForm, crateSize, saving, loadPricingForBatch, loadBroilerForBatch, saveWeight, saveBirdSale, loadEggsForBatch, saveEggCollection, saveEggSale } = useContext(FarmManagerContext);
+  const { formatMoney, farm, batches, customers, dateRange, setDateRange, applicationSettings, eggBatchId, setEggBatchId, broilerBatchId, setBroilerBatchId, broilerGrowth, broilerWeights, broilerSales, weightForm, setWeightForm, birdSaleForm, setBirdSaleForm, emptyWeight, emptyBirdSale, pricing, pricingForm, setPricingForm, eggInventory, eggCollections, eggSales, eggCollectionForm, setEggCollectionForm, eggSaleForm, setEggSaleForm, crateSize, saving, loadPricingForBatch, loadBroilerForBatch, saveWeight, saveBirdSale, loadEggsForBatch, saveEggCollection, saveEggSale } = useContext(FarmManagerContext);
+
+  const periodEggCollections = filterRowsByDateRange(eggCollections, dateRange, "recordDate");
+  const periodEggSales = filterRowsByDateRange(eggSales, dateRange, "recordDate");
+  const periodBroilerWeights = filterRowsByDateRange(broilerWeights, dateRange, "recordDate");
+  const periodBroilerSales = filterRowsByDateRange(broilerSales, dateRange, "recordDate");
 
   return (
     <PageTemplate className="grid pomas-page page-production">
@@ -87,7 +92,7 @@ export default function ProductionPage() {
                 <DataTable caption="Egg collections" columns={[
                     { key: "recordDate", label: "Date" }, { key: "good", label: "Good" }, { key: "cracked", label: "Cracked" },
                     { key: "total", label: "Total" }, { key: "notes", label: "Notes", render: row => row.notes || "—" },
-                  ]} rows={eggCollections} emptyMessage="No egg collections recorded for this layer batch. Record the first collection above." />
+                  ]} rows={periodEggCollections} emptyMessage="No egg collections recorded for this layer batch. Record the first collection above." />
               </div>
 
               <div className="subsection">
@@ -111,7 +116,7 @@ export default function ProductionPage() {
                     { key: "crates", label: "Crates", render: row => row.crates.toString() }, { key: "soldEggs", label: "Eggs" },
                     { key: "pricePerCrateMinor", label: "Price / crate", render: row => formatMoney(row.pricePerCrateMinor, farm.currency) },
                     { key: "totalAmountMinor", label: "Total", render: row => formatMoney(row.totalAmountMinor, farm.currency) },
-                  ]} rows={eggSales} emptyMessage="No egg sales recorded for this layer batch yet." />
+                  ]} rows={periodEggSales} emptyMessage="No egg sales recorded for this layer batch yet." />
               </div>
             </>
           )}
@@ -178,7 +183,7 @@ export default function ProductionPage() {
                 <DataTable caption="Meat-bird weight records" columns={[
                     { key: "recordDate", label: "Date" }, { key: "sampleQuantity", label: "Sample" }, { key: "totalWeightKg", label: "Total kg" },
                     { key: "averageWeightKg", label: "Average kg" }, { key: "weightGainKg", label: "Gain kg/bird" },
-                  ]} rows={broilerWeights} emptyMessage="No weight records yet. Record a sample above to start the growth trend." />
+                  ]} rows={periodBroilerWeights} emptyMessage="No weight records yet. Record a sample above to start the growth trend." />
               </div>
 
               <div className="subsection">
@@ -218,7 +223,7 @@ export default function ProductionPage() {
                     { key: "pricePerBirdMinor", label: "Price / bird", render: row => formatMoney(row.pricePerBirdMinor, farm.currency) },
                     { key: "totalAmountMinor", label: "Total", render: row => formatMoney(row.totalAmountMinor, farm.currency) },
                     { key: "customer", label: "Customer" },
-                  ]} rows={broilerSales} emptyMessage="No bird sales recorded for this meat-bird batch yet." />
+                  ]} rows={periodBroilerSales} emptyMessage="No bird sales recorded for this meat-bird batch yet." />
               </div>
             </>
           )}
