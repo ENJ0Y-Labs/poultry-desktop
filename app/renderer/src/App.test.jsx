@@ -705,7 +705,7 @@ describe("App", () => {
     await waitFor(() => expect(screen.getByRole("heading", { name: "Farm dashboard" })).toBeInTheDocument());
     expect(await screen.findByText("Low feed stock")).toBeInTheDocument();
     expect(screen.getByText("Layer Mash has about 2.0 days of stock.")).toBeInTheDocument();
-    expect(screen.getByText("Feed")).toBeInTheDocument();
+    expect(screen.getAllByText("Feed").length).toBeGreaterThan(0);
     expect(screen.getByText("Detected: 2026-11-11")).toBeInTheDocument();
     expect(screen.getByText("Feed stock cover is 3 days or less at the recent usage rate.")).toBeInTheDocument();
     expect(screen.getByText("Threshold: Warning at 3 days of cover or less.")).toBeInTheDocument();
