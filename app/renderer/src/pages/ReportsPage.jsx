@@ -118,7 +118,7 @@ export default function ReportsPage() {
                 </div>
               </div>
             </div>
-            <p className="muted">Activity period: {batchReport.from || dateRange.from} to {batchReport.to || dateRange.to}. Current population, feed cost, egg inventory, average weight and FCR remain snapshot or batch-to-date values. Water quantities use {batchReport.waterUnitLabel || "litres"}.</p>
+            <p className="muted">Activity period: {batchReport.from || dateRange.from} to {batchReport.to || dateRange.to} (inclusive). Current population, feed cost, egg inventory, average weight and FCR remain snapshot or batch-to-date values as of {batchReport.asOf}. Water quantities use {batchReport.waterUnitLabel || "litres"}.</p>
           </> : <p className="muted">{selectedBatchId ? "Batch report is loading…" : "Select a batch to inspect its report."}</p>}
           {selectedBatchId && batches.find(batch => batch.id === selectedBatchId)?.type === "LAYER" && (
             <ProductionTrendChart
