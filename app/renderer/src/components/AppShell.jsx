@@ -77,6 +77,7 @@ const pageTabs = {
   reports: [
     { id: "farm-report", label: "Farm report" },
     { id: "batch-report", label: "Batch report" },
+    { id: "batch-comparison", label: "Compare batches" },
   ],
   settings: [
     { id: "farm", label: "Farm profile" },
