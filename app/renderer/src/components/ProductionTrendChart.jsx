@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+// eslint-disable-next-line no-unused-vars
+import EmptyState from "./EmptyState.jsx";
 // JSX component usage is not counted by the configured core no-unused-vars rule.
 /* eslint-disable no-unused-vars */
 import {
@@ -77,9 +79,9 @@ export default function ProductionTrendChart({ batchId, title, titleHelp, descri
         <label className="field"><span>From</span><input type="date" aria-label={title + " start date"} value={from} max={to || undefined} onChange={event => setFrom(event.target.value)} /></label>
         <label className="field"><span>To</span><input type="date" aria-label={title + " end date"} value={to} min={from || undefined} onChange={event => setTo(event.target.value)} /></label>
       </div>
-      {loading ? <p className="muted" role="status">Loading {title.toLowerCase()}…</p> :
-        error ? <p className="error" role="alert">{error}</p> :
-          !hasValues ? <p className="muted empty">No production records in this period. Days without records are shown as gaps, not zero.</p> :
+      {loading ? <EmptyState variant="loading" heading={`Loading ${title.toLowerCase()}`} compact /> :
+        error ? <EmptyState variant="error" description={error} onRetry={() => setRefreshKey(key => key + 1)} compact /> :
+          !hasValues ? <EmptyState variant="no-records" heading="No production records in this period" description="Days without records are shown as gaps, not zero. Choose another date range or record production for this batch." compact /> :
             <div role="img" aria-label={`${title} line chart from ${trend.from} to ${trend.to}. Values are provided by the backend.`} className="production-trend-chart">
               <ResponsiveContainer width="100%" height={260}>
                 <LineChart data={points} margin={{ top: 12, right: 20, left: 4, bottom: 8 }}>

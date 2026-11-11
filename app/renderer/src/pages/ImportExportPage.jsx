@@ -21,6 +21,22 @@ export default function ImportExportPage() {
     if (!file) return;
     try {
       const preview = await inspectCsvFile(file, importModule);
+      if (importModule === "batches") {
+        const serverPreview = await csvImportApi.previewBatchRecords(preview.rows.map(row => row.record));
+        for (let index = 0; index < preview.rows.length; index += 1) {
+          const row = preview.rows[index];
+          const checked = serverPreview.rows?.[index];
+          if (!checked) { row.errors.push("The backend could not validate this row."); row.valid = false; continue; }
+          row.errors = [...row.errors, ...(checked.errors || [])];
+          row.duplicate = Boolean(checked.duplicate);
+          row.valid = Boolean(checked.valid) && row.errors.length === 0;
+          row.resolvedHouse = checked.resolvedHouse || "";
+          row.resolvedSupplier = checked.resolvedSupplier || "";
+        }
+        preview.duplicates = serverPreview.duplicates || 0;
+        preview.validRows = preview.rows.filter(row => row.valid).length;
+        preview.invalidRows = preview.rows.filter(row => !row.valid).length;
+      }
       if (importModule === "houses") {
         const existing = await farmApi.listHouses();
         const byCode = new Map(existing.map(item => [String(item.code || "").trim().toUpperCase(), item]));
@@ -107,18 +123,24 @@ export default function ImportExportPage() {
 
   async function confirmImport() {
     if (!importPreview || importPreview.invalidRows || !importPreview.totalRows || importBusy) return;
-    const confirmed = window.confirm(`Import ${importPreview.totalRows} ${CSV_TEMPLATES[importModule].label.toLowerCase()}? Existing exact matches will be skipped as duplicates. This will write records to this farm.`);
+    const confirmationMessage = importModule === "batches"
+      ? `Create ${importPreview.totalRows} permanent batch opening record(s)? Pomas will generate a new batch code for each record. This will write records to this farm.`
+      : `Import ${importPreview.totalRows} ${CSV_TEMPLATES[importModule].label.toLowerCase()}? Existing exact matches will be skipped as duplicates. This will write records to this farm.`;
+    const confirmed = window.confirm(confirmationMessage);
     if (!confirmed) return;
     setImportBusy(true);
     setImportError("");
     setImportMessage("");
     try {
       const records = importPreview.rows.map(row => row.record);
+      const batchHistory = importModule === "batches";
       const healthHistory = ["health", "drugs", "vaccinations"].includes(importModule);
       const feedHistory = ["feed-purchases", "feed-usage"].includes(importModule);
       const operationalHistory = ["daily-records", "mortality", "culling"].includes(importModule);
       const productionHistory = ["egg-collections", "broiler-weights"].includes(importModule);
-      const result = productionHistory
+      const result = batchHistory
+        ? await csvImportApi.importBatchRecords(records)
+        : productionHistory
         ? await csvImportApi.importProductionRecords(importModule, records)
         : feedHistory
           ? await csvImportApi.importFeedRecords(importModule, records)
@@ -127,7 +149,9 @@ export default function ImportExportPage() {
           : operationalHistory
             ? await csvImportApi.importOperationalRecords(importModule, records)
             : await csvImportApi.importRecords(importModule, records);
-      if (feedHistory) {
+      if (batchHistory) {
+        setImportMessage(`Imported ${result.imported} batches successfully. Generated codes: ${(result.createdBatches || []).map(batch => batch.code).join(", ")}.`);
+      } else if (feedHistory) {
         const count = importModule === "feed-purchases" ? result.importedPurchases : result.importedUsage;
         const duplicateText = result.skippedDuplicates ? ` ${result.skippedDuplicates} exact duplicate(s) skipped.` : "";
         setImportMessage(`Imported ${count} ${CSV_TEMPLATES[importModule].label.toLowerCase()} successfully.${duplicateText}`);
@@ -147,7 +171,7 @@ export default function ImportExportPage() {
   }
 
   return (
-    <PageTemplate title="Import / Export" description="Move supported data into Pomas or export the reports the application currently provides." className="grid">
+    <PageTemplate title="Import / Export" description="Move supported data into Pomas or export the reports the application currently provides." className="grid pomas-page page-import-export">
       <section className="card full">
         <div className="section-head">
           <div>
@@ -155,7 +179,7 @@ export default function ImportExportPage() {
             <h2>Farm and batch records</h2>
           </div>
         </div>
-        <p>Houses and pens can be imported first as the prerequisite for historical batch imports. Batch import itself is not yet available. Health/treatment, drug, vaccination, layer egg collections, and broiler weight history can be imported for existing active batches.</p>
+        <p>Houses/pens and suppliers can be imported first, then opening batch/flock records. Health/treatment, drug, vaccination, layer egg collections, and broiler weight history can then reference the generated batch codes.</p>
         <div className="dashboard-columns">
           <div className="subsection">
             <h3>Houses and pens</h3>
@@ -163,11 +187,10 @@ export default function ImportExportPage() {
             <p className="muted">An exact existing record is skipped as a duplicate. Reusing a name or code with different details is a conflict. Existing records are never silently overwritten.</p>
           </div>
           <div className="subsection">
-            <h3>Existing batch opening records</h3>
-            <p className="muted">Planned. The import path must preserve the real placement date, opening bird count, house or pen, supplier, and original bird cost before it can be enabled.</p>
-            <button type="button" disabled aria-disabled="true">Batch import unavailable</button>
-            <p className="muted">For now, open the batch manually and enter its actual historical placement date and opening details.</p>
-            <button type="button" onClick={() => { window.location.hash = "flocks/flocks"; }}>Open batch management</button>
+            <h3>Batch / flock opening records</h3>
+            <p className="muted">Import historical opening details after importing the referenced houses and suppliers. Pomas generates each batch code during confirmation and reports the generated codes.</p>
+            <p className="muted">Preview is read-only. Invalid or potentially duplicate opening records block confirmation; existing batches are never overwritten.</p>
+            <button type="button" onClick={() => { setImportModule("batches"); document.getElementById("pomas-csv-file")?.scrollIntoView({ behavior: "smooth", block: "center" }); }}>Prepare batch import</button>
           </div>
           <div className="subsection">
             <h3>Export farm or batch reports</h3>
@@ -197,6 +220,7 @@ export default function ImportExportPage() {
               if (input) input.value = "";
             }}>
               <option value="houses">{CSV_TEMPLATES.houses.label}</option>
+              <option value="batches">{CSV_TEMPLATES.batches.label}</option>
               <option value="feed-purchases">{CSV_TEMPLATES["feed-purchases"].label}</option>
               <option value="feed-usage">{CSV_TEMPLATES["feed-usage"].label}</option>
               <option value="egg-collections">{CSV_TEMPLATES["egg-collections"].label}</option>
@@ -221,7 +245,7 @@ export default function ImportExportPage() {
         {importPreview && <div className="subsection">
           <h3>Import preview</h3>
           <p>{importFile?.name} · Template v{importPreview.templateVersion}</p>
-          <p>Total rows: <strong>{importPreview.totalRows}</strong> · Valid: <strong>{importPreview.validRows}</strong> · Invalid: <strong>{importPreview.invalidRows}</strong>{["houses", "health", "drugs", "vaccinations", "feed-purchases", "feed-usage"].includes(importModule) && <> · Exact duplicates: <strong>{importPreview.duplicates || 0}</strong></>}</p>
+          <p>Total rows: <strong>{importPreview.totalRows}</strong> · Valid: <strong>{importPreview.validRows}</strong> · Invalid: <strong>{importPreview.invalidRows}</strong>{["houses", "batches", "health", "drugs", "vaccinations", "feed-purchases", "feed-usage"].includes(importModule) && <> · Exact duplicates: <strong>{importPreview.duplicates || 0}</strong></>}</p>
           {importPreview.invalidRows > 0 && <button type="button" onClick={downloadErrorReport}>Download row error report</button>}
           <div className="table-scroll">
             <table>

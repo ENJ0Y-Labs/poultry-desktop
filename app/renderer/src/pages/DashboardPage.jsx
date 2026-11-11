@@ -7,6 +7,8 @@ import PageSection from "../components/PageSection.jsx";
 // eslint-disable-next-line no-unused-vars
 import PageTemplate from "../components/PageTemplate.jsx";
 import { formatAuditAction, formatAuditEntity, formatAuditTimestamp } from "../utils/auditFormatting.js";
+// eslint-disable-next-line no-unused-vars -- JSX component usage is not detected by the core rule
+import ContextDrawer, { DrawerDetails } from "../components/ContextDrawer.jsx";
 import { attentionTarget } from "../utils/attentionNavigation.js";
 import { formatEggQuantity } from "../utils/eggFormatting.js";
 // eslint-disable-next-line no-unused-vars
@@ -50,6 +52,8 @@ export default function DashboardPage() {
     applicationSettings,
     selectedBatchId,
     setMortalityForm,
+    setMortalityModalSignal,
+    setFeedUsageModalSignal,
     setEggBatchId,
     setEggCollectionForm,
     setFeedUsageForm,
@@ -58,9 +62,12 @@ export default function DashboardPage() {
     setBirdSaleForm,
     setEggSaleForm,
     setExpenseForm,
+    setFeedPurchaseModalSignal,
     loadEggsForBatch,
     loadBroilerForBatch,
   } = useContext(FarmManagerContext);
+
+  const [drawerRecord, setDrawerRecord] = useState(null);
 
   const isFirstRunEmpty = dashboard
     && houses.length === 0
@@ -78,6 +85,32 @@ export default function DashboardPage() {
     window.location.hash = target;
   }
 
+  function openAuditDetails(row) {
+    let changedFields = row.changedFields;
+    if (typeof changedFields === "string") {
+      try { changedFields = JSON.parse(changedFields); } catch { /* Preserve the recorded value. */ }
+    }
+    const changedFieldsLabel = Array.isArray(changedFields) ? changedFields.join(", ") : changedFields;
+    const snapshotText = value => {
+      if (value == null || value === "") return "";
+      if (typeof value !== "string") return JSON.stringify(value, null, 2);
+      try { return JSON.stringify(JSON.parse(value), null, 2); } catch { return value; }
+    };
+    setDrawerRecord({
+      title: formatAuditAction(row.action),
+      description: "Immutable audit activity. The recorded values are displayed without changing audit history.",
+      fields: [
+        ["Entity ID", row.entityId],
+        ["User ID", row.userId],
+        ["Batch ID", row.batchId],
+        ["Changed fields", changedFieldsLabel],
+        ["Audit record ID", row.id],
+      ].filter(([, value]) => value !== null && value !== undefined && value !== ""),
+      before: snapshotText(row.before),
+      after: snapshotText(row.after),
+    });
+  }
+
 
 
   const [checklistDismissed, setChecklistDismissed] = useState(
@@ -89,7 +122,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <PageTemplate className="grid">
+    <PageTemplate className="grid pomas-page page-dashboard">
       <PageSection page="dashboard" tab="overview"><section id="dashboard" className="card full dashboard-page">
         <div className="section-head">
           <div><p className="eyebrow">OVERVIEW</p><h2>Farm dashboard</h2></div>
@@ -114,13 +147,14 @@ export default function DashboardPage() {
           </section>
         ) : (
           <>
-            <GettingStartedChecklist houses={houses} batches={batches} feedTypes={feedTypes} feedInventory={feedInventory} />
+            <GettingStartedChecklist houses={houses} batches={batches} feedTypes={feedTypes} feedInventory={feedInventory} onTaskAction={route => { if (route === "feed-stock/purchases") setFeedPurchaseModalSignal(value => value + 1); }} />
             <section className="subsection quick-actions" aria-labelledby="quick-actions-title">
               <div className="section-head"><div><p className="eyebrow">DAILY WORK</p><h3 id="quick-actions-title">Quick actions</h3></div><p className="muted">Jump straight to a validated entry form.</p></div>
               <div className="quick-action-grid">
                 <button type="button" onClick={() => {
                   const batch = batches.find(item => item.id === selectedBatchId && item.status === "ACTIVE") || batches.find(item => item.status === "ACTIVE");
                   setMortalityForm(form => ({ ...form, batchId: batch?.id || form.batchId, date: todayLocalDate() }));
+                  setMortalityModalSignal(value => value + 1);
                   navigateTo("daily-work/mortality");
                 }}>Record mortality</button>
                 <button type="button" onClick={() => {
@@ -138,6 +172,7 @@ export default function DashboardPage() {
                   const batchId = batch?.id || "";
                   setDailyForm(form => ({ ...form, batchId, date: todayLocalDate() }));
                   setFeedUsageForm(form => ({ ...form, batchId, feedTypeId: type?.id || form.feedTypeId, unit: type?.unit || form.unit, usageDate: todayLocalDate() }));
+                  setFeedUsageModalSignal(value => value + 1);
                   navigateTo("daily-work/daily-record");
                 }}>Record feed usage</button>
                 <button type="button" onClick={() => {
@@ -217,10 +252,22 @@ export default function DashboardPage() {
                 { key: "action", label: "Action", render: row => formatAuditAction(row.action) },
                 { key: "entityType", label: "Entity", render: row => formatAuditEntity(row.entityType) },
                 { key: "reason", label: "Reason", render: row => typeof row.reason === "string" && row.reason.trim() ? row.reason : "—" },
+                { key: "details", label: "Details", render: row => <button type="button" className="secondary-button" onClick={() => openAuditDetails(row)}>View</button> },
               ]} rows={auditRows.slice(0, 8)} emptyMessage="No audit records yet." />}</div>
           </>
         ) : <p className="muted">Dashboard is loading…</p>}
       </section></PageSection>
+      <ContextDrawer open={Boolean(drawerRecord)} onClose={() => setDrawerRecord(null)} title={drawerRecord?.title || "Audit details"} description={drawerRecord?.description} size="large">
+        {drawerRecord && <DrawerDetails fields={drawerRecord.fields} />}
+        {drawerRecord?.before && <section className="subsection">
+          <h3>Before</h3>
+          <pre className="pomas-audit-snapshot">{drawerRecord.before}</pre>
+        </section>}
+        {drawerRecord?.after && <section className="subsection">
+          <h3>After</h3>
+          <pre className="pomas-audit-snapshot">{drawerRecord.after}</pre>
+        </section>}
+      </ContextDrawer>
     </PageTemplate>
   );
 }

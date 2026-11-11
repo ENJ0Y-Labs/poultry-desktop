@@ -14,6 +14,8 @@ The repeatable build check in `scripts/verify-a11y.mjs` computes WCAG relative-l
 - Status bar and connection metadata: 11 px because they are secondary metadata, not primary workflow instructions.
 - Decorative uppercase section kickers may remain smaller than body text only where they are not the sole carrier of meaning. They use the stronger secondary-text token.
 - Form helper text remains 11 px as supplementary guidance. Important errors are 13 px and use the existing error color tokens.
+- Independent binary settings use a labeled switch with an explicit keyboard focus indicator. Keep multi-select and submit-time form options as compact 16px checkboxes. Backup activation remains part of its existing Save form; its switch edits the pending form value until saved.
+- In the signed-in application, theme preference switches are located in Settings → App, appearance & account. The landing and sign-in screens retain a theme selector before authentication.
 
 WCAG contrast thresholds used by the checker are 4.5:1 for normal text. The current checked text pairs are not large-text exceptions. The 3:1 large-text allowance is therefore not used to excuse small labels.
 
@@ -60,9 +62,11 @@ This section supersedes any earlier palette decision. Pomas uses deep teal `#1A4
 - Primary buttons use white text on teal in light mode and black text on gold in dark mode.
 - Warning, critical, and error colours remain semantically distinct from the brand palette.
 - Use semantic CSS tokens for colour roles. Do not add per-screen hardcoded colour values.
-- Landing, sign-in, and first-run owner-setup screens use the shared --auth-* token family. Verify the story panel, release highlights, form controls, focus states, and primary action in Light and Dark. Keep the Theme selector available before authentication.
+- Landing, sign-in, and first-run owner-setup screens use the shared --auth-* token family. Verify the story panel, release highlights, form controls, focus states, and primary action in Light and Dark. Keep the theme preference switches available before authentication.
 - The external `theme-init.js` script runs in the document head before the renderer module and styles, preventing a saved Light/Dark preference from flashing the default theme. `scripts/verify-production-renderer.mjs` checks that the bootstrap is included and ordered before the renderer entry.
 - Preserve Auto, Light, and Dark preferences. Auto follows the operating system colour scheme.
+- The theme preference controls expose “Follow system appearance” and “Dark appearance” as accessible switches. In Auto mode, the dark switch is disabled and reflects the system's current appearance; turning Auto off retains that appearance. Light and Dark remain explicit, immediately applied preferences.
+- Keep the signed-in theme controls in Settings → App, appearance & account, not in the application top bar.
 - `scripts/verify-a11y.mjs` checks approved theme tokens and WCAG 2.2 AA normal-text contrast pairs. Automated token checks do not replace rendered UI review.
 
 Manual pre-launch review remains required at 1366×768 and 1100×650 in Auto, Light, and Dark. Record each check as not run until it is actually performed.

@@ -1,4 +1,6 @@
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, render as rtlRender, screen, waitFor, within } from "@testing-library/react";
+import { createElement } from "react";
+import { ToastProvider } from "./components/ToastProvider.jsx";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App.jsx";
 // eslint-disable-next-line no-unused-vars
@@ -12,6 +14,10 @@ import {
   feedApi, pricingApi, dashboardApi, attentionApi, auditApi,
   eggApi, broilerApi, reportApi, expenseCategoryApi, accountApi, settingsApi, supplierApi,
 } from "./services/api.js";
+
+function render(ui, options) {
+  return rtlRender(createElement(ToastProvider, null, ui), options);
+}
 
 const farm = {
   id: "farm-1",
@@ -85,6 +91,9 @@ function mockFarmApis({
   ]);
   vi.spyOn(accountApi, "get").mockResolvedValue({
     id: "user-1", email: "owner@example.com", fullName: "Farm Owner", role: "OWNER"
+  });
+  vi.spyOn(settingsApi, "application").mockResolvedValue({
+    startPage: "dashboard", dateFormat: "YYYY-MM-DD"
   });
   vi.spyOn(settingsApi, "backup").mockResolvedValue({
     enabled: false, directory: "", intervalMs: 86400000
@@ -230,10 +239,11 @@ describe("App", () => {
     render(<App />);
 
     expect(await screen.findByRole("heading", { name: "Sign in to Pomas" })).toBeInTheDocument();
-    const themeSelector = screen.getByRole("combobox", { name: "Theme" });
-    expect(themeSelector).toHaveValue("auto");
-    fireEvent.change(themeSelector, { target: { value: "light" } });
-    expect(themeSelector).toHaveValue("light");
+    const systemThemeSwitch = screen.getByRole("switch", { name: "Follow system appearance" });
+    expect(systemThemeSwitch).toBeChecked();
+    fireEvent.click(systemThemeSwitch);
+    const darkThemeSwitch = screen.getByRole("switch", { name: "Dark appearance" });
+    if (darkThemeSwitch.checked) fireEvent.click(darkThemeSwitch);
     expect(document.documentElement.dataset.theme).toBe("light");
     expect(localStorage.getItem("pomas:theme")).toBe("light");
     expect(screen.getByRole("heading", { name: "What's new" })).toBeInTheDocument();
@@ -326,21 +336,27 @@ describe("App", () => {
     render(<App />);
 
     await screen.findByRole("heading", { name: "Create your owner account" });
-    const setupThemeSelector = screen.getByRole("combobox", { name: "Theme" });
-    expect(setupThemeSelector).toHaveValue("auto");
-    fireEvent.change(setupThemeSelector, { target: { value: "dark" } });
+    const setupSystemSwitch = screen.getByRole("switch", { name: "Follow system appearance" });
+    expect(setupSystemSwitch).toBeChecked();
+    fireEvent.click(setupSystemSwitch);
+    const setupDarkSwitch = screen.getByRole("switch", { name: "Dark appearance" });
+    if (!setupDarkSwitch.checked) fireEvent.click(setupDarkSwitch);
     expect(document.documentElement.dataset.theme).toBe("dark");
     expect(screen.getByRole("button", { name: "Create account and continue" })).toBeInTheDocument();
     expect(screen.queryByLabelText("Username or email")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Sign in to your farm/ })).not.toBeInTheDocument();
     fireEvent.change(screen.getByLabelText("Full name"), { target: { value: "Farm Owner" } });
-    fireEvent.change(screen.getByLabelText(/Username/), { target: { value: "farm-owner" } });
+    const username = screen.getByLabelText(/Username/);
+    expect(username).toHaveAttribute("pattern", "[A-Za-z0-9][A-Za-z0-9._\\-]{2,31}");
+    fireEvent.change(username, { target: { value: "farm-owner" } });
+    expect(username).toBeValid();
     fireEvent.change(screen.getByLabelText("Email (optional)"), { target: { value: "owner@example.com" } });
     fireEvent.change(screen.getByLabelText(/Password/), { target: { value: "correct-horse-battery" } });
     fireEvent.click(screen.getByRole("button", { name: "Create account and continue" }));
 
     await waitFor(() => expect(screen.getByRole("heading", { name: "Farm dashboard" })).toBeInTheDocument());
-    expect(screen.getByRole("combobox", { name: "Theme" })).toHaveValue("dark");
+    expect(localStorage.getItem("pomas:theme")).toBe("dark");
+    expect(document.documentElement.dataset.theme).toBe("dark");
     expect(setup).toHaveBeenCalledWith({
       username: "farm-owner",
       email: "owner@example.com",
@@ -446,16 +462,24 @@ describe("App", () => {
     expect(screen.queryByText("5678")).not.toBeInTheDocument();
   });
 
-  it("exposes the theme selector through its visible label and allows changing it", async () => {
+  it("exposes the theme switches through accessible names and allows changing appearance", async () => {
     mockFarmApis();
 
     render(<App />);
 
-    const themeSelector = await screen.findByRole("combobox", { name: "Theme" });
-    expect(themeSelector).toHaveValue("auto");
+    await screen.findByRole("heading", { name: "Farm dashboard" });
+    fireEvent.click(screen.getByRole("button", { name: "Settings" }));
+    fireEvent.click(screen.getByRole("button", { name: "App, appearance & account" }));
 
-    fireEvent.change(themeSelector, { target: { value: "dark" } });
-    expect(themeSelector).toHaveValue("dark");
+    const systemSwitch = await screen.findByRole("switch", { name: "Follow system appearance" });
+    fireEvent.click(systemSwitch);
+    const darkSwitch = screen.getByRole("switch", { name: "Dark appearance" });
+    if (!darkSwitch.checked) fireEvent.click(darkSwitch);
+    expect(darkSwitch).toBeChecked();
+    expect(localStorage.getItem("pomas:theme")).toBe("dark");
+    fireEvent.click(darkSwitch);
+    expect(document.documentElement.dataset.theme).toBe("light");
+    expect(localStorage.getItem("pomas:theme")).toBe("light");
   });
 
   it("renders backend-derived dashboard metrics and empty dashboard states", async () => {
@@ -509,6 +533,7 @@ describe("App", () => {
     await waitFor(() => expect(screen.getByRole("heading", { name: "Farm dashboard" })).toBeInTheDocument());
     fireEvent.click(within(screen.getByRole("navigation", { name: "Main navigation" })).getByRole("button", { name: "Production" }));
     fireEvent.change(await screen.findByLabelText("Layer batch"), { target: { value: "layer-1" } });
+    fireEvent.click(screen.getByRole("button", { name: "Record egg sale" }));
 
     const savedCustomer = await screen.findByLabelText("Saved customer");
     expect(savedCustomer).not.toBeRequired();
@@ -693,6 +718,7 @@ describe("App", () => {
     await waitFor(() => expect(window.location.hash).toBe(
       "#daily-work/daily-record/batchId=layer-1/date=2026-10-25"
     ));
+    fireEvent.click(await screen.findByRole("button", { name: "Save daily notes" }));
     expect(await screen.findByLabelText("Batch")).toHaveValue("layer-1");
     expect(screen.getByLabelText("Date")).toHaveValue("2026-10-25");
   });
@@ -779,6 +805,8 @@ describe("App", () => {
     fireEvent.click(screen.getByRole("button", { name: "Weight & growth" }));
     await waitFor(() => expect(screen.getByRole("option", { name: "Select a batch" })).toBeInTheDocument());
     const broilerBatch = screen.getByRole("option", { name: "Select a batch" }).parentElement;
+    expect(screen.getByRole("combobox", { name: "Meat-production batch" })).toBe(broilerBatch);
+    expect(screen.queryByRole("heading", { name: "Meat-production batch" })).not.toBeInTheDocument();
     fireEvent.change(broilerBatch, { target: { value: "broiler-1" } });
     await waitFor(() => expect(screen.getByRole("heading", { name: "Record weight" })).toBeInTheDocument());
     expect(within(broilerBatch).getByRole("option", { name: /B-2026-001/ })).toBeInTheDocument();
@@ -823,18 +851,26 @@ describe("App", () => {
 
     fireEvent.click(await screen.findByRole("button", { name: "Record mortality" }));
     expect(window.location.hash).toContain("daily-work/mortality");
+    await screen.findByRole("heading", { name: "Record mortality" });
     expect(await screen.findByRole("combobox", { name: "Batch" })).toHaveValue("layer-1");
 
     dashboardNav();
     fireEvent.click(await screen.findByRole("button", { name: "Collect eggs" }));
     expect(window.location.hash).toContain("production/eggs");
+    fireEvent.click(await screen.findByRole("button", { name: "Record collection" }));
     expect(await screen.findByRole("combobox", { name: "Layer batch" })).toHaveValue("layer-1");
 
     dashboardNav();
     fireEvent.click(await screen.findByRole("button", { name: "Record feed usage" }));
-    expect(window.location.hash).toContain("daily-work/daily-record");
-    expect(await screen.findByRole("combobox", { name: "Batch" })).toHaveValue("layer-1");
-    expect(screen.getByRole("combobox", { name: "Feed type" })).toHaveValue("feed-layer");
+    await waitFor(() => expect(window.location.hash).toContain("daily-work/daily-record"));
+    fireEvent(window, new HashChangeEvent("hashchange"));
+    const feedUsageDialog = await screen.findByRole("dialog", { name: "Feed usage" });
+    expect(within(feedUsageDialog).getByRole("combobox", { name: "Feed type" })).toHaveValue("feed-layer");
+
+    fireEvent.click(within(feedUsageDialog).getByRole("button", { name: "Close dialog" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Save daily notes" }));
+    const dailyRecordDialog = await screen.findByRole("dialog", { name: "Daily record" });
+    expect(within(dailyRecordDialog).getByRole("combobox", { name: "Batch" })).toHaveValue("layer-1");
 
     dashboardNav();
     fireEvent.click(await screen.findByRole("button", { name: "Record a sale" }));
@@ -844,6 +880,7 @@ describe("App", () => {
     dashboardNav();
     fireEvent.click(await screen.findByRole("button", { name: "Record an expense" }));
     expect(window.location.hash).toContain("sales-money/expenses");
+    fireEvent.click(await screen.findByRole("button", { name: "Record expense" }));
     expect(await screen.findByLabelText("Batch association")).toHaveValue("layer-1");
   });
 
@@ -890,7 +927,8 @@ describe("App", () => {
     expect(screen.getByText("Open a batch")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Configure feed" })).toBeInTheDocument();
     expect(screen.getByText("Record a feed purchase")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Record purchase" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Record purchase" }));
+    expect(await screen.findByRole("heading", { name: "Feed purchase" })).toBeInTheDocument();
   });
 
   it("hides the getting-started checklist when all setup tasks have saved data", async () => {

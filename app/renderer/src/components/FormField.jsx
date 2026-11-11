@@ -1,4 +1,4 @@
-import { Children, cloneElement, isValidElement } from "react";
+import { normalizeFieldKey } from "../utils/formValidation.js";
 
 /** Accessible field wrapper; validation remains in the owning form and API. */
 export default function FormField({ id, label, children, hint, error, required = false, className = "field" }) {
@@ -17,9 +17,9 @@ export default function FormField({ id, label, children, hint, error, required =
   const labelContent = <span>{label}{required && <span aria-hidden="true"> *</span>}</span>;
   return (
     <div className={`form-field ${className}`.trim()}>
-      {id ? <><label htmlFor={id}>{labelContent}</label>{controls}</> : <label className="form-field-label">{labelContent}{controls}</label>}
-      {hint && <p className="form-field-hint" id={hintId}>{hint}</p>}
-      {error && <p className="form-field-error" id={errorId} role="alert">{error}</p>}
+      {id ? <><label htmlFor={id}>{labelContent}</label>{children}</> : <label className="form-field-label">{labelContent}{children}</label>}
+      {hint && <p className="form-field-hint" id={id ? `${id}-hint` : undefined}>{hint}</p>}
+      {error && <p className="form-field-error" id={id ? `${id}-error` : `${normalizeFieldKey(label)}-error`} aria-live="polite">{error}</p>}
     </div>
   );
 }
