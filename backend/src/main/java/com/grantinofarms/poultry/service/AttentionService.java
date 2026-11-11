@@ -381,22 +381,6 @@ public class AttentionService {
     }
 
     private void addDecliningWeightAlerts(List<Map<String, Object>> result, String farmId, LocalDate date) {
-        jdbc.query("""
-                SELECT b.id AS batch_id, b.code, wr.record_date,
-                       SUM(wr.total_weight_grams) * 1.0 / SUM(wr.sample_quantity) AS average_grams,
-                       SUM(wr.sample_quantity) AS sampled_birds
-                FROM batches b
-                JOIN weight_records wr ON wr.batch_id = b.id
-                WHERE b.farm_id = ? AND b.status = 'ACTIVE' AND b.batch_type IN ('BROILER','TURKEY')
-                  AND wr.record_date <= ?
-                GROUP BY b.id, b.code, wr.record_date
-                ORDER BY b.id, wr.record_date DESC
-                """,
-                rs -> {
-                    // Collecting the latest two measurements is handled below to avoid treating
-                    // an absent measurement as a zero-weight observation.
-                }, farmId, date.toString());
-
         Map<String, List<Map<String, Object>>> measurements = new LinkedHashMap<>();
         jdbc.query("""
                 SELECT b.id AS batch_id, b.code, wr.record_date,
@@ -485,7 +469,7 @@ public class AttentionService {
                 Map.entry("MORTALITY_INCREASE", new String[]{"Mortality in the last 7 days is at least 2% of initial birds.", "Review recent mortality records and escalate unusual losses to the farm's qualified animal-health professional."}),
                 Map.entry("MISSING_DAILY_RECORD", new String[]{"No daily record or other supported daily activity exists for the selected date.", "Complete the missing daily record if the work was performed."}),
                 Map.entry("VACCINATION_DUE", new String[]{"No vaccination is recorded in the previous 28 days for a batch at least 14 days old.", "Review the vaccination schedule and consult the farm's qualified animal-health professional."}),
-                Map.entry("UNUSUAL_PRODUCTION_DROP", new String[]{"Good-egg production is at least 20% below the previous 7-day period.", "Review collection records, flock condition and recent operational changes."}),
+                Map.entry("UNUSUAL_PRODUCTION_DROP", new String[]{"Total egg production (good + cracked) is at least 20% below the previous 7-day period.", "Review collection records, flock condition and recent operational changes."}),
                 Map.entry("UNUSUAL_FEED_CONSUMPTION", new String[]{"Feed usage is at least 25% above the preceding 7-day period for the same batch and feed type.", "Check the feed entries, bird count, spillage and storage conditions."}),
                 Map.entry("DECLINING_WEIGHT", new String[]{"The latest recorded average weight is at least 10% below the preceding measurement.", "Verify sample size and weighing procedure, then review feed and health records."}),
                 Map.entry("RISING_EXPENSES", new String[]{"Recorded farm expenses are at least 25% above the preceding 7-day period.", "Review recent expenses and confirm unusual or duplicate entries."}),
@@ -509,11 +493,9 @@ public class AttentionService {
                         FROM batches b JOIN houses h ON h.id = b.house_id
                         WHERE b.id = ? AND b.farm_id = ?
                         """, rs -> {
-                    if (rs.next()) {
-                        item.put("houseId", rs.getString("house_id"));
-                        item.put("houseName", rs.getString("house_name"));
-                        item.put("houseCode", rs.getString("house_code"));
-                    }
+                    item.put("houseId", rs.getString("house_id"));
+                    item.put("houseName", rs.getString("house_name"));
+                    item.put("houseCode", rs.getString("house_code"));
                 }, String.valueOf(batchId), farmId);
             }
         }
