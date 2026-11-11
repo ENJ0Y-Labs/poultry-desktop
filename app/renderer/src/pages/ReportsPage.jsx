@@ -28,7 +28,7 @@ export default function ReportsPage() {
     <PageTemplate className="grid">
       <PageSection page="reports" tab="farm-report"><section id="reports" className="card full">
           <div className="section-head"><div><p className="eyebrow">REPORTING</p><h2>Farm reports</h2></div>
-            <div className="report-range-actions"><DateRangeFilter value={dateRange} timezone={farm?.timezone} onChange={setDateRange} /><div className="inline-form"><button type="button" onClick={() => loadReport(dateRange.from, dateRange.to)}>Refresh</button><button type="button" onClick={() => exportCsv(() => reportApi.farmCsv(null, dateRange.from, dateRange.to), "farm-report.csv")}>Export CSV</button><button type="button" onClick={() => exportPdf(() => reportApi.farmPdf(null, dateRange.from, dateRange.to), "farm-report.pdf")}>Export PDF</button></div></div>
+            <div className="report-range-actions"><DateRangeFilter value={dateRange} timezone={farm?.timezone} onChange={setDateRange} /><div className="inline-form"><button type="button" onClick={() => loadReport(dateRange.from, dateRange.to)}>Refresh</button><button type="button" onClick={() => exportCsv(() => reportApi.farmCsv(null, dateRange.from, dateRange.to, farmPeriodProfitMinor), "farm-report.csv")}>Export CSV</button><button type="button" onClick={() => exportPdf(() => reportApi.farmPdf(null, dateRange.from, dateRange.to, farmPeriodProfitMinor), "farm-report.pdf")}>Export PDF</button></div></div>
           </div>
           {farmReport ? <>
             <div className="metric-grid">
@@ -72,8 +72,8 @@ export default function ReportsPage() {
                 <option value="">Select a batch</option>{batches.map(batch => <option key={batch.id} value={batch.id}>{batch.code} · {batch.type === "LAYER" ? "Layer" : batch.type === "BROILER" ? "Broiler" : batch.type === "TURKEY" ? "Turkey" : "Unknown type"}</option>)}
               </select>
               <button type="button" onClick={() => loadBatchReport(selectedBatchId, dateRange.from, dateRange.to)}>Refresh</button>
-              <button type="button" disabled={!selectedBatchId} onClick={() => exportCsv(() => reportApi.batchCsv(selectedBatchId, null, dateRange.from, dateRange.to), "batch-report.csv")}>Export CSV</button>
-              <button type="button" disabled={!selectedBatchId} onClick={() => exportPdf(() => reportApi.batchPdf(selectedBatchId, null, dateRange.from, dateRange.to), "batch-report.pdf")}>Export PDF</button>
+              <button type="button" disabled={!selectedBatchId} onClick={() => exportCsv(() => reportApi.batchCsv(selectedBatchId, null, dateRange.from, dateRange.to, batchPeriodProfitMinor), "batch-report.csv")}>Export CSV</button>
+              <button type="button" disabled={!selectedBatchId} onClick={() => exportPdf(() => reportApi.batchPdf(selectedBatchId, null, dateRange.from, dateRange.to, batchPeriodProfitMinor), "batch-report.pdf")}>Export PDF</button>
               </div>
             </div>
           </div>
