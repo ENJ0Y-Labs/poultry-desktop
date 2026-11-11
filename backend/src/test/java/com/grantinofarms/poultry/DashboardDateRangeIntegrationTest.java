@@ -78,7 +78,7 @@ class DashboardDateRangeIntegrationTest {
                 .containsEntry("profitMinor", 2_000L)
                 .containsEntry("salesCount", 2L)
                 .containsEntry("expenseCount", 2L);
-        assertThat(result.get("totalBirds")).isEqualTo(92);
+        assertThat(result.get("totalBirds")).isEqualTo(92L);
         assertThat(result.get("from")).isEqualTo(LocalDate.of(2026, 2, 28));
         assertThat(result.get("to")).isEqualTo(LocalDate.of(2026, 3, 1));
     }
