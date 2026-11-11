@@ -279,7 +279,7 @@ The farm report and batch report reuse the same calculation/domain services as t
 
 Backend-derived attention rules currently include:
 
-- Low feed stock: roughly three days of recent usage cover or less
+- Low feed stock: purchases plus dated opening balances minus usage leave roughly three days of recent usage cover or less
 - Insufficient inventory: zero/negative stock
 - Low inventory: stock at or below reorder level
 - High mortality: cumulative 5% warning, 10% critical; recent 7-day mortality 2% warning, 5% critical
