@@ -1,5 +1,3 @@
-import PropTypes from "prop-types";
-
 const variants = new Set(["primary", "secondary", "outline", "ghost", "destructive"]);
 
 /** Shared action button. Keep actions in the renderer; domain validation stays in the API. */
