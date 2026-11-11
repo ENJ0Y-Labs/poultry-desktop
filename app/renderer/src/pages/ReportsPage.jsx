@@ -172,7 +172,7 @@ const COMPARISON_METRICS = [
   { key: "initialBirds", label: "Initial population", unit: "birds", kind: "count" },
   { key: "currentBirds", label: "Current population", unit: "birds at period end", kind: "count" },
   { key: "mortalityRatePercent", label: "Mortality rate", unit: "% of initial population in period", kind: "percent" },
-  { key: "feedQuantityMilli", label: "Feed quantity", unit: "recorded feed units (units may differ)", kind: "quantity" },
+  { key: "feedQuantityMilli", label: "Feed quantity", unit: "each batch's recorded feed unit", kind: "quantity" },
   { key: "feedCostMinor", label: "Feed cost", unit: "__CURRENCY__", kind: "money" },
   { key: "averageWeightKg", label: "Average weight at period end", unit: "kg", kind: "kg", types: ["BROILER", "TURKEY"] },
   { key: "fcr", label: "FCR (batch-to-date)", unit: "kg feed / kg gain", kind: "metric", types: ["BROILER", "TURKEY"] },
@@ -205,7 +205,11 @@ export function BatchComparison({ batches, houses, dateRange, setDateRange, farm
   const metricDefinitions = useMemo(() => COMPARISON_METRICS.filter(metric =>
     !metric.types || (metric.types.includes("LAYER") ? allLayers : allMeatBirds)
   ).map(metric => ({ ...metric, unit: metric.unit === "__CURRENCY__" ? farm.currency : metric.unit })), [allLayers, allMeatBirds, farm.currency]);
-  const activeMetric = metricDefinitions.find(metric => metric.key === metricKey) || metricDefinitions[0];
+  const feedUnitsMatch = selectedReports.length > 0
+    && selectedReports.every(report => report.comparisonMetrics?.feedQuantityComparable === true
+      && report.comparisonMetrics?.feedQuantityUnit === selectedReports[0].comparisonMetrics?.feedQuantityUnit);
+  const chartMetricDefinitions = metricDefinitions.filter(metric => metric.key !== "feedQuantityMilli" || feedUnitsMatch);
+  const activeMetric = chartMetricDefinitions.find(metric => metric.key === metricKey) || chartMetricDefinitions[0];
 
   useEffect(() => {
     let current = true;
@@ -299,11 +303,11 @@ export function BatchComparison({ batches, houses, dateRange, setDateRange, farm
         : error ? <p className="error" role="alert">{error}</p>
         : selectedReports.length < 2 ? <p className="muted">No comparison data is available for the selected batches.</p>
         : <>
-          <div className="comparison-period-note">Activity period: <strong>{dateRange.from}</strong> to <strong>{dateRange.to}</strong>. Dates are inclusive. Feed quantity uses recorded feed units, which may differ between products. Egg production is shown only for layer-only comparisons; weight and FCR are shown only for meat-bird-only comparisons.</div>
+          <div className="comparison-period-note">Activity period: <strong>{dateRange.from}</strong> to <strong>{dateRange.to}</strong>. Dates are inclusive. Feed quantity is charted only when all selected batches use the same recorded unit; the table shows each batch's unit. Egg production is shown only for layer-only comparisons; weight and FCR are shown only for meat-bird-only comparisons.</div>
           <div className="comparison-chart">
             <div className="section-head"><div><h3>Metric comparison</h3><p className="muted">One unit-consistent metric at a time.</p></div>
               <label className="field"><span>Chart metric</span><select aria-label="Comparison chart metric" value={activeMetric?.key || ""} onChange={event => setMetricKey(event.target.value)}>
-                {metricDefinitions.map(metric => <option key={metric.key} value={metric.key}>{metric.label}</option>)}
+                {chartMetricDefinitions.map(metric => <option key={metric.key} value={metric.key}>{metric.label}</option>)}
               </select></label>
             </div>
             {activeMetric && <div role="img" aria-label={activeMetric.label + " comparison across selected batches"} style={{ width: "100%", height: 280 }}>
@@ -326,7 +330,12 @@ export function BatchComparison({ batches, houses, dateRange, setDateRange, farm
                 <thead><tr><th scope="col">Metric and unit</th>{selectedReports.map(report => <th scope="col" key={report.batch.id}>{report.batch.code}<small>{report.batch.type} · {houses.find(house => house.id === report.batch.houseId)?.name || "House not recorded"} · placed {report.batch.placementDate} · {report.population?.countStatus || "Unknown"} count</small></th>)}</tr></thead>
                 <tbody>{metricDefinitions.map(metric => <tr key={metric.key}>
                   <th scope="row">{metric.label}<small>{metric.unit}</small></th>
-                  {selectedReports.map(report => <td key={report.batch.id}>{formatValue(metric, report.comparisonMetrics?.[metric.key])}</td>)}
+                  {selectedReports.map(report => {
+                    const value = report.comparisonMetrics?.[metric.key];
+                    const unit = metric.key === "feedQuantityMilli" && value != null
+                      ? " · " + (report.comparisonMetrics?.feedQuantityUnit || "unit unknown") : "";
+                    return <td key={report.batch.id}>{formatValue(metric, value)}{unit}</td>;
+                  })}
                 </tr>)}</tbody>
               </table>
             </div>
