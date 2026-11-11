@@ -216,7 +216,7 @@ export default function DashboardPage() {
               <div className="dashboard-kpi-primary">
                 <DashboardKpiCard label="Total birds" value={formatCount(dashboard.totalBirds)} primary href="#flocks/batch-dashboard" description="View flock populations and batch details" />
                 <DashboardKpiCard label="Revenue" value={formatMoney(dashboard.revenueMinor, farm.currency)} primary href="#sales-money/sales" description="View recorded farm sales" />
-                <DashboardKpiCard label="Profit" value={formatMoney(dashboard.profitMinor, farm.currency)} primary href="#reports/farm-report" description="Review the farm financial report" />
+                <DashboardKpiCard label="Profit" value={formatMoney(periodProfitMinor, farm.currency)} primary href="#reports/farm-report" description="Review the farm financial report" />
               </div>
               <div className="dashboard-kpi-secondary">
                 <DashboardKpiCard label="Mortality" value={formatCount(dashboard.mortality)} unit="birds" href="#daily-work/mortality" description="Review mortality records" />
