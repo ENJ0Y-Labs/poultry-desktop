@@ -1,7 +1,7 @@
 import { useId } from "react";
 import { DATE_RANGE_PRESETS, createDateRange, formatDateRange, isValidDateRange } from "../utils/dateRange.js";
 
-export default function DateRangeFilter({ value, timezone, onChange }) {
+export default function DateRangeFilter({ value, timezone, dateFormat, onChange }) {
   const id = useId();
   const valid = isValidDateRange(value);
   const preset = value?.preset || "LAST_30_DAYS";
@@ -33,7 +33,7 @@ export default function DateRangeFilter({ value, timezone, onChange }) {
         </label>
       </div>
       {valid
-        ? <p className="date-range-summary" aria-live="polite">Showing {formatDateRange(value)} (inclusive)</p>
+        ? <p className="date-range-summary" aria-live="polite">Showing {formatDateRange(value, dateFormat)} (inclusive)</p>
         : <p className="date-range-error" role="alert">Enter valid dates and make sure the start date is on or before the end date.</p>}
     </div>
   );
