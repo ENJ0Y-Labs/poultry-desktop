@@ -1087,3 +1087,56 @@ body { min-width: 0; }
   .auth-whats-new { margin-top: 18px; }
   .auth-whats-new-item { padding: 9px; }
 }
+
+
+/* Shared controls: compatibility styles for legacy markup plus reusable primitives. */
+.ui-button {
+  --ui-button-bg: var(--palette-26303a);
+  --ui-button-fg: var(--text);
+  --ui-button-border: var(--border);
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 38px; padding: 9px 14px; border: 1px solid var(--ui-button-border);
+  border-radius: 8px; background: var(--ui-button-bg); color: var(--ui-button-fg);
+  font: inherit; font-size: 13px; font-weight: 700; line-height: 1.2;
+  cursor: pointer; transition: background .16s ease, border-color .16s ease, transform .16s ease, opacity .16s ease;
+}
+.ui-button--primary { --ui-button-bg: #1a4d5c; --ui-button-fg: #fff; --ui-button-border: var(--ui-button-bg); }
+:root[data-theme="dark"] .ui-button--primary { --ui-button-bg: #f4b41a; --ui-button-fg: #101010; --ui-button-border: var(--ui-button-bg); }
+.ui-button--secondary { --ui-button-bg: var(--panel-raised); }
+.ui-button--outline { --ui-button-bg: transparent; }
+.ui-button--ghost { --ui-button-bg: transparent; --ui-button-border: transparent; }
+.ui-button--destructive { --ui-button-bg: var(--palette-5b2428); --ui-button-fg: #fff; --ui-button-border: var(--palette-5b2428); }
+.ui-button--sm { min-height: 32px; padding: 6px 10px; font-size: 12px; }
+.ui-button--lg { min-height: 44px; padding: 11px 18px; }
+.ui-button--icon-only { width: 38px; min-width: 38px; padding: 0; }
+.ui-button:hover:not(:disabled) { filter: brightness(1.08); }
+.ui-button:active:not(:disabled) { transform: translateY(1px); }
+.ui-button:focus-visible, .ui-control:focus-visible, .ui-choice input:focus-visible,
+button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+  outline: 2px solid #f4b41a; outline-offset: 2px;
+}
+.ui-button:disabled { cursor: not-allowed; opacity: .58; }
+.ui-button__content { display: inline-flex; align-items: center; gap: inherit; }
+.ui-button__spinner { width: 13px; height: 13px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: ui-spin .7s linear infinite; }
+@keyframes ui-spin { to { transform: rotate(360deg); } }
+.ui-field { display: grid; gap: 6px; min-width: 0; }
+.ui-field__label, .form-field > label, .form-field-label { color: var(--text); font-size: 13px; font-weight: 650; line-height: 1.35; }
+.ui-control, .form-field input, .form-field select, .form-field textarea {
+  width: 100%; min-width: 0; min-height: 40px; padding: 9px 11px;
+  border: 1px solid var(--border); border-radius: 8px; background: var(--palette-10141a);
+  color: var(--text); font: inherit; font-size: 13px; line-height: 1.4;
+  transition: border-color .16s ease, box-shadow .16s ease, background .16s ease;
+}
+.ui-control:hover:not(:disabled), .form-field input:hover:not(:disabled), .form-field select:hover:not(:disabled), .form-field textarea:hover:not(:disabled) { border-color: var(--palette-7f8b99); }
+.ui-control:disabled, .form-field input:disabled, .form-field select:disabled, .form-field textarea:disabled { cursor: not-allowed; opacity: .6; }
+.ui-control[aria-invalid="true"], .form-field input[aria-invalid="true"], .form-field select[aria-invalid="true"], .form-field textarea[aria-invalid="true"] { border-color: var(--red); }
+.ui-field__hint, .form-field-hint { margin: 0; color: var(--muted); font-size: 11px; line-height: 1.45; }
+.ui-field__error, .form-field-error { margin: 0; color: var(--error-text); font-size: 13px; line-height: 1.4; }
+.ui-field--choice { gap: 5px; }
+.ui-choice { display: inline-flex; align-items: center; gap: 9px; min-height: 32px; color: var(--text); font-size: 13px; cursor: pointer; }
+.ui-choice input { width: 16px; height: 16px; min-height: 16px; margin: 0; accent-color: var(--cyan); }
+.ui-switch input { appearance: none; width: 36px; height: 20px; min-height: 20px; border: 1px solid var(--border); border-radius: 999px; background: var(--palette-303742); position: relative; cursor: pointer; }
+.ui-switch input::before { content: ""; position: absolute; width: 14px; height: 14px; top: 2px; left: 2px; border-radius: 50%; background: var(--text); transition: transform .16s ease; }
+.ui-switch input:checked { background: var(--cyan); border-color: var(--cyan); }
+.ui-switch input:checked::before { transform: translateX(16px); background: #101010; }
+@media (prefers-reduced-motion: reduce) { .ui-button, .ui-control, .ui-switch input::before { transition: none; } .ui-button__spinner { animation-duration: 1.5s; } }
