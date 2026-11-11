@@ -5,6 +5,11 @@ describe("attentionTarget", () => {
   it.each([
     [{ type: "MISSING_DAILY_RECORD", batchId: "batch 1", date: "2026-10-26" }, "#daily-work/daily-record/batchId=batch%201/date=2026-10-26"],
     [{ type: "HIGH_MORTALITY", batchId: "batch-1" }, "#flocks/batch-dashboard/batchId=batch-1"],
+    [{ type: "MORTALITY_INCREASE", batchId: "batch-1" }, "#flocks/batch-dashboard/batchId=batch-1"],
+    [{ type: "UNUSUAL_FEED_CONSUMPTION", batchId: "batch-1", feedTypeId: "feed-1" }, "#daily-work/daily-record/batchId=batch-1/feedTypeId=feed-1"],
+    [{ type: "DECLINING_WEIGHT", batchId: "batch-1" }, "#production/broiler/batchId=batch-1"],
+    [{ type: "RISING_EXPENSES" }, "#sales-money/expenses"],
+    [{ type: "FALLING_REVENUE" }, "#sales-money/sales"],
     [{ type: "VACCINATION_DUE", batchId: "batch-1" }, "#health/vaccination/batchId=batch-1"],
     [{ type: "UNUSUAL_PRODUCTION_DROP", batchId: "batch-1" }, "#production/eggs/batchId=batch-1"],
     [{ type: "BATCH_NEARING_SALE", batchId: "batch-1" }, "#production/broiler/batchId=batch-1"],
