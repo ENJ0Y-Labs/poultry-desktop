@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.util.Map;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/reports")
@@ -29,6 +30,15 @@ public class ReportController {
             @RequestParam(required = false) LocalDate to
     ) {
         return Map.of("ok", true, "data", from != null || to != null ? service.farm(from, to) : service.farm(asOf));
+    }
+
+    @GetMapping("/batches/compare")
+    public Map<String, Object> compareBatches(
+            @RequestParam List<String> batchIds,
+            @RequestParam LocalDate from,
+            @RequestParam LocalDate to
+    ) {
+        return Map.of("ok", true, "data", service.compare(batchIds, from, to));
     }
 
     @GetMapping("/batches/{id}")
