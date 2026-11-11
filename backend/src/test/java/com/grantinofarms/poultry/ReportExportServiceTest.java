@@ -49,7 +49,7 @@ class ReportExportServiceTest {
     @Test
     void pdfHasReportTitleDateStructuredHeadingsAndFormattedMoney() throws Exception {
         byte[] pdf = service.pdf(
-                Map.of("reportType", "BATCH_SUMMARY", "asOf", "2026-10-03", "waterUnitLabel", "litres", "profitMinor", 500000, "farmName", "Grantino Farms"),
+                Map.of("reportType", "BATCH_SUMMARY", "from", "2026-10-01", "to", "2026-10-03", "asOf", "2026-10-03", "waterUnitLabel", "litres", "period", Map.of("profitMinor", 500000), "farmName", "Grantino Farms"),
                 "Batch Report"
         );
 
