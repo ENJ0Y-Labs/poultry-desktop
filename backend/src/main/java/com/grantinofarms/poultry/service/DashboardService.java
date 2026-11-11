@@ -116,6 +116,12 @@ public class DashboardService {
                 WHERE b.farm_id=? AND e.record_date BETWEEN ? AND ?
                   AND (? IS NULL OR b.id=?)
                 """, farmId, range, batchId);
+        long eggsCracked = rangeTotal("""
+                SELECT COALESCE(SUM(e.cracked_eggs), 0)
+                FROM egg_collections e JOIN batches b ON b.id=e.batch_id
+                WHERE b.farm_id=? AND e.record_date BETWEEN ? AND ?
+                  AND (? IS NULL OR b.id=?)
+                """, farmId, range, batchId);
         long revenue = rangeTotal("""
                 SELECT COALESCE(SUM(total_amount_minor), 0) FROM sales
                 WHERE farm_id=? AND sale_date BETWEEN ? AND ?
@@ -128,6 +134,7 @@ public class DashboardService {
                 """, farmId, range, batchId);
         period.put("mortality", mortality);
         period.put("eggsGood", eggsGood);
+        period.put("eggsCracked", eggsCracked);
         period.put("revenueMinor", revenue);
         period.put("expensesMinor", expenses);
         period.put("salesCount", rangeTotal("""
@@ -139,12 +146,6 @@ public class DashboardService {
                 SELECT COUNT(*) FROM expenses
                 WHERE farm_id=? AND occurred_date BETWEEN ? AND ?
                   AND (? IS NULL OR batch_id=?)
-                """, farmId, range, batchId));
-        period.put("feedUsageQuantityMilli", rangeTotal("""
-                SELECT COALESCE(SUM(u.quantity_milli), 0)
-                FROM feed_usage u JOIN batches b ON b.id=u.batch_id
-                WHERE b.farm_id=? AND u.usage_date BETWEEN ? AND ?
-                  AND (? IS NULL OR b.id=?)
                 """, farmId, range, batchId));
         period.put("feedUsageCount", rangeTotal("""
                 SELECT COUNT(*)
