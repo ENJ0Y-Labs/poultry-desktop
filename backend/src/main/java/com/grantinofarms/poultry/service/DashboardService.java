@@ -151,6 +151,11 @@ public class DashboardService {
                 WHERE b.farm_id=? AND u.usage_date BETWEEN ? AND ?
                   AND (? IS NULL OR b.id=?)
                 """, farmId, range, batchId));
+        BatchFeedCostResponse feedPeriod = feed.batchCost(batchId, range.from(), range.to());
+        period.put("feedQuantityMilli", feedPeriod.consumedQuantityMilli());
+        period.put("feedCostMinor", feedPeriod.feedCostMinor());
+        period.put("feedKnownCostMinor", feedPeriod.knownFeedCostMinor());
+        period.put("feedQuantityUnit", "recorded feed units; feed products may use different units");
         period.put("healthRecordCount", rangeTotal("""
                 SELECT COUNT(*) FROM health_records h JOIN batches b ON b.id=h.batch_id
                 WHERE b.farm_id=? AND h.record_date BETWEEN ? AND ?
