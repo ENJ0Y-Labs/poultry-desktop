@@ -189,7 +189,11 @@ describe("App", () => {
     );
 
     render(<App />);
-    expect(screen.getByText("Loading farm...")).toBeInTheDocument();
+    expect(screen.getByRole("main", { name: "Pomas is starting" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Pomas" })).toBeInTheDocument();
+    expect(screen.getByText("Poultry management, made clear.")).toBeInTheDocument();
+    expect(screen.getByText("Preparing your farm workspace and records.")).toBeInTheDocument();
+    expect(screen.getByRole("status", { name: "Loading" })).toBeInTheDocument();
 
     vi.spyOn(farmApi, "getSettings").mockResolvedValue(settings);
     vi.spyOn(farmApi, "listHouses").mockResolvedValue([]);
