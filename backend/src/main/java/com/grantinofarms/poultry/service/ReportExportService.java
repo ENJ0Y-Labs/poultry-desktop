@@ -36,10 +36,12 @@ public class ReportExportService {
         List<ExportRow> rows = rows(report);
         String reportType = text(report.get("reportType"));
         String asOf = text(report.get("asOf"));
+        String from = text(report.get("from"));
+        String to = text(report.get("to"));
         StringBuilder csv = new StringBuilder("\uFEFF");
-        appendCsv(csv, List.of("report_type", "as_of", "section", "record", "field", "value", "unit"));
+        appendCsv(csv, List.of("report_type", "period_from", "period_to", "snapshot_as_of", "section", "record", "field", "value", "unit"));
         for (ExportRow row : rows) {
-            appendCsv(csv, List.of(reportType, asOf, row.section(), row.record(), row.field(), row.value(), row.unit()));
+            appendCsv(csv, List.of(reportType, from, to, asOf, row.section(), row.record(), row.field(), row.value(), row.unit()));
         }
         return csv.toString();
     }
@@ -48,7 +50,10 @@ public class ReportExportService {
         List<ExportRow> rows = rows(report);
         try (PDDocument document = new PDDocument(); ByteArrayOutputStream output = new ByteArrayOutputStream()) {
             PdfTable writer = new PdfTable(document);
-            writer.title(title, text(report.get("asOf")));
+            String from = text(report.get("from"));
+            String to = text(report.get("to"));
+            String period = !from.isBlank() && !to.isBlank() ? from + " to " + to : text(report.get("asOf"));
+            writer.title(title, period);
             writer.header();
             for (ExportRow row : rows) {
                 writer.row(List.of(row.section(), row.record(), row.field(), row.value(), row.unit()));
@@ -68,7 +73,8 @@ public class ReportExportService {
         while (fields.hasNext()) {
             Map.Entry<String, JsonNode> field = fields.next();
             String section = humanize(field.getKey());
-            if (field.getKey().equals("asOf") || field.getKey().equals("reportType")) continue;
+            if (field.getKey().equals("asOf") || field.getKey().equals("from")
+                    || field.getKey().equals("to") || field.getKey().equals("reportType")) continue;
             appendRows(field.getValue(), section, "", field.getKey(), result);
         }
         return result;
@@ -212,7 +218,7 @@ public class ReportExportService {
 
         private void title(String title, String asOf) {
             writeText(title, bold, 15f);
-            writeText("As of: " + (asOf == null || asOf.isBlank() ? "Not specified" : asOf), regular, 10f);
+            writeText("Reporting period / snapshot: " + (asOf == null || asOf.isBlank() ? "Not specified" : asOf), regular, 10f);
             y -= 8;
         }
 
