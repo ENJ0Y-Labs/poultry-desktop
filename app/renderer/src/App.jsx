@@ -1240,7 +1240,19 @@ export default function App() {
     setHouseForm(emptyHouse);
   }
 
-  if (loading) return <main className="shell"><p className="muted">Loading farm...</p></main>;
+  if (loading) return (
+    <main className="pomas-loading-screen" aria-label="Pomas is starting">
+      <section className="pomas-loading-content" aria-labelledby="pomas-loading-title">
+        <img className="pomas-loading-logo" src={pomasLogo} alt="Pomas logo" />
+        <h1 id="pomas-loading-title">Pomas</h1>
+        <p className="pomas-loading-description">Poultry management, made clear.</p>
+        <p className="pomas-loading-detail">Preparing your farm workspace and records.</p>
+        <div className="pomas-loading-spinner" role="status" aria-label="Loading">
+          <span className="visually-hidden">Loading</span>
+        </div>
+      </section>
+    </main>
+  );
 
   if (!authStatus?.authenticated) return (
     <main className="auth-screen">
