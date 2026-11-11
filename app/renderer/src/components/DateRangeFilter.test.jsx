@@ -23,7 +23,7 @@ describe("DateRangeFilter", () => {
     const onChange = vi.fn();
     const value = { preset: "LAST_7_DAYS", from: "2024-02-24", to: "2024-03-01" };
     const { rerender } = render(<DateRangeFilter value={value} timezone="UTC" onChange={onChange} />);
-    fireEvent.change(screen.getByRole("textbox", { name: "Range start date" }), { target: { value: "2024-03-02" } });
+    fireEvent.change(screen.getByLabelText("Range start date"), { target: { value: "2024-03-02" } });
     expect(onChange).toHaveBeenCalledWith({ preset: "CUSTOM", from: "2024-03-02", to: "2024-03-01" });
     rerender(<DateRangeFilter value={{ preset: "CUSTOM", from: "2024-03-02", to: "2024-03-01" }} timezone="UTC" onChange={onChange} />);
     expect(screen.getByRole("alert")).toHaveTextContent("start date is on or before the end date");
