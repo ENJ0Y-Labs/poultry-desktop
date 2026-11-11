@@ -40,7 +40,7 @@ public class AuditRepository {
     public List<Map<String, Object>> find(String farmId, int limit, String fromInclusive, String toInclusive) {
         int safeLimit = Math.max(1, Math.min(limit, 500));
         String dateClause = fromInclusive == null || toInclusive == null
-                ? "" : " AND occurred_at >= ? AND occurred_at <= ?";
+                ? "" : " AND julianday(occurred_at) >= julianday(?) AND julianday(occurred_at) < julianday(?)";
         String sql = """
                 SELECT id, user_id, farm_id, batch_id, occurred_at, action, entity_type,
                        entity_id, reason, changed_fields_json, before_json, after_json
