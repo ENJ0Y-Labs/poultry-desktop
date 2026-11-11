@@ -75,6 +75,7 @@ export default function ProductionPage() {
                   <label className="field"><span>Notes</span><input value={eggCollectionForm.notes} onChange={e=>setEggCollectionForm({...eggCollectionForm,notes:e.target.value})}/></label>
                   <button disabled={saving}>Record collection</button>
                 </form>
+                <p className="muted">Showing collection records within the selected reporting period.</p>
                 <DataTable caption="Egg collections" columns={[
                     { key: "recordDate", label: "Date" }, { key: "good", label: "Good" }, { key: "cracked", label: "Cracked" },
                     { key: "total", label: "Total" }, { key: "notes", label: "Notes", render: row => row.notes || "—" },
@@ -95,6 +96,7 @@ export default function ProductionPage() {
                   <label className="field"><span>Price per crate (₦)</span><input required type="text" inputMode="decimal" value={eggSaleForm.pricePerCrateMinor} onChange={e=>setEggSaleForm({...eggSaleForm,pricePerCrateMinor:e.target.value})}/></label>
                   <button disabled={saving}>Record sale</button>
                 </form>
+                <p className="muted">Showing sale records within the selected reporting period.</p>
                 <DataTable caption="Egg sales" columns={[
                     { key: "recordDate", label: "Date" }, { key: "customer", label: "Customer" },
                     { key: "crates", label: "Crates", render: row => row.crates.toString() }, { key: "soldEggs", label: "Eggs" },
@@ -161,6 +163,7 @@ export default function ProductionPage() {
                   <label className="field"><span>Notes</span><input value={weightForm.notes} onChange={e=>setWeightForm({...weightForm,notes:e.target.value})}/></label>
                   <button disabled={saving}>Record weight</button>
                 </form>
+                <p className="muted">Showing weight records within the selected reporting period.</p>
                 <DataTable caption="Meat-bird weight records" columns={[
                     { key: "recordDate", label: "Date" }, { key: "sampleQuantity", label: "Sample" }, { key: "totalWeightKg", label: "Total kg" },
                     { key: "averageWeightKg", label: "Average kg" }, { key: "weightGainKg", label: "Gain kg/bird" },
@@ -197,6 +200,7 @@ export default function ProductionPage() {
                   {!birdSaleForm.customerId && <label className="field"><span>Walk-in customer name</span><input required maxLength="120" value={birdSaleForm.customer} onChange={e=>setBirdSaleForm({...birdSaleForm,customer:e.target.value})} placeholder="Enter buyer name"/></label>}
                   <button disabled={saving}>Record bird sale</button>
                 </form>
+                <p className="muted">Showing sale records within the selected reporting period.</p>
                 <DataTable caption="Meat-bird sales" columns={[
                     { key: "recordDate", label: "Date" }, { key: "quantity", label: "Quantity" },
                     { key: "pricePerBirdMinor", label: "Price / bird", render: row => formatMoney(row.pricePerBirdMinor, farm.currency) },
