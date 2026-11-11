@@ -1087,3 +1087,85 @@ body { min-width: 0; }
   .auth-whats-new { margin-top: 18px; }
   .auth-whats-new-item { padding: 9px; }
 }
+
+
+/* Shared farm-local reporting period controls */
+.date-range-filter {
+  display: grid;
+  grid-template-columns: minmax(150px, 0.85fr) minmax(260px, 1.4fr);
+  gap: 7px 10px;
+  min-width: 0;
+  align-items: end;
+}
+.date-range-preset-label {
+  grid-column: 1 / -1;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+.date-range-filter select,
+.date-range-filter input {
+  width: 100%;
+  min-width: 0;
+  min-height: 36px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel-raised);
+  color: var(--text);
+  padding: 7px 9px;
+  font: inherit;
+}
+.date-range-fields {
+  display: flex;
+  gap: 8px;
+  min-width: 0;
+}
+.date-range-fields label {
+  display: grid;
+  gap: 4px;
+  flex: 1 1 0;
+  min-width: 0;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+.date-range-summary,
+.date-range-error {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: 0.78rem;
+}
+.date-range-summary { color: var(--muted); }
+.date-range-error { color: var(--red); }
+.date-range-filter [aria-invalid="true"] { border-color: var(--red); }
+.dashboard-range-controls,
+.report-range-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 12px 18px;
+  min-width: 0;
+}
+.dashboard-range-controls .date-range-filter,
+.report-range-actions .date-range-filter {
+  flex: 1 1 440px;
+}
+.dashboard-range-controls .dashboard-as-of {
+  margin: 0 0 3px;
+  min-width: 150px;
+}
+.dashboard-range-note { margin: 0 0 12px; }
+.report-range-actions .inline-form { flex: 0 1 auto; }
+
+@media (max-width: 760px) {
+  .date-range-filter {
+    grid-template-columns: 1fr;
+  }
+  .date-range-preset-label,
+  .date-range-summary,
+  .date-range-error { grid-column: 1; }
+  .date-range-fields { display: grid; grid-template-columns: 1fr 1fr; }
+  .dashboard-range-controls,
+  .report-range-actions { align-items: stretch; }
+  .dashboard-range-controls .date-range-filter,
+  .report-range-actions .date-range-filter { flex-basis: 100%; }
+}
