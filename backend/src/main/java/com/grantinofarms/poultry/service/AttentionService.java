@@ -401,7 +401,7 @@ public class AttentionService {
         }, farmId, date.toString());
 
         measurements.forEach((batchId, rows) -> {
-            if (rows.size() < 2) return;
+            if (rows.size() < 2 || LocalDate.parse(String.valueOf(rows.get(0).get("date"))).isBefore(date.minusDays(7))) return;
             double latest = (double) rows.get(0).get("averageGrams");
             double previous = (double) rows.get(1).get("averageGrams");
             if (previous <= 0) return;
