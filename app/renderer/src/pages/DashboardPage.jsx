@@ -11,6 +11,7 @@ import { attentionTarget } from "../utils/attentionNavigation.js";
 import { formatEggQuantity } from "../utils/eggFormatting.js";
 // eslint-disable-next-line no-unused-vars
 import GettingStartedChecklist from "../components/GettingStartedChecklist.jsx";
+// eslint-disable-next-line no-unused-vars
 import DashboardKpiCard from "../components/DashboardKpiCard.jsx";
 
 function todayLocalDate() {
