@@ -105,6 +105,14 @@ export function isValidDateRange(range) {
   return Boolean(from && to && from.getTime() <= to.getTime());
 }
 
+export function filterRowsByDateRange(rows, range, dateField = "recordDate") {
+  if (!isValidDateRange(range) || !Array.isArray(rows)) return [];
+  return rows.filter(row => {
+    const date = row?.[dateField];
+    return typeof date === "string" && date >= range.from && date <= range.to;
+  });
+}
+
 export function formatDateRange(range, dateFormat = "YYYY-MM-DD") {
   if (!isValidDateRange(range)) return "Invalid date range";
   const formatDate = value => {
