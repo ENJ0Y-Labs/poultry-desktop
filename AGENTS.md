@@ -1409,3 +1409,16 @@ An opening balance may be dated before a later purchase, but cannot be dated bef
 - Background, text, muted text, and spinner colors must follow the active `data-theme` tokens so the screen works in both light and dark mode.
 - Keep the loading state presentation-only. Do not add artificial delays, block startup on animation, or change authentication/backend readiness behavior.
 - Cover the startup screen in renderer tests and manually verify both light and dark appearance plus transition into sign-in, farm setup, and the dashboard.
+
+
+## Batch performance comparison
+
+- Batch comparison reuses the existing backend batch reports and calculation services. Spring Boot owns every comparison value; the renderer only filters, formats and visualizes returned metrics.
+- A comparison accepts 2–8 unique batches from the active farm and one shared inclusive from/to date range. Activity totals must use both boundary dates. Population and average-weight values are snapshots at the range end; show each batch's placement date. FCR remains the existing backend batch-to-date metric and must be labeled as such.
+- Apply bird-type and house filters to both the selectable batch list and the compared chart/table. Selected batches excluded by active filters must not silently appear in results.
+- Compare initial/current population, mortality rate, feed quantity/cost, revenue, expenses and profit across all selected batches. Compare egg production only when every selected batch is a LAYER. Compare average weight and FCR only when every selected batch is BROILER or TURKEY.
+- Feed quantity and FIFO cost must be calculated from feed usage events inside the selected date range while preserving the full FIFO history needed to value those usage events. Do not recompute FIFO from only the selected range.
+- If no feed usage, mortality event, or egg collection exists in the selected period, show the metric as missing rather than inventing a zero. Unknown feed costs remain null.
+- Feed quantities are recorded in configured feed units; disclose that quantities may not be directly comparable when feed products use different units. Money remains integer minor units and must use the shared money formatter.
+- The comparison chart must show one unit-consistent metric at a time. The accessible comparison table must expose metric units, each batch's type and placement date, and the common reporting period.
+- Test layer-only, meat-bird-only, mixed selections, missing histories, duplicate/invalid selections, FIFO costs across period boundaries, and batches with different placement dates. Do not fabricate missing metrics.
