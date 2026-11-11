@@ -1395,3 +1395,12 @@ An opening balance may be dated before a later purchase, but cannot be dated bef
 - Map backend Bean Validation field details to controls when supplied. The backend remains authoritative for population, FIFO, lifecycle, duplicate, financial and all other domain invariants.
 - Do not invent phone-number formats: customer phone is optional without a format constraint; supplier phone is optional and capped at 40 characters by the current API contract. A client-side supplier-name duplicate check may improve feedback because the backend enforces that unique name; the backend remains authoritative. Do not pre-check customer names because the customer create API does not enforce uniqueness.
 - Update `docs/form-validation.md` and its manual mock-data steps when validation behavior changes. Run focused renderer tests, then the full test, lint, backend verification and build commands. Do not claim manual desktop checks unless performed with a disposable database.
+
+## Branded startup loading screen
+
+- While the initial authentication and farm-data bootstrap is pending, show the Pomas startup screen rather than a plain text loading message.
+- Use the existing local Pomas logo asset; do not load remote images, fonts, scripts, or other network resources.
+- The startup screen includes the Pomas name, a short product description, and an accessible continuously rotating loading indicator.
+- Background, text, muted text, and spinner colors must follow the active `data-theme` tokens so the screen works in both light and dark mode.
+- Keep the loading state presentation-only. Do not add artificial delays, block startup on animation, or change authentication/backend readiness behavior.
+- Cover the startup screen in renderer tests and manually verify both light and dark appearance plus transition into sign-in, farm setup, and the dashboard.
