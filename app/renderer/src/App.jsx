@@ -262,28 +262,40 @@ export default function App() {
       if (!batch) return;
 
       const date = todayLocalDate();
+      const segments = window.location.hash.replace(/^#\/?/, "").split("/");
+      const page = segments[0];
+      const tab = segments[1];
       rememberLastBatchId(batch.id);
       setSelectedBatchId(batch.id);
-      setDailyForm(form => ({ ...form, batchId: batch.id, date }));
-      setMortalityForm(form => ({ ...form, batchId: batch.id, date }));
-      setCullingForm(form => ({ ...form, batchId: batch.id, date }));
-      setHealthForm(form => ({ ...form, batchId: batch.id, date }));
-      setVaccinationForm(form => ({ ...form, batchId: batch.id, date }));
-      setFeedUsageForm(form => {
-        const compatible = feedTypes.filter(type => type.status === "ACTIVE" && (type.applicableTypes || []).includes(batch.type));
-        const selected = compatible.find(type => type.id === form.feedTypeId) || compatible[0];
-        return { ...form, batchId: batch.id, usageDate: date, feedTypeId: selected?.id || "", unit: selected?.unit || "bag" };
-      });
 
-      if (batch.type === "LAYER") {
+      if (page === "daily-work" && tab === "daily-record") {
+        setDailyForm(form => ({ ...form, batchId: batch.id, date }));
+        setFeedUsageForm(form => {
+          const compatible = feedTypes.filter(type => type.status === "ACTIVE" && (type.applicableTypes || []).includes(batch.type));
+          const selected = compatible.find(type => type.id === form.feedTypeId) || compatible[0];
+          return { ...form, batchId: batch.id, usageDate: date, feedTypeId: selected?.id || "", unit: selected?.unit || "bag" };
+        });
+      } else if (page === "daily-work" && tab === "mortality") {
+        setMortalityForm(form => ({ ...form, batchId: batch.id, date }));
+      } else if (page === "daily-work" && tab === "culling") {
+        setCullingForm(form => ({ ...form, batchId: batch.id, date }));
+      } else if (page === "health" && tab === "health-record") {
+        setHealthForm(form => ({ ...form, batchId: batch.id, date }));
+      } else if (page === "health" && tab === "vaccination") {
+        setVaccinationForm(form => ({ ...form, batchId: batch.id, date }));
+      } else if (page === "production" && tab === "eggs" && batch.type === "LAYER") {
         setEggBatchId(batch.id);
         setEggCollectionForm(form => ({ ...form, batchId: batch.id, date }));
         setEggSaleForm(form => ({ ...form, batchId: batch.id, date }));
         loadEggsForBatch(batch.id);
-      } else if (batch.type === "BROILER" || batch.type === "TURKEY") {
+      } else if (page === "production" && tab === "broiler" && (batch.type === "BROILER" || batch.type === "TURKEY")) {
         setBroilerBatchId(batch.id);
         setBirdSaleForm(form => ({ ...form, batchId: batch.id, date }));
         loadBroilerForBatch(batch.id);
+      } else if (page === "sales-money" && tab === "expenses") {
+        setExpenseForm(form => ({ ...form, batchId: batch.id, occurredDate: date }));
+      } else if (page === "feed-stock" && tab === "inventory") {
+        setInventoryMovementForm(form => ({ ...form, batchId: batch.id, date }));
       }
     }
 
