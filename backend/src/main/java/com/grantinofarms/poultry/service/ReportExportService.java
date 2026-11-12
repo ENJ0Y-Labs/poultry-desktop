@@ -101,7 +101,7 @@ public class ReportExportService {
             }
             for (int i = 0; i < node.size(); i++) {
                 JsonNode item = node.get(i);
-                String itemRecord = recordName(item, i);
+                String itemRecord = recordName(item, i, dateFormat);
                 appendRows(item, section, itemRecord, "", rows, currency, dateFormat);
             }
             return;
@@ -120,11 +120,13 @@ public class ReportExportService {
         return record == null || record.isBlank() ? "—" : record;
     }
 
-    private String recordName(JsonNode item, int index) {
+    private String recordName(JsonNode item, int index, String dateFormat) {
         if (item != null && item.isObject()) {
             for (String key : List.of("code", "batchCode", "name", "id", "recordDate", "saleDate", "occurredDate", "date")) {
                 JsonNode value = item.get(key);
-                if (value != null && value.isValueNode() && !value.asText().isBlank()) return value.asText();
+                if (value != null && value.isValueNode() && !value.asText().isBlank()) {
+                    return key.toLowerCase(Locale.ROOT).endsWith("date") ? formatDate(value.asText(), dateFormat) : value.asText();
+                }
             }
         }
         return "Record " + (index + 1);
