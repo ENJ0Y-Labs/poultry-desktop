@@ -4,6 +4,7 @@ import com.grantinofarms.poultry.dto.BatchResponse;
 import com.grantinofarms.poultry.dto.BirdPopulationResponse;
 import com.grantinofarms.poultry.dto.ExpenseResponse;
 import com.grantinofarms.poultry.dto.FarmResponse;
+import com.grantinofarms.poultry.exception.ApiException;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -188,7 +189,13 @@ public class ReportService {
 
     private void addExportMetadata(Map<String, Object> report, String title, BatchResponse batch) {
         FarmResponse farm = farmService.get();
-        Map<String, String> settings = applicationSettings.get();
+        Map<String, String> settings;
+        try {
+            settings = applicationSettings.get();
+        } catch (ApiException error) {
+            if (!"APPLICATION_SETTINGS_MISSING".equals(error.getCode())) throw error;
+            settings = Map.of();
+        }
         report.put("farmName", farm.name());
         report.put("farmLocation", farm.location());
         report.put("timezone", farm.timezone());
