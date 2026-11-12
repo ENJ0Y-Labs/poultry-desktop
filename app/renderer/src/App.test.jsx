@@ -895,7 +895,8 @@ describe("App", () => {
     fireEvent.click(await screen.findByRole("button", { name: "Record an expense" }));
     expect(window.location.hash).toContain("sales-money/expenses");
     fireEvent.click(await screen.findByRole("button", { name: "Record expense" }));
-    expect(await screen.findByLabelText("Batch association")).toHaveValue("layer-1");
+    fireEvent.click(await screen.findByRole("button", { name: /Batch allocation/ }));
+    expect(await screen.findByLabelText(/Batch association/)).toHaveValue("layer-1");
   });
 
   it("preserves unsaved farm form input while retrying after a backend outage", async () => {
