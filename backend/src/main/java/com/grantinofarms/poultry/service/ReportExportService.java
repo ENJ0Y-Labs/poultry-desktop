@@ -16,6 +16,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.NumberFormat;
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -39,7 +40,7 @@ public class ReportExportService {
         String reportType = text(report.get("reportType"));
         String farmName = text(report.get("farmName"));
         String reportTitle = text(report.get("reportTitle"));
-        String generatedAt = text(report.get("generatedAt"));
+        String generatedAt = formatGeneratedAt(text(report.get("generatedAt")), dateFormat);
         String currency = currencyCode(report);
         String dateFormat = dateFormat(report);
         String asOf = formatDate(text(report.get("asOf")), dateFormat);
@@ -56,7 +57,7 @@ public class ReportExportService {
         List<ExportRow> rows = rows(report);
         try (PDDocument document = new PDDocument(); ByteArrayOutputStream output = new ByteArrayOutputStream()) {
             PdfTable writer = new PdfTable(document);
-            writer.title(text(report.get("farmName")), title, text(report.get("generatedAt")),
+            writer.title(text(report.get("farmName")), title, formatGeneratedAt(text(report.get("generatedAt")), dateFormat(report)),
                     text(report.get("asOf")), currencyCode(report), dateFormat(report));
             writer.header();
             for (ExportRow row : rows) {
@@ -172,6 +173,17 @@ public class ReportExportService {
     private String dateFormat(Map<String, Object> report) {
         String format = text(report.get("dateFormat"));
         return format.isBlank() ? "YYYY-MM-DD" : format;
+    }
+
+    private static String formatGeneratedAt(String value, String format) {
+        if (value == null || value.isBlank()) return "";
+        try {
+            OffsetDateTime timestamp = OffsetDateTime.parse(value);
+            return formatDate(timestamp.toLocalDate().toString(), format)
+                    + " " + timestamp.toLocalTime().withNano(0) + " " + timestamp.getOffset();
+        } catch (RuntimeException ignored) {
+            return value;
+        }
     }
 
     private static String formatDate(String value, String format) {
