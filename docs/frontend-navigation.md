@@ -33,7 +33,9 @@ The top-level page components live under `app/renderer/src/pages/`. Shared form 
 
 
 ## Farm dashboard presentation
-- The dashboard “Record feed usage” quick action opens Daily Work / Daily record and preselects the active batch, compatible feed type, and current farm-local date. Keep this aligned with the feed-usage form location.
+- Keep the dashboard focused on farm status, attention, and recent activity. Do not render a second page-level Quick actions grid; task shortcuts belong in the single global Quick actions menu in the top bar.
+- The global Quick actions menu is the single entry point for common tasks: daily record, mortality, culling, feed usage, egg collection, vaccination, health event, feed purchase, sale, expense, inventory item, and stock movement. Show batch-dependent actions only when the selected batch is active and compatible; show feed and inventory actions only when their required active records and stock exist.
+- Quick action routes must preserve the selected batch context and open the existing workflow. Do not create duplicate forms, duplicate business logic, or alternate API paths for quick actions.
 
 - The farm dashboard provides the shared reporting-period selector used by farm and batch reports. Preset dates are derived from the farm's IANA timezone and the active application date-format preference.
 - The dashboard labels its current population/stock date separately from the selected activity period. Current birds, house occupancy, and feed stock are not filtered by a historical activity range.
