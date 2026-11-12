@@ -1427,7 +1427,9 @@ export default function App() {
     activeBatch: quickActionBatch,
     hasFeedTypes: feedTypes.some(type => type.status === "ACTIVE"),
     hasApplicableFeed: Boolean(quickActionBatch && feedTypes.some(type =>
-      type.status === "ACTIVE" && (type.applicableTypes || []).includes(quickActionBatch.type)
+      type.status === "ACTIVE"
+      && (type.applicableTypes || []).includes(quickActionBatch.type)
+      && feedInventory.some(stock => stock.feedTypeId === type.id && Number(stock.remainingQuantityMilli) > 0)
     )),
     hasInventoryItems: inventoryItems.length > 0,
   };
