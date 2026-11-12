@@ -1,4 +1,4 @@
-import { createElement, useContext, useEffect, useMemo, useState } from "react";
+import { createElement, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { FarmManagerContext } from "./FarmManagerContext.jsx";
 import EmptyState from "./EmptyState.jsx";
 import TableFilters, { EMPTY } from "./TableFilters.jsx";
@@ -40,8 +40,16 @@ export default function DataTable({
   const safePage = Math.min(page, Math.max(0, pageCount - 1));
   const pageRows = useMemo(() => paginateTableRows(sortedRows, safePage, pageSize), [sortedRows, safePage, pageSize]);
 
-  useEffect(() => { setPage(0); }, [filters, pageSize]);
-  useEffect(() => { if (page !== safePage) setPage(safePage); }, [page, safePage]);
+  const paginationResetKey = JSON.stringify({ filters, pageSize });
+  const previousResetKey = useRef(paginationResetKey);
+  useEffect(() => {
+    if (previousResetKey.current !== paginationResetKey) {
+      previousResetKey.current = paginationResetKey;
+      setPage(0);
+      return;
+    }
+    if (page !== safePage) setPage(safePage);
+  }, [paginationResetKey, page, safePage]);
 
   const hasRows = visibleRows.length > 0;
   const hasActiveFilters = Object.values(filters).some(Boolean);
