@@ -15,6 +15,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.NumberFormat;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -35,11 +37,17 @@ public class ReportExportService {
     public String csv(Map<String, Object> report) {
         List<ExportRow> rows = rows(report);
         String reportType = text(report.get("reportType"));
-        String asOf = text(report.get("asOf"));
+        String farmName = text(report.get("farmName"));
+        String reportTitle = text(report.get("reportTitle"));
+        String generatedAt = text(report.get("generatedAt"));
+        String currency = currencyCode(report);
+        String dateFormat = dateFormat(report);
+        String asOf = formatDate(text(report.get("asOf")), dateFormat);
+        String selectedPeriod = asOf.isBlank() ? "Not specified" : "As of " + asOf;
         StringBuilder csv = new StringBuilder("\uFEFF");
-        appendCsv(csv, List.of("report_type", "as_of", "section", "record", "field", "value", "unit"));
+        appendCsv(csv, List.of("farm_name", "report_title", "generated_at", "selected_period", "currency", "as_of", "report_type", "section", "record", "field", "value", "unit"));
         for (ExportRow row : rows) {
-            appendCsv(csv, List.of(reportType, asOf, row.section(), row.record(), row.field(), row.value(), row.unit()));
+            appendCsv(csv, List.of(farmName, reportTitle, generatedAt, selectedPeriod, currency, asOf, reportType, row.section(), row.record(), row.field(), row.value(), row.unit()));
         }
         return csv.toString();
     }
@@ -48,7 +56,8 @@ public class ReportExportService {
         List<ExportRow> rows = rows(report);
         try (PDDocument document = new PDDocument(); ByteArrayOutputStream output = new ByteArrayOutputStream()) {
             PdfTable writer = new PdfTable(document);
-            writer.title(title, text(report.get("asOf")));
+            writer.title(text(report.get("farmName")), title, text(report.get("generatedAt")),
+                    text(report.get("asOf")), currencyCode(report), dateFormat(report));
             writer.header();
             for (ExportRow row : rows) {
                 writer.row(List.of(row.section(), row.record(), row.field(), row.value(), row.unit()));
@@ -63,24 +72,26 @@ public class ReportExportService {
 
     private List<ExportRow> rows(Map<String, Object> report) {
         JsonNode root = objectMapper.valueToTree(report);
+        String currency = currencyCode(report);
+        String dateFormat = dateFormat(report);
         List<ExportRow> result = new ArrayList<>();
         Iterator<Map.Entry<String, JsonNode>> fields = root.fields();
         while (fields.hasNext()) {
             Map.Entry<String, JsonNode> field = fields.next();
             String section = humanize(field.getKey());
-            if (field.getKey().equals("asOf") || field.getKey().equals("reportType")) continue;
-            appendRows(field.getValue(), section, "", field.getKey(), result);
+            if (List.of("asOf", "reportType", "farmName", "farmLocation", "timezone", "currency", "dateFormat", "generatedAt", "reportTitle", "batchCode", "batchType", "houseId").contains(field.getKey())) continue;
+            appendRows(field.getValue(), section, "", field.getKey(), result, currency, dateFormat);
         }
         return result;
     }
 
-    private void appendRows(JsonNode node, String section, String record, String fieldPath, List<ExportRow> rows) {
+    private void appendRows(JsonNode node, String section, String record, String fieldPath, List<ExportRow> rows, String currency, String dateFormat) {
         if (node == null || node.isNull()) {
-            rows.add(new ExportRow(section, displayRecord(record), humanize(fieldPath), "", unit(fieldPath)));
+            rows.add(new ExportRow(section, displayRecord(record), humanize(fieldPath), "", unit(fieldPath, currency)));
             return;
         }
         if (node.isValueNode()) {
-            rows.add(new ExportRow(section, displayRecord(record), humanize(fieldPath), formatValue(node, fieldPath), unit(fieldPath)));
+            rows.add(new ExportRow(section, displayRecord(record), humanize(fieldPath), formatValue(node, fieldPath, currency, dateFormat), unit(fieldPath, currency)));
             return;
         }
         if (node.isArray()) {
@@ -91,7 +102,7 @@ public class ReportExportService {
             for (int i = 0; i < node.size(); i++) {
                 JsonNode item = node.get(i);
                 String itemRecord = recordName(item, i);
-                appendRows(item, section, itemRecord, "", rows);
+                appendRows(item, section, itemRecord, "", rows, currency, dateFormat);
             }
             return;
         }
@@ -100,7 +111,7 @@ public class ReportExportService {
             while (fields.hasNext()) {
                 Map.Entry<String, JsonNode> field = fields.next();
                 String childPath = field.getKey();
-                appendRows(field.getValue(), section, record, childPath, rows);
+                appendRows(field.getValue(), section, record, childPath, rows, currency, dateFormat);
             }
         }
     }
@@ -119,17 +130,21 @@ public class ReportExportService {
         return "Record " + (index + 1);
     }
 
-    private String formatValue(JsonNode value, String key) {
+    private String formatValue(JsonNode value, String key, String currencyCode, String dateFormat) {
         if (key.toLowerCase(Locale.ROOT).endsWith("minor")) {
             try {
-                long minor = value.asLong();
-                NumberFormat currency = NumberFormat.getNumberInstance(Locale.forLanguageTag("en-NG"));
-                currency.setMinimumFractionDigits(2);
-                currency.setMaximumFractionDigits(2);
-                return "₦" + currency.format(java.math.BigDecimal.valueOf(minor, 2));
+                java.util.Currency currency = java.util.Currency.getInstance(currencyCode);
+                NumberFormat amount = NumberFormat.getNumberInstance(Locale.forLanguageTag("en-NG"));
+                amount.setMinimumFractionDigits(2);
+                amount.setMaximumFractionDigits(2);
+                return currency.getSymbol(Locale.forLanguageTag("en-NG"))
+                        + amount.format(java.math.BigDecimal.valueOf(value.asLong(), 2));
             } catch (RuntimeException ignored) {
                 return value.asText();
             }
+        }
+        if (value.isTextual() && key.toLowerCase(Locale.ROOT).matches(".*(date|asof)$")) {
+            return formatDate(value.asText(), dateFormat);
         }
         if (key.toLowerCase(Locale.ROOT).contains("percent") && value.isNumber()) {
             return String.format(Locale.ROOT, "%.2f%%", value.asDouble());
@@ -137,14 +152,38 @@ public class ReportExportService {
         return value.asText();
     }
 
-    private String unit(String key) {
+    private String unit(String key, String currencyCode) {
         String lower = key.toLowerCase(Locale.ROOT);
-        if (lower.endsWith("minor")) return "NGN";
+        if (lower.endsWith("minor")) return currencyCode;
         if (lower.contains("percent")) return "%";
         if (lower.contains("kg") || lower.contains("weight")) return "kg";
         if (lower.contains("quantitymilli")) return "units";
         if (lower.contains("eggs") || lower.contains("birds") || lower.contains("mortality") || lower.contains("culling")) return "count";
         return "";
+    }
+
+    private String currencyCode(Map<String, Object> report) {
+        String currency = text(report.get("currency"));
+        return currency.isBlank() ? "NGN" : currency.toUpperCase(Locale.ROOT);
+    }
+
+    private String dateFormat(Map<String, Object> report) {
+        String format = text(report.get("dateFormat"));
+        return format.isBlank() ? "YYYY-MM-DD" : format;
+    }
+
+    private static String formatDate(String value, String format) {
+        if (value == null || value.isBlank()) return value == null ? "" : value;
+        try {
+            LocalDate date = LocalDate.parse(value.length() >= 10 ? value.substring(0, 10) : value);
+            return switch (format) {
+                case "DD/MM/YYYY" -> date.format(DateTimeFormatter.ofPattern("dd/MM/uuuu"));
+                case "DD-MM-YYYY" -> date.format(DateTimeFormatter.ofPattern("dd-MM-uuuu"));
+                default -> date.format(DateTimeFormatter.ISO_LOCAL_DATE);
+            };
+        } catch (RuntimeException ignored) {
+            return value;
+        }
     }
 
     private String humanize(String key) {
@@ -176,6 +215,12 @@ public class ReportExportService {
         private final PDFont bold;
         private PDPageContentStream stream;
         private float y;
+        private String farmName;
+        private String reportTitle;
+        private String generatedAt;
+        private String asOf;
+        private String currency;
+        private String dateFormat;
         private float[] widths;
 
         private PdfTable(PDDocument document) throws IOException {
@@ -210,10 +255,25 @@ public class ReportExportService {
             y = page.getMediaBox().getHeight() - MARGIN;
         }
 
-        private void title(String title, String asOf) {
-            writeText(title, bold, 15f);
-            writeText("As of: " + (asOf == null || asOf.isBlank() ? "Not specified" : asOf), regular, 10f);
+        private void title(String farmName, String reportTitle, String generatedAt, String asOf, String currency, String dateFormat) {
+            this.farmName = farmName;
+            this.reportTitle = reportTitle;
+            this.generatedAt = generatedAt;
+            this.asOf = asOf;
+            this.currency = currency;
+            this.dateFormat = dateFormat;
+            writeText(farmName.isBlank() ? "Farm report" : farmName, bold, 15f);
+            writeText(reportTitle, bold, 12f);
+            writeText("Generated: " + (generatedAt.isBlank() ? "Not specified" : generatedAt), regular, 9f);
+            writeText("Selected period: As of " + (asOf.isBlank() ? "Not specified" : formatDate(asOf, dateFormat)), regular, 9f);
+            writeText("Currency: " + currency, regular, 9f);
             y -= 8;
+        }
+
+        private void continued() {
+            writeText((farmName.isBlank() ? "Farm report" : farmName) + " · " + reportTitle + " (continued)", bold, 10f);
+            writeText("As of: " + (asOf.isBlank() ? "Not specified" : formatDate(asOf, dateFormat)) + " · Currency: " + currency, regular, 8f);
+            y -= 5;
         }
 
         private void header() {
@@ -233,7 +293,7 @@ public class ReportExportService {
                 max = Math.max(max, lines.size());
             }
             if (y - max * LINE_HEIGHT < MARGIN) {
-                try { closePage(); openPage(); title("Report (continued)", ""); header(); }
+                try { closePage(); openPage(); continued(); header(); }
                 catch (IOException e) { throw new IllegalStateException("Could not create report PDF page.", e); }
             }
             try {
