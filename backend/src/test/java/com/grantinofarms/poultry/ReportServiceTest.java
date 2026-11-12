@@ -113,6 +113,8 @@ class ReportServiceTest {
         InventoryService inventory = mock(InventoryService.class);
         HealthManagementService health = mock(HealthManagementService.class);
         FarmService farmService = mock(FarmService.class);
+        ApplicationSettingsService applicationSettings = mock(ApplicationSettingsService.class);
+        when(applicationSettings.get()).thenReturn(Map.of());
         when(farmService.get()).thenReturn(new FarmResponse(
                 "farm-1", "Test Farm", "Port Harcourt", "Africa/Lagos", "NGN",
                 "ACTIVE", "2026-01-01T00:00:00Z", "2026-01-01T00:00:00Z"));
@@ -147,7 +149,7 @@ class ReportServiceTest {
 
         ReportService service = new ReportService(
                 dashboard, batches, population, birdCost, feed, eggs, broilers,
-                expenses, sales, inventory, health, farmService);
+                expenses, sales, inventory, health, farmService, applicationSettings);
 
         Map<String, Object> report = service.farm(from, to);
 
