@@ -1,5 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
+// eslint-disable-next-line no-unused-vars -- JSX component usage is not detected by the core rule
 import OptionalFields from "./OptionalFields.jsx";
 
 describe("OptionalFields", () => {
