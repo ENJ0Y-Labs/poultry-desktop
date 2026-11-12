@@ -52,6 +52,21 @@ describe("QuickActionsMenu", () => {
     expect(onNavigate).toHaveBeenCalledWith("#daily-work/mortality/batchId=batch-1");
   });
 
+  it("dispatches the selected action to the app before navigating", async () => {
+    const onAction = vi.fn();
+    const onNavigate = vi.fn();
+    render(<QuickActionsMenu
+      activeBatch={{ id: "batch-1", type: "LAYER", status: "ACTIVE" }}
+      onAction={onAction}
+      onNavigate={onNavigate}
+    />);
+    fireEvent.click(screen.getByRole("button", { name: /Quick actions/ }));
+    fireEvent.click(await screen.findByRole("button", { name: /Mortality/ }));
+
+    expect(onAction).toHaveBeenCalledWith("mortality");
+    expect(onNavigate).toHaveBeenCalledWith("#daily-work/mortality/batchId=batch-1");
+  });
+
   it("routes sales to the existing workflow for the selected batch type", async () => {
     const onNavigate = vi.fn();
     render(<QuickActionsMenu activeBatch={{ id: "turkey-1", type: "TURKEY", status: "ACTIVE" }} onNavigate={onNavigate} />);
