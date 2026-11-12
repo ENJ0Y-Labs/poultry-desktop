@@ -383,7 +383,7 @@ export default function App() {
     ];
     const timer = setTimeout(async () => {
       for (const [id, form] of entries) {
-        if (!draftIsMeaningful(id, form) || !window.poultryDesktop?.saveDraft || draftStatuses[id]?.saving) continue;
+        if (!draftIsMeaningful(id, form) || !window.poultryDesktop?.saveDraft || draftStatuses[id]?.saving || draftStatuses[id]?.posted) continue;
         if (draftStatuses[id]?.saveError && JSON.stringify(draftStatuses[id]?.failedForm) === JSON.stringify(form)) continue;
         const existingDraft = drafts[id];
         if (existingDraft && JSON.stringify(existingDraft.form) === JSON.stringify(form)) continue;
