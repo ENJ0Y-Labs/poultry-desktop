@@ -21,7 +21,7 @@ export default function TableFilters({ rows, fields, filters, setFilters, filter
   ].filter(Boolean);
   return <div className="table-filters" aria-label="Filter records">
     <div className="table-filter-controls">
-      <label><span>Search records</span><input type="search" value={filters.query} onChange={e => update("query", e.target.value)} placeholder="Search this list…"/></label>
+      <label><span>Search records</span><input type="search" data-pomas-page-search="true" value={filters.query} onChange={e => update("query", e.target.value)} placeholder="Search this list…"/></label>
       {fields.dateKey && <><label><span>From</span><input type="date" value={filters.from} max={filters.to || undefined} onChange={e => update("from", e.target.value)}/></label><label><span>To</span><input type="date" value={filters.to} min={filters.from || undefined} onChange={e => update("to", e.target.value)}/></label></>}
       {fields.batchKey && <label><span>Batch</span><select value={filters.batch} onChange={e => update("batch", e.target.value)}><option value="">All batches</option>{options(rows, fields.batchKey).map(o => <option key={o.value} value={o.value}>{o.label}</option>)}</select></label>}
       {fields.houseKey && <label><span>House</span><select value={filters.house} onChange={e => update("house", e.target.value)}><option value="">All houses</option>{options(rows, fields.houseKey).map(o => <option key={o.value} value={o.value}>{o.label}</option>)}</select></label>}
