@@ -24,8 +24,9 @@
 - Supplier records are loaded and managed through the existing supplier API; feed purchases can reference a registered supplier.
 - The connection indicator probes the backend health endpoint and refreshes periodically. It reports healthy status only when the backend responds successfully and reports a valid database schema.
 - The API base can be configured with `VITE_API_BASE_URL` or the desktop bridge's `getApiBaseUrl`; the local loopback address is only the development fallback.
-- Keyboard navigation shortcuts follow the ten-destination sidebar order: Ctrl+1 through Ctrl+8 open Dashboard through Reports, Ctrl+9 opens Import / Export, and Ctrl+0 opens Settings (the tenth destination, since keyboards have no 10 key). The sidebar displays the matching shortcut beside each destination.
-- Navigation is fully local and adds no package dependency.
+- Keyboard shortcuts are centrally registered in `app/renderer/src/utils/keyboardShortcuts.js`. Ctrl+1 through Ctrl+8 open Dashboard through Reports, Ctrl+9 opens Import / Export, Ctrl+0 opens Settings, Ctrl+K opens Quick actions, and Ctrl+F focuses the current page record search when one exists.
+- Shortcuts are ignored while typing in inputs, textareas, selects, content-editable elements, or during IME composition. Ctrl+N and Ctrl+S are intentionally not intercepted because they are native commands without a single safe app-wide meaning. Alt+number shortcuts are avoided because they may conflict with operating-system menu behavior.
+- Escape remains owned by the active modal, drawer, or menu so dirty-form confirmation and focus restoration continue to work. The top-bar Keyboard shortcuts reference documents active shortcuts. Navigation remains usable without shortcuts and adds no dependency.
 - Only the active page/tab sections are mounted. The backend remains the source of truth for farm calculations and records.
 
 The top-level page components live under `app/renderer/src/pages/`. Shared form state and API handlers remain in `App.jsx` and are exposed through `FarmManagerContext`; future cleanup can move domain-specific state/handlers into focused hooks.
