@@ -26,7 +26,7 @@ class ReportExportServiceTest {
                 "dateFormat", "DD/MM/YYYY",
                 "asOf", "2026-10-03",
                 "waterUnitLabel", "gallons",
-                "dashboard", Map.of("totalBirds", 5000, "profitMinor", 300000),
+                "dashboard", Map.of("totalBirds", 5000, "profitMinor", 300000, "adjustmentMinor", -50000),
                 "sales", List.of(Map.of("saleDate", "2026-10-03", "totalAmountMinor", 125000))
         );
 
@@ -34,7 +34,7 @@ class ReportExportServiceTest {
 
         assertThat(csv).startsWith("\uFEFF\"farm_name\",\"report_title\",\"batch_code\",\"batch_type\",\"house_id\",\"generated_at\",\"selected_period\",\"currency\",\"as_of\",\"report_type\",\"section\",\"record\",\"field\",\"value\",\"unit\"");
         assertThat(csv).contains("\"Grantino Farms\",\"Farm Report\",\"\",\"\",\"\",\"03/10/2026 12:00 +01:00\",\"As of 03/10/2026\",\"NGN\",\"03/10/2026\",\"FARM_SUMMARY\",\"Dashboard\",\"—\",\"Total birds\",\"5000\",\"count\"");
-        assertThat(csv).contains("₦3,000.00");
+        assertThat(csv).contains("₦3,000.00", "-₦500.00");
         assertThat(csv).contains("\"Sales\",\"03/10/2026\",\"Sale date\",\"03/10/2026\"");
         assertThat(csv).contains("\"Water unit label\",\"gallons\"");
     }
