@@ -10,6 +10,7 @@ import org.springframework.test.annotation.DirtiesContext;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -160,7 +161,7 @@ class AttentionServiceIntegrationTest {
                 INSERT INTO weight_records(id,batch_id,record_date,sample_quantity,total_weight_grams,notes,created_at)
                 VALUES(?,?,?,?,?,?,?)
                 """, UUID.randomUUID().toString(), broiler.id(), AS_OF.minusDays(2).toString(),
-                10, 12_000, "Latest weight", AS_OF.minusDays(2).atStartOfDay().toString());
+                10, 12_000, "Latest weight", AS_OF.minusDays(2).atStartOfDay().toInstant(ZoneOffset.UTC).toString());
 
         String farmId = jdbc.queryForObject("SELECT id FROM farms LIMIT 1", String.class);
         jdbc.update("""
