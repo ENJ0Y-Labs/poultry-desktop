@@ -242,6 +242,7 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [, setSuccessMessage] = useState("");
   const [dataLoadError, setDataLoadError] = useState("");
   const [authStatus, setAuthStatus] = useState(null);
   const [showAuthPassword, setShowAuthPassword] = useState(false);
