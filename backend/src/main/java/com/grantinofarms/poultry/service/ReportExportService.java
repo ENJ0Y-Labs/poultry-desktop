@@ -28,7 +28,6 @@ import java.util.Map;
 public class ReportExportService {
     private static final float MARGIN = 36f;
     private static final float LINE_HEIGHT = 13f;
-    private static final String[] HEADERS = {"Section", "Record", "Field", "Value", "Unit"};
     private final ObjectMapper objectMapper;
 
     public ReportExportService(ObjectMapper objectMapper) {
