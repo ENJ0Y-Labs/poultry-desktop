@@ -161,7 +161,7 @@ function SidebarToggleIcon({ expanded }) {
   );
 }
 
-export default function AppShell({ farm, error, appInfo, onRetry, children, startPage = "dashboard", startPageReady = true }) {
+export default function AppShell({ farm, error, appInfo, onRetry, children, batches = [], selectedBatchId = "", feedTypes = [], feedInventory = [], inventoryItems = [], startPage = "dashboard", startPageReady = true }) {
   const [active, setActive] = useState(() => resolvePage(window.location.hash, startPage));
   const [activeTab, setActiveTab] = useState(() => resolveTab(window.location.hash, resolvePage(window.location.hash, startPage)));
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => localStorage.getItem("pomas:sidebar-collapsed") === "true");
@@ -184,6 +184,14 @@ export default function AppShell({ farm, error, appInfo, onRetry, children, star
   }
 
   const today = useMemo(localDateLabel, []);
+  const activeBatch = batches.find(batch => batch.id === selectedBatchId && batch.status === "ACTIVE") || null;
+  const hasActiveFeedTypes = feedTypes.some(type => type.status === "ACTIVE");
+  const hasApplicableFeed = Boolean(activeBatch && feedTypes.some(type =>
+    type.status === "ACTIVE"
+    && (type.applicableTypes || []).includes(activeBatch.type)
+    && feedInventory.some(item => item.feedTypeId === type.id && Number(item.remainingQuantityMilli) > 0)
+  ));
+  const hasActiveInventoryItems = inventoryItems.some(item => item.status === "ACTIVE");
 
   useEffect(() => {
     localStorage.setItem("pomas:sidebar-collapsed", String(sidebarCollapsed));
@@ -380,6 +388,7 @@ export default function AppShell({ farm, error, appInfo, onRetry, children, star
               <p className="muted">{farm.location || "Farm profile"} · {farm.currency} · {farm.timezone}</p>
             </div>
             <div className="topbar-actions">
+              <QuickActionsMenu activeBatch={activeBatch} hasFeedTypes={hasActiveFeedTypes} hasApplicableFeed={hasApplicableFeed} hasInventoryItems={hasActiveInventoryItems} onNavigate={navigateQuickAction} />
               <div className={backendConnected === true && !recoveryNeeded ? "system-pill connected" : backendConnected === false || recoveryNeeded ? "system-pill disconnected" : "system-pill"} role="status" aria-live="polite">
                 <span className={backendConnected === true && !recoveryNeeded ? "status-dot online" : backendConnected === false || recoveryNeeded ? "status-dot offline" : "status-dot"} />
                 {connectionLabel}
