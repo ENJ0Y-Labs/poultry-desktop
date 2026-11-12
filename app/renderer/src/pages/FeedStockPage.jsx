@@ -3,6 +3,7 @@ import { useContext, useEffect, useRef, useState } from "react";
 import ValidatedForm from "../components/ValidatedForm.jsx";
 // eslint-disable-next-line no-unused-vars -- JSX component usage is not detected by the core rule
 import OptionalFields from "../components/OptionalFields.jsx";
+// eslint-disable-next-line no-unused-vars -- JSX component usage is not detected by the core rule
 import MultiStepForm from "../components/MultiStepForm.jsx";
 import { feedApi } from "../services/api.js";
 import { FarmManagerContext } from "../components/FarmManagerContext.jsx";
