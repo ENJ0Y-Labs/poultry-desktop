@@ -14,7 +14,7 @@ const actionGroups = [
   {
     label: "Flock & health",
     actions: [
-      { id: "egg-collection", label: "Egg collection", description: "Record layer egg production", page: "production", tab: "eggs", requiresLayer: true },
+      { id: "egg-collection", label: "Egg collection", description: "Record layer egg production", page: "production", tab: "eggs", requiresBatch: true, requiresLayer: true },
       { id: "vaccination", label: "Vaccination", description: "Record a vaccine dose", page: "health", tab: "vaccination", requiresBatch: true },
       { id: "health-event", label: "Health event", description: "Record an observation or illness", page: "health", tab: "health-record", requiresBatch: true },
     ],
@@ -24,9 +24,9 @@ const actionGroups = [
     actions: [
       { id: "feed-purchase", label: "Feed purchase", description: "Add a feed stock purchase", page: "feed-stock", tab: "purchases", requiresFeedType: true },
       { id: "sale", label: "Sale", description: "Record a batch sale", page: "production", tab: "eggs", requiresBatch: true, saleRoute: true },
-      { id: "expense", label: "Expense", description: "Record a farm or batch expense", page: "sales-money", tab: "expenses" },
+      { id: "expense", label: "Expense", description: "Record a farm or batch expense", page: "sales-money", tab: "expenses", supportsBatchContext: true },
       { id: "inventory-item", label: "Inventory item", description: "Add a stock item", page: "feed-stock", tab: "inventory" },
-      { id: "stock-movement", label: "Stock movement", description: "Receive or issue existing stock", page: "feed-stock", tab: "inventory", requiresInventoryItem: true },
+      { id: "stock-movement", label: "Stock movement", description: "Receive or issue existing stock", page: "feed-stock", tab: "inventory", requiresInventoryItem: true, supportsBatchContext: true },
     ],
   },
 ];
@@ -102,7 +102,7 @@ export default function QuickActionsMenu({
 
   function selectAction(action) {
     const targetTab = action.saleRoute && activeBatch?.type !== "LAYER" ? "broiler" : action.tab;
-    const context = action.requiresBatch && activeBatch?.id
+    const context = (action.requiresBatch || action.supportsBatchContext) && activeBatch?.id
       ? `/batchId=${encodeURIComponent(activeBatch.id)}`
       : "";
     onNavigate?.(`#${action.page}/${targetTab}${context}`);
