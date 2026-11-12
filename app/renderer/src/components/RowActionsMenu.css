@@ -1,0 +1,89 @@
+.pomas-row-actions {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+button.pomas-row-actions__trigger {
+  display: inline-grid;
+  place-items: center;
+  width: 34px;
+  min-width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--panel);
+  color: var(--text);
+  font-size: 22px;
+  line-height: 1;
+}
+
+button.pomas-row-actions__trigger:hover:not(:disabled),
+button.pomas-row-actions__trigger[aria-expanded="true"] {
+  border-color: var(--pomas-focus-ring);
+  background: var(--panel-raised);
+  color: var(--text);
+}
+
+.pomas-row-actions__menu {
+  position: absolute;
+  z-index: 1200;
+  top: calc(100% + 5px);
+  right: 0;
+  display: grid;
+  min-width: 190px;
+  max-width: min(280px, calc(100vw - 32px));
+  padding: 5px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--panel);
+  box-shadow: 0 12px 32px rgb(0 0 0 / 24%);
+}
+
+button.pomas-row-actions__item {
+  display: grid;
+  gap: 3px;
+  width: 100%;
+  padding: 9px 10px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+button.pomas-row-actions__item:hover:not(:disabled),
+button.pomas-row-actions__item:focus-visible {
+  background: var(--panel-raised);
+  color: var(--text);
+}
+
+button.pomas-row-actions__item:disabled {
+  cursor: not-allowed;
+  opacity: .62;
+}
+
+button.pomas-row-actions__item small {
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.35;
+  white-space: normal;
+}
+
+button.pomas-row-actions__item.is-destructive {
+  color: var(--red);
+}
+
+@media (max-width: 560px) {
+  .pomas-row-actions__menu {
+    position: fixed;
+    top: auto;
+    right: 16px;
+    max-width: calc(100vw - 32px);
+  }
+}

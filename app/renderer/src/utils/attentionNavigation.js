@@ -9,6 +9,31 @@ const alertRoutes = {
     tab: "batch-dashboard",
     required: ["batchId"],
   },
+  MORTALITY_INCREASE: {
+    page: "flocks",
+    tab: "batch-dashboard",
+    required: ["batchId"],
+  },
+  UNUSUAL_FEED_CONSUMPTION: {
+    page: "daily-work",
+    tab: "daily-record",
+    required: ["batchId"],
+  },
+  DECLINING_WEIGHT: {
+    page: "production",
+    tab: "broiler",
+    required: ["batchId"],
+  },
+  RISING_EXPENSES: {
+    page: "sales-money",
+    tab: "expenses",
+    required: [],
+  },
+  FALLING_REVENUE: {
+    page: "sales-money",
+    tab: "sales",
+    required: [],
+  },
   VACCINATION_DUE: {
     page: "health",
     tab: "vaccination",

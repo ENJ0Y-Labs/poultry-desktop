@@ -14,6 +14,15 @@ function dateRangeQuery(from, to) {
   return query ? "?" + query : "";
 }
 
+function dateRangeExportQuery(from, to, periodProfitMinor) {
+  const params = new URLSearchParams();
+  if (from) params.set("from", from);
+  if (to) params.set("to", to);
+  if (periodProfitMinor != null) params.set("periodProfitMinor", String(periodProfitMinor));
+  const query = params.toString();
+  return query ? "?" + query : "";
+}
+
 // Error codes for classifying backend communication failures.
 export const BackendErrorCode = Object.freeze({
   URL_UNAVAILABLE: "BACKEND_URL_UNAVAILABLE",
@@ -303,7 +312,7 @@ export const productionTrendApi = {
 };
 
 export const dashboardApi = {
-  farm: (asOf) => request("/dashboard" + (asOf ? "?asOf=" + encodeURIComponent(asOf) : "")),
+  farm: (asOf, from, to) => request("/dashboard" + (from || to ? dateRangeQuery(from, to) : (asOf ? "?asOf=" + encodeURIComponent(asOf) : ""))),
   batch: (id, asOf) => request("/batches/" + id + "/dashboard" + (asOf ? "?asOf=" + encodeURIComponent(asOf) : "")),
 };
 
@@ -342,16 +351,23 @@ async function downloadBlob(path) {
 }
 
 export const reportApi = {
-  farm: (asOf) => request("/reports/farm" + (asOf ? "?asOf=" + encodeURIComponent(asOf) : "")),
-  batch: (id, asOf) => request("/reports/batches/" + id + (asOf ? "?asOf=" + encodeURIComponent(asOf) : "")),
-  farmCsv: (asOf) => downloadText("/reports/farm.csv" + (asOf ? "?asOf=" + encodeURIComponent(asOf) : "")),
-  batchCsv: (id, asOf) => downloadText("/reports/batches/" + id + ".csv" + (asOf ? "?asOf=" + encodeURIComponent(asOf) : "")),
-  farmPdf: (asOf) => downloadBlob("/reports/farm.pdf" + (asOf ? "?asOf=" + encodeURIComponent(asOf) : "")),
-  batchPdf: (id, asOf) => downloadBlob("/reports/batches/" + id + ".pdf" + (asOf ? "?asOf=" + encodeURIComponent(asOf) : "")),
+  farm: (asOf, from, to) => request("/reports/farm" + (from || to ? dateRangeQuery(from, to) : (asOf ? "?asOf=" + encodeURIComponent(asOf) : ""))),
+  batch: (id, asOf, from, to) => request("/reports/batches/" + id + (from || to ? dateRangeQuery(from, to) : (asOf ? "?asOf=" + encodeURIComponent(asOf) : ""))),
+  compare: (ids, from, to) => {
+    const params = new URLSearchParams();
+    ids.forEach(id => params.append("batchIds", id));
+    if (from) params.set("from", from);
+    if (to) params.set("to", to);
+    return request("/reports/batches/compare?" + params.toString());
+  },
+  farmCsv: (asOf, from, to, periodProfitMinor) => downloadText("/reports/farm.csv" + (from || to ? dateRangeExportQuery(from, to, periodProfitMinor) : (asOf ? "?asOf=" + encodeURIComponent(asOf) : ""))),
+  batchCsv: (id, asOf, from, to, periodProfitMinor) => downloadText("/reports/batches/" + id + ".csv" + (from || to ? dateRangeExportQuery(from, to, periodProfitMinor) : (asOf ? "?asOf=" + encodeURIComponent(asOf) : ""))),
+  farmPdf: (asOf, from, to, periodProfitMinor) => downloadBlob("/reports/farm.pdf" + (from || to ? dateRangeExportQuery(from, to, periodProfitMinor) : (asOf ? "?asOf=" + encodeURIComponent(asOf) : ""))),
+  batchPdf: (id, asOf, from, to, periodProfitMinor) => downloadBlob("/reports/batches/" + id + ".pdf" + (from || to ? dateRangeExportQuery(from, to, periodProfitMinor) : (asOf ? "?asOf=" + encodeURIComponent(asOf) : ""))),
 };
 
 export const auditApi = {
-  list: (limit = 100) => request("/audit?limit=" + encodeURIComponent(limit)),
+  list: (limit = 100, from, to) => { const params = new URLSearchParams({ limit: String(limit) }); if (from) params.set("from", from); if (to) params.set("to", to); return request("/audit?" + params.toString()); },
 };
 
 export const backupApi = {
@@ -361,6 +377,8 @@ export const backupApi = {
 
 
 export const csvImportApi = {
+  previewBatchRecords: (records) => request("/imports/csv/batches/preview", { method: "POST", body: JSON.stringify({ module: "batches", records }) }),
+  importBatchRecords: (records) => request("/imports/csv/batches", { method: "POST", body: JSON.stringify({ module: "batches", records }) }),
   importRecords: (module, records) => request("/imports/csv", { method: "POST", body: JSON.stringify({ module, records }) }),
   previewOperationalRecords: (module, records) => request("/imports/csv/operational/preview", { method: "POST", body: JSON.stringify({ module, records }) }),
   importOperationalRecords: (module, records) => request("/imports/csv/operational", { method: "POST", body: JSON.stringify({ module, records }) }),

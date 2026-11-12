@@ -24,6 +24,7 @@
 - Supplier records are loaded and managed through the existing supplier API; feed purchases can reference a registered supplier.
 - The connection indicator probes the backend health endpoint and refreshes periodically. It reports healthy status only when the backend responds successfully and reports a valid database schema.
 - The API base can be configured with `VITE_API_BASE_URL` or the desktop bridge's `getApiBaseUrl`; the local loopback address is only the development fallback.
+- Keyboard navigation shortcuts follow the ten-destination sidebar order: Ctrl+1 through Ctrl+8 open Dashboard through Reports, Ctrl+9 opens Import / Export, and Ctrl+0 opens Settings (the tenth destination, since keyboards have no 10 key). The sidebar displays the matching shortcut beside each destination.
 - Navigation is fully local and adds no package dependency.
 - Only the active page/tab sections are mounted. The backend remains the source of truth for farm calculations and records.
 
@@ -33,8 +34,9 @@ The top-level page components live under `app/renderer/src/pages/`. Shared form 
 ## Farm dashboard presentation
 - The dashboard “Record feed usage” quick action opens Daily Work / Daily record and preselects the active batch, compatible feed type, and current farm-local date. Keep this aligned with the feed-usage form location.
 
-- The farm dashboard labels its business date as “Dashboard as of” so it is not mistaken for the computer's current date or a date-range selector.
-- The dashboard formats that date using the saved application date-format preference. Business dates are parsed as calendar components, not as UTC instants.
+- The farm dashboard provides the shared reporting-period selector used by farm and batch reports. Preset dates are derived from the farm's IANA timezone and the active application date-format preference.
+- The dashboard labels its current population/stock date separately from the selected activity period. Current birds, house occupancy, and feed stock are not filtered by a historical activity range.
+- Business dates are parsed as calendar components, not as UTC instants.
 - Total birds, revenue, and profit are primary metrics. Other KPIs remain visible but use a quieter visual treatment.
 - Feed and attention panels share the available dashboard width and stack at narrower supported widths; neither panel truncates its content to force equal heights.
 - Dashboard currency values use the existing `formatMoney` utility and farm currency. This presentation change must not alter backend calculations or financial values.
@@ -46,6 +48,8 @@ The top-level page components live under `app/renderer/src/pages/`. Shared form 
 - Batch creation and feed purchases select registered suppliers by name instead of asking operators to type database IDs.
 - Tables, table headings, navigation labels, and keyboard shortcut hints use readable text sizes intended for the 1366×768 desktop target.
 - The shell name and initials are derived from the saved farm profile.
+- Signed-in theme preferences are changed in Settings → App, appearance & account. The top bar shows connection and local-first status without duplicating appearance controls; the pre-authentication screens retain their theme selector.
+- All ten page templates use shared hierarchy, spacing, table, form, and interactive-state styles. Page-specific layouts preserve each module's existing backend-driven content and do not synthesize report or chart data.
 
 
 ## Single collapsible navigation
@@ -82,17 +86,17 @@ The top-level page components live under `app/renderer/src/pages/`. Shared form 
 ## Actionable dashboard attention items
 
 - Alerts with known routes render as keyboard-accessible buttons. Alerts with missing required identifiers or an unsupported type remain readable but are not clickable.
-- Supported destinations: missing daily record → Daily Work / Daily record; high mortality → Flocks / Batch dashboard; vaccination due → Health / Vaccination; production drop → Production / Egg production; batch nearing sale → Production / Weight & growth; low feed → Feed & Stock / Purchases; low/insufficient inventory → Feed & Stock / Other stock; overdue backup → Settings / Backup & restore.
+- Supported destinations: missing daily record → Daily Work / Daily record; high or recently increasing mortality → Flocks / Batch dashboard; unusual feed consumption → Daily Work / Daily record; declining meat-bird weight → Production / Weight & growth; vaccination due → Health / Vaccination; production drop → Production / Egg production; batch nearing sale → Production / Weight & growth; low feed → Feed & Stock / Purchases; low/insufficient inventory → Feed & Stock / Other stock; rising expenses → Sales & Money / Expenses; falling revenue → Sales & Money / Sales; overdue backup → Settings / Backup & restore.
 - Alert context is encoded in additional hash-route segments (batch ID, feed type ID, inventory item ID, and/or business date). The route resolver continues to use the first two segments for page and tab selection; the app reads only allow-listed context keys and pre-fills the corresponding form state.
 - On direct application startup with a contextual alert hash, a valid batch ID from the hash takes priority over the remembered/default batch while farm data loads, so the selected batch remains aligned with the alert.
-- Backend feed-stock alerts expose `feedTypeId`; low and insufficient inventory alerts expose `itemId`. Display names are not used as database identifiers.
+- Backend feed-stock alerts expose `feedTypeId`; low and insufficient inventory alerts expose `itemId`. Display names are not used as database identifiers. Insights also expose detection date, metric, rule/threshold explanation, suggested action, and current house attribution for batch-scoped alerts.
 - Successful writes emit the shared mutation invalidation event. Relevant mutations refresh farm dashboard metrics, attention alerts, audit activity, reports, and the selected batch dashboard.
 - Vitest covers all supported alert mappings, missing/invalid context, encoded context parsing, and a dashboard-to-daily-record navigation with batch/date prefilled. Backend integration tests assert that stock alerts include their navigable IDs.
 
 
 ## Light-theme IDE shell tokens
 
-- The activity bar, sidebar, workspace, cards, hover states, focus ring, tabs, and scrollbar use dedicated semantic IDE tokens.
+- The sidebar, workspace, cards, hover states, focus ring, tabs, and scrollbar use dedicated semantic tokens.
 - Every shell token used by navigation and page tabs has an explicit light-theme value. Keep these values readable against the light surfaces and preserve a visible keyboard focus indicator.
 - CSS tests verify token presence and selector usage without depending on formatting or whitespace.
 
@@ -139,34 +143,24 @@ The top-level page components live under `app/renderer/src/pages/`. Shared form 
 - Farm feed inventory report rows include each feed type's applicability set.
 
 
-## Global contextual Quick Actions
+## Dashboard KPI cards (issue #229)
 
-- The application header exposes one compact Quick Actions entry point. It is available offline and uses the existing hash router; it must not create a second form or mutation workflow.
-- Group actions by Daily work, Flock & health, and Finance & stock. The menu includes daily record, mortality, culling, egg collection, feed usage, feed purchase, vaccination, health event, sale, expense, inventory item, and stock movement.
-- Filter actions against the current state: batch-specific actions require an ACTIVE batch; egg collection is LAYER-only; sale opens the existing layer or meat-bird sale workflow for the selected batch type; feed usage requires an active applicable feed type with remaining stock; feed purchase requires a registered feed type; stock movement requires an existing inventory item. Expense and inventory-item creation remain farm-level actions.
-- Batch context is carried only for operations that accept a batch. The app validates the context against the loaded ACTIVE batch list before pre-filling existing form state. A missing, stale, closed, or incompatible batch context must not be trusted.
-- Ctrl+K opens the menu. Arrow Up/Down, Home, End, Enter, and Escape are supported, and Escape restores focus to the trigger. Outside pointer interaction closes the panel.
-- Preserve the dashboard's existing Record feed usage action and its behavior. The global menu supplements it; it does not replace it.
-- Vitest covers action visibility, type-aware sale routing, context propagation, keyboard navigation, and focus restoration. Manual verification must exercise every action, a missing/closed batch, layer and meat-bird batches, keyboard-only operation, narrow desktop windows, and offline use.
+- Use one shared KPI card component for consistent labels, values, optional units, period comparisons, trend/status metadata, and navigation.
+- The visual hierarchy is three primary cards (total birds, revenue, profit), followed by quieter operational/financial cards.
+- KPI values are display-only projections of the farm dashboard API. The renderer must not calculate totals, rates, or trends.
+- Only show a comparison when the backend explicitly supplies both comparable values and the actual period labels. Never compare lifetime totals with daily values or infer a trend from the current value.
+- Undefined/null values render as an em dash, not zero. Optional comparison/status metadata is omitted when absent.
+- Navigable cards are keyboard-accessible buttons and route to the existing destination; non-navigable cards remain non-interactive.
+- Current dashboard response does not expose comparable previous-period values. Therefore no percentage/direction comparison is displayed until an authoritative backend contract is added. The aggregate feed quantity is also not a valid farm-wide KPI because feed types may use different units; show feed stock per type in the existing Feed panel instead.
+- Dashboard date remains the backend asOf business date, formatted using the saved date preference. Successful writes continue to refresh dashboard data through the existing mutation invalidation flow.
 
 
-### Quick Actions verification commands and manual steps
+## Reusable record-table filters (Issue #234)
 
-Run from the repository root:
-
-```powershell
-npm test -- app/renderer/src/components/QuickActionsMenu.test.jsx app/renderer/src/App.test.jsx
-npm run lint
-npm run backend:verify
-npm run build
-```
-
-Using a disposable local farm (never production records):
-
-1. Create ACTIVE LAYER, BROILER, and TURKEY batches. Add an active feed type applicable to each relevant type and record a purchase so remaining stock is positive. Create an inventory item.
-2. Open Quick Actions and verify each visible action opens the existing page and correct tab. Confirm feed usage appears only when the selected active batch has a compatible feed type with remaining stock; feed purchase appears only when a feed type exists; stock movement appears only when an inventory item exists.
-3. Verify Egg collection appears for LAYER only. Verify Sale opens the egg workflow for LAYER and the meat-bird workflow for BROILER/TURKEY.
-4. Open Mortality, Culling, Daily record, Feed usage, Health event, Vaccination, Egg collection, Sale, Expense, and Stock movement from an active batch context. Confirm only the target form receives the batch and today's farm-local date where supported.
-5. Remove the active batch or mark it SOLD and confirm batch-specific actions disappear. Test with no feed types, no compatible feed stock, and no inventory items.
-6. Use Ctrl+K, Arrow Up/Down, Home, End, Enter, and Escape without a mouse. Confirm Escape restores focus to the trigger and outside clicks dismiss the panel.
-7. Repeat at 1366×768 and 1100×700, then disconnect the internet and repeat navigation. Quick Actions must remain available offline.
+- DataTable provides shared text search and detects applicable date, batch, house, and status fields from the rows already supplied to it. A criterion is shown only when that table has a matching field.
+- All selected criteria are combined with AND semantics. Date boundaries are inclusive and business dates are compared as `YYYY-MM-DD` calendar values, not UTC instants.
+- Active criteria appear as removable chips; Clear all resets the complete filter set. An empty filtered result is distinct from an empty source table and from a request failure.
+- Filter state is stored locally per table caption under `pomas:table-filters:<caption>` and restored when the same list is revisited. This is a renderer preference only and never changes farm records or calls a write API.
+- Filtering operates only on rows already returned by each existing API request. The control explicitly reports “loaded records”; it does not trigger additional requests or silently fetch an unbounded result set. Existing endpoints currently return their module collections without a shared pagination/filter contract. Server-side query parameters and bounded pagination must be introduced at the API/repository layer before any large collection is represented as fully searchable; do not imply the local filter searched records that were not loaded.
+- Every DataTable using the shared component receives the pattern, including applicable batch/house, operations, feed, inventory, health, production, sales, expenses, and audit tables. Tables without a date/batch/house/status field retain text search only.
+- Vitest covers intersection behavior, inclusive date boundaries, no-match results, missing dates, and source-row immutability.

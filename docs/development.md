@@ -54,7 +54,7 @@ For routine React UI and backend development, run both services together:
 npm run dev:browser:all
 ```
 
-Open `http://127.0.0.1:5173/` in Chrome or another browser. This command starts the existing backend and Vite scripts concurrently. Vite React Fast Refresh and Hot Module Replacement (HMR) automatically apply supported React and CSS edits without packaging or rebuilding the desktop application. Spring Boot serves the API on `http://127.0.0.1:18942/api/v1`.
+Open `http://127.0.0.1:5173/` in Chrome or another browser. This command starts the existing backend and Vite scripts concurrently. If a backend is already listening on the configured port, it is reused only when `/api/v1/health` confirms that the database and schema are ready; an occupied but unhealthy port is reported without starting a second backend. Vite React Fast Refresh and Hot Module Replacement (HMR) automatically apply supported React and CSS edits without packaging or rebuilding the desktop application. Spring Boot serves the API on `http://127.0.0.1:18942/api/v1` by default.
 
 You can also start the services separately in two terminals:
 
@@ -400,3 +400,49 @@ Manual validation must use two separate test states:
 2. **Populated test farm:** use a separate disposable database with at least one house and batch plus recorded farm activity. Confirm normal dashboard metrics, feed, attention, and audit sections remain visible.
 3. Confirm no demo/sample records are created by opening the empty state or clicking its navigation actions. Navigation must not write to the database.
 4. Never reset, delete, or reuse the user's real farm database for this test. Record runtime checks as not run until they have actually been performed.
+
+
+## Branded startup loading screen
+
+The initial authentication and farm-data bootstrap displays the local Pomas logo, product name, a short description, and an accessible rotating progress indicator. Its colors use the active theme tokens, so it follows both Light and Dark appearance settings. The screen does not add a startup delay or change backend readiness behavior.
+
+Focused renderer test:
+
+```powershell
+npm test -- App.test.jsx
+```
+
+Manual validation:
+
+1. Start the app while the backend is available and observe the branded screen before the sign-in, farm setup, or dashboard view appears.
+2. Set Appearance to Light and restart. Confirm the screen has a light background, readable dark text, and a visible gold-accent spinner.
+3. Set Appearance to Dark and restart. Confirm the screen has a dark background, readable light text, and a visible gold-accent spinner.
+4. Confirm the loading indicator rotates continuously and the screen disappears as soon as the initial application bootstrap completes.
+5. Repeat with a delayed/unavailable backend. Confirm the app's existing connection/error handling remains intact and no artificial loading timeout is introduced.
+
+
+## Transparent dashboard attention insights (Issue #233)
+
+Run focused backend and renderer coverage:
+
+```powershell
+npm test -- attentionNavigation
+npm test -- App.test.jsx
+npm run backend:test -- --tests com.grantinofarms.poultry.AttentionServiceIntegrationTest
+npm run lint
+npm run backend:verify
+npm run build
+```
+
+Use a disposable database for manual rule checks. Create separate layer and meat-bird batches and seed dated records so the selected `asOf` date has both a latest 7-day period and a preceding 7-day period.
+
+1. Record mortality below and at the recent 2% warning boundary; confirm the recent-mortality insight appears only at/above the threshold. Separately verify cumulative mortality retains its existing 5% warning / 10% critical behavior.
+2. For the same batch and feed type, compare 7-day feed usage against the preceding 7 days. Confirm a 25% increase warns and 50% increase is critical. A feed type or period without usage history must not trigger this rule.
+3. Record two meat-bird weight measurements. Confirm a 10% or larger decline is shown only when the latest measurement is within 7 days. A stale latest measurement and missing second measurement must not trigger it.
+4. Compare farm expenses and common-ledger sales in the latest 7 days against the preceding 7 days. Confirm a 25% adverse change warns and 50% is critical. A zero prior-period baseline must not trigger a trend alert.
+5. Confirm egg production comparison includes good and cracked eggs, while a missing prior-period baseline does not alert.
+6. Confirm each insight shows severity, metric, date, rule/threshold and suggested action. Batch insights should identify the current house. Selecting each card should open its existing module; stock and batch IDs must be passed as IDs, not names.
+7. Correct the underlying test data so the condition is resolved, refresh attention, and confirm the alert disappears. Repeated refreshes must not create duplicate entries.
+8. Confirm no poor-FCR alert is emitted: a universal target is not defined. FCR alerting remains deferred until an approved farm/type/age benchmark exists.
+
+Inspect the dashboard at 1100×650 and 1366×768 in both Light and Dark themes. Automated tests do not replace these manual navigation, contrast, and layout checks. Never use the real Grantino farm database for seeded tests.

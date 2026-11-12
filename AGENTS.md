@@ -88,7 +88,7 @@ The installer ID (`appId`), repository name, Java packages, and database file na
 - Do not add an ORM such as Hibernate/JPA unless the owner explicitly approves it.
 - Do not add cloud services, telemetry, or another server/process without owner approval.
 - Spring Boot is the backend source of truth for business rules and persistence.
-- React is responsible for presentation and user interaction, not authoritative farm calculations.
+- React is responsible for presentation, interaction, and display-level analytics derivations from raw backend aggregates. Spring Boot remains authoritative for transactional domain rules, validation, persistence, audit, and persisted business calculations. Renderer-derived reporting values are presentation-only and must never be stored or used to bypass backend validation.
 - Keep the backend capable of running locally on the same PC as the Electron application.
 - Prefer a packaged/local Spring Boot process launched and supervised by Electron for the desktop distribution.
 - The jlink runtime shipped with the desktop app must include `java.desktop` and the backend's required modules; `package:verify` checks the generated runtime before packaging.
@@ -199,6 +199,16 @@ Turkey is an independent `TURKEY` batch type, not a Broiler subtype. Farm dashbo
 ## Historical production CSV import
 
 The Import / Export screen supports versioned CSV imports for layer egg collections (`egg-collections`) and broiler weight records (`broiler-weights`) for existing ACTIVE batches. Batch references use human-readable batch codes. Egg imports must use LAYER batches and preserve good/cracked separation; weight imports must use BROILER batches and store sample count plus total sample weight in kilograms. All writes go through `EggManagementService` or `BroilerProductionService` in a single transaction so existing validation and audit behavior remain authoritative. Do not import derived averages, growth, sellable cracked eggs, or synthetic zero records for missing dates. See `docs/csv-bulk-import.md`.
+
+## Reusable record-table filters
+
+- Keep record-table search and applicable date, batch, house, and status criteria in the shared `DataTable` pattern. Criteria intersect (AND), date boundaries are inclusive, active criteria are removable, and Clear all resets every criterion.
+- Filter state is a local renderer preference keyed by table identity; it must not mutate records or issue write requests. Empty filtered results must remain distinct from empty source data and API failures.
+- Client-side filtering may only claim to search rows already loaded. Do not silently fetch unbounded collections. Add bounded backend pagination/filter parameters before claiming complete search over large datasets.
+
+## Toast notifications
+
+Use the single app-wide React `ToastProvider` mounted in `app/renderer/src/main.jsx` and its `useToast()` API for routine success, warning, informational, and non-blocking error feedback. Do not create page-local toast providers or restore page-local success banners. Keep field validation inline and destructive confirmations / decisions in dialogs. Never display raw SQL, stack traces, filesystem paths, or raw backend exceptions. Follow `docs/toast-notifications.md` for API, accessibility, placement, and verification requirements.
 
 ## 5. Electron security
 
@@ -1322,14 +1332,21 @@ Validate the renderer with the backend available, during startup, and with the b
 - Inventory reorder level `0` disables low-stock alerts for that item. Positive reorder levels are active thresholds: stock at or below the threshold alerts, with zero stock critical and positive stock warning.
 - Archived inventory items are excluded from alerts. Never rewrite existing reorder levels to suppress an alert.
 - Farm dashboard inventory-alert counts must use the same positive-threshold rule as the attention list.
+- Keep all attention rules backend-owned in `AttentionService`. Every insight must expose detection date, affected metric, rule ID/description, explicit threshold context, suggested action, and batch/house attribution when applicable. Recompute from source records so resolved alerts clear; do not persist duplicate/stale alert rows.
+- Trend alerts must compare like-for-like windows and require sufficient non-zero baseline data. Never invent zeros for missing records. Do not alert on poor FCR until an approved farm-configurable or bird-type/age benchmark exists.
 
 ## 39. Report exports and date scope
 
-- Farm and batch reports must use the selected as-of date for the report preview and CSV/PDF exports; do not silently export the current date when the user selected a historical date.
-- CSV exports use a stable, documented column order with report type, as-of date, section, record, field, value, and unit. Do not regress to a path,value-only dump.
-- PDF exports include the report title and as-of date, readable column headings, row separation, and repeated table headers when a report spans pages.
-- Values come from ReportService and its existing dashboard/domain calculation services. Export formatting may format values but must not recalculate farm metrics.
-- Test date scope, empty sections, CSV escaping/headers, money/unit formatting, and generated PDF text/output.
+- Farm dashboard and farm/batch reports share one inclusive date range with Today, Yesterday, Last 7 days, Last 30 days, Last 90 days, This month, Last month, This year, and Custom range presets.
+- Preset boundaries use the farm's IANA timezone, not the computer's timezone. Date-only values remain calendar dates through the API. Audit timestamps are filtered using farm-local day boundaries converted to instants.
+- Custom ranges require both dates and start date <= end date. Reject invalid ranges before requesting data and show clear feedback.
+- Compatible activity metrics, production record tables, report previews, exports, audit activity, and production charts use the same selected from/to range. Range changes must never write or mutate farm records.
+- Current/lifetime snapshots such as current live population, house occupancy, feed stock, egg inventory, and batch-to-date values remain snapshots. Do not silently filter them as period activity; label the distinction in the UI.
+- Backend period responses expose raw period totals and range-filtered source rows. React may derive presentation-only period metrics, including profit from integer minor-unit revenue minus expenses. Do not persist these derived display values.
+- CSV exports use stable documented columns with report type, period start, period end, snapshot date, section, record, field, value, and unit. PDF exports include the report title, selected period, and separate snapshot date, readable column headings, row separation, and repeated table headers when a report spans pages.
+- Export formatting may serialize renderer-derived display metrics supplied by the request, but must not independently recalculate farm metrics.
+- Production trend endpoints retain their 366-day maximum. A longer custom range may still filter other report panels; the chart must show a clear range-limit state.
+- Test month/year boundaries, leap day, custom and invalid ranges, farm-local dates, inclusive boundaries, range filtering, current-snapshot preservation, export metadata, and backend reconciliation.
 
 ## 40. Production trend charts
 
@@ -1372,11 +1389,60 @@ Opening feed stock is stored in the existing `feed_opening_balances` table. Do n
 An opening balance may be dated before a later purchase, but cannot be dated before the latest existing usage or latest opening-balance entry for the same feed type. This prevents retroactive changes to FIFO allocations. Preserve the existing purchase rule that an actual purchase creates exactly one feed expense. See `docs/decisions/2026-10-02-feed-management.md`.
 
 
-## Global Quick Actions
+## Contextual side drawer (Issue #224)
 
-- Keep the global Quick Actions menu in the existing application shell and use the existing hash routes and forms. Never duplicate business workflows or write farm data directly from the menu.
-- Only expose operations supported by the current authenticated farm state. Batch-specific actions require a loaded ACTIVE batch. Egg collection is LAYER-only; sale routing follows the active batch type. Feed usage requires an active applicable feed type, feed purchase requires a registered feed type, and stock movement requires an existing inventory item.
-- Pass batch context only to operations that accept it. Validate the context against the loaded ACTIVE batch list before updating form state. Never trust a batch ID merely because it appears in the URL.
-- Keep the menu keyboard accessible: Ctrl+K opens it, arrow keys move through actions, Home/End jump to the boundaries, Enter activates, Escape closes and restores focus, and pointer interaction outside the panel dismisses it.
-- Preserve existing dashboard quick actions, route conventions, offline operation, and backend validation. The menu is navigation only; Spring Boot remains authoritative.
-- Update docs/frontend-navigation.md and tests when action availability, routes, context, or keyboard behavior changes.
+- Use the shared renderer primitive `app/renderer/src/components/ContextDrawer.jsx` for contextual inspection/editing of existing records. Keep short creation and confirmation flows in the shared modal system.
+- Opening a drawer must not navigate, remount the active page, clear filters, change selection, or reset list scroll. Keep the underlying page mounted and render the drawer in a portal.
+- Keep API access, validation, calculations, transaction rules and persistence in existing page/context and Spring Boot layers. The drawer is presentation-only.
+- Support small/medium/large sizes, read-only/editable modes, loading/error states, safe backdrop close, Escape, focus trapping/restoration, body-scroll locking and explicit discard confirmation for dirty edits.
+- Do not invent fields or fetch additional detail data unless the existing workflow supports it. Feed purchase detail remains out of scope until purchase history is exposed to the renderer.
+- Add Vitest coverage and update `docs/contextual-drawer.md` plus relevant manual test instructions when the drawer contract changes.
+
+
+## Client-side form validation
+
+- Use the shared `ValidatedForm` component and `app/renderer/src/utils/formValidation.js` for farm workflow form validation. Authentication keeps its existing sign-in validation feedback. Keep field labels visible, mark required fields, show field-level errors and a multi-error summary, and focus the first invalid field.
+- Preserve entered values after client validation and API failures. Disable submit while pending and prevent duplicate requests.
+- Validate only rules supported by existing field attributes and API/domain contracts. Negative quantities are invalid unless the field explicitly permits them; respect `min`, `max`, and `step`.
+- Parse naira inputs with `parseNairaToKobo` and retain integer kobo in API payloads. Never introduce floating-point money arithmetic or display raw minor units.
+- Map backend Bean Validation field details to controls when supplied. The backend remains authoritative for population, FIFO, lifecycle, duplicate, financial and all other domain invariants.
+- Do not invent phone-number formats: customer phone is optional without a format constraint; supplier phone is optional and capped at 40 characters by the current API contract. A client-side supplier-name duplicate check may improve feedback because the backend enforces that unique name; the backend remains authoritative. Do not pre-check customer names because the customer create API does not enforce uniqueness.
+- Update `docs/form-validation.md` and its manual mock-data steps when validation behavior changes. Run focused renderer tests, then the full test, lint, backend verification and build commands. Do not claim manual desktop checks unless performed with a disposable database.
+
+## Branded startup loading screen
+
+- While the initial authentication and farm-data bootstrap is pending, show the Pomas startup screen rather than a plain text loading message.
+- Use the existing local Pomas logo asset; do not load remote images, fonts, scripts, or other network resources.
+- The startup screen includes the Pomas name, a short product description, and an accessible continuously rotating loading indicator.
+- Background, text, muted text, and spinner colors must follow the active `data-theme` tokens so the screen works in both light and dark mode.
+- Keep the loading state presentation-only. Do not add artificial delays, block startup on animation, or change authentication/backend readiness behavior.
+- Cover the startup screen in renderer tests and manually verify both light and dark appearance plus transition into sign-in, farm setup, and the dashboard.
+
+
+## Batch performance comparison
+
+- Batch comparison reuses the existing backend batch reports and calculation services. Spring Boot owns every comparison value; the renderer only filters, formats and visualizes returned metrics.
+- A comparison accepts 2–8 unique batches from the active farm and one shared inclusive from/to date range. Activity totals must use both boundary dates. Population and average-weight values are snapshots at the range end; show each batch's placement date. FCR remains the existing backend batch-to-date metric and must be labeled as such.
+- Apply bird-type and house filters to both the selectable batch list and the compared chart/table. Selected batches excluded by active filters must not silently appear in results.
+- Compare initial/current population, mortality rate, feed quantity/cost, revenue, expenses and profit across all selected batches. Compare egg production only when every selected batch is a LAYER. Compare average weight and FCR only when every selected batch is BROILER or TURKEY.
+- Feed quantity and FIFO cost must be calculated from feed usage events inside the selected date range while preserving the full FIFO history needed to value those usage events. Do not recompute FIFO from only the selected range.
+- If no feed usage, mortality event, or egg collection exists in the selected period, show the metric as missing rather than inventing a zero. Unknown feed costs remain null.
+- Feed quantities are recorded in configured feed units. Never sum quantities across different units within one batch; return a missing quantity in that case while retaining a valid FIFO cost. Show each batch's actual unit in the table and chart feed quantity only when every selected batch has the same single unit. Money remains integer minor units and must use the shared money formatter.
+- The comparison chart must show one unit-consistent metric at a time. The accessible comparison table must expose metric units, each batch's type and placement date, and the common reporting period.
+- Test layer-only, meat-bird-only, mixed selections, missing histories, duplicate/invalid selections, FIFO costs across period boundaries, and batches with different placement dates. Do not fabricate missing metrics.
+
+## Shared data-table sorting and pagination (Issue #235)
+
+- Use the shared `DataTable` for consistent column sorting and page controls. Columns may provide `sortValue(row)` when the displayed field differs from the sort value; mark action columns `sortable: false`.
+- Sorting is stable: equal primary values are ordered by the row's unique ID in ascending order, independent of primary sort direction. Persisted farm records must expose stable IDs.
+- Page sizes are 10, 25, 50 and 100. Apply filtering, sorting, then pagination. Reset to page one when filters or page size change and clamp the current page when rows are removed.
+- The current shared renderer component paginates loaded rows only. This is not database pagination. Do not describe large histories as scalable until relevant API and SQL repository queries are bounded and return total counts. Preserve existing API response behavior when introducing paged responses.
+- See `docs/data-table-pagination.md` for the current contract and server-pagination limitation.
+
+
+## Contextual row actions (Issue #236)
+
+- Use the shared `RowActionsMenu` through the optional `DataTable rowActions(row)` callback for contextual record actions. Return stable action IDs and use `visible`, `disabled`, `disabledReason`, and `destructive` to communicate applicability and lifecycle restrictions.
+- The page/context owns action configuration and must call existing backend-backed workflows. The menu is presentation-only; Spring Boot remains authoritative for authorization, lifecycle validation, transaction safety, persistence and audit.
+- Never expose unrestricted edit/delete for posted financial or stock transactions. Use the audited reversal-plus-replacement workflow and existing confirmation UI.
+- See `docs/contextual-row-actions.md`. The shared primitive is not a completed domain integration: migrate relevant module pages and add backend invalid-operation and audit tests before closing Issue #236.
