@@ -981,7 +981,7 @@ describe("App", () => {
 
     fireEvent.click(await screen.findByRole("button", { name: /Quick actions/ }));
     const quickActionsDialog = await screen.findByRole("dialog", { name: "Quick actions" });
-    fireEvent.click(await within(quickActionsDialog).findByRole("button", { name: "Mortality" }));
+    fireEvent.click(await within(quickActionsDialog).findByRole("button", { name: "Mortality Record birds that died" }));
 
     expect(window.location.hash).toBe("#daily-work/mortality/batchId=layer-1");
     const mortalityDialog = await screen.findByRole("dialog", { name: "Record mortality" });
