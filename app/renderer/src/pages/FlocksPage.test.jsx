@@ -141,10 +141,11 @@ describe("FlocksPage contextual details", () => {
     expect(screen.getByText("STEP 4 OF 5")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Continue" }));
     expect(screen.getByText("STEP 5 OF 5")).toBeInTheDocument();
-    expect(screen.getByText("250")).toBeInTheDocument();
-    expect(screen.getByText("North Pen")).toBeInTheDocument();
+    const dialog = screen.getByRole("dialog", { name: "Register batch" });
+    expect(within(dialog).getByText("250", { exact: true })).toBeInTheDocument();
+    expect(within(dialog).getByText("North Pen", { exact: true })).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: "Create batch" }));
+    fireEvent.click(within(dialog).getByRole("button", { name: "Create batch" }));
     expect(context.createBatch).toHaveBeenCalledTimes(1);
   });
 
