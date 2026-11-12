@@ -22,8 +22,12 @@ describe("QuickActionsMenu", () => {
   it("hides batch-specific and incompatible actions when no active batch exists", async () => {
     render(<QuickActionsMenu hasFeedTypes={false} hasInventoryItems={false} onNavigate={vi.fn()} />);
     fireEvent.click(screen.getByRole("button", { name: /Quick actions/ }));
-    expect(await screen.findByText(/No quick actions are available yet/)).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: /Expense/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Inventory item/ })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Mortality/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Egg collection/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Feed purchase/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Stock movement/ })).not.toBeInTheDocument();
   });
 
   it("routes a batch-specific action with the active batch context", async () => {
@@ -54,4 +58,11 @@ describe("QuickActionsMenu", () => {
     expect(trigger).toHaveFocus();
     expect(screen.queryByRole("dialog", { name: "Quick actions" })).not.toBeInTheDocument();
   });
+  it("opens from the Ctrl+K shortcut", async () => {
+    render(<QuickActionsMenu activeBatch={{ id: "batch-1", type: "LAYER", status: "ACTIVE" }} />);
+    fireEvent.keyDown(window, { key: "k", ctrlKey: true });
+    expect(await screen.findByRole("dialog", { name: "Quick actions" })).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByRole("button", { name: /Daily record/ })).toHaveFocus());
+  });
+
 });
