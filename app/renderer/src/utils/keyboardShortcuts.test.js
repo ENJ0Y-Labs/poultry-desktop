@@ -11,9 +11,20 @@ describe("central keyboard shortcuts", () => {
   it("ignores editable controls and contenteditable regions", () => {
     const input = document.createElement("input");
     const editor = document.createElement("div");
-    editor.contentEditable = "true";
+    editor.setAttribute("contenteditable", "true");
+    const plainTextEditor = document.createElement("div");
+    plainTextEditor.setAttribute("contenteditable", "plaintext-only");
+    const lockedEditor = document.createElement("div");
+    lockedEditor.setAttribute("contenteditable", "false");
+    const nestedLockedEditor = document.createElement("span");
+    editor.append(nestedLockedEditor);
+    nestedLockedEditor.setAttribute("contenteditable", "false");
+
     expect(isTypingTarget(input)).toBe(true);
     expect(isTypingTarget(editor)).toBe(true);
+    expect(isTypingTarget(plainTextEditor)).toBe(true);
+    expect(isTypingTarget(lockedEditor)).toBe(false);
+    expect(isTypingTarget(nestedLockedEditor)).toBe(false);
     expect(isTypingTarget(document.body)).toBe(false);
   });
   it("routes navigation and dispatches quick actions from one listener", () => {
