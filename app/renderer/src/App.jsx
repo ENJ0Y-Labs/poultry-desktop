@@ -674,7 +674,6 @@ export default function App() {
   async function exportCsv(loader, filename) {
     setReportExporting(true);
     setError("");
-    setSuccessMessage("");
     try {
       const csv = await loader();
       const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
