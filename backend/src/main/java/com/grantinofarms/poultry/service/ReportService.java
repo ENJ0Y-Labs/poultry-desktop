@@ -1,7 +1,6 @@
 package com.grantinofarms.poultry.service;
 
 import com.grantinofarms.poultry.dto.BatchResponse;
-import com.grantinofarms.poultry.dto.FarmResponse;
 import com.grantinofarms.poultry.dto.BirdPopulationResponse;
 import com.grantinofarms.poultry.dto.FarmResponse;
 import com.grantinofarms.poultry.exception.ApiException;
@@ -19,7 +18,6 @@ import com.grantinofarms.poultry.domain.ReportDateRange;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
-import java.time.OffsetDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.function.Function;
