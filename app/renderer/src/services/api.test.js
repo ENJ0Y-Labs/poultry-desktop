@@ -125,6 +125,55 @@ describe("API client", () => {
     );
   });
 
+  it("downloads a report CSV with the selected as-of date", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response("\uFEFFfarm_name,as_of\nGrantino Farms,03/10/2026", {
+        status: 200,
+        headers: { "Content-Type": "text/csv;charset=UTF-8" },
+      })
+    );
+
+    const csv = await reportApi.farmCsv("2026-10-03");
+
+    expect(csv).toContain("Grantino Farms");
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining("/reports/farm.csv?asOf=2026-10-03"),
+      expect.objectContaining({ credentials: "include", signal: expect.any(AbortSignal) })
+    );
+  });
+
+  it("returns an actionable timeout error for a slow report export", async () => {
+    const timeout = new Error("The operation timed out");
+    timeout.name = "TimeoutError";
+    vi.spyOn(globalThis, "fetch").mockRejectedValue(timeout);
+
+    await expect(reportApi.farmCsv("2026-10-03")).rejects.toMatchObject({
+      name: "ApiError",
+      code: "EXPORT_TIMEOUT",
+      status: 504,
+      message: expect.stringContaining("narrower report scope"),
+    });
+  });
+
+  it("preserves backend failure details for report exports", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({
+        ok: false,
+        error: { code: "REPORT_EXPORT_FAILED", message: "A supported Unicode font is required." },
+      }), {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      })
+    );
+
+    await expect(reportApi.farmPdf()).rejects.toMatchObject({
+      name: "ApiError",
+      code: "EXPORT_FAILED",
+      status: 500,
+      message: "A supported Unicode font is required.",
+    });
+  });
+
   it("emits a mutation event after a successful production write", async () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValue(
       new Response(JSON.stringify({ ok: true, data: { id: "egg-1" } }), {

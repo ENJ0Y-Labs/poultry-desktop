@@ -1326,10 +1326,13 @@ Validate the renderer with the backend available, during startup, and with the b
 ## 39. Report exports and date scope
 
 - Farm and batch reports must use the selected as-of date for the report preview and CSV/PDF exports; do not silently export the current date when the user selected a historical date.
-- CSV exports use a stable, documented column order with report type, as-of date, section, record, field, value, and unit. Do not regress to a path,value-only dump.
-- PDF exports include the report title and as-of date, readable column headings, row separation, and repeated table headers when a report spans pages.
+- CSV exports use a stable, documented column order: farm name, report title, batch code, batch type, house ID, generation timestamp, selected period, currency, as-of date, report type, section, record, field, value, and unit. Do not regress to a path,value-only dump.
+- PDF exports include farm name, report title, generation timestamp, selected period, currency, readable column headings, row separation, and repeated report context/table headers when a report spans pages.
+- Format dates using the configured application date format and money using the farm's configured currency. Keep API and stored values unchanged; minor-unit money remains integer-valued.
 - Values come from ReportService and its existing dashboard/domain calculation services. Export formatting may format values but must not recalculate farm metrics.
-- Test date scope, empty sections, CSV escaping/headers, money/unit formatting, and generated PDF text/output.
+- Farm exports cover the farm; batch exports cover exactly the selected batch. A house selector may narrow available batch choices but must not silently broaden the exported scope.
+- Large export requests must remain asynchronous from the renderer, expose progress and success/failure feedback, and use an appropriate timeout. Do not report success before the download response is received.
+- Test date scope, empty sections, CSV escaping/headers, currency/date formatting, filter scope, and generated PDF text/output.
 
 ## 40. Production trend charts
 

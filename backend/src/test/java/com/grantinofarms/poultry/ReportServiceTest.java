@@ -3,6 +3,7 @@ package com.grantinofarms.poultry;
 import com.grantinofarms.poultry.dto.BatchResponse;
 import com.grantinofarms.poultry.dto.BirdPopulationResponse;
 import com.grantinofarms.poultry.dto.ExpenseResponse;
+import com.grantinofarms.poultry.dto.FarmResponse;
 import com.grantinofarms.poultry.service.*;
 import org.junit.jupiter.api.Test;
 
@@ -30,7 +31,10 @@ class ReportServiceTest {
         InventoryService inventory = mock(InventoryService.class);
         HealthManagementService health = mock(HealthManagementService.class);
         FarmService farmService = mock(FarmService.class);
+        ApplicationSettingsService applicationSettings = mock(ApplicationSettingsService.class);
         when(farmService.getWaterUnitLabel()).thenReturn("litres");
+        when(farmService.get()).thenReturn(new FarmResponse("farm-1", "Grantino Farms", "Port Harcourt", "Africa/Lagos", "NGN", "ACTIVE", null, null));
+        when(applicationSettings.get()).thenReturn(Map.of("dateFormat", "DD/MM/YYYY"));
 
         BatchResponse layer = mock(BatchResponse.class);
         when(layer.id()).thenReturn("layer-1");
@@ -66,7 +70,7 @@ class ReportServiceTest {
 
         ReportService service = new ReportService(
                 dashboard, batches, population, birdCost, feed, eggs, broilers,
-                expenses, sales, inventory, health, farmService
+                expenses, sales, inventory, health, farmService, applicationSettings
         );
 
         Map<String, Object> report = service.farm(asOf);
@@ -75,6 +79,11 @@ class ReportServiceTest {
         assertThat(report.get("revenueMinor")).isEqualTo(500000L);
         assertThat(report.get("profitMinor")).isEqualTo(300000L);
         assertThat(report.get("waterUnitLabel")).isEqualTo("litres");
+        assertThat(report.get("farmName")).isEqualTo("Grantino Farms");
+        assertThat(report.get("currency")).isEqualTo("NGN");
+        assertThat(report.get("dateFormat")).isEqualTo("DD/MM/YYYY");
+        assertThat(report.get("reportTitle")).isEqualTo("Farm Report");
+        assertThat(report.get("generatedAt")).isNotNull();
 
         verify(dashboard).farm(asOf);
         verify(population).get("layer-1", asOf);
@@ -100,7 +109,10 @@ class ReportServiceTest {
         InventoryService inventory = mock(InventoryService.class);
         HealthManagementService health = mock(HealthManagementService.class);
         FarmService farmService = mock(FarmService.class);
+        ApplicationSettingsService applicationSettings = mock(ApplicationSettingsService.class);
         when(farmService.getWaterUnitLabel()).thenReturn("litres");
+        when(farmService.get()).thenReturn(new FarmResponse("farm-1", "Grantino Farms", "Port Harcourt", "Africa/Lagos", "NGN", "ACTIVE", null, null));
+        when(applicationSettings.get()).thenReturn(Map.of("dateFormat", "DD/MM/YYYY"));
 
         BatchResponse batch = mock(BatchResponse.class);
         when(batch.id()).thenReturn("batch-1");
@@ -132,7 +144,7 @@ class ReportServiceTest {
 
         ReportService service = new ReportService(
                 dashboard, batches, population, birdCost, feed, eggs, broilers,
-                expenses, sales, inventory, health, farmService
+                expenses, sales, inventory, health, farmService, applicationSettings
         );
 
         Map<String, Object> report = service.batch("batch-1", asOf);
@@ -142,6 +154,12 @@ class ReportServiceTest {
         assertThat(report.get("mortality")).isEqualTo(12);
         assertThat(report.get("profitMinor")).isEqualTo(500000L);
         assertThat(report.get("waterUnitLabel")).isEqualTo("litres");
+        assertThat(report.get("farmName")).isEqualTo("Grantino Farms");
+        assertThat(report.get("currency")).isEqualTo("NGN");
+        assertThat(report.get("dateFormat")).isEqualTo("DD/MM/YYYY");
+        assertThat(report.get("reportTitle")).isEqualTo("Batch Report");
+        assertThat(report.get("batchType")).isEqualTo("LAYER");
+        assertThat(report.get("generatedAt")).isNotNull();
 
         verify(dashboard).batch("batch-1", asOf);
         verify(population).get("batch-1", asOf);

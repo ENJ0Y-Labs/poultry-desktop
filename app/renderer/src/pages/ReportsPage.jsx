@@ -1,4 +1,4 @@
-import { useContext } from "react";
+import { useContext, useState } from "react";
 import { FarmManagerContext } from "../components/FarmManagerContext.jsx";
 // eslint-disable-next-line no-unused-vars
 import PageSection from "../components/PageSection.jsx";
@@ -14,13 +14,17 @@ import DataTable from "../components/DataTable.jsx";
 import MetricHelp from "../components/MetricHelp.jsx";
 
 export default function ReportsPage() {
-  const { formatMoney, formatQuantity, formatPercent, formatKg, formatMetric, formatCount, feedQuantity, farm, batches, selectedBatchId, setSelectedBatchId, farmReport, batchReport, reportAsOf, setReportAsOf, loadReport, loadBatchReport, exportCsv, exportPdf } = useContext(FarmManagerContext);
+  const { formatMoney, formatQuantity, formatPercent, formatKg, formatMetric, formatCount, feedQuantity, farm, houses, batches, selectedBatchId, setSelectedBatchId, farmReport, batchReport, reportAsOf, setReportAsOf, reportExporting, loadReport, loadBatchReport, exportCsv, exportPdf } = useContext(FarmManagerContext);
+  const [reportHouseId, setReportHouseId] = useState("");
+  const visibleBatches = reportHouseId ? batches.filter(batch => batch.houseId === reportHouseId) : batches;
+  const selectedBatchIsVisible = visibleBatches.some(batch => batch.id === selectedBatchId);
 
   return (
     <PageTemplate className="grid">
+      <p className="muted" role="status" aria-live="polite">{reportExporting ? "Preparing report export. Larger reports may take a little longer." : ""}</p>
       <PageSection page="reports" tab="farm-report"><section id="reports" className="card full">
           <div className="section-head"><div><p className="eyebrow">REPORTING</p><h2>Farm reports</h2></div>
-            <div className="inline-form"><label>As of <input aria-label="Report as-of date" type="date" value={reportAsOf} onChange={e => setReportAsOf(e.target.value)} /></label><button type="button" onClick={() => loadReport(reportAsOf)}>Refresh</button><button type="button" onClick={() => exportCsv(() => reportApi.farmCsv(reportAsOf), "farm-report.csv")}>Export CSV</button><button type="button" onClick={() => exportPdf(() => reportApi.farmPdf(reportAsOf), "farm-report.pdf")}>Export PDF</button></div>
+            <div className="inline-form"><label>As of <input aria-label="Report as-of date" type="date" value={reportAsOf} onChange={e => { setReportAsOf(e.target.value); void loadReport(e.target.value); }} /></label><button type="button" onClick={() => loadReport(reportAsOf)}>Refresh</button><button type="button" disabled={reportExporting} onClick={() => exportCsv(() => reportApi.farmCsv(reportAsOf), "farm-report.csv")}>{reportExporting ? "Preparing…" : "Export CSV"}</button><button type="button" disabled={reportExporting} onClick={() => exportPdf(() => reportApi.farmPdf(reportAsOf), "farm-report.pdf")}>{reportExporting ? "Preparing…" : "Export PDF"}</button></div>
           </div>
           {farmReport ? <>
             <div className="metric-grid">
@@ -58,15 +62,18 @@ export default function ReportsPage() {
       <PageSection page="reports" tab="batch-report"><section id="batch-reports" className="card full">
           <div className="section-head"><div><p className="eyebrow">REPORTING</p><h2>Batch reports</h2></div>
             <div className="inline-form">
-              <select aria-label="Batch report" value={selectedBatchId} onChange={e => { setSelectedBatchId(e.target.value); rememberLastBatchId(e.target.value); }}>
-                <option value="">Select a batch</option>{batches.map(batch => <option key={batch.id} value={batch.id}>{batch.code} · {batch.type === "LAYER" ? "Layer" : batch.type === "BROILER" ? "Broiler" : batch.type === "TURKEY" ? "Turkey" : "Unknown type"}</option>)}
+              <select aria-label="Filter batches by house" value={reportHouseId} onChange={e => setReportHouseId(e.target.value)}>
+                <option value="">All houses</option>{houses.map(house => <option key={house.id} value={house.id}>{house.name}{house.code ? " · " + house.code : ""}</option>)}
               </select>
-              <button type="button" onClick={() => loadBatchReport(selectedBatchId, reportAsOf)}>Refresh</button>
-              <button type="button" disabled={!selectedBatchId} onClick={() => exportCsv(() => reportApi.batchCsv(selectedBatchId, reportAsOf), "batch-report.csv")}>Export CSV</button>
-              <button type="button" disabled={!selectedBatchId} onClick={() => exportPdf(() => reportApi.batchPdf(selectedBatchId, reportAsOf), "batch-report.pdf")}>Export PDF</button>
+              <select aria-label="Batch report" value={selectedBatchIsVisible ? selectedBatchId : ""} onChange={e => { setSelectedBatchId(e.target.value); rememberLastBatchId(e.target.value); void loadBatchReport(e.target.value, reportAsOf); }}>
+                <option value="">Select a batch</option>{visibleBatches.map(batch => <option key={batch.id} value={batch.id}>{batch.code} · {batch.type === "LAYER" ? "Layer" : batch.type === "BROILER" ? "Broiler" : batch.type === "TURKEY" ? "Turkey" : "Unknown type"}</option>)}
+              </select>
+              <button type="button" disabled={!selectedBatchIsVisible || reportExporting} onClick={() => loadBatchReport(selectedBatchId, reportAsOf)}>Refresh</button>
+              <button type="button" disabled={!selectedBatchIsVisible || reportExporting} onClick={() => exportCsv(() => reportApi.batchCsv(selectedBatchId, reportAsOf), "batch-report.csv")}>{reportExporting ? "Preparing…" : "Export CSV"}</button>
+              <button type="button" disabled={!selectedBatchIsVisible || reportExporting} onClick={() => exportPdf(() => reportApi.batchPdf(selectedBatchId, reportAsOf), "batch-report.pdf")}>{reportExporting ? "Preparing…" : "Export PDF"}</button>
             </div>
           </div>
-          {batchReport ? <>
+          {batchReport && selectedBatchIsVisible ? <>
             <div className="metric-grid">
               {[
                 ["Initial birds", batchReport.population?.initialBirds],
@@ -107,8 +114,8 @@ export default function ReportsPage() {
               </div>
             </div>
             <p className="muted">As of {batchReport.asOf}. Water quantities use the farm display label: {batchReport.waterUnitLabel || "litres"}. Population, feed, production, costs, revenue and profit reuse the dashboard calculation services.</p>
-          </> : <p className="muted">{selectedBatchId ? "Batch report is loading…" : "Select a batch to inspect its report."}</p>}
-          {selectedBatchId && batches.find(batch => batch.id === selectedBatchId)?.type === "LAYER" && (
+          </> : <p className="muted">{selectedBatchIsVisible ? "Batch report is loading…" : "Choose a batch within the selected house to inspect its report."}</p>}
+          {selectedBatchIsVisible && batches.find(batch => batch.id === selectedBatchId)?.type === "LAYER" && (
             <ProductionTrendChart
               batchId={selectedBatchId}
               title="Layer HDP%"
@@ -118,7 +125,7 @@ export default function ReportsPage() {
               loadTrend={productionTrendApi.layerHdp}
             />
           )}
-          {selectedBatchId && ["BROILER", "TURKEY"].includes(batches.find(batch => batch.id === selectedBatchId)?.type) && (
+          {selectedBatchIsVisible && ["BROILER", "TURKEY"].includes(batches.find(batch => batch.id === selectedBatchId)?.type) && (
             <ProductionTrendChart
               batchId={selectedBatchId}
               title="Broiler average weight"

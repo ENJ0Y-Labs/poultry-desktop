@@ -170,7 +170,7 @@ Optional `asOf=YYYY-MM-DD` is supported where the service exposes historical cal
 - GET `/reports/farm.pdf`
 - GET `/reports/batches/{id}.pdf`
 
-Reports reuse the same backend calculation services used by dashboards. CSV and PDF are export representations of those report results. PDF exports embed a locally installed Unicode font; font discovery supports Windows system/user fonts and common DejaVu Sans, Liberation Sans, and FreeSans directories on Linux and macOS.
+Reports reuse the same backend calculation services used by dashboards. CSV and PDF are export representations of those report results. Report payloads include farm name, location, timezone, configured currency, application date format, generation timestamp, report title, and the selected as-of date; batch reports also include batch identity metadata. The JSON API keeps dates and integer minor-unit money in their normal API representation. Export formatting applies the configured date format and currency without changing API or stored values. The Reports UI supports farm-wide reports and batch-specific reports; the batch selector can be narrowed by house before choosing the exact batch to preview or export. PDF exports embed a locally installed Unicode font; font discovery supports Windows system/user fonts and common DejaVu Sans, Liberation Sans, and FreeSans directories on Linux and macOS.
 
 ## Audit
 
