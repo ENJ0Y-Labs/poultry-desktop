@@ -86,7 +86,7 @@ class ReportExportServiceTest {
         assertThat(pdf).contains("%EOF".getBytes(StandardCharsets.US_ASCII));
         try (var document = Loader.loadPDF(pdf)) {
             String text = new PDFTextStripper().getText(document);
-            assertThat(text).contains("Grantino Farms", "Batch Report", "Generated: 2026-10-03T12:00:00+01:00", "Selected period: As of 03/10/2026", "Currency: NGN", "Section", "Record", "Field", "Value", "Unit", "₦5,000.00", "Water unit label", "litres");
+            assertThat(text).contains("Grantino Farms", "Batch Report", "Generated: 03/10/2026 12:00 +01:00", "Selected period: As of 03/10/2026", "Currency: NGN", "Section", "Record", "Field", "Value", "Unit", "₦5,000.00", "Water unit label", "litres");
         }
     }
 }
