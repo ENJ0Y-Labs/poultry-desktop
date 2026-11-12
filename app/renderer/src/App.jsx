@@ -256,12 +256,12 @@ export default function App() {
 
   useEffect(() => {
     function applyQuickActionContext() {
-      const { batchId } = parseAttentionContext(window.location.hash);
+      const { batchId, date: contextDate } = parseAttentionContext(window.location.hash);
       if (!batchId) return;
       const batch = batches.find(item => item.id === batchId && item.status === "ACTIVE");
       if (!batch) return;
 
-      const date = todayLocalDate();
+      const date = contextDate || todayLocalDate();
       const segments = window.location.hash.replace(/^#\/?/, "").split("/");
       const page = segments[0];
       const tab = segments[1];
