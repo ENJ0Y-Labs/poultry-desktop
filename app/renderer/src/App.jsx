@@ -375,7 +375,9 @@ export default function App() {
     ];
     const timer = setTimeout(async () => {
       for (const [id, form] of entries) {
-        if (!draftIsMeaningful(id, form) || !window.poultryDesktop?.saveDraft) continue;
+        if (!draftIsMeaningful(id, form) || !window.poultryDesktop?.saveDraft || draftStatuses[id]?.saving) continue;
+        const existingDraft = drafts[id];
+        if (existingDraft && JSON.stringify(existingDraft.form) === JSON.stringify(form) && !draftStatuses[id]?.saveError) continue;
         setDraftStatuses(current => ({ ...current, [id]: { ...current[id], hasDraft: true, saving: true } }));
         try {
           const existing = drafts[id];
@@ -390,7 +392,7 @@ export default function App() {
       }
     }, 700);
     return () => clearTimeout(timer);
-  }, [draftsReady, authStatus?.authenticated, batchForm, feedPurchaseForm, expenseForm, healthForm, drugForm, vaccinationForm, birdSaleForm, eggSaleForm, eggCollectionForm, weightForm]);
+  }, [draftsReady, authStatus?.authenticated, batchForm, feedPurchaseForm, expenseForm, healthForm, drugForm, vaccinationForm, birdSaleForm, eggSaleForm, eggCollectionForm, weightForm, drafts, draftStatuses, batches, houses, feedTypes, suppliers, customers]);
 
   useEffect(() => {
     if (!draftsReady) return;
