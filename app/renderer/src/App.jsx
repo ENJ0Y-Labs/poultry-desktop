@@ -435,7 +435,7 @@ export default function App() {
       anchor.download = filename;
       anchor.click();
       window.setTimeout(() => URL.revokeObjectURL(url), 1000);
-      setSuccessMessage(filename + " downloaded successfully.");
+      setSuccessMessage("Export ready. Download started for " + filename + ".");
     } catch (err) {
       setError(displayApiError(err));
       setSuccessMessage("");
@@ -456,7 +456,7 @@ export default function App() {
       anchor.download = filename;
       anchor.click();
       window.setTimeout(() => URL.revokeObjectURL(url), 1000);
-      setSuccessMessage(filename + " downloaded successfully.");
+      setSuccessMessage("Export ready. Download started for " + filename + ".");
     } catch (err) {
       setError(displayApiError(err));
       setSuccessMessage("");
