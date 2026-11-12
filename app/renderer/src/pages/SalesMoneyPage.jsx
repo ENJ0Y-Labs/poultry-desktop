@@ -68,7 +68,7 @@ export default function SalesMoneyPage() {
               <option value="">Farm-level</option>
               {batches.map(b=><option key={b.id} value={b.id}>{b.code}</option>)}
             </select></label>
-            <button disabled={saving || draftStatuses.expense?.stale}>Record expense</button>
+            <button disabled={saving || draftStatuses.expense?.stale || draftStatuses.expense?.posted}>Record expense</button>
           </form>
 
           <div className="subsection">
