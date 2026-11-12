@@ -19,6 +19,20 @@ describe("QuickActionsMenu", () => {
     expect(screen.getByRole("button", { name: /Stock movement/ })).toBeInTheDocument();
   });
 
+  it("contains the former dashboard shortcuts in one global action menu", async () => {
+    render(<QuickActionsMenu
+      activeBatch={{ id: "batch-1", type: "LAYER", status: "ACTIVE" }}
+      hasFeedTypes
+      hasApplicableFeed
+      onNavigate={vi.fn()}
+    />);
+    fireEvent.click(screen.getByRole("button", { name: /Quick actions/ }));
+
+    for (const label of ["Mortality", "Egg collection", "Feed usage", "Sale", "Expense"]) {
+      expect(await screen.findByRole("button", { name: new RegExp(label) })).toBeInTheDocument();
+    }
+  });
+
   it("hides batch-specific and incompatible actions when no active batch exists", async () => {
     render(<QuickActionsMenu hasFeedTypes={false} hasInventoryItems={false} onNavigate={vi.fn()} />);
     fireEvent.click(screen.getByRole("button", { name: /Quick actions/ }));
