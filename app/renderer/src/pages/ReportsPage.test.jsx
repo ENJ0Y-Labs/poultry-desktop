@@ -50,6 +50,8 @@ const context = {
   farmReport: null,
   batchReport: null,
   reportExporting: false,
+  dateRange: { preset: "CUSTOM", from: "2026-10-03", to: "2026-10-03" },
+  setDateRange: vi.fn(),
   loadReport: vi.fn(),
   loadBatchReport: vi.fn(),
   exportCsv: vi.fn(),
@@ -60,8 +62,7 @@ function renderReports(activeTab, reportExporting = false) {
   // eslint-disable-next-line no-unused-vars -- rendered as a JSX component
   function Harness() {
     const [selectedBatchId, setSelectedBatchId] = useState("batch-1");
-    const [reportAsOf, setReportAsOf] = useState("2026-10-03");
-    const value = { ...context, reportExporting, selectedBatchId, setSelectedBatchId, reportAsOf, setReportAsOf };
+    const value = { ...context, reportExporting, selectedBatchId, setSelectedBatchId };
     return (
       <NavigationContext.Provider value={{ activePage: "reports", activeTab }}>
         <FarmManagerContext.Provider value={value}>
@@ -95,7 +96,7 @@ describe("ReportsPage filters", () => {
 
     fireEvent.change(batchSelect, { target: { value: "batch-2" } });
 
-    expect(context.loadBatchReport).toHaveBeenCalledWith("batch-2", "2026-10-03");
+    expect(context.loadBatchReport).toHaveBeenCalledWith("batch-2", "2026-10-03", "2026-10-03");
     expect(exportButton).toBeEnabled();
 
     fireEvent.click(exportButton);
@@ -103,7 +104,7 @@ describe("ReportsPage filters", () => {
     const [loadExport, filename] = context.exportCsv.mock.calls[0];
     expect(filename).toBe("batch-report.csv");
     await loadExport();
-    expect(reportApi.batchCsv).toHaveBeenCalledWith("batch-2", "2026-10-03");
+    expect(reportApi.batchCsv).toHaveBeenCalledWith("batch-2", null, "2026-10-03", "2026-10-03", null);
   });
 
   it("shows export progress and prevents duplicate downloads", () => {
@@ -116,13 +117,15 @@ describe("ReportsPage filters", () => {
     exportButtons.forEach(button => expect(button).toBeDisabled());
   });
 
-  it("refreshes report data when the selected as-of date changes", () => {
+  it("updates the inclusive reporting range when a boundary date changes", () => {
     renderReports("farm-report");
 
-    fireEvent.change(screen.getByLabelText("Report as-of date"), {
-      target: { value: "2026-10-04" },
+    fireEvent.change(screen.getByLabelText("Range start date"), {
+      target: { value: "2026-10-02" },
     });
 
-    expect(context.loadReport).toHaveBeenCalledWith("2026-10-04");
+    expect(context.setDateRange).toHaveBeenCalledWith({
+      preset: "CUSTOM", from: "2026-10-02", to: "2026-10-03",
+    });
   });
 });
