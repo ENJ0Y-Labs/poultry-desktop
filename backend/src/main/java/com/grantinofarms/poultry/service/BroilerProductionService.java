@@ -75,6 +75,28 @@ public class BroilerProductionService {
         return records.get(records.size() - 1);
     }
 
+    /** Undo is intentionally restricted to the latest effective measurement. */
+    @Transactional
+    public java.util.Map<String, Object> undoWeight(String batchId, String weightId, String suppliedReason) {
+        String actorId = CurrentUserContext.get();
+        if (actorId == null || actorId.isBlank()) throw new ApiException(HttpStatus.UNAUTHORIZED, "AUTHENTICATION_REQUIRED", "Sign in as the farm owner before undoing a record.");
+        String reason = suppliedReason == null ? "" : suppliedReason.trim();
+        if (reason.isBlank() || reason.length() > 500) throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_REVERSAL_REASON", "Enter a reason of 1 to 500 characters.");
+        requireBatch(batchId);
+        java.util.Map<String,Object> original = repository.findWeightForUndo(batchId, weightId);
+        if (original == null) throw new ApiException(HttpStatus.NOT_FOUND, "WEIGHT_RECORD_NOT_FOUND", "The weight record could not be found in this batch.");
+        if (repository.isWeightReversed(weightId)) throw new ApiException(HttpStatus.CONFLICT, "TRANSACTION_ALREADY_REVERSED", "This weight record has already been undone.");
+        String date = String.valueOf(original.get("record_date"));
+        String createdAt = String.valueOf(original.get("created_at"));
+        if (repository.hasLaterEffectiveWeight(batchId, date, createdAt)) throw new ApiException(HttpStatus.CONFLICT, "WEIGHT_RECORD_HAS_DEPENDENTS", "This is not the latest weight record. Undo later weight records first.");
+        String farmId = repository.batchFarmId(batchId);
+        String now = Instant.now().toString();
+        String before = String.format("{\"batchId\":\"%s\",\"recordDate\":\"%s\",\"sampleQuantity\":%s,\"totalWeightGrams\":%s}", batchId, date, original.get("sample_quantity"), original.get("total_weight_grams"));
+        repository.insertWeightReversal(UUID.randomUUID().toString(), farmId, batchId, weightId, reason, actorId, now);
+        auditRepository.append(farmId, "VOID", "WEIGHT_RECORD", weightId, reason, before, "{\"status\":\"VOIDED\"}", now);
+        return java.util.Map.of("originalId", weightId, "status", "VOIDED", "reason", reason, "occurredAt", now);
+    }
+
     public List<WeightRecordResponse> weights(String batchId, LocalDate asOf) {
         requireBatch(batchId);
         LocalDate effective = asOf == null ? LocalDate.now() : asOf;

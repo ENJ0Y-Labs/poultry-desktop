@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
+import "./ToastProvider.css";
 const ToastContext=createContext(null);
 const variants=new Set(["success","error","warning","info"]);
 function safeMessage(value){
@@ -15,12 +16,12 @@ export function ToastProvider({children}){
   if(last&&now-last<900)return null;
   recent.current.set(key,now);for(const [k,t] of recent.current)if(now-t>3000)recent.current.delete(k);
   const id=globalThis.crypto?.randomUUID?.()||variant+"-"+now+"-"+Math.random().toString(36).slice(2);
-  setToasts(items=>[...items.filter(item=>item.key!==key),{id,key,variant:variants.has(variant)?variant:"info",message:text}].slice(-4));
+  setToasts(items=>[...items.filter(item=>item.key!==key),{id,key,variant:variants.has(variant)?variant:"info",message:text,action:options.action&&typeof options.action.onClick==="function"&&typeof options.action.label==="string"?{label:options.action.label.slice(0,32),onClick:options.action.onClick}:null}].slice(-4));
   if(duration>0)timers.current.set(id,setTimeout(()=>dismiss(id),duration));
   return id;
  },[dismiss]);
  useEffect(()=>()=>{for(const timer of timers.current.values())clearTimeout(timer);},[]);
  const api={success:(m,o)=>notify("success",m,o),error:(m,o)=>notify("error",m,o),warning:(m,o)=>notify("warning",m,o),info:(m,o)=>notify("info",m,o),dismiss};
- return <ToastContext.Provider value={api}>{children}<div className="toast-viewport" aria-label="Notifications">{toasts.map(t=><div key={t.id} className="toast" data-variant={t.variant} role={t.variant==="error"?"alert":"status"} aria-live={t.variant==="error"?"assertive":"polite"}><span className="toast-message">{t.message}</span><button type="button" className="toast-dismiss" aria-label="Dismiss notification" onClick={()=>dismiss(t.id)}>×</button></div>)}</div></ToastContext.Provider>;
+ return <ToastContext.Provider value={api}>{children}<div className="toast-viewport" aria-label="Notifications">{toasts.map(t=><div key={t.id} className="toast" data-variant={t.variant} role={t.variant==="error"?"alert":"status"} aria-live={t.variant==="error"?"assertive":"polite"}><span className="toast-message">{t.message}</span>{t.action&&<button type="button" className="toast-action" onClick={()=>{try{const result=t.action.onClick();if(result&&typeof result.catch==="function")result.catch(()=>{});}finally{dismiss(t.id);}}}>{t.action.label}</button>}<button type="button" className="toast-dismiss" aria-label="Dismiss notification" onClick={()=>dismiss(t.id)}>×</button></div>)}</div></ToastContext.Provider>;
 }
 export function useToast(){const value=useContext(ToastContext);if(!value)throw new Error("useToast must be used within ToastProvider");return value;}

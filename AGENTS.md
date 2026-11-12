@@ -1455,3 +1455,22 @@ An opening balance may be dated before a later purchase, but cannot be dated bef
 - Keep optional controls inside the existing `ValidatedForm` and preserve current validation, API payloads, backend authority, and offline operation.
 - Do not add optional UI fields that the current API cannot persist. Add the complete backend contract and migration first when new invoice, expiry, receipt, payment, or diagnosis metadata is approved.
 - See `docs/form-validation.md` for current module coverage and test steps.
+
+
+## Multi-step workflow forms (Issue #240)
+
+- Use `app/renderer/src/components/MultiStepForm.jsx` only for complex multi-group workflows. Do not turn short forms into wizards.
+- Keep all step controls mounted while inactive panels are hidden so controlled values persist and final `ValidatedForm` validation can inspect the full payload.
+- Continue runs the shared `validateForm` rules against only the active step, including required fields, numeric constraints, dates, patterns and integer-kobo naira parsing. Back preserves values. The final step must review the complete submission and permit correction before saving.
+- Submit through the existing page/context callback and API payload. Keep final validation, backend field errors, pending state and duplicate-submit protection in `ValidatedForm`.
+- Place creation wizards inside `ModalForm` where cancellation must warn about unsaved work. Preserve values after API failures; reset only after successful save or confirmed discard.
+- Spring Boot remains authoritative for business validation, transactions, calculations and persistence. Do not add UI-only fields or duplicate financial/stock writes.
+- See `docs/multi-step-forms.md` for current batch/feed purchase coverage and manual mock-data steps.
+
+
+## Safe undo and correction (Issue #241)
+
+- A short-lived toast action is permitted only when a matching transaction-specific backend undo endpoint revalidates eligibility. Toast expiry is a UI affordance, not the security check.
+- Currently supported: Undo for the latest effective BROILER/TURKEY weight record only. It requires an authenticated owner, a reason, no later effective measurement, and an append-only WEIGHT_RECORD reversal plus audit event. Original rows remain stored; effective weight history excludes reversed rows.
+- Do not expose Undo for feed, stock, expenses, drugs, population, transfers, egg records, bird sales, or inventory until each owning domain has atomic audited reversal and dependent-ledger recalculation. Feed usage must rebuild FIFO and bird-cost allocations or reject.
+- See docs/safe-undo.md and docs/decisions/2026-10-26-auditable-transaction-corrections.md.

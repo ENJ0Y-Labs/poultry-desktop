@@ -1112,13 +1112,29 @@ export default function App() {
     event.preventDefault(); setSaving(true); setError("");
     try {
       const batchId = weightForm.batchId;
-      await broilerApi.addWeight(batchId, {
+      const saved = await broilerApi.addWeight(batchId, {
         recordDate: weightForm.date,
         sampleQuantity: Number(weightForm.sampleQuantity),
         totalWeightKg: weightForm.totalWeightKg,
         notes: weightForm.notes.trim() || null,
       });
       await loadBroilerForBatch(batchId);
+      notify.success("Weight record saved.", {
+        key: "weight-undo:" + saved.id,
+        duration: 15000,
+        action: {
+          label: "Undo",
+          onClick: async () => {
+            const reason = window.prompt("Why are you undoing this weight record? A reason is required.");
+            if (reason === null) return;
+            try {
+              await broilerApi.undoWeight(batchId, saved.id, reason);
+              await loadBroilerForBatch(batchId);
+              notify.success("Weight record reversed. Growth calculations have been updated.");
+            } catch (undoError) { notify.error(displayApiError(undoError), { duration: 0 }); }
+          },
+        },
+      });
       setWeightForm(form => ({ ...form, sampleQuantity: "", totalWeightKg: "", notes: "" }));
     } catch (err) { setError(displayApiError(err)); } finally { setSaving(false); }
   }
