@@ -1466,3 +1466,12 @@ An opening balance may be dated before a later purchase, but cannot be dated bef
 - Place creation wizards inside `ModalForm` where cancellation must warn about unsaved work. Preserve values after API failures; reset only after successful save or confirmed discard.
 - Spring Boot remains authoritative for business validation, transactions, calculations and persistence. Do not add UI-only fields or duplicate financial/stock writes.
 - See `docs/multi-step-forms.md` for current batch/feed purchase coverage and manual mock-data steps.
+
+
+## Central keyboard shortcut system (Issue #242)
+
+- Register global keyboard shortcuts in `app/renderer/src/utils/keyboardShortcuts.js`; do not add competing page/component-level global key handlers.
+- Ignore shortcuts while focus is in input, textarea, select, contenteditable, or while IME composition is active. Do not intercept native Ctrl+N or Ctrl+S. Do not bind Alt+number because of OS menu conflicts.
+- Ctrl+1 through Ctrl+8 navigate Dashboard through Reports, Ctrl+9 opens Import / Export, Ctrl+0 opens Settings, Ctrl+K opens Quick actions, and Ctrl+F focuses the current page's record search when available.
+- Escape remains owned by the active modal/drawer/menu so dirty-form discard confirmation, focus restoration, and overlay stacking are preserved.
+- Keep the top-bar Keyboard shortcuts reference synchronized with the registry and test shortcut matching, typing guards, search focus, quick-action dispatch, navigation, and overlay Escape behavior.
