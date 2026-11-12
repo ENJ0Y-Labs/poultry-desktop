@@ -56,12 +56,12 @@ const context = {
   exportPdf: vi.fn(),
 };
 
-function renderReports(activeTab) {
+function renderReports(activeTab, reportExporting = false) {
   // eslint-disable-next-line no-unused-vars -- rendered as a JSX component
   function Harness() {
     const [selectedBatchId, setSelectedBatchId] = useState("batch-1");
     const [reportAsOf, setReportAsOf] = useState("2026-10-03");
-    const value = { ...context, selectedBatchId, setSelectedBatchId, reportAsOf, setReportAsOf };
+    const value = { ...context, reportExporting, selectedBatchId, setSelectedBatchId, reportAsOf, setReportAsOf };
     return (
       <NavigationContext.Provider value={{ activePage: "reports", activeTab }}>
         <FarmManagerContext.Provider value={value}>
@@ -104,6 +104,16 @@ describe("ReportsPage filters", () => {
     expect(filename).toBe("batch-report.csv");
     await loadExport();
     expect(reportApi.batchCsv).toHaveBeenCalledWith("batch-2", "2026-10-03");
+  });
+
+  it("shows export progress and prevents duplicate downloads", () => {
+    const { container } = renderReports("farm-report", true);
+    const farmSection = container.querySelector("#reports");
+
+    expect(screen.getByRole("status")).toHaveTextContent("Preparing report export");
+    const exportButtons = within(farmSection).getAllByRole("button", { name: "Preparing…" });
+    expect(exportButtons).toHaveLength(2);
+    exportButtons.forEach(button => expect(button).toBeDisabled());
   });
 
   it("refreshes report data when the selected as-of date changes", () => {
