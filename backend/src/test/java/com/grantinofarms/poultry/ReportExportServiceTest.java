@@ -19,6 +19,11 @@ class ReportExportServiceTest {
     void csvUsesStableStructuredHeadersAndIncludesDateScope() {
         Map<String, Object> report = Map.of(
                 "reportType", "FARM_SUMMARY",
+                "reportTitle", "Farm Report",
+                "farmName", "Grantino Farms",
+                "generatedAt", "2026-10-03T12:00:00+01:00",
+                "currency", "NGN",
+                "dateFormat", "DD/MM/YYYY",
                 "asOf", "2026-10-03",
                 "waterUnitLabel", "gallons",
                 "dashboard", Map.of("totalBirds", 5000, "profitMinor", 300000),
@@ -27,10 +32,10 @@ class ReportExportServiceTest {
 
         String csv = service.csv(report);
 
-        assertThat(csv).startsWith("\uFEFF\"report_type\",\"as_of\",\"section\",\"record\",\"field\",\"value\",\"unit\"");
-        assertThat(csv).contains("\"FARM_SUMMARY\",\"2026-10-03\",\"Dashboard\",\"—\",\"Total birds\",\"5000\",\"count\"");
+        assertThat(csv).startsWith("\uFEFF\"farm_name\",\"report_title\",\"generated_at\",\"selected_period\",\"currency\",\"as_of\",\"report_type\",\"section\",\"record\",\"field\",\"value\",\"unit\"");
+        assertThat(csv).contains("\"Grantino Farms\",\"Farm Report\",\"2026-10-03T12:00:00+01:00\",\"As of 03/10/2026\",\"NGN\",\"03/10/2026\",\"FARM_SUMMARY\",\"Dashboard\",\"—\",\"Total birds\",\"5000\",\"count\"");
         assertThat(csv).contains("₦3,000.00");
-        assertThat(csv).contains("\"Sales\",\"2026-10-03\",\"Sale date\",\"2026-10-03\"");
+        assertThat(csv).contains("\"Sales\",\"03/10/2026\",\"Sale date\",\"03/10/2026\"");
         assertThat(csv).contains("\"Water unit label\",\"gallons\"");
     }
 
@@ -46,7 +51,7 @@ class ReportExportServiceTest {
     @Test
     void pdfHasReportTitleDateStructuredHeadingsAndFormattedMoney() throws Exception {
         byte[] pdf = service.pdf(
-                Map.of("reportType", "BATCH_SUMMARY", "asOf", "2026-10-03", "waterUnitLabel", "litres", "profitMinor", 500000, "farmName", "Grantino Farms"),
+                Map.of("reportType", "BATCH_SUMMARY", "asOf", "2026-10-03", "dateFormat", "DD/MM/YYYY", "currency", "NGN", "generatedAt", "2026-10-03T12:00:00+01:00", "reportTitle", "Batch Report", "waterUnitLabel", "litres", "profitMinor", 500000, "farmName", "Grantino Farms"),
                 "Batch Report"
         );
 
@@ -54,7 +59,7 @@ class ReportExportServiceTest {
         assertThat(pdf).contains("%EOF".getBytes(StandardCharsets.US_ASCII));
         try (var document = Loader.loadPDF(pdf)) {
             String text = new PDFTextStripper().getText(document);
-            assertThat(text).contains("Batch Report", "As of: 2026-10-03", "Section", "Record", "Field", "Value", "Unit", "₦5,000.00", "Water unit label", "litres");
+            assertThat(text).contains("Grantino Farms", "Batch Report", "Generated: 2026-10-03T12:00:00+01:00", "Selected period: As of 03/10/2026", "Currency: NGN", "Section", "Record", "Field", "Value", "Unit", "₦5,000.00", "Water unit label", "litres");
         }
     }
 }
