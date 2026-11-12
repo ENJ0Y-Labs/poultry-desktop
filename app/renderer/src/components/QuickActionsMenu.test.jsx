@@ -65,4 +65,31 @@ describe("QuickActionsMenu", () => {
     await waitFor(() => expect(screen.getByRole("button", { name: /Daily record/ })).toHaveFocus());
   });
 
+  it.each([
+    ["Daily record", "#daily-work/daily-record/batchId=batch-1"],
+    ["Mortality", "#daily-work/mortality/batchId=batch-1"],
+    ["Culling", "#daily-work/culling/batchId=batch-1"],
+    ["Feed usage", "#daily-work/daily-record/batchId=batch-1"],
+    ["Egg collection", "#production/eggs/batchId=batch-1"],
+    ["Vaccination", "#health/vaccination/batchId=batch-1"],
+    ["Health event", "#health/health-record/batchId=batch-1"],
+    ["Feed purchase", "#feed-stock/purchases"],
+    ["Sale", "#production/eggs/batchId=batch-1"],
+    ["Expense", "#sales-money/expenses/batchId=batch-1"],
+    ["Inventory item", "#feed-stock/inventory"],
+    ["Stock movement", "#feed-stock/inventory/batchId=batch-1"],
+  ])("routes %s into its existing workflow", async (label, target) => {
+    const onNavigate = vi.fn();
+    render(<QuickActionsMenu
+      activeBatch={{ id: "batch-1", type: "LAYER", status: "ACTIVE" }}
+      hasFeedTypes
+      hasApplicableFeed
+      hasInventoryItems
+      onNavigate={onNavigate}
+    />);
+    fireEvent.click(screen.getByRole("button", { name: /Quick actions/ }));
+    fireEvent.click(await screen.findByRole("button", { name: new RegExp(label) }));
+    expect(onNavigate).toHaveBeenCalledWith(target);
+  });
+
 });
