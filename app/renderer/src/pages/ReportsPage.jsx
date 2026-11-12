@@ -24,6 +24,7 @@ import { FinancialAnalytics, FlockAnalytics } from "../components/AnalyticsChart
 
 export default function ReportsPage() {
   const { formatMoney, formatQuantity, formatPercent, formatKg, formatMetric, formatCount, feedQuantity, farm, houses, batches, selectedBatchId, setSelectedBatchId, farmReport, batchReport, dateRange, setDateRange, applicationSettings, loadReport, loadBatchReport, exportCsv, exportPdf, reportLoading, batchReportLoading, dataLoadError, retryData } = useContext(FarmManagerContext);
+  const selectedBatchIsVisible = batches.some(batch => batch.id === selectedBatchId);
 
   const farmPeriodProfitMinor = farmReport?.period
     ? calculatePeriodProfitMinor(farmReport.period.revenueMinor, farmReport.period.expensesMinor)
