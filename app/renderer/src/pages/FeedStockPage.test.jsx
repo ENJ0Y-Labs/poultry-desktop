@@ -249,17 +249,18 @@ describe("FeedStockPage", () => {
     );
 
     fireEvent.click(screen.getByRole("button", { name: "Record purchase" }));
-    expect(screen.getByText("STEP 1 OF 4")).toBeInTheDocument();
+    const dialog = screen.getByRole("dialog", { name: "Feed purchase" });
+    expect(within(dialog).getByText("STEP 1 OF 4")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Continue" }));
-    expect(screen.getByText("STEP 2 OF 4")).toBeInTheDocument();
+    expect(within(dialog).getByText("STEP 2 OF 4")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Continue" }));
-    expect(screen.getByText("STEP 3 OF 4")).toBeInTheDocument();
+    expect(within(dialog).getByText("STEP 3 OF 4")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Continue" }));
-    expect(screen.getByText("STEP 4 OF 4")).toBeInTheDocument();
-    expect(screen.getByText("25.5 kg")).toBeInTheDocument();
-    expect(screen.getByText("₦25000")).toBeInTheDocument();
+    expect(within(dialog).getByText("STEP 4 OF 4")).toBeInTheDocument();
+    expect(within(dialog).getByText("25.5 kg")).toBeInTheDocument();
+    expect(within(dialog).getByText("₦25000")).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: "Record purchase" }));
+    fireEvent.click(within(dialog).getByRole("button", { name: "Record purchase" }));
     expect(context.purchaseFeed).toHaveBeenCalledTimes(1);
   });
 
