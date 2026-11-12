@@ -923,4 +923,17 @@ describe("App", () => {
     expect(screen.queryByText("875")).not.toBeInTheDocument();
   });
 
+  it("opens a contextual quick action and preselects the active batch in the existing form", async () => {
+    mockFarmApis({ currentBatches: [batches[0]] });
+    render(<App />);
+
+    fireEvent.click(await screen.findByRole("button", { name: /Quick actions/ }));
+    fireEvent.click(await screen.findByRole("button", { name: /Mortality/ }));
+
+    expect(window.location.hash).toBe("#daily-work/mortality/batchId=layer-1");
+    await waitFor(() => {
+      expect(screen.getByLabelText("Batch")).toHaveValue("layer-1");
+    });
+  });
+
 });
