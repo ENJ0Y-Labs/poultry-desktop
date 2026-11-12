@@ -1390,7 +1390,7 @@ export default function App() {
 
           <section className="auth-whats-new" aria-labelledby="auth-whats-new-title">
             <div className="auth-whats-new-heading">
-              <p className="auth-whats-new-kicker">POMAS v1.0.4</p>
+              <p className="auth-whats-new-kicker">POMAS v{appInfo.version || "VERSION LOADING"}</p>
               <h2 id="auth-whats-new-title">What's new</h2>
               <p>More flexible egg and bird sales, better feed and stock controls, and a clearer experience across the farm workspace.</p>
             </div>
