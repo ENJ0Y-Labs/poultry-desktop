@@ -400,3 +400,42 @@ Manual validation must use two separate test states:
 2. **Populated test farm:** use a separate disposable database with at least one house and batch plus recorded farm activity. Confirm normal dashboard metrics, feed, attention, and audit sections remain visible.
 3. Confirm no demo/sample records are created by opening the empty state or clicking its navigation actions. Navigation must not write to the database.
 4. Never reset, delete, or reuse the user's real farm database for this test. Record runtime checks as not run until they have actually been performed.
+
+
+## Offline form drafts (Issue #243)
+
+Complex farm-entry forms use local draft persistence through the narrow Electron preload bridge. The main process stores an allow-listed set of draft payloads in pomas-drafts.json under Electron's existing userData directory. This file is separate from the SQLite farm database and remains available without an internet connection or a running Spring Boot process.
+
+Supported forms currently include batch registration, feed purchases, expenses, health records, drug records, vaccinations, egg collection, egg sales, broiler/turkey weight records, and bird sales. Drafts are not posted transactions. They do not call the farm API, create audit events, or affect official calculations.
+
+Drafts autosave after a short pause in editing. Each form shows its last-saved time and offers deliberate discard. A draft stores snapshots of selected related records. If a batch, house, feed type, supplier, or customer reference no longer matches the current farm data, Pomas displays a stale-draft warning and disables submission until the operator reviews the form.
+
+Run the focused UI test:
+
+```powershell
+npm test -- DraftStatus.test.jsx
+```
+
+Then run the full required checks:
+
+```powershell
+npm test
+npm run lint
+npm run backend:verify
+npm run build
+```
+
+Manual validation must use a disposable farm database and the packaged desktop app:
+
+1. Open a supported form, enter partial values, wait at least one second, and confirm the saved-draft status and timestamp appear.
+2. Navigate to another page and return. Confirm the partial values are restored.
+3. Close Pomas completely and reopen it. Confirm the draft is restored.
+4. Disconnect the internet and repeat autosave, navigation, close/reopen, and restore. The local draft must remain available.
+5. Create partial entries in at least three different supported forms. Confirm each restores independently.
+6. Discard one draft. Confirm its form clears and the other drafts remain.
+7. Change or archive a referenced batch, house, feed type, supplier, or customer in a disposable test dataset. Reopen the affected draft. Confirm the warning appears and the official submit action stays disabled until review is acknowledged.
+8. Submit one valid draft. Confirm it is removed only after the API write succeeds. Simulate a rejected submission and confirm its draft remains.
+9. Before and after draft-only operations, compare dashboard metrics, feed inventory/FIFO, sales, expenses, reports, and audit rows. They must be identical until an official transaction is posted.
+10. Inspect the userData/pomas-drafts.json file only from the main process/test environment. Confirm it contains draft form data and reference snapshots, not passwords, tokens, or official transaction rows.
+
+Automated source tests do not prove packaged restart/offline behavior or ledger isolation. Record those runtime checks as Not run until executed.

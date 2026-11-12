@@ -1,5 +1,8 @@
 import { useContext } from "react";
 import { FarmManagerContext } from "../components/FarmManagerContext.jsx";
+// Core ESLint does not count JSX tag references as variable usage.
+// eslint-disable-next-line no-unused-vars
+import DraftStatus from "../components/DraftStatus.jsx";
 // eslint-disable-next-line no-unused-vars
 import PageSection from "../components/PageSection.jsx";
 // eslint-disable-next-line no-unused-vars
@@ -12,7 +15,7 @@ import DataTable from "../components/DataTable.jsx";
 const saleTypeLabel = type => type === "EGG" ? "Eggs" : type === "BROILER" ? "Broiler birds" : type === "TURKEY" ? "Turkey birds" : String(type || "Unknown").toLowerCase().replace(/\b\w/g, letter => letter.toUpperCase());
 
 export default function SalesMoneyPage() {
-  const { formatMoney, farm, batches, expenseForm, setExpenseForm, expenses, expenseBatchFilter, setExpenseBatchFilter, customers, customerForm, setCustomerForm, editingCustomerId, editCustomer, cancelCustomerEdit, sales, saving, expenseCategories, loadExpenses, saveCustomer, saveExpense } = useContext(FarmManagerContext);
+  const { draftStatuses, discardDraft, markDraftReviewed, formatMoney, farm, batches, expenseForm, setExpenseForm, expenses, expenseBatchFilter, setExpenseBatchFilter, customers, customerForm, setCustomerForm, editingCustomerId, editCustomer, cancelCustomerEdit, sales, saving, expenseCategories, loadExpenses, saveCustomer, saveExpense } = useContext(FarmManagerContext);
 
   return (
     <PageTemplate className="grid">
@@ -56,6 +59,7 @@ export default function SalesMoneyPage() {
             <p className="muted">Record farm-level or batch-associated expenses. Enter amounts in naira (₦); the app stores exact kobo values.</p>
           </div>
           <form className="inline-form" onSubmit={saveExpense}>
+            <DraftStatus draft={draftStatuses.expense} onDiscard={() => discardDraft("expense")} onReview={() => markDraftReviewed("expense")} />
             <label className="field"><span>Expense date</span><input required type="date" value={expenseForm.occurredDate} onChange={e=>setExpenseForm({...expenseForm,occurredDate:e.target.value})}/></label>
             <label className="field"><span>Description</span><input required value={expenseForm.description} onChange={e=>setExpenseForm({...expenseForm,description:e.target.value})}/></label>
             <label className="field"><span>Amount (₦)</span><input required type="text" inputMode="decimal" value={expenseForm.amountMinor} onChange={e=>setExpenseForm({...expenseForm,amountMinor:e.target.value})}/></label>
@@ -66,7 +70,7 @@ export default function SalesMoneyPage() {
               <option value="">Farm-level</option>
               {batches.map(b=><option key={b.id} value={b.id}>{b.code}</option>)}
             </select></label>
-            <button disabled={saving}>Record expense</button>
+            <button disabled={saving || draftStatuses.expense?.stale || draftStatuses.expense?.posted}>Record expense</button>
           </form>
 
           <div className="subsection">

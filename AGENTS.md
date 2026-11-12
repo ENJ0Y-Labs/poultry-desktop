@@ -1373,3 +1373,14 @@ Validate the renderer with the backend available, during startup, and with the b
 Opening feed stock is stored in the existing `feed_opening_balances` table. Do not create a duplicate feed ledger or a purchase, supplier, invoice, or expense for opening stock. Opening balances enter the same FIFO sequence as purchased lots, ordered by effective date and then creation timestamp. Opening lots are unvalued: never assign zero or estimated cost. If a usage consumes any unvalued opening quantity, its total feed cost is unknown (`null`). Preserve and allocate the known cost portion consumed from purchased lots to the batch bird-cost pool, exposing it as `knownFeedCostMinor`; never invent cost for the unvalued portion. A usage consuming only opening stock has no known purchased-feed cost and creates no bird additional-cost event. Remaining or consumed inventory cost, batch feed cost, and per-bird feed cost must remain unknown whenever their included quantities contain unvalued stock. Render unknown as “Unknown”, never as currency zero.
 
 An opening balance may be dated before a later purchase, but cannot be dated before the latest existing usage or latest opening-balance entry for the same feed type. This prevents retroactive changes to FIFO allocations. Preserve the existing purchase rule that an actual purchase creates exactly one feed expense. See `docs/decisions/2026-10-02-feed-management.md`.
+
+
+## Offline form drafts
+
+- Supported complex entry forms autosave locally through narrow Electron IPC into a dedicated pomas-drafts.json file under the existing Electron userData directory. The renderer must never receive filesystem or Node access.
+- Draft persistence is independent of Spring Boot/SQLite transactions. Saving, restoring, or discarding a draft must not call farm write APIs, create audit events, or change bird populations, feed/FIFO balances, expenses, revenue, reports, or inventory.
+- Persist only allow-listed draft identifiers and bounded JSON payloads. Keep writes atomic and local; do not add cloud sync, telemetry, packages, or a new service.
+- Drafts must restore after navigation and application restart, remain available offline, and expose a visible last-saved status plus explicit discard action.
+- Capture stable snapshots of referenced batch, house, feed type, supplier, and customer records. If a referenced record disappears or changes, mark the draft stale, explain the affected references, and block transaction submission until the operator explicitly reviews the form.
+- Clear a draft only after the corresponding official API transaction succeeds. A failed or cancelled submission must leave the draft intact.
+- Cover draft status, stale review, discard, autosave/restart recovery, offline recovery, multiple simultaneous drafts, and proof that drafts do not mutate official records. Use disposable test data only.
