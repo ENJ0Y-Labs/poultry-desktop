@@ -254,6 +254,44 @@ export default function App() {
     return () => { active = false; };
   }, []);
 
+  useEffect(() => {
+    function applyQuickActionContext() {
+      const { batchId } = parseAttentionContext(window.location.hash);
+      if (!batchId) return;
+      const batch = batches.find(item => item.id === batchId && item.status === "ACTIVE");
+      if (!batch) return;
+
+      const date = todayLocalDate();
+      rememberLastBatchId(batch.id);
+      setSelectedBatchId(batch.id);
+      setDailyForm(form => ({ ...form, batchId: batch.id, date }));
+      setMortalityForm(form => ({ ...form, batchId: batch.id, date }));
+      setCullingForm(form => ({ ...form, batchId: batch.id, date }));
+      setHealthForm(form => ({ ...form, batchId: batch.id, date }));
+      setVaccinationForm(form => ({ ...form, batchId: batch.id, date }));
+      setFeedUsageForm(form => {
+        const compatible = feedTypes.filter(type => type.status === "ACTIVE" && (type.applicableTypes || []).includes(batch.type));
+        const selected = compatible.find(type => type.id === form.feedTypeId) || compatible[0];
+        return { ...form, batchId: batch.id, usageDate: date, feedTypeId: selected?.id || "", unit: selected?.unit || "bag" };
+      });
+
+      if (batch.type === "LAYER") {
+        setEggBatchId(batch.id);
+        setEggCollectionForm(form => ({ ...form, batchId: batch.id, date }));
+        setEggSaleForm(form => ({ ...form, batchId: batch.id, date }));
+        loadEggsForBatch(batch.id);
+      } else if (batch.type === "BROILER" || batch.type === "TURKEY") {
+        setBroilerBatchId(batch.id);
+        setBirdSaleForm(form => ({ ...form, batchId: batch.id, date }));
+        loadBroilerForBatch(batch.id);
+      }
+    }
+
+    applyQuickActionContext();
+    window.addEventListener("hashchange", applyQuickActionContext);
+    return () => window.removeEventListener("hashchange", applyQuickActionContext);
+  }, [batches, feedTypes]);
+
   function changeAuthTheme(event) {
     const nextTheme = setThemePreference(event.target.value);
     setThemePreferenceState(nextTheme);
@@ -1380,43 +1418,7 @@ export default function App() {
     </main>
   );
 
-  useEffect(() => {
-    function applyQuickActionContext() {
-      const { batchId } = parseAttentionContext(window.location.hash);
-      if (!batchId) return;
-      const batch = batches.find(item => item.id === batchId && item.status === "ACTIVE");
-      if (!batch) return;
 
-      const date = todayLocalDate();
-      rememberLastBatchId(batch.id);
-      setSelectedBatchId(batch.id);
-      setDailyForm(form => ({ ...form, batchId: batch.id, date }));
-      setMortalityForm(form => ({ ...form, batchId: batch.id, date }));
-      setCullingForm(form => ({ ...form, batchId: batch.id, date }));
-      setHealthForm(form => ({ ...form, batchId: batch.id, date }));
-      setVaccinationForm(form => ({ ...form, batchId: batch.id, date }));
-      setFeedUsageForm(form => {
-        const compatible = feedTypes.filter(type => type.status === "ACTIVE" && (type.applicableTypes || []).includes(batch.type));
-        const selected = compatible.find(type => type.id === form.feedTypeId) || compatible[0];
-        return { ...form, batchId: batch.id, usageDate: date, feedTypeId: selected?.id || "", unit: selected?.unit || "bag" };
-      });
-
-      if (batch.type === "LAYER") {
-        setEggBatchId(batch.id);
-        setEggCollectionForm(form => ({ ...form, batchId: batch.id, date }));
-        setEggSaleForm(form => ({ ...form, batchId: batch.id, date }));
-        loadEggsForBatch(batch.id);
-      } else if (batch.type === "BROILER" || batch.type === "TURKEY") {
-        setBroilerBatchId(batch.id);
-        setBirdSaleForm(form => ({ ...form, batchId: batch.id, date }));
-        loadBroilerForBatch(batch.id);
-      }
-    }
-
-    applyQuickActionContext();
-    window.addEventListener("hashchange", applyQuickActionContext);
-    return () => window.removeEventListener("hashchange", applyQuickActionContext);
-  }, [batches, feedTypes]);
 
   const quickActionBatch = batches.find(batch => batch.id === selectedBatchId && batch.status === "ACTIVE")
     || batches.find(batch => batch.status === "ACTIVE")
