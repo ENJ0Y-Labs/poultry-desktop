@@ -932,7 +932,8 @@ describe("App", () => {
 
     expect(window.location.hash).toBe("#daily-work/mortality/batchId=layer-1");
     await waitFor(() => {
-      expect(screen.getByLabelText("Batch")).toHaveValue("layer-1");
+      const mortalitySection = screen.getByRole("heading", { name: "Mortality" }).closest("section");
+      expect(within(mortalitySection).getByLabelText("Batch")).toHaveValue("layer-1");
     });
   });
 
