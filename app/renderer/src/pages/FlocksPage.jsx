@@ -78,7 +78,7 @@ export default function FlocksPage() {
             <label className="field"><span>Purchase information</span><select aria-label="Purchase information" value={batchForm.purchaseCostRecorded ? "RECORDED" : "EXISTING_STOCK"} onChange={e=>setBatchForm({...batchForm,purchaseCostRecorded:e.target.value==="RECORDED",purchaseCostMinor:""})}><option value="RECORDED">Record purchase cost</option><option value="EXISTING_STOCK">Not recorded / Existing stock</option></select></label>
             <label className="field"><span>Supplier / source (optional)</span><select value={batchForm.supplierId} onChange={e=>setBatchForm({...batchForm,supplierId:e.target.value})}><option value="">Unknown / not recorded</option>{suppliers.filter(supplier=>supplier.status!=="ARCHIVED").map(supplier=><option key={supplier.id} value={supplier.id}>{supplier.name}</option>)}</select></label>
             {batchForm.purchaseCostRecorded && <label className="field"><span>Purchase cost (₦)</span><input required type="text" inputMode="decimal" value={batchForm.purchaseCostMinor} onChange={e=>setBatchForm({...batchForm,purchaseCostMinor:e.target.value})}/></label>}
-            <button disabled={saving || houses.length===0}>Create batch</button>
+            <button disabled={saving || houses.length===0 || draftStatuses.batch?.stale}>Create batch</button>
           </form>
           <DataTable caption="Batch records" columns={[
               { key: "code", label: "Code" }, { key: "type", label: "Type", render: batch => batchTypeLabel(batch.type) },
