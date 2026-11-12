@@ -63,14 +63,9 @@ export default function QuickActionsMenu({
   }, [open]);
 
   useEffect(() => {
-    function handleGlobalShortcut(event) {
-      if (event.ctrlKey && !event.altKey && !event.shiftKey && event.key.toLowerCase() === "k") {
-        event.preventDefault();
-        setOpen(true);
-      }
-    }
-    window.addEventListener("keydown", handleGlobalShortcut);
-    return () => window.removeEventListener("keydown", handleGlobalShortcut);
+    const openFromShortcut = () => setOpen(true);
+    window.addEventListener("pomas:open-quick-actions", openFromShortcut);
+    return () => window.removeEventListener("pomas:open-quick-actions", openFromShortcut);
   }, []);
 
   useEffect(() => {
