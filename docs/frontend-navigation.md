@@ -153,3 +153,14 @@ The top-level page components live under `app/renderer/src/pages/`. Shared form 
 - Navigable cards are keyboard-accessible buttons and route to the existing destination; non-navigable cards remain non-interactive.
 - Current dashboard response does not expose comparable previous-period values. Therefore no percentage/direction comparison is displayed until an authoritative backend contract is added. The aggregate feed quantity is also not a valid farm-wide KPI because feed types may use different units; show feed stock per type in the existing Feed panel instead.
 - Dashboard date remains the backend asOf business date, formatted using the saved date preference. Successful writes continue to refresh dashboard data through the existing mutation invalidation flow.
+
+
+## Reusable record-table filters (Issue #234)
+
+- DataTable provides shared text search and detects applicable date, batch, house, and status fields from the rows already supplied to it. A criterion is shown only when that table has a matching field.
+- All selected criteria are combined with AND semantics. Date boundaries are inclusive and business dates are compared as `YYYY-MM-DD` calendar values, not UTC instants.
+- Active criteria appear as removable chips; Clear all resets the complete filter set. An empty filtered result is distinct from an empty source table and from a request failure.
+- Filter state is stored locally per table caption under `pomas:table-filters:<caption>` and restored when the same list is revisited. This is a renderer preference only and never changes farm records or calls a write API.
+- Filtering operates only on rows already returned by each existing API request. The control explicitly reports “loaded records”; it does not trigger additional requests or silently fetch an unbounded result set. Existing endpoints currently return their module collections without a shared pagination/filter contract. Server-side query parameters and bounded pagination must be introduced at the API/repository layer before any large collection is represented as fully searchable; do not imply the local filter searched records that were not loaded.
+- Every DataTable using the shared component receives the pattern, including applicable batch/house, operations, feed, inventory, health, production, sales, expenses, and audit tables. Tables without a date/batch/house/status field retain text search only.
+- Vitest covers intersection behavior, inclusive date boundaries, no-match results, missing dates, and source-row immutability.

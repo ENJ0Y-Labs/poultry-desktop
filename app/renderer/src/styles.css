@@ -1260,3 +1260,16 @@ body { min-width: 0; }
 .comparison-table td{text-align:right;font-variant-numeric:tabular-nums}
 .comparison-table th[scope="row"] small{white-space:normal;max-width:180px}
 @media(max-width:1250px){.comparison-selection{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+
+/* Reusable multi-criteria table filtering */
+.table-filters{display:grid;gap:10px;margin:0 0 14px;padding:12px;border:1px solid var(--border);border-radius:10px;background:var(--panel-soft)}
+.table-filter-controls{display:flex;flex-wrap:wrap;align-items:end;gap:10px}
+.table-filter-controls label{display:grid;gap:5px;min-width:130px;flex:1 1 145px;color:var(--muted);font-size:.78rem;font-weight:600}
+.table-filter-controls input,.table-filter-controls select{width:100%;min-height:36px;padding:7px 9px;border:1px solid var(--border);border-radius:7px;background:var(--panel);color:var(--text);font:inherit}
+.table-filter-controls input:focus-visible,.table-filter-controls select:focus-visible,.table-filter-chip:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+.table-filter-chips{display:flex;flex-wrap:wrap;gap:7px}
+.table-filter-chip{display:inline-flex;align-items:center;gap:8px;padding:5px 9px;border:1px solid var(--border);border-radius:999px;background:var(--panel);color:var(--text);font:inherit;font-size:.78rem;cursor:pointer}
+.table-filter-chip span[aria-hidden="true"]{color:var(--amber);font-size:1rem}
+.table-filter-count{margin:0;color:var(--muted);font-size:.75rem}
+@media(max-width:700px){.table-filter-controls{align-items:stretch}.table-filter-controls label{flex-basis:100%}.table-filter-controls>.secondary-button{align-self:flex-start}}
