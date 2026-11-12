@@ -1390,40 +1390,19 @@ export default function App() {
 
           <section className="auth-whats-new" aria-labelledby="auth-whats-new-title">
             <div className="auth-whats-new-heading">
-              <p className="auth-whats-new-kicker">POMAS v{appInfo.version || "VERSION LOADING"}</p>
+              <p className="auth-whats-new-kicker">{appVersionLabel(appInfo)}</p>
               <h2 id="auth-whats-new-title">What's new</h2>
-              <p>More flexible egg and bird sales, better feed and stock controls, and a clearer experience across the farm workspace.</p>
+              <p>Reach common farm tasks faster, with one Quick actions menu and keyboard shortcuts across the workspace.</p>
             </div>
             <div className="auth-whats-new-grid">
               <article className="auth-whats-new-item">
-                <span>01</span><div><h3>Egg production in crates</h3><p>See dashboard egg totals as crates and remaining eggs, using your farm's configured crate size.</p></div>
+                <span>01</span><div><h3>Quick actions in one place</h3><p>Start common daily, production, finance, and stock workflows from the top bar.</p></div>
               </article>
               <article className="auth-whats-new-item">
-                <span>02</span><div><h3>Flexible bird sales</h3><p>Record partial or individual bird sales without having to close the entire batch.</p></div>
+                <span>02</span><div><h3>Keyboard-first navigation</h3><p>Use Ctrl+1 through Ctrl+0 to navigate, Ctrl+K for Quick actions, and Ctrl+F to focus page search when available.</p></div>
               </article>
               <article className="auth-whats-new-item">
-                <span>03</span><div><h3>Clearer Windows installer</h3><p>The Windows installer filename now identifies the x64 architecture clearly.</p></div>
-              </article>
-              <article className="auth-whats-new-item">
-                <span>04</span><div><h3>Theme preference on sign-in</h3><p>Your Light or Dark theme preference now applies to the landing and sign-in screens.</p></div>
-              </article>
-              <article className="auth-whats-new-item">
-                <span>05</span><div><h3>More readable dashboard alerts</h3><p>Improved text contrast makes alerts on gold warning backgrounds easier to read.</p></div>
-              </article>
-              <article className="auth-whats-new-item">
-                <span>06</span><div><h3>Feed product identity and editing</h3><p>Manage brand-specific feed product details and edit feed products more clearly.</p></div>
-              </article>
-              <article className="auth-whats-new-item">
-                <span>07</span><div><h3>Opening feed stock</h3><p>Enter existing feed stock even when it did not come from a recorded purchase.</p></div>
-              </article>
-              <article className="auth-whats-new-item">
-                <span>08</span><div><h3>Editable farm records</h3><p>Correct supported farm master records after creation instead of having to recreate them.</p></div>
-              </article>
-              <article className="auth-whats-new-item">
-                <span>09</span><div><h3>Multiple bird-type feed applicability</h3><p>Select more than one applicable bird type for a feed product using checkboxes.</p></div>
-              </article>
-              <article className="auth-whats-new-item">
-                <span>10</span><div><h3>Cleaner text rendering</h3><p>Literal escape sequences now display as normal text in the interface.</p></div>
+                <span>03</span><div><h3>A cleaner dashboard</h3><p>Dashboard space is reserved for farm performance, attention items, and recent activity.</p></div>
               </article>
             </div>
           </section>
