@@ -1,6 +1,7 @@
 import { useContext, useEffect, useRef, useState } from "react";
 // eslint-disable-next-line no-unused-vars -- JSX component usage is not detected by the core rule
 import ValidatedForm from "../components/ValidatedForm.jsx";
+import OptionalFields from "../components/OptionalFields.jsx";
 import { feedApi } from "../services/api.js";
 import { FarmManagerContext } from "../components/FarmManagerContext.jsx";
 // eslint-disable-next-line no-unused-vars -- JSX component usage is not detected by the core rule
@@ -288,7 +289,7 @@ export default function FeedStockPage() {
                 <option value="VACCINE">Vaccine</option>
               </select></label>
               <label className="field"><span>Unit e.g. bottle, piece, dose</span><input required value={inventoryItemForm.unit} onChange={e=>setInventoryItemForm({...inventoryItemForm,unit:e.target.value})}/></label>
-              <label className="field"><span>Reorder level</span><input min="0" step="0.001" type="number" value={inventoryItemForm.reorderLevel} onChange={e=>setInventoryItemForm({...inventoryItemForm,reorderLevel:e.target.value})}/></label>
+              <OptionalFields title="Stock alert settings"><label className="field"><span>Reorder level (optional)</span><input min="0" step="0.001" type="number" value={inventoryItemForm.reorderLevel} onChange={e=>setInventoryItemForm({...inventoryItemForm,reorderLevel:e.target.value})}/></label></OptionalFields>
               <button disabled={saving}>{editingInventoryItemId ? "Save item" : "Add item"}</button>{editingInventoryItemId && <button type="button" className="secondary-button" onClick={cancelInventoryItemEdit}>Cancel</button>}
             </ValidatedForm>
 </ModalForm>
@@ -329,10 +330,10 @@ export default function FeedStockPage() {
               <label className="field"><span>Quantity</span><input required min="0.001" step="0.001" type="number" value={inventoryMovementForm.quantity} onChange={e=>setInventoryMovementForm({...inventoryMovementForm,quantity:e.target.value})}/></label>
               <label className="field"><span>Reason</span><input required value={inventoryMovementForm.reason} onChange={e=>setInventoryMovementForm({...inventoryMovementForm,reason:e.target.value})}/></label>
               <label className="field"><span>Source e.g. supplier invoice, treatment</span><input required value={inventoryMovementForm.source} onChange={e=>setInventoryMovementForm({...inventoryMovementForm,source:e.target.value})}/></label>
-              <label className="field"><span>Batch association</span><select value={inventoryMovementForm.batchId} onChange={e=>setInventoryMovementForm({...inventoryMovementForm,batchId:e.target.value})}>
+              <OptionalFields title="Batch allocation" description="Leave this closed for farm-level stock movements."><label className="field"><span>Batch association (optional)</span><select value={inventoryMovementForm.batchId} onChange={e=>setInventoryMovementForm({...inventoryMovementForm,batchId:e.target.value})}>
                 <option value="">Farm-level</option>
                 {batches.map(b=><option key={b.id} value={b.id}>{b.code}</option>)}
-              </select></label>
+              </select></label></OptionalFields>
               <button disabled={saving || !inventoryMovementForm.itemId}>Record movement</button>
             </ValidatedForm>
 </ModalForm>
@@ -356,7 +357,7 @@ export default function FeedStockPage() {
               </select></label>
               <label className="field"><span>Purchase date</span><input required type="date" value={feedPurchaseForm.purchaseDate} onChange={e=>setFeedPurchaseForm({...feedPurchaseForm,purchaseDate:e.target.value})}/></label>
               <label className="field"><span>Quantity</span><input required min="0.001" step="0.001" type="number" value={feedPurchaseForm.quantity} onChange={e=>setFeedPurchaseForm({...feedPurchaseForm,quantity:e.target.value})}/></label>
-              <label className="field"><span>Supplier (optional)</span><select value={feedPurchaseForm.supplierId} onChange={e=>setFeedPurchaseForm({...feedPurchaseForm,supplierId:e.target.value})}><option value="">No supplier recorded</option>{suppliers.filter(supplier=>supplier.status!=="ARCHIVED").map(supplier=><option key={supplier.id} value={supplier.id}>{supplier.name}</option>)}</select></label>
+              <OptionalFields title="Purchase details" description="Supplier information is optional. Purchase date, feed type, quantity and total cost remain visible."><label className="field"><span>Supplier (optional)</span><select value={feedPurchaseForm.supplierId} onChange={e=>setFeedPurchaseForm({...feedPurchaseForm,supplierId:e.target.value})}><option value="">No supplier recorded</option>{suppliers.filter(supplier=>supplier.status!=="ARCHIVED").map(supplier=><option key={supplier.id} value={supplier.id}>{supplier.name}</option>)}</select></label></OptionalFields>
               <label className="field"><span>Total cost (₦)</span><input required type="text" inputMode="decimal" value={feedPurchaseForm.totalCostMinor} onChange={e=>setFeedPurchaseForm({...feedPurchaseForm,totalCostMinor:e.target.value})}/></label>
               <button disabled={saving || feedTypes.filter(t=>t.status==="ACTIVE").length===0}>Record purchase</button>
             </ValidatedForm>
