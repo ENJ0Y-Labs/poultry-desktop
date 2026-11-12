@@ -15,6 +15,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.NumberFormat;
+import java.time.LocalDate;
+import java.time.OffsetDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -25,7 +28,6 @@ import java.util.Map;
 public class ReportExportService {
     private static final float MARGIN = 36f;
     private static final float LINE_HEIGHT = 13f;
-    private static final String[] HEADERS = {"Section", "Record", "Field", "Value", "Unit"};
     private final ObjectMapper objectMapper;
 
     public ReportExportService(ObjectMapper objectMapper) {
@@ -71,6 +73,8 @@ public class ReportExportService {
 
     private List<ExportRow> rows(Map<String, Object> report) {
         JsonNode root = objectMapper.valueToTree(report);
+        String currency = currencyCode(report);
+        String dateFormat = dateFormat(report);
         List<ExportRow> result = new ArrayList<>();
         Iterator<Map.Entry<String, JsonNode>> fields = root.fields();
         while (fields.hasNext()) {
@@ -83,13 +87,13 @@ public class ReportExportService {
         return result;
     }
 
-    private void appendRows(JsonNode node, String section, String record, String fieldPath, List<ExportRow> rows) {
+    private void appendRows(JsonNode node, String section, String record, String fieldPath, List<ExportRow> rows, String currency, String dateFormat) {
         if (node == null || node.isNull()) {
-            rows.add(new ExportRow(section, displayRecord(record), humanize(fieldPath), "", unit(fieldPath)));
+            rows.add(new ExportRow(section, displayRecord(record), humanize(fieldPath), "", unit(fieldPath, currency)));
             return;
         }
         if (node.isValueNode()) {
-            rows.add(new ExportRow(section, displayRecord(record), humanize(fieldPath), formatValue(node, fieldPath), unit(fieldPath)));
+            rows.add(new ExportRow(section, displayRecord(record), humanize(fieldPath), formatValue(node, fieldPath, currency, dateFormat), unit(fieldPath, currency)));
             return;
         }
         if (node.isArray()) {
@@ -99,8 +103,8 @@ public class ReportExportService {
             }
             for (int i = 0; i < node.size(); i++) {
                 JsonNode item = node.get(i);
-                String itemRecord = recordName(item, i);
-                appendRows(item, section, itemRecord, "", rows);
+                String itemRecord = recordName(item, i, dateFormat);
+                appendRows(item, section, itemRecord, "", rows, currency, dateFormat);
             }
             return;
         }
@@ -109,7 +113,7 @@ public class ReportExportService {
             while (fields.hasNext()) {
                 Map.Entry<String, JsonNode> field = fields.next();
                 String childPath = field.getKey();
-                appendRows(field.getValue(), section, record, childPath, rows);
+                appendRows(field.getValue(), section, record, childPath, rows, currency, dateFormat);
             }
         }
     }
@@ -118,27 +122,34 @@ public class ReportExportService {
         return record == null || record.isBlank() ? "—" : record;
     }
 
-    private String recordName(JsonNode item, int index) {
+    private String recordName(JsonNode item, int index, String dateFormat) {
         if (item != null && item.isObject()) {
             for (String key : List.of("code", "batchCode", "name", "id", "recordDate", "saleDate", "occurredDate", "date")) {
                 JsonNode value = item.get(key);
-                if (value != null && value.isValueNode() && !value.asText().isBlank()) return value.asText();
+                if (value != null && value.isValueNode() && !value.asText().isBlank()) {
+                    return key.toLowerCase(Locale.ROOT).endsWith("date") ? formatDate(value.asText(), dateFormat) : value.asText();
+                }
             }
         }
         return "Record " + (index + 1);
     }
 
-    private String formatValue(JsonNode value, String key) {
+    private String formatValue(JsonNode value, String key, String currencyCode, String dateFormat) {
         if (key.toLowerCase(Locale.ROOT).endsWith("minor")) {
             try {
-                long minor = value.asLong();
-                NumberFormat currency = NumberFormat.getNumberInstance(Locale.forLanguageTag("en-NG"));
-                currency.setMinimumFractionDigits(2);
-                currency.setMaximumFractionDigits(2);
-                return "₦" + currency.format(java.math.BigDecimal.valueOf(minor, 2));
+                NumberFormat amount = NumberFormat.getNumberInstance(Locale.forLanguageTag("en-NG"));
+                amount.setMinimumFractionDigits(2);
+                amount.setMaximumFractionDigits(2);
+                java.math.BigDecimal minorAmount = java.math.BigDecimal.valueOf(value.asLong(), 2);
+                return (minorAmount.signum() < 0 ? "-" : "")
+                        + currencySymbol(currencyCode)
+                        + amount.format(minorAmount.abs());
             } catch (RuntimeException ignored) {
                 return value.asText();
             }
+        }
+        if (value.isTextual() && key.toLowerCase(Locale.ROOT).matches(".*(date|asof)$")) {
+            return formatDate(value.asText(), dateFormat);
         }
         if (key.toLowerCase(Locale.ROOT).contains("percent") && value.isNumber()) {
             return String.format(Locale.ROOT, "%.2f%%", value.asDouble());
@@ -146,14 +157,54 @@ public class ReportExportService {
         return value.asText();
     }
 
-    private String unit(String key) {
+    private String unit(String key, String currencyCode) {
         String lower = key.toLowerCase(Locale.ROOT);
-        if (lower.endsWith("minor")) return "NGN";
+        if (lower.endsWith("minor")) return currencyCode;
         if (lower.contains("percent")) return "%";
         if (lower.contains("kg") || lower.contains("weight")) return "kg";
         if (lower.contains("quantitymilli")) return "units";
         if (lower.contains("eggs") || lower.contains("birds") || lower.contains("mortality") || lower.contains("culling")) return "count";
         return "";
+    }
+
+    private String currencySymbol(String currencyCode) {
+        if ("NGN".equals(currencyCode)) return "₦";
+        return java.util.Currency.getInstance(currencyCode).getSymbol(Locale.forLanguageTag("en-NG"));
+    }
+
+    private String currencyCode(Map<String, Object> report) {
+        String currency = text(report.get("currency"));
+        return currency.isBlank() ? "NGN" : currency.toUpperCase(Locale.ROOT);
+    }
+
+    private String dateFormat(Map<String, Object> report) {
+        String format = text(report.get("dateFormat"));
+        return format.isBlank() ? "YYYY-MM-DD" : format;
+    }
+
+    private static String formatGeneratedAt(String value, String format) {
+        if (value == null || value.isBlank()) return "";
+        try {
+            OffsetDateTime timestamp = OffsetDateTime.parse(value);
+            return formatDate(timestamp.toLocalDate().toString(), format)
+                    + " " + timestamp.toLocalTime().withNano(0) + " " + timestamp.getOffset();
+        } catch (RuntimeException ignored) {
+            return value;
+        }
+    }
+
+    private static String formatDate(String value, String format) {
+        if (value == null || value.isBlank()) return value == null ? "" : value;
+        try {
+            LocalDate date = LocalDate.parse(value.length() >= 10 ? value.substring(0, 10) : value);
+            return switch (format) {
+                case "DD/MM/YYYY" -> date.format(DateTimeFormatter.ofPattern("dd/MM/uuuu"));
+                case "DD-MM-YYYY" -> date.format(DateTimeFormatter.ofPattern("dd-MM-uuuu"));
+                default -> date.format(DateTimeFormatter.ISO_LOCAL_DATE);
+            };
+        } catch (RuntimeException ignored) {
+            return value;
+        }
     }
 
     private String humanize(String key) {
@@ -185,6 +236,15 @@ public class ReportExportService {
         private final PDFont bold;
         private PDPageContentStream stream;
         private float y;
+        private String farmName;
+        private String reportTitle;
+        private String batchCode;
+        private String batchType;
+        private String houseId;
+        private String generatedAt;
+        private String asOf;
+        private String currency;
+        private String dateFormat;
         private float[] widths;
 
         private PdfTable(PDDocument document) throws IOException {
@@ -225,6 +285,14 @@ public class ReportExportService {
             y -= 8;
         }
 
+        private void continued() {
+            writeText((farmName.isBlank() ? "Farm report" : farmName) + " · " + reportTitle + " (continued)", bold, 10f);
+            if (!batchCode.isBlank()) writeText("Batch: " + batchCode + (batchType.isBlank() ? "" : " (" + batchType + ")"), regular, 8f);
+            if (!houseId.isBlank()) writeText("House ID: " + houseId, regular, 8f);
+            writeText("As of: " + (asOf.isBlank() ? "Not specified" : formatDate(asOf, dateFormat)) + " · Currency: " + currency, regular, 8f);
+            y -= 5;
+        }
+
         private void header() {
             drawRow(List.of("Section", "Record", "Field", "Value", "Unit"), true);
         }
@@ -242,7 +310,7 @@ public class ReportExportService {
                 max = Math.max(max, lines.size());
             }
             if (y - max * LINE_HEIGHT < MARGIN) {
-                try { closePage(); openPage(); title("Report (continued)", ""); header(); }
+                try { closePage(); openPage(); continued(); header(); }
                 catch (IOException e) { throw new IllegalStateException("Could not create report PDF page.", e); }
             }
             try {

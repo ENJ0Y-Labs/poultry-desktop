@@ -18,6 +18,11 @@ import { FarmManagerContext } from "../components/FarmManagerContext.jsx";
 import { NavigationContext } from "../components/NavigationContext.jsx";
 
 const contextValue = {
+  // FeedStockPage always renders the purchase form, including when another tab is active.
+  // Supply the draft context used by the real App provider so these tests exercise the page, not an incomplete fixture.
+  draftStatuses: {},
+  discardDraft: vi.fn(),
+  markDraftReviewed: vi.fn(),
   formatMoney: value => String(value),
   farm: { currency: "NGN" },
   batches: [],

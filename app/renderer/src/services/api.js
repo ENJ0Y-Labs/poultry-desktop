@@ -120,7 +120,7 @@ async function request(path, options = {}) {
     response = await fetch(apiBase + path, {
       credentials: "include",
       headers: { "Content-Type": "application/json", "X-Requested-With": "XMLHttpRequest", ...(options.headers || {}) },
-      signal: AbortSignal.timeout(8000),
+      signal: AbortSignal.timeout(120000),
       ...options,
     });
   } catch {
@@ -324,14 +324,19 @@ export const attentionApi = {
 async function downloadText(path) {
   let response;
   try {
-    response = await fetch((await getApiBase()) + path, { credentials: "include", signal: AbortSignal.timeout(8000) });
-  } catch {
+    response = await fetch((await getApiBase()) + path, { credentials: "include", signal: AbortSignal.timeout(120000) });
+  } catch (error) {
+    if (error?.name === "TimeoutError") {
+      throw new ApiError("EXPORT_TIMEOUT", "The report is taking longer than expected. Try a narrower report scope or retry when the farm is idle.", 504);
+    }
     signalBackendUnavailable();
     throw new ApiError("BACKEND_UNAVAILABLE", "The local backend is not responding. Retry the connection when the backend is available. The current screen will remain open during recovery.", 503);
   }
   if (!response.ok) {
     if (response.status >= 500) signalBackendUnavailable();
-    throw new ApiError("EXPORT_FAILED", "Report export failed.", response.status);
+    const payload = await response.json().catch(() => null);
+    const message = payload?.error?.message || "Report export failed (HTTP " + response.status + ").";
+    throw new ApiError("EXPORT_FAILED", message, response.status);
   }
   return response.text();
 }
@@ -339,14 +344,19 @@ async function downloadText(path) {
 async function downloadBlob(path) {
   let response;
   try {
-    response = await fetch((await getApiBase()) + path, { credentials: "include", signal: AbortSignal.timeout(8000) });
-  } catch {
+    response = await fetch((await getApiBase()) + path, { credentials: "include", signal: AbortSignal.timeout(120000) });
+  } catch (error) {
+    if (error?.name === "TimeoutError") {
+      throw new ApiError("EXPORT_TIMEOUT", "The report is taking longer than expected. Try a narrower report scope or retry when the farm is idle.", 504);
+    }
     signalBackendUnavailable();
     throw new ApiError("BACKEND_UNAVAILABLE", "The local backend is not responding. Retry the connection when the backend is available. The current screen will remain open during recovery.", 503);
   }
   if (!response.ok) {
     if (response.status >= 500) signalBackendUnavailable();
-    throw new ApiError("EXPORT_FAILED", "Report export failed.", response.status);
+    const payload = await response.json().catch(() => null);
+    const message = payload?.error?.message || "Report export failed (HTTP " + response.status + ").";
+    throw new ApiError("EXPORT_FAILED", message, response.status);
   }
   return response.blob();
 }

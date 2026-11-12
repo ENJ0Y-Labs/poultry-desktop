@@ -2,6 +2,9 @@ import { useContext, useState } from "react";
 // eslint-disable-next-line no-unused-vars -- JSX component usage is not detected by the core rule
 import ValidatedForm from "../components/ValidatedForm.jsx";
 import { FarmManagerContext } from "../components/FarmManagerContext.jsx";
+// Core ESLint does not count JSX tag references as variable usage.
+// eslint-disable-next-line no-unused-vars
+import DraftStatus from "../components/DraftStatus.jsx";
 // eslint-disable-next-line no-unused-vars
 import PageSection from "../components/PageSection.jsx";
 // eslint-disable-next-line no-unused-vars
