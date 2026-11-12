@@ -937,4 +937,20 @@ describe("App", () => {
     });
   });
 
+  it("does not trust a closed batch in a quick action route", async () => {
+    window.location.hash = "#daily-work/mortality/batchId=closed-1";
+    mockFarmApis({
+      currentBatches: [
+        { ...batches[0], id: "closed-1", status: "SOLD" },
+        batches[1],
+      ],
+    });
+    render(<App />);
+
+    await waitFor(() => {
+      const mortalitySection = screen.getByRole("heading", { name: "Mortality" }).closest("section");
+      expect(within(mortalitySection).getByLabelText("Batch")).toHaveValue("broiler-1");
+    });
+  });
+
 });
