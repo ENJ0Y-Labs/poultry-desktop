@@ -26,7 +26,7 @@ export default function HealthPage() {
             <label>Condition / problem<input required value={healthForm.conditionProblem} onChange={event => setHealthForm({...healthForm,conditionProblem:event.target.value})}/></label>
             <label>Description<input required value={healthForm.description} onChange={event => setHealthForm({...healthForm,description:event.target.value})}/></label>
             <label className="full">Action taken<input required value={healthForm.action} onChange={event => setHealthForm({...healthForm,action:event.target.value})}/></label>
-            <button disabled={saving || draftStatuses.health?.stale}>Record health issue</button>
+            <button disabled={saving || draftStatuses.health?.stale || draftStatuses.health?.posted}>Record health issue</button>
           </form>
           <DataTable caption="Health records" columns={[
               { key: "recordDate", label: "Date" }, { key: "conditionProblem", label: "Condition" },
@@ -45,7 +45,7 @@ export default function HealthPage() {
             <label>Quantity<input required min="1" step="1" type="number" value={drugForm.quantity} onChange={event => setDrugForm({...drugForm,quantity:event.target.value})}/></label>
             <label>Cost (₦)<input required type="text" inputMode="decimal" value={drugForm.costMinor} onChange={event => setDrugForm({...drugForm,costMinor:event.target.value})}/></label>
             <label>Reason<input required value={drugForm.reason} onChange={event => setDrugForm({...drugForm,reason:event.target.value})}/></label>
-            <button disabled={saving || draftStatuses.drug?.stale}>Record drug</button>
+            <button disabled={saving || draftStatuses.drug?.stale || draftStatuses.drug?.posted}>Record drug</button>
           </form>
           <DataTable caption="Drug and treatment records" columns={[
               { key: "recordDate", label: "Date" }, { key: "drug", label: "Drug" }, { key: "quantity", label: "Quantity" },
@@ -64,7 +64,7 @@ export default function HealthPage() {
             <label>Dose<input required value={vaccinationForm.dose} onChange={event => setVaccinationForm({...vaccinationForm,dose:event.target.value})}/></label>
             <label>Quantity<input required min="1" step="1" type="number" value={vaccinationForm.quantity} onChange={event => setVaccinationForm({...vaccinationForm,quantity:event.target.value})}/></label>
             <label>Notes<input value={vaccinationForm.notes} onChange={event => setVaccinationForm({...vaccinationForm,notes:event.target.value})}/></label>
-            <button disabled={saving || draftStatuses.vaccination?.stale}>Record vaccination</button>
+            <button disabled={saving || draftStatuses.vaccination?.stale || draftStatuses.vaccination?.posted}>Record vaccination</button>
           </form>
           <DataTable caption="Vaccination records" columns={[
               { key: "recordDate", label: "Date" }, { key: "vaccine", label: "Vaccine" }, { key: "dose", label: "Dose" },
