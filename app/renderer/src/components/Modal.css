@@ -1,0 +1,65 @@
+.pomas-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  overflow-y: auto;
+  background: rgba(0, 0, 0, .62);
+  backdrop-filter: blur(3px);
+}
+.pomas-modal {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: min(100%, 620px);
+  max-height: min(760px, calc(100dvh - 48px));
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--panel);
+  color: var(--text);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, .35);
+  outline: none;
+}
+.pomas-modal--small { width: min(100%, 420px); }
+.pomas-modal--medium { width: min(100%, 620px); }
+.pomas-modal--large { width: min(100%, 900px); }
+.pomas-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 20px 22px;
+  border-bottom: 1px solid var(--border-soft);
+}
+.pomas-modal-heading { display: flex; align-items: flex-start; gap: 12px; min-width: 0; }
+.pomas-modal-heading h2 { margin: 0; color: var(--text); font-size: 17px; letter-spacing: -.02em; }
+.pomas-modal-heading p { margin: 6px 0 0; color: var(--muted); font-size: 12px; line-height: 1.5; }
+.pomas-modal-icon { display: grid; place-items: center; flex: 0 0 34px; width: 34px; height: 34px; border-radius: 8px; background: var(--panel-soft); color: var(--amber); }
+button.pomas-modal-close { flex: 0 0 32px; width: 32px; height: 32px; padding: 0; border: 1px solid var(--border); border-radius: 7px; background: var(--panel-soft); color: var(--text); font-size: 21px; line-height: 1; }
+.pomas-modal-content { position: relative; min-height: 0; overflow-y: auto; padding: 20px 22px; }
+.pomas-modal-content > form { display: grid; gap: 13px; }
+.pomas-modal-content .inline-form { grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 0; }
+.pomas-modal-content .form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.pomas-modal-content .form-grid > .full { grid-column: 1 / -1; }
+.pomas-modal-footer { padding: 14px 22px; border-top: 1px solid var(--border-soft); }
+.pomas-modal-actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.pomas-modal-discard { position: sticky; bottom: 0; margin: 16px -4px -4px; padding: 16px; border: 1px solid var(--red); border-radius: 9px; background: var(--panel); box-shadow: 0 -8px 24px rgba(0,0,0,.12); }
+.pomas-modal-discard strong { font-size: 13px; }
+.pomas-modal-discard p { margin: 6px 0 0; color: var(--muted); font-size: 12px; line-height: 1.5; }
+.pomas-modal-loading { position: absolute; inset: auto 0 0; padding: 7px; background: var(--panel-raised); color: var(--muted); text-align: center; font-size: 11px; }
+@media (max-width: 560px) {
+  .pomas-modal-backdrop { align-items: end; padding: 8px; }
+  .pomas-modal { max-height: calc(100dvh - 16px); border-radius: 12px 12px 8px 8px; }
+  .pomas-modal-header, .pomas-modal-content { padding: 16px; }
+  .pomas-modal-content .inline-form, .pomas-modal-content .form-grid { grid-template-columns: minmax(0, 1fr); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pomas-modal-backdrop, .pomas-modal { animation: none !important; transition: none !important; }
+}
+
+.pomas-modal-form-fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
+.pomas-modal-form-fieldset > form { display: grid; gap: 13px; }
+.pomas-modal-form-fieldset:disabled { opacity: .72; }

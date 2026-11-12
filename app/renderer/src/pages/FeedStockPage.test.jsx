@@ -159,6 +159,7 @@ describe("FeedStockPage", () => {
       </NavigationContext.Provider>
     );
 
+    fireEvent.click(screen.getByRole("button", { name: "Record purchase" }));
     const select = screen.getByLabelText("Feed type");
     expect(within(select).getByRole("option", { name: "Grower Mash · Brand A (bag)" })).toBeInTheDocument();
     expect(within(select).getByRole("option", { name: "Grower Mash · Brand B (bag)" })).toBeInTheDocument();
@@ -185,4 +186,87 @@ describe("FeedStockPage", () => {
     }));
     expect(container.textContent).not.toContain("\\n");
   });
+
+  it("opens inventory item details without leaving the inventory list", () => {
+    const context = {
+      ...contextValue,
+      inventoryItems: [{ id: "item-1", name: "Vitamin supplement", category: "DRUG", quantityOnHand: 12, reorderLevel: 3, unit: "bottle", status: "ACTIVE" }],
+    };
+    const initialHash = window.location.hash;
+    render(
+      <NavigationContext.Provider value={{ activePage: "feed-stock", activeTab: "inventory" }}>
+        <FarmManagerContext.Provider value={context}>
+          <FeedStockPage />
+        </FarmManagerContext.Provider>
+      </NavigationContext.Provider>
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "View" }));
+    expect(screen.getByRole("dialog", { name: "Vitamin supplement" })).toBeInTheDocument();
+    expect(within(screen.getByRole("dialog", { name: "Vitamin supplement" })).getByText("3 bottle")).toBeInTheDocument();
+    expect(within(screen.getByRole("dialog", { name: "Vitamin supplement" })).getByRole("button", { name: "Edit inventory item" })).toBeInTheDocument();
+    expect(context.loadInventoryMovements).toHaveBeenCalledWith("item-1");
+    expect(screen.getByRole("table", { name: "Inventory items" })).toBeInTheDocument();
+    expect(window.location.hash).toBe(initialHash);
+    fireEvent.click(screen.getByRole("button", { name: "Close drawer" }));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("opens supplier contact details in the contextual drawer", () => {
+    const context = {
+      ...contextValue,
+      batches: [{ id: "batch-1", code: "B-2026-001", supplierId: "supplier-1", type: "BROILER", placementDate: "2026-10-10", status: "ACTIVE" }],
+      suppliers: [{ id: "supplier-1", name: "Farm Inputs Ltd", phone: "08012345678", email: "sales@example.test", address: "Port Harcourt", notes: "Feed supplier", status: "ACTIVE" }],
+    };
+    render(
+      <NavigationContext.Provider value={{ activePage: "feed-stock", activeTab: "suppliers" }}>
+        <FarmManagerContext.Provider value={context}>
+          <FeedStockPage />
+        </FarmManagerContext.Provider>
+      </NavigationContext.Provider>
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "View" }));
+    const drawer = screen.getByRole("dialog", { name: "Farm Inputs Ltd" });
+    expect(drawer).toBeInTheDocument();
+    expect(within(drawer).getByText("sales@example.test")).toBeInTheDocument();
+    expect(within(drawer).getByText("Feed supplier")).toBeInTheDocument();
+    expect(within(drawer).getByText("B-2026-001")).toBeInTheDocument();
+    expect(within(drawer).getByRole("button", { name: "Edit supplier" })).toBeInTheDocument();
+    expect(within(screen.getByRole("table", { name: "Suppliers" })).queryByText("Feed supplier")).not.toBeInTheDocument();
+  });
+
+  it("completes a feed purchase through the review step", () => {
+    const context = {
+      ...contextValue,
+      feedTypes: [{ id: "feed-1", name: "Layer Mash", unit: "kg", status: "ACTIVE" }],
+      feedPurchaseForm: {
+        feedTypeId: "feed-1", unit: "kg", purchaseDate: "2026-11-01",
+        quantity: "25.5", supplierId: "", totalCostMinor: "25000",
+      },
+    };
+    render(
+      <NavigationContext.Provider value={{ activePage: "feed-stock", activeTab: "purchases" }}>
+        <FarmManagerContext.Provider value={context}>
+          <FeedStockPage />
+        </FarmManagerContext.Provider>
+      </NavigationContext.Provider>
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Record purchase" }));
+    const dialog = screen.getByRole("dialog", { name: "Feed purchase" });
+    expect(within(dialog).getByText("STEP 1 OF 4")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+    expect(within(dialog).getByText("STEP 2 OF 4")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+    expect(within(dialog).getByText("STEP 3 OF 4")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+    expect(within(dialog).getByText("STEP 4 OF 4")).toBeInTheDocument();
+    expect(within(dialog).getByText("25.5 kg")).toBeInTheDocument();
+    expect(within(dialog).getByText("₦25000")).toBeInTheDocument();
+
+    fireEvent.click(within(dialog).getByRole("button", { name: "Record purchase" }));
+    expect(context.purchaseFeed).toHaveBeenCalledTimes(1);
+  });
+
 });

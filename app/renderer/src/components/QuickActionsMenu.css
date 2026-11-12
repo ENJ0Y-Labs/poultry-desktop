@@ -1,0 +1,96 @@
+.global-quick-actions {
+  display: flex;
+  align-items: center;
+}
+
+.quick-actions-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 38px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--panel-raised);
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.quick-actions-trigger > span {
+  color: var(--pomas-primary-action-text);
+  font-size: 20px;
+  line-height: 1;
+}
+
+.quick-actions-trigger kbd,
+.quick-actions-hint kbd {
+  padding: 2px 5px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--panel-soft);
+  color: var(--muted);
+  font: inherit;
+  font-size: 10px;
+}
+
+.quick-actions-panel {
+  display: grid;
+  gap: 12px;
+}
+
+.quick-actions-group h3 {
+  margin: 0 0 6px;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.quick-actions-list { display: grid; gap: 6px; }
+
+.quick-action-item.secondary {
+  display: flex;
+  width: 100%;
+  min-height: 52px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 11px;
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  background: var(--panel-soft);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.quick-action-item.secondary:hover:not(:disabled) {
+  border-color: var(--amber);
+  background: var(--panel-raised);
+  color: var(--text);
+}
+
+.quick-action-copy { display: grid; gap: 3px; }
+.quick-action-copy strong { font-size: 13px; font-weight: 650; }
+.quick-action-copy small { color: var(--muted); font-size: 11px; }
+.quick-action-arrow { color: var(--amber); font-size: 16px; }
+.quick-actions-empty { margin: 4px 0; color: var(--muted); font-size: 12px; }
+
+.quick-actions-hint {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 2px 0 0;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-soft);
+  color: var(--muted);
+  font-size: 10px;
+}
+
+@media (max-width: 900px) {
+  .quick-actions-trigger kbd { display: none; }
+}

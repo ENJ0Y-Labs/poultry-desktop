@@ -18,7 +18,13 @@ let shutdownInProgress = false;
 
 ipcMain.handle("app:info", async (_event, ...args) => {
   if (args.length !== 0) throw new Error("Invalid IPC message.");
-  return Object.freeze({ version: app.getVersion(), architecture: process.arch, isPackaged: app.isPackaged });
+  return Object.freeze({ version: app.getVersion(), architecture: process.arch, isPackaged: app.isPackaged, customTitleBar: process.platform === "win32" });
+});
+
+ipcMain.handle("app:quit", async (event, ...args) => {
+  if (args.length !== 0 || event.sender !== mainWindow?.webContents) throw new Error("Invalid IPC message.");
+  app.quit();
+  return true;
 });
 
 ipcMain.handle("backend:base-url", async (_event, ...args) => {
@@ -108,18 +114,27 @@ function applyNativeTheme(theme) {
 }
 
 const themeBackground = () => nativeTheme.shouldUseDarkColors ? "#0b0f14" : "#f5f7fa";
+const titleBarOverlay = () => ({
+  color: nativeTheme.shouldUseDarkColors ? "#16161a" : "#ffffff",
+  symbolColor: nativeTheme.shouldUseDarkColors ? "#e4e4e7" : "#27272a",
+  height: 40,
+});
 
 ipcMain.handle("theme:set", async (_event, theme) => {
   if (!["auto", "light", "dark"].includes(theme)) throw new Error("Invalid theme preference.");
   writeFileSync(themePreferencePath(), JSON.stringify({ theme }, null, 2), "utf8");
   const backgroundColor = applyNativeTheme(theme);
-  if (mainWindow && !mainWindow.isDestroyed()) mainWindow.setBackgroundColor(backgroundColor);
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.setBackgroundColor(backgroundColor);
+    if (process.platform === "win32") mainWindow.setTitleBarOverlay(titleBarOverlay());
+  }
   return { theme, backgroundColor };
 });
 
 nativeTheme.on("updated", () => {
   if (mainWindow && !mainWindow.isDestroyed() && nativeTheme.themeSource === "system") {
     mainWindow.setBackgroundColor(themeBackground());
+    if (process.platform === "win32") mainWindow.setTitleBarOverlay(titleBarOverlay());
   }
 });
 
@@ -360,6 +375,7 @@ async function createWindow() {
   mainWindow = new BrowserWindow({
     ...(existsSync(iconPath) ? { icon: iconPath } : {}),
     backgroundColor: initialBackground,
+    ...(process.platform === "win32" ? { titleBarStyle: "hidden", titleBarOverlay: titleBarOverlay() } : {}),
     width: 1366,
     height: 768,
     minWidth: 1100,

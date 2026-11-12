@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 // eslint-disable-next-line no-unused-vars
 import { NavigationContext } from "./NavigationContext.jsx";
-import { getThemePreference, setThemePreference } from "../utils/theme.js";
 import { connectionApi } from "../services/api.js";
 import { appVersionLabel } from "../utils/appInfo.js";
 import pomasLogo from "../assets/pomas-logo.png";
@@ -9,6 +8,16 @@ import pomasLogo from "../assets/pomas-logo.png";
 import PageHelp from "./PageHelp.jsx";
 // eslint-disable-next-line no-unused-vars
 import GuidedTour from "./GuidedTour.jsx";
+// eslint-disable-next-line no-unused-vars
+import TutorialLibrary from "./TutorialLibrary.jsx";
+// eslint-disable-next-line no-unused-vars
+import QuickActionsMenu from "./QuickActionsMenu.jsx";
+// eslint-disable-next-line no-unused-vars
+import { Modal } from "./Modal.jsx";
+import { registerGlobalShortcuts } from "../utils/keyboardShortcuts.js";
+import { attentionTarget } from "../utils/attentionNavigation.js";
+// eslint-disable-next-line no-unused-vars
+import DesktopTitleBar from "./DesktopTitleBar.jsx";
 
 const groups = [
   { label: "WORKSPACE", items: [
@@ -20,8 +29,8 @@ const groups = [
     { label: "Production", target: "production", icon: "eggs", shortcut: "Ctrl+6" },
     { label: "Sales & Money", target: "sales-money", icon: "sales", shortcut: "Ctrl+7" },
     { label: "Reports", target: "reports", icon: "reports", shortcut: "Ctrl+8" },
-    { label: "Import / Export", target: "import-export", icon: "importExport" },
-    { label: "Settings", target: "settings", icon: "settings", shortcut: "Ctrl+9" },
+    { label: "Import / Export", target: "import-export", icon: "importExport", shortcut: "Ctrl+9" },
+    { label: "Settings", target: "settings", icon: "settings", shortcut: "Ctrl+0" },
   ]},
 ];
 
@@ -78,6 +87,7 @@ const pageTabs = {
   reports: [
     { id: "farm-report", label: "Farm report" },
     { id: "batch-report", label: "Batch report" },
+    { id: "batch-comparison", label: "Compare batches" },
   ],
   settings: [
     { id: "farm", label: "Farm profile" },
@@ -138,14 +148,39 @@ function localDateLabel() {
   return new Intl.DateTimeFormat("en-NG", { day: "2-digit", month: "short", year: "numeric" }).format(new Date());
 }
 
-export default function AppShell({ farm, error, appInfo, onRetry, children, startPage = "dashboard", startPageReady = true }) {
+// eslint-disable-next-line no-unused-vars
+function SidebarToggleIcon({ expanded }) {
+  return (
+    <svg
+      className="sidebar-toggle-icon"
+      data-mode={expanded ? "expanded" : "collapsed"}
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <rect x="3" y="4" width="18" height="16" rx="2" />
+      <path d="M9 4v16" />
+      {expanded ? <path d="m15 9-3 3 3 3" /> : <path d="m13 9 3 3-3 3" />}
+    </svg>
+  );
+}
+
+export default function AppShell({ farm, error, appInfo, onRetry, onQuickAction, children, batches = [], selectedBatchId = "", feedTypes = [], feedInventory = [], inventoryItems = [], attention = [], startPage = "dashboard", startPageReady = true }) {
   const [active, setActive] = useState(() => resolvePage(window.location.hash, startPage));
   const [activeTab, setActiveTab] = useState(() => resolveTab(window.location.hash, resolvePage(window.location.hash, startPage)));
-  const [theme, setTheme] = useState(getThemePreference);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => localStorage.getItem("pomas:sidebar-collapsed") === "true");
+  const [attentionCollapsed, setAttentionCollapsed] = useState(() => localStorage.getItem("pomas:attention-collapsed") === "true");
+  const [attentionMobileOpen, setAttentionMobileOpen] = useState(false);
   const [backendConnected, setBackendConnected] = useState(null);
   const [recoveryNeeded, setRecoveryNeeded] = useState(false);
   const [tourOpen, setTourOpen] = useState(false);
+  const [tutorialLibraryOpen, setTutorialLibraryOpen] = useState(false);
+  const [activeTutorial, setActiveTutorial] = useState("");
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [retrying, setRetrying] = useState(false);
   const [hasUserNavigated, setHasUserNavigated] = useState(Boolean(window.location.hash));
   const mainContentRef = useRef(null);
@@ -161,26 +196,43 @@ export default function AppShell({ farm, error, appInfo, onRetry, children, star
     }
   }
 
-  function changeTheme(event) {
-    const nextTheme = setThemePreference(event.target.value);
-    setTheme(nextTheme);
-  }
   const today = useMemo(localDateLabel, []);
+  const activeBatch = batches.find(batch => batch.id === selectedBatchId && batch.status === "ACTIVE") || null;
+  const hasActiveFeedTypes = feedTypes.some(type => type.status === "ACTIVE");
+  const hasApplicableFeed = Boolean(activeBatch && feedTypes.some(type =>
+    type.status === "ACTIVE"
+    && (type.applicableTypes || []).includes(activeBatch.type)
+    && feedInventory.some(item => item.feedTypeId === type.id && Number(item.remainingQuantityMilli) > 0)
+  ));
+  const hasActiveInventoryItems = inventoryItems.some(item => item.status === "ACTIVE");
 
   useEffect(() => {
     localStorage.setItem("pomas:sidebar-collapsed", String(sidebarCollapsed));
   }, [sidebarCollapsed]);
-  const connectionLabel = backendConnected === null
-    ? "CONNECTING TO BACKEND"
-    : recoveryNeeded
-      ? (backendConnected ? "RECONNECTED · RETRY DATA" : "BACKEND UNAVAILABLE")
-      : backendConnected ? "BACKEND CONNECTED" : "BACKEND UNAVAILABLE";
-
+  useEffect(() => {
+    localStorage.setItem("pomas:attention-collapsed", String(attentionCollapsed));
+  }, [attentionCollapsed]);
+  const activePageLabel = groups.flatMap(group => group.items).find(item => item.target === active)?.label || "Dashboard";
+  const activeTabLabel = (pageTabs[active] || []).find(tab => tab.id === activeTab)?.label;
+  const actionableAttention = attention.filter(item => attentionTarget(item));
+  const attentionCount = actionableAttention.length;
+  const customTitleBar = Boolean(appInfo?.customTitleBar && window.poultryDesktop?.quit);
+  const databaseStatus = recoveryNeeded
+    ? backendConnected ? "Connected · refresh needed" : "Offline"
+    : backendConnected ? "Connected" : "Connecting";
   function navigate(target) {
     const page = resolvePage(`#${target}`, startPage);
     const tab = defaultTabs[page] || "overview";
     setHasUserNavigated(true);
     if (window.location.hash !== `#${page}/${tab}`) window.location.hash = `${page}/${tab}`;
+    setActive(page);
+    setActiveTab(tab);
+  }
+
+  function navigateQuickAction(target) {
+    const [page, tab] = target.replace(/^#/, "").split("/");
+    setHasUserNavigated(true);
+    window.location.hash = target.replace(/^#/, "");
     setActive(page);
     setActiveTab(tab);
   }
@@ -239,25 +291,26 @@ export default function AppShell({ farm, error, appInfo, onRetry, children, star
     };
   }, []);
 
-  useEffect(() => {
-    const onKeyDown = (event) => {
-      if (!event.ctrlKey || event.altKey || event.shiftKey) return;
-      const shortcuts = { "1": "dashboard", "2": "flocks", "3": "daily-work", "4": "feed-stock", "5": "health", "6": "production", "7": "sales-money", "8": "reports", "9": "settings" };
-      const target = shortcuts[event.key];
-      if (!target) return;
-      event.preventDefault();
-      window.location.hash = `${target}/${defaultTabs[target] || "overview"}`;
+  useEffect(() => registerGlobalShortcuts({
+    navigate: target => {
+      const tab = defaultTabs[target] || "overview";
+      window.location.hash = "#" + target + "/" + tab;
       setActive(target);
-      setActiveTab(defaultTabs[target] || "overview");
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, []);
-
+      setActiveTab(tab);
+    },
+    openQuickActions: () => window.dispatchEvent(new CustomEvent("pomas:open-quick-actions")),
+    focusPageSearch: () => {
+      const search = mainContentRef.current?.querySelector('input[type="search"]');
+      if (!search) return false;
+      search.focus();
+      search.select?.();
+      return true;
+    },
+  }), []);
 
 
   return (
-    <div className={sidebarCollapsed ? "app-shell sidebar-collapsed" : "app-shell"}>
+    <div className={`app-shell${sidebarCollapsed ? " sidebar-collapsed" : ""}${attentionCollapsed ? " attention-collapsed" : ""}${attentionMobileOpen ? " attention-open" : ""}${customTitleBar ? " desktop-titlebar-enabled" : ""}`}>
       <a
         className="skip-link"
         href="#main-content"
@@ -268,9 +321,24 @@ export default function AppShell({ farm, error, appInfo, onRetry, children, star
       >
         Skip to main content
       </a>
+      {customTitleBar && <DesktopTitleBar
+        onNavigate={navigateQuickAction}
+        onQuickActions={() => window.dispatchEvent(new CustomEvent("pomas:open-quick-actions"))}
+        onToggleSidebar={() => setSidebarCollapsed(value => !value)}
+        onToggleAttention={() => {
+          if (window.innerWidth <= 1150) setAttentionMobileOpen(value => !value);
+          else setAttentionCollapsed(value => !value);
+        }}
+        onShortcuts={() => setShortcutsOpen(true)}
+        onTutorials={() => setTutorialLibraryOpen(true)}
+        sidebarCollapsed={sidebarCollapsed}
+        attentionCollapsed={attentionCollapsed}
+      />}
       <aside className={sidebarCollapsed ? "sidebar collapsed" : "sidebar"}>
         <div className="brand" data-tour="brand">
-          <div className="brand-mark" aria-hidden="true"><img src={pomasLogo} alt="" draggable="false" /></div>
+          <div className="brand-mark" aria-hidden="true">
+            <img src={pomasLogo} alt="" draggable="false" />
+          </div>
           <div className="brand-copy">
             <strong>Pomas</strong>
             <small>Farm management</small>
@@ -283,14 +351,8 @@ export default function AppShell({ farm, error, appInfo, onRetry, children, star
             title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
             onClick={() => setSidebarCollapsed(value => !value)}
           >
-            <span aria-hidden="true">{sidebarCollapsed ? "›" : "‹"}</span>
+            <SidebarToggleIcon expanded={!sidebarCollapsed} />
           </button>
-        </div>
-
-        <div className="workspace-summary" aria-label="Active farm" data-tour="farm-summary">
-          <span className="workspace-kicker">ACTIVE FARM</span>
-          <span className="workspace-name">{farm.name || "Local farm"}</span>
-          <span className="workspace-status">Local data · single farm</span>
         </div>
 
         <nav className="sidebar-nav" aria-label="Main navigation">
@@ -335,17 +397,14 @@ export default function AppShell({ farm, error, appInfo, onRetry, children, star
         <div className="shell">
           <header className="app-topbar">
             <div className="topbar-title">
-              <p className="eyebrow">{farm.name || "LOCAL FARM"} / POULTRY MANAGER</p>
-              <h1>{farm.name}</h1>
+              <p className="eyebrow">{farm.name || "LOCAL FARM"} / {activePageLabel.toUpperCase()}</p>
+              <h1>{activeTabLabel || activePageLabel}</h1>
               <p className="muted">{farm.location || "Farm profile"} · {farm.currency} · {farm.timezone}</p>
             </div>
             <div className="topbar-actions">
-              <label className="theme-control">Theme<select value={theme} onChange={changeTheme}><option value="auto">System</option><option value="light">Teal Light</option><option value="dark">Dark (Gold)</option></select></label>
-              <div className={backendConnected === true && !recoveryNeeded ? "system-pill connected" : backendConnected === false || recoveryNeeded ? "system-pill disconnected" : "system-pill"} role="status" aria-live="polite">
-                <span className={backendConnected === true && !recoveryNeeded ? "status-dot online" : backendConnected === false || recoveryNeeded ? "status-dot offline" : "status-dot"} />
-                {connectionLabel}
-              </div>
-              <div className="system-pill" title="Designed to keep farm records on this computer">LOCAL-FIRST</div>
+              <button type="button" className="secondary-button attention-mobile-toggle" onClick={() => setAttentionMobileOpen(true)} aria-label={`Open attention panel, ${attentionCount} actionable alerts`} aria-expanded={attentionMobileOpen}>Attention <span>{attentionCount}</span></button>
+              <QuickActionsMenu activeBatch={activeBatch} hasFeedTypes={hasActiveFeedTypes} hasApplicableFeed={hasApplicableFeed} hasInventoryItems={hasActiveInventoryItems} onAction={onQuickAction} onNavigate={navigateQuickAction} />
+              <button type="button" className="secondary-button keyboard-shortcuts-trigger" onClick={() => setShortcutsOpen(true)} aria-haspopup="dialog">Keyboard shortcuts</button>
               <div className="date-chip">{today}</div>
             </div>
           </header>
@@ -360,7 +419,7 @@ export default function AppShell({ farm, error, appInfo, onRetry, children, star
               </button>
             </div>
           )}
-          <PageHelp page={active} tab={activeTab} onStartTour={() => setTourOpen(true)} />
+          <PageHelp page={active} tab={activeTab} onStartTour={() => { setActiveTutorial(""); setTourOpen(true); }} onBrowseTutorials={() => setTutorialLibraryOpen(true)} />
           {(pageTabs[active] || []).length > 0 && (
             <nav className="page-tabs" aria-label={`${active} sections`} data-tour="page-tabs">
               {pageTabs[active].map(tab => (
@@ -380,13 +439,57 @@ export default function AppShell({ farm, error, appInfo, onRetry, children, star
           <NavigationContext.Provider value={{ activePage: active, activeTab }}>
             {children}
           </NavigationContext.Provider>
-          <footer className="app-version-footer" aria-label="Application information">
-            <span>{appVersionLabel(appInfo)}</span>
-            <span>Grantino Farms · Local-first</span>
-          </footer>
         </div>
-        <GuidedTour open={tourOpen} onClose={() => setTourOpen(false)} onNavigate={navigateTourTarget} />
+        <Modal open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} title="Keyboard shortcuts" description="Shortcuts available in Pomas. Native browser and operating-system commands are left untouched." size="medium" footer={<div className="pomas-modal-actions"><button type="button" className="secondary-button" onClick={() => setShortcutsOpen(false)}>Close</button></div>}>
+          <div className="keyboard-shortcut-reference">
+            <div><span>Open quick actions</span><kbd>Ctrl + K</kbd></div>
+            <div><span>Focus page record search</span><kbd>Ctrl + F</kbd></div>
+            {groups[0].items.map(item => <div key={item.target}><span>Go to {item.label}</span><kbd>{item.shortcut}</kbd></div>)}
+            <div><span>Close active modal or drawer</span><kbd>Esc</kbd></div>
+            <p>Ctrl + N and Ctrl + S are not intercepted. They retain native behavior until a single safe app-wide create/save action exists.</p>
+          </div>
+        </Modal>
+        <GuidedTour open={tourOpen} guideId={activeTutorial} onClose={() => { setTourOpen(false); setActiveTutorial(""); }} onNavigate={navigateTourTarget} />
+        <TutorialLibrary open={tutorialLibraryOpen} onClose={() => setTutorialLibraryOpen(false)} onStart={tutorial => { setActiveTutorial(tutorial.id); setTourOpen(true); navigateTourTarget(tutorial.route); }} />
       </main>
+
+      {attentionMobileOpen && <button type="button" className="attention-backdrop" aria-label="Close attention panel" onClick={() => setAttentionMobileOpen(false)} />}
+      <aside className={`attention-sidebar${attentionCollapsed ? " collapsed" : ""}`} aria-label="Farm attention panel">
+        <header className="attention-sidebar-header">
+          <div className="attention-sidebar-heading"><h2>Attention</h2><span className="attention-count">{attentionCount}</span></div>
+          <button type="button" className="attention-panel-toggle" onClick={() => { setAttentionCollapsed(value => !value); setAttentionMobileOpen(false); }} aria-label={attentionCollapsed ? "Expand attention panel" : "Collapse attention panel"} aria-expanded={!attentionCollapsed} title={attentionCollapsed ? "Expand attention panel" : "Collapse attention panel"}>
+            {attentionCollapsed
+              ? <span className="attention-count attention-toggle-count" aria-hidden="true">{attentionCount}</span>
+              : <span aria-hidden="true">›</span>}
+          </button>
+          <button type="button" className="attention-panel-close" onClick={() => setAttentionMobileOpen(false)} aria-label="Close attention panel">×</button>
+        </header>
+        <div className="attention-sidebar-content">
+          {attentionCount === 0 ? <p className="muted">Nothing currently requires attention.</p> : <>
+            {[["CRITICAL", "Critical"], ["WARNING", "Warnings"], ["INFO", "Information"]].map(([severity, label]) => {
+              const items = actionableAttention.filter(item => String(item.severity).toUpperCase() === severity);
+              return items.length > 0 && <section className="attention-severity-group" key={severity}>
+                <h3>{label}<span>{items.length}</span></h3>
+                <div className="attention-list">{items.map((item, index) => {
+                  const target = attentionTarget(item);
+                  const context = item.batchCode || item.item || "";
+                  return <button type="button" className="attention-item attention-item-clickable" key={`${item.type}-${item.batchId || item.itemId || index}`} onClick={() => { navigateQuickAction(target); setAttentionMobileOpen(false); }} aria-label={`${item.title}. ${item.message}. Open related record`}>
+                    <span className={`severity ${String(item.severity).toLowerCase()}`}>{item.severity}</span>
+                    <span className="attention-item-copy"><strong>{item.title}</strong><span>{item.message}</span>{context && <span className="attention-item-meta">{context}</span>}</span>
+                  </button>;
+                })}</div>
+              </section>;
+            })}
+            <button type="button" className="attention-view-all" onClick={() => navigate("dashboard")}>Review farm dashboard <span aria-hidden="true">→</span></button>
+          </>}
+        </div>
+      </aside>
+
+      <footer className="system-status-bar" aria-label="System status">
+        <span className={backendConnected === true && !recoveryNeeded ? "system-status-connected" : backendConnected === false || recoveryNeeded ? "system-status-disconnected" : "system-status-connecting"} role="status" aria-live="polite"><i />Database · {databaseStatus}</span>
+        <span>Local mode</span>
+        <span className="system-status-version">{appVersionLabel(appInfo)}</span>
+      </footer>
 
     </div>
   );

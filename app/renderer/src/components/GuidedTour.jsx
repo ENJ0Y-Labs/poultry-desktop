@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { tutorials } from "./TutorialLibrary.jsx";
 import "./GuidedTour.css";
 
 const sections = [
@@ -54,11 +55,16 @@ function findTarget(name) {
   return document.querySelector(`[data-tour="${name}"]`);
 }
 
-export default function GuidedTour({ open, onClose, onNavigate }) {
+export default function GuidedTour({ open, onClose, onNavigate, guideId = "" }) {
   const [index, setIndex] = useState(0);
   const [rect, setRect] = useState(null);
   const onNavigateRef = useRef(onNavigate);
-  const step = steps[index];
+  const guide = tutorials.find(item => item.id === guideId);
+  const activeSteps = useMemo(() => guide ? [
+    ...guide.steps.map((description, stepIndex) => ({ target: stepIndex === 0 ? guide.tab : "main-content", title: stepIndex === 0 ? guide.title : `Step ${stepIndex + 1}`, description, route: guide.route })),
+    { target: "main-content", title: "Tutorial completed", description: `You have reviewed ${guide.title.toLowerCase()}. You learned: ${guide.learned.join("; ")}. The guide itself did not submit a form. Any save you chose on the real screen is a farm record. Choose Try with farm data to return to this workflow.`, route: null, complete: true },
+  ] : steps, [guide]);
+  const step = activeSteps[index];
 
   useEffect(() => { onNavigateRef.current = onNavigate; }, [onNavigate]);
 
@@ -91,7 +97,7 @@ export default function GuidedTour({ open, onClose, onNavigate }) {
     document.body.style.overflow = "hidden";
     const keydown = event => {
       if (event.key === "Escape") onClose();
-      if (event.key === "ArrowRight") setIndex(current => Math.min(steps.length - 1, current + 1));
+      if (event.key === "ArrowRight") setIndex(current => Math.min(activeSteps.length - 1, current + 1));
       if (event.key === "ArrowLeft") setIndex(current => Math.max(0, current - 1));
     };
     window.addEventListener("keydown", keydown);
@@ -99,28 +105,33 @@ export default function GuidedTour({ open, onClose, onNavigate }) {
       document.body.style.overflow = previousOverflow;
       window.removeEventListener("keydown", keydown);
     };
-  }, [open, onClose]);
+  }, [open, onClose, activeSteps.length]);
 
-  useEffect(() => { if (open) setIndex(0); }, [open]);
+  useEffect(() => { if (open) setIndex(0); }, [open, guideId]);
 
   if (!open) return null;
   const finish = () => { setRect(null); onClose(); };
-  const next = () => { if (index === steps.length - 1) finish(); else setIndex(current => current + 1); };
+  const next = () => {
+    if (step.complete) { onNavigateRef.current(guide.route); finish(); }
+    else if (index === activeSteps.length - 1) finish();
+    else setIndex(current => current + 1);
+  };
 
   return (
-    <div className="guided-tour-layer" role="dialog" aria-modal="true" aria-labelledby="guided-tour-title" aria-describedby="guided-tour-description">
+    <div className={`guided-tour-layer${guide ? " guided-tour-interactive" : ""}`} role="dialog" aria-modal={guide ? "false" : "true"} aria-labelledby="guided-tour-title" aria-describedby="guided-tour-description">
       {rect && <div className="guided-tour-spotlight" style={rect} aria-hidden="true" />}
       <section className="guided-tour-card">
-        <div className="guided-tour-topline"><span>POMAS GUIDED TOUR</span><button type="button" onClick={finish} aria-label="Close tour">×</button></div>
-        <div className="guided-tour-progress"><span style={{ width: `${((index + 1) / steps.length) * 100}%` }} /></div>
-        <p className="guided-tour-count">STEP {index + 1} OF {steps.length}</p>
+        <div className="guided-tour-topline"><span>{guide ? "GUIDED WALKTHROUGH · NO AUTO-SAVE" : "POMAS GUIDED TOUR"}</span><button type="button" onClick={finish} aria-label="Close tour">×</button></div>
+        <div className="guided-tour-progress"><span style={{ width: `${((index + 1) / activeSteps.length) * 100}%` }} /></div>
+        <p className="guided-tour-count">{step.complete ? "COMPLETE" : `STEP ${index + 1} OF ${guide ? activeSteps.length - 1 : activeSteps.length}`}</p>
         <h2 id="guided-tour-title">{step.title}</h2>
         <p id="guided-tour-description">{step.description}</p>
         <div className="guided-tour-actions">
-          <button type="button" className="guided-tour-skip" onClick={finish}>Skip tour</button>
+            {step.complete && <button type="button" className="guided-tour-skip" onClick={() => setIndex(0)}>Repeat guide</button>}
+            {!step.complete && <button type="button" className="guided-tour-skip" onClick={finish}>{guide ? "Exit guide" : "Skip tour"}</button>}
           <div>
             <button type="button" className="guided-tour-back" onClick={() => setIndex(current => Math.max(0, current - 1))} disabled={index === 0}>Back</button>
-            <button type="button" className="guided-tour-next" onClick={next}>{index === steps.length - 1 ? "Finish tour" : "Next"}</button>
+            <button type="button" className="guided-tour-next" onClick={next}>{step.complete ? "Try with farm data" : !guide && index === activeSteps.length - 1 ? "Finish tour" : "Next"}</button>
           </div>
         </div>
         <p className="guided-tour-hint">Press Esc to exit. Arrow keys also work.</p>

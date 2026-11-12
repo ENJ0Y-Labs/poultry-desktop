@@ -2,6 +2,12 @@
 
 The backend is the authoritative calculation engine. The renderer displays API results and does not implement independent farm formulas.
 
+## Reporting-period presentation values
+
+For date-range analytics, the backend returns raw period totals and filtered source records. React may derive presentation-only values from those raw totals. Period profit is calculated in the shared renderer reporting utility as integer minor-unit revenue minus integer minor-unit expenses, only when both inputs are safe integers. It is not persisted and does not replace the backend's authoritative financial ledger or domain calculations. Report export formatting receives the same renderer-derived display value so the file matches the screen; it does not recalculate it.
+
+Current/lifetime snapshots remain separate from activity-period totals. Current population, stock balances, and batch-to-date values are not filtered merely because a user selects a historical activity range.
+
 All historical calculations accept an `asOf` business date where the underlying operation supports historical reporting.
 
 ## Bird population
@@ -273,20 +279,29 @@ The farm report and batch report reuse the same calculation/domain services as t
 
 Backend-derived attention rules currently include:
 
-- Low feed stock: roughly three days of recent usage cover or less
+- Low feed stock: purchases plus dated opening balances minus usage leave roughly three days of recent usage cover or less
 - Insufficient inventory: zero/negative stock
 - Low inventory: stock at or below reorder level
-- High mortality: 5% warning, 10% critical
+- High mortality: cumulative 5% warning, 10% critical; recent 7-day mortality 2% warning, 5% critical
+- Unusual feed consumption: same batch/feed type, latest 7 days at least 25% above preceding 7 days; critical at 50%
+- Declining meat-bird average weight: latest measurement at least 10% below the preceding measurement, provided the latest is no older than 7 days; critical at 20%
+- Rising farm expenses: latest 7 days at least 25% above preceding 7 days; critical at 50%
+- Falling farm sales revenue: latest 7 days at least 25% below preceding 7 days; critical at 50%
 - Missing daily record: active batch has no record for the requested date
 - Vaccination due: active batch is at least 14 days old with no vaccination in the prior 28 days
-- Unusual production drop: 20% warning, 30% critical compared with the previous seven-day production period
+- Unusual production drop: 20% warning, 30% critical compared with the previous seven-day production period, using good + cracked eggs
 - Broiler nearing sale: warning at 35 days, target sale age 42 days, critical at 49 days
 - Backup overdue: automatic backup enabled and no recent backup within seven days
 
-These thresholds are centralized in the backend attention service. The frontend does not invent alerts.
+These thresholds are centralized in the backend attention service. Each returned insight carries its detection date, affected metric, rule ID/description, explicit threshold context, suggested action, and batch/house attribution when applicable. The renderer does not invent alerts. Financial trends require a non-zero prior-period baseline. Poor FCR is not alerted until a farm-approved age/type benchmark exists; an arbitrary universal FCR target would be misleading.
 
 ## Settings and calculation integrity
 
 Settings that affect calculations are audited. Historical records preserve values needed to interpret the record at the time it was created, such as the crate size used for an egg sale.
 
 Changing configuration must not rewrite historical transactions.
+
+
+## Batch comparison periods
+
+Batch comparison activity metrics use one inclusive reporting range for every selected batch. Feed usage quantities and FIFO costs are calculated only for usage events inside that range, but FIFO valuation must use all purchases, opening lots, and feed usages up to the range end so historical lot consumption remains correct. Unknown costs remain null. Feed quantities may be compared only when every selected batch used the same single configured unit; if one batch used multiple units, its aggregate quantity remains null while its FIFO cost can still be shown. Population and average weight are end-date snapshots; FCR remains the existing batch-to-date backend calculation and must be labeled accordingly. If the period contains no mortality event, egg collection, or feed usage, the corresponding rate/production/feed metric is missing rather than an invented zero.

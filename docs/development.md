@@ -54,7 +54,7 @@ For routine React UI and backend development, run both services together:
 npm run dev:browser:all
 ```
 
-Open `http://127.0.0.1:5173/` in Chrome or another browser. This command starts the existing backend and Vite scripts concurrently. Vite React Fast Refresh and Hot Module Replacement (HMR) automatically apply supported React and CSS edits without packaging or rebuilding the desktop application. Spring Boot serves the API on `http://127.0.0.1:18942/api/v1`.
+Open `http://127.0.0.1:5173/` in Chrome or another browser. This command starts the existing backend and Vite scripts concurrently. If a backend is already listening on the configured port, it is reused only when `/api/v1/health` confirms that the database and schema are ready; an occupied but unhealthy port is reported without starting a second backend. Vite React Fast Refresh and Hot Module Replacement (HMR) automatically apply supported React and CSS edits without packaging or rebuilding the desktop application. Spring Boot serves the API on `http://127.0.0.1:18942/api/v1` by default.
 
 You can also start the services separately in two terminals:
 
@@ -402,40 +402,47 @@ Manual validation must use two separate test states:
 4. Never reset, delete, or reuse the user's real farm database for this test. Record runtime checks as not run until they have actually been performed.
 
 
-## Offline form drafts (Issue #243)
+## Branded startup loading screen
 
-Complex farm-entry forms use local draft persistence through the narrow Electron preload bridge. The main process stores an allow-listed set of draft payloads in pomas-drafts.json under Electron's existing userData directory. This file is separate from the SQLite farm database and remains available without an internet connection or a running Spring Boot process.
+The initial authentication and farm-data bootstrap displays the local Pomas logo, product name, a short description, and an accessible rotating progress indicator. Its colors use the active theme tokens, so it follows both Light and Dark appearance settings. The screen does not add a startup delay or change backend readiness behavior.
 
-Supported forms currently include batch registration, feed purchases, expenses, health records, drug records, vaccinations, egg collection, egg sales, broiler/turkey weight records, and bird sales. Drafts are not posted transactions. They do not call the farm API, create audit events, or affect official calculations.
-
-Drafts autosave after a short pause in editing. Each form shows its last-saved time and offers deliberate discard. A draft stores snapshots of selected related records. If a batch, house, feed type, supplier, or customer reference no longer matches the current farm data, Pomas displays a stale-draft warning and disables submission until the operator reviews the form.
-
-Run the focused UI test:
+Focused renderer test:
 
 ```powershell
-npm test -- DraftStatus.test.jsx
+npm test -- App.test.jsx
 ```
 
-Then run the full required checks:
+Manual validation:
+
+1. Start the app while the backend is available and observe the branded screen before the sign-in, farm setup, or dashboard view appears.
+2. Set Appearance to Light and restart. Confirm the screen has a light background, readable dark text, and a visible gold-accent spinner.
+3. Set Appearance to Dark and restart. Confirm the screen has a dark background, readable light text, and a visible gold-accent spinner.
+4. Confirm the loading indicator rotates continuously and the screen disappears as soon as the initial application bootstrap completes.
+5. Repeat with a delayed/unavailable backend. Confirm the app's existing connection/error handling remains intact and no artificial loading timeout is introduced.
+
+
+## Transparent dashboard attention insights (Issue #233)
+
+Run focused backend and renderer coverage:
 
 ```powershell
-npm test
+npm test -- attentionNavigation
+npm test -- App.test.jsx
+npm run backend:test -- --tests com.grantinofarms.poultry.AttentionServiceIntegrationTest
 npm run lint
 npm run backend:verify
 npm run build
 ```
 
-Manual validation must use a disposable farm database and the packaged desktop app:
+Use a disposable database for manual rule checks. Create separate layer and meat-bird batches and seed dated records so the selected `asOf` date has both a latest 7-day period and a preceding 7-day period.
 
-1. Open a supported form, enter partial values, wait at least one second, and confirm the saved-draft status and timestamp appear.
-2. Navigate to another page and return. Confirm the partial values are restored.
-3. Close Pomas completely and reopen it. Confirm the draft is restored.
-4. Disconnect the internet and repeat autosave, navigation, close/reopen, and restore. The local draft must remain available.
-5. Create partial entries in at least three different supported forms. Confirm each restores independently.
-6. Discard one draft. Confirm its form clears and the other drafts remain.
-7. Change or archive a referenced batch, house, feed type, supplier, or customer in a disposable test dataset. Reopen the affected draft. Confirm the warning appears and the official submit action stays disabled until review is acknowledged.
-8. Submit one valid draft. Confirm it is removed only after the API write succeeds. Simulate a rejected submission and confirm its draft remains.
-9. Before and after draft-only operations, compare dashboard metrics, feed inventory/FIFO, sales, expenses, reports, and audit rows. They must be identical until an official transaction is posted.
-10. Inspect the userData/pomas-drafts.json file only from the main process/test environment. Confirm it contains draft form data and reference snapshots, not passwords, tokens, or official transaction rows.
+1. Record mortality below and at the recent 2% warning boundary; confirm the recent-mortality insight appears only at/above the threshold. Separately verify cumulative mortality retains its existing 5% warning / 10% critical behavior.
+2. For the same batch and feed type, compare 7-day feed usage against the preceding 7 days. Confirm a 25% increase warns and 50% increase is critical. A feed type or period without usage history must not trigger this rule.
+3. Record two meat-bird weight measurements. Confirm a 10% or larger decline is shown only when the latest measurement is within 7 days. A stale latest measurement and missing second measurement must not trigger it.
+4. Compare farm expenses and common-ledger sales in the latest 7 days against the preceding 7 days. Confirm a 25% adverse change warns and 50% is critical. A zero prior-period baseline must not trigger a trend alert.
+5. Confirm egg production comparison includes good and cracked eggs, while a missing prior-period baseline does not alert.
+6. Confirm each insight shows severity, metric, date, rule/threshold and suggested action. Batch insights should identify the current house. Selecting each card should open its existing module; stock and batch IDs must be passed as IDs, not names.
+7. Correct the underlying test data so the condition is resolved, refresh attention, and confirm the alert disappears. Repeated refreshes must not create duplicate entries.
+8. Confirm no poor-FCR alert is emitted: a universal target is not defined. FCR alerting remains deferred until an approved farm/type/age benchmark exists.
 
-Automated source tests do not prove packaged restart/offline behavior or ledger isolation. Record those runtime checks as Not run until executed.
+Inspect the dashboard at 1100×650 and 1366×768 in both Light and Dark themes. Automated tests do not replace these manual navigation, contrast, and layout checks. Never use the real Grantino farm database for seeded tests.

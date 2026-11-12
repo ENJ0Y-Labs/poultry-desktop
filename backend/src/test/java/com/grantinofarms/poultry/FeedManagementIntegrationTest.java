@@ -510,6 +510,34 @@ class FeedManagementIntegrationTest {
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM feed_usage", Integer.class)).isZero();
     }
 
+    @Test
+    void batchFeedCostUsesOnlyUsageEventsInsideRangeButPreservesFullFifoHistory() {
+        setupFarm();
+        var house = houseService.create(new HouseCreateRequest("Period Feed House", "PFH1", null));
+        var batch = batchService.create(new BatchCreateRequest(
+                "BROILER", LocalDate.of(2026, 1, 1), house.id(), 100, null, 1_000_000L));
+        var feedType = feedService.createType(new FeedTypeCreateRequest(
+                "Period Feed", "bag", "BROILER", new BigDecimal("25")));
+        feedService.purchase(new FeedPurchaseRequest(
+                feedType.id(), null, LocalDate.of(2026, 1, 1), new BigDecimal("10"), "bag", 100_000L));
+        feedService.use(batch.id(), new FeedUsageRequest(
+                feedType.id(), LocalDate.of(2026, 1, 5), new BigDecimal("2"), "bag", "January use"));
+        feedService.use(batch.id(), new FeedUsageRequest(
+                feedType.id(), LocalDate.of(2026, 2, 5), new BigDecimal("3"), "bag", "February use"));
+
+        var january = feedService.batchCost(batch.id(),
+                LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 31));
+        var february = feedService.batchCost(batch.id(),
+                LocalDate.of(2026, 2, 1), LocalDate.of(2026, 2, 28));
+
+        assertThat(january.consumedQuantityMilli()).isEqualTo(2_000L);
+        assertThat(january.feedCostMinor()).isEqualTo(20_000L);
+        assertThat(feedService.batchUsageUnits(batch.id(), LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 31)))
+                .containsExactly("bag");
+        assertThat(february.consumedQuantityMilli()).isEqualTo(3_000L);
+        assertThat(february.feedCostMinor()).isEqualTo(30_000L);
+    }
+
     private void setupFarm() {
         farmService.create(new FarmCreateRequest(
                 "Grantino Farms", "Port Harcourt", "Africa/Lagos", "NGN"));

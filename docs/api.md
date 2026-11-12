@@ -165,6 +165,7 @@ Optional `asOf=YYYY-MM-DD` is supported where the service exposes historical cal
 
 - GET `/reports/farm`
 - GET `/reports/batches/{id}`
+- GET `/reports/batches/compare?batchIds=id1&batchIds=id2&from=YYYY-MM-DD&to=YYYY-MM-DD` compares 2–8 unique batches over one inclusive reporting period.
 - GET `/reports/farm.csv`
 - GET `/reports/batches/{id}.csv`
 - GET `/reports/farm.pdf`

@@ -45,6 +45,7 @@ It:
 - exposes native backup-directory and restore dialogs
 - performs the file replacement part of database restore
 - blocks arbitrary renderer navigation
+- uses Windows' title-bar overlay for native minimize/maximize/close controls while React renders the branded File/Edit/View/Farm/Tools/Help menus
 
 Packaged Java is loaded from the application resources. During development the Maven Wrapper starts Spring Boot.
 
@@ -57,6 +58,8 @@ The preload exposes only the small desktop operations required by the UI, includ
 - choose a backup directory
 - request database restore
 - set the native application theme using a validated Auto/Light/Dark preference
+- request application shutdown through a sender-validated IPC handler
+- report whether the current Windows window supports the custom title bar
 
 IPC handlers reject unexpected arguments.
 

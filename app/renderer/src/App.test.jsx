@@ -1,4 +1,6 @@
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, render as rtlRender, screen, waitFor, within } from "@testing-library/react";
+import { createElement } from "react";
+import { ToastProvider } from "./components/ToastProvider.jsx";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App.jsx";
 // eslint-disable-next-line no-unused-vars
@@ -12,6 +14,10 @@ import {
   feedApi, pricingApi, dashboardApi, attentionApi, auditApi,
   eggApi, broilerApi, reportApi, expenseCategoryApi, accountApi, settingsApi, supplierApi,
 } from "./services/api.js";
+
+function render(ui, options) {
+  return rtlRender(createElement(ToastProvider, null, ui), options);
+}
 
 const farm = {
   id: "farm-1",
@@ -85,6 +91,9 @@ function mockFarmApis({
   ]);
   vi.spyOn(accountApi, "get").mockResolvedValue({
     id: "user-1", email: "owner@example.com", fullName: "Farm Owner", role: "OWNER"
+  });
+  vi.spyOn(settingsApi, "application").mockResolvedValue({
+    startPage: "dashboard", dateFormat: "YYYY-MM-DD"
   });
   vi.spyOn(settingsApi, "backup").mockResolvedValue({
     enabled: false, directory: "", intervalMs: 86400000
@@ -180,7 +189,11 @@ describe("App", () => {
     );
 
     render(<App />);
-    expect(screen.getByText("Loading farm...")).toBeInTheDocument();
+    expect(screen.getByRole("main", { name: "Pomas is starting" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Pomas" })).toBeInTheDocument();
+    expect(screen.getByText("Poultry management, made clear.")).toBeInTheDocument();
+    expect(screen.getByText("Preparing your farm workspace and records.")).toBeInTheDocument();
+    expect(screen.getByRole("status", { name: "Loading" })).toBeInTheDocument();
 
     vi.spyOn(farmApi, "getSettings").mockResolvedValue(settings);
     vi.spyOn(farmApi, "listHouses").mockResolvedValue([]);
@@ -230,29 +243,25 @@ describe("App", () => {
     render(<App />);
 
     expect(await screen.findByRole("heading", { name: "Sign in to Pomas" })).toBeInTheDocument();
-    const themeSelector = screen.getByRole("combobox", { name: "Theme" });
-    expect(themeSelector).toHaveValue("auto");
-    fireEvent.change(themeSelector, { target: { value: "light" } });
-    expect(themeSelector).toHaveValue("light");
+    expect(screen.queryByRole("switch", { name: "Follow system appearance" })).not.toBeInTheDocument();
+    const darkThemeSwitch = screen.getByRole("switch", { name: "Dark appearance" });
+    if (darkThemeSwitch.checked) {
+      fireEvent.click(darkThemeSwitch);
+    } else {
+      fireEvent.click(darkThemeSwitch);
+      fireEvent.click(screen.getByRole("switch", { name: "Dark appearance" }));
+    }
     expect(document.documentElement.dataset.theme).toBe("light");
     expect(localStorage.getItem("pomas:theme")).toBe("light");
     expect(screen.getByRole("heading", { name: "What's new" })).toBeInTheDocument();
-    expect(screen.getByText("POMAS v1.0.4")).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Egg production in crates" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Flexible bird sales" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Clearer Windows installer" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Theme preference on sign-in" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "More readable dashboard alerts" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Feed product identity and editing" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Opening feed stock" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Editable farm records" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Multiple bird-type feed applicability" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Cleaner text rendering" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Quick actions in one place" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Keyboard-first navigation" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "A cleaner dashboard" })).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Independent turkey management" })).not.toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "House and pen classification" })).not.toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Verified bird counts" })).not.toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "More detailed feed records" })).not.toBeInTheDocument();
-    expect(screen.getByText("POMAS · DEVELOPMENT BUILD")).toBeInTheDocument();
+    expect(screen.getAllByText("POMAS · DEVELOPMENT BUILD")).toHaveLength(2);
     expect(screen.getByRole("button", { name: /Sign in to your farm/ })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /create account/i })).not.toBeInTheDocument();
     expect(screen.queryByLabelText("Full name")).not.toBeInTheDocument();
@@ -326,21 +335,30 @@ describe("App", () => {
     render(<App />);
 
     await screen.findByRole("heading", { name: "Create your owner account" });
-    const setupThemeSelector = screen.getByRole("combobox", { name: "Theme" });
-    expect(setupThemeSelector).toHaveValue("auto");
-    fireEvent.change(setupThemeSelector, { target: { value: "dark" } });
+    expect(screen.queryByRole("switch", { name: "Follow system appearance" })).not.toBeInTheDocument();
+    const setupDarkSwitch = screen.getByRole("switch", { name: "Dark appearance" });
+    if (setupDarkSwitch.checked) {
+      fireEvent.click(setupDarkSwitch);
+      fireEvent.click(screen.getByRole("switch", { name: "Dark appearance" }));
+    } else {
+      fireEvent.click(setupDarkSwitch);
+    }
     expect(document.documentElement.dataset.theme).toBe("dark");
     expect(screen.getByRole("button", { name: "Create account and continue" })).toBeInTheDocument();
     expect(screen.queryByLabelText("Username or email")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Sign in to your farm/ })).not.toBeInTheDocument();
     fireEvent.change(screen.getByLabelText("Full name"), { target: { value: "Farm Owner" } });
-    fireEvent.change(screen.getByLabelText(/Username/), { target: { value: "farm-owner" } });
+    const username = screen.getByLabelText(/Username/);
+    expect(username).toHaveAttribute("pattern", "[A-Za-z0-9][A-Za-z0-9._\\-]{2,31}");
+    fireEvent.change(username, { target: { value: "farm-owner" } });
+    expect(username).toBeValid();
     fireEvent.change(screen.getByLabelText("Email (optional)"), { target: { value: "owner@example.com" } });
     fireEvent.change(screen.getByLabelText(/Password/), { target: { value: "correct-horse-battery" } });
     fireEvent.click(screen.getByRole("button", { name: "Create account and continue" }));
 
     await waitFor(() => expect(screen.getByRole("heading", { name: "Farm dashboard" })).toBeInTheDocument());
-    expect(screen.getByRole("combobox", { name: "Theme" })).toHaveValue("dark");
+    expect(localStorage.getItem("pomas:theme")).toBe("dark");
+    expect(document.documentElement.dataset.theme).toBe("dark");
     expect(setup).toHaveBeenCalledWith({
       username: "farm-owner",
       email: "owner@example.com",
@@ -399,12 +417,12 @@ describe("App", () => {
 
     await waitFor(() => expect(screen.getByRole("heading", { name: "Farm dashboard" })).toBeInTheDocument());
     await waitFor(() => expect(screen.getByText("03/10/2026")).toBeInTheDocument());
-    expect(screen.getByText("Dashboard as of")).toBeInTheDocument();
+    expect(screen.getByText("Today’s farm overview")).toBeInTheDocument();
 
-    const primaryMetric = screen.getByText("Total birds").closest(".metric-card");
-    const secondaryMetric = screen.getByText("Layer birds").closest(".metric-card");
-    expect(primaryMetric).toHaveClass("metric-card-primary");
-    expect(secondaryMetric).not.toHaveClass("metric-card-primary");
+    const primaryMetric = screen.getByText("Total birds").closest(".dashboard-kpi-card");
+    const secondaryMetric = screen.getByText("Layer birds").closest(".dashboard-kpi-card");
+    expect(primaryMetric).toHaveClass("dashboard-kpi-card-primary");
+    expect(secondaryMetric).not.toHaveClass("dashboard-kpi-card-primary");
   });
 
   it("formats expense history and inventory remaining cost as naira", async () => {
@@ -446,16 +464,24 @@ describe("App", () => {
     expect(screen.queryByText("5678")).not.toBeInTheDocument();
   });
 
-  it("exposes the theme selector through its visible label and allows changing it", async () => {
+  it("exposes the theme switches through accessible names and allows changing appearance", async () => {
     mockFarmApis();
 
     render(<App />);
 
-    const themeSelector = await screen.findByRole("combobox", { name: "Theme" });
-    expect(themeSelector).toHaveValue("auto");
+    await screen.findByRole("heading", { name: "Farm dashboard" });
+    fireEvent.click(screen.getByRole("button", { name: "Settings" }));
+    fireEvent.click(screen.getByRole("button", { name: "App, appearance & account" }));
 
-    fireEvent.change(themeSelector, { target: { value: "dark" } });
-    expect(themeSelector).toHaveValue("dark");
+    const systemSwitch = await screen.findByRole("switch", { name: "Follow system appearance" });
+    fireEvent.click(systemSwitch);
+    const darkSwitch = screen.getByRole("switch", { name: "Dark appearance" });
+    if (!darkSwitch.checked) fireEvent.click(darkSwitch);
+    expect(darkSwitch).toBeChecked();
+    expect(localStorage.getItem("pomas:theme")).toBe("dark");
+    fireEvent.click(darkSwitch);
+    expect(document.documentElement.dataset.theme).toBe("light");
+    expect(localStorage.getItem("pomas:theme")).toBe("light");
   });
 
   it("renders backend-derived dashboard metrics and empty dashboard states", async () => {
@@ -465,9 +491,9 @@ describe("App", () => {
 
     await waitFor(() => expect(screen.getByRole("heading", { name: "Farm dashboard" })).toBeInTheDocument());
     await waitFor(() => expect(screen.getAllByText("5,000")).toHaveLength(1));
-    expect(within(screen.getByText("Revenue").parentElement).getByText("₦1,000.00")).toBeInTheDocument();
-    expect(within(screen.getByText("Expenses").parentElement).getByText("₦700.00")).toBeInTheDocument();
-    expect(within(screen.getByText("Profit").parentElement).getByText("₦300.00")).toBeInTheDocument();
+    expect(within(screen.getByText("Revenue today").parentElement).getByText(/1,000\.00/)).toBeInTheDocument();
+    expect(within(screen.getByText("Expenses today").parentElement).getByText(/700\.00/)).toBeInTheDocument();
+    expect(within(screen.getByText("Profit today").parentElement).getByText(/300\.00/)).toBeInTheDocument();
     expect(screen.getByText("Nothing currently requires attention.")).toBeInTheDocument();
     expect(screen.getByText("No audit records yet.")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Sales & Money" }));
@@ -509,6 +535,7 @@ describe("App", () => {
     await waitFor(() => expect(screen.getByRole("heading", { name: "Farm dashboard" })).toBeInTheDocument());
     fireEvent.click(within(screen.getByRole("navigation", { name: "Main navigation" })).getByRole("button", { name: "Production" }));
     fireEvent.change(await screen.findByLabelText("Layer batch"), { target: { value: "layer-1" } });
+    fireEvent.click(screen.getByRole("button", { name: "Record egg sale" }));
 
     const savedCustomer = await screen.findByLabelText("Saved customer");
     expect(savedCustomer).not.toBeRequired();
@@ -580,13 +607,18 @@ describe("App", () => {
       .getByRole("button", { name: "Flocks" }));
     fireEvent.click(await screen.findByRole("button", { name: "Batches & bird costs" }));
 
-    fireEvent.change(await screen.findByLabelText("Purchase information"), {
+    fireEvent.click(await screen.findByRole("button", { name: "Register batch" }));
+    fireEvent.change(screen.getByLabelText("Placement date"), { target: { value: "2026-11-06" } });
+    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+    fireEvent.change(screen.getByLabelText("House / pen"), { target: { value: "house-1" } });
+    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+    fireEvent.change(screen.getByLabelText("Initial birds"), { target: { value: "250" } });
+    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+    fireEvent.change(screen.getByLabelText("Purchase information"), {
       target: { value: "EXISTING_STOCK" },
     });
     expect(screen.queryByLabelText("Purchase cost (₦)")).not.toBeInTheDocument();
-    fireEvent.change(screen.getByLabelText("Placement date"), { target: { value: "2026-11-06" } });
-    fireEvent.change(screen.getByLabelText("House / pen"), { target: { value: "house-1" } });
-    fireEvent.change(screen.getByLabelText("Initial birds"), { target: { value: "250" } });
+    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
     fireEvent.click(screen.getByRole("button", { name: "Create batch" }));
 
     await waitFor(() => expect(batchApi.create).toHaveBeenCalledWith({
@@ -657,20 +689,27 @@ describe("App", () => {
     expect(within(unknownAuditRow).getByText("—")).toBeInTheDocument();
   });
 
-  it("renders backend-derived attention items on the dashboard", async () => {
+  it("renders actionable backend attention items in the persistent attention panel", async () => {
     mockFarmApis();
     vi.mocked(attentionApi.list).mockResolvedValue([{
       type: "LOW_FEED_STOCK",
       severity: "WARNING",
       title: "Low feed stock",
-      message: "Layer Mash has about 2.0 days of stock."
+      message: "Layer Mash has about 2.0 days of stock.",
+      feedTypeId: "feed-layer-mash",
+      affectedMetric: "Feed",
+      detectedAt: "2026-11-11",
+      ruleDescription: "Feed stock cover is 3 days or less at the recent usage rate.",
+      thresholdContext: "Warning at 3 days of cover or less.",
+      suggestedAction: "Review feed stock and arrange a purchase if required."
     }]);
 
     render(<App />);
 
-    await waitFor(() => expect(screen.getByRole("heading", { name: "Farm dashboard" })).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByRole("complementary", { name: "Farm attention panel" })).toBeInTheDocument());
     expect(await screen.findByText("Low feed stock")).toBeInTheDocument();
     expect(screen.getByText("Layer Mash has about 2.0 days of stock.")).toBeInTheDocument();
+    expect(screen.getAllByText("Feed").length).toBeGreaterThan(0);
   });
 
   it("opens a missing daily-record alert with batch and date prefilled", async () => {
@@ -693,8 +732,10 @@ describe("App", () => {
     await waitFor(() => expect(window.location.hash).toBe(
       "#daily-work/daily-record/batchId=layer-1/date=2026-10-25"
     ));
-    expect(await screen.findByLabelText("Batch")).toHaveValue("layer-1");
-    expect(screen.getByLabelText("Date")).toHaveValue("2026-10-25");
+    fireEvent.click(await screen.findByRole("button", { name: "Save daily notes" }));
+    const dailyRecordDialog = screen.getByRole("dialog", { name: "Daily record" });
+    expect(within(dailyRecordDialog).getByLabelText("Batch")).toHaveValue("layer-1");
+    expect(within(dailyRecordDialog).getByLabelText("Date")).toHaveValue("2026-10-25");
   });
 
   it("preserves a contextual batch when opening an alert route directly", async () => {
@@ -708,7 +749,7 @@ describe("App", () => {
     });
   });
 
-  it("keeps alerts with missing required identifiers non-clickable", async () => {
+  it("omits alerts without required context from the actionable attention panel", async () => {
     mockFarmApis();
     vi.mocked(attentionApi.list).mockResolvedValue([{
       type: "LOW_FEED_STOCK",
@@ -720,8 +761,8 @@ describe("App", () => {
 
     render(<App />);
 
-    expect(await screen.findByText("Low feed stock")).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /Low feed stock/ })).not.toBeInTheDocument();
+    await waitFor(() => expect(screen.getByRole("complementary", { name: "Farm attention panel" })).toBeInTheDocument());
+    expect(screen.queryByText("Low feed stock")).not.toBeInTheDocument();
   });
 
   it("renders an em dash for undefined backend metrics", async () => {
@@ -779,6 +820,8 @@ describe("App", () => {
     fireEvent.click(screen.getByRole("button", { name: "Weight & growth" }));
     await waitFor(() => expect(screen.getByRole("option", { name: "Select a batch" })).toBeInTheDocument());
     const broilerBatch = screen.getByRole("option", { name: "Select a batch" }).parentElement;
+    expect(screen.getByRole("combobox", { name: "Meat-production batch" })).toBe(broilerBatch);
+    expect(screen.queryByRole("heading", { name: "Meat-production batch" })).not.toBeInTheDocument();
     fireEvent.change(broilerBatch, { target: { value: "broiler-1" } });
     await waitFor(() => expect(screen.getByRole("heading", { name: "Record weight" })).toBeInTheDocument());
     expect(within(broilerBatch).getByRole("option", { name: /B-2026-001/ })).toBeInTheDocument();
@@ -811,40 +854,61 @@ describe("App", () => {
     expect(screen.getByRole("option", { name: /B-2026-001 · Broiler/ })).toBeInTheDocument();
     expect(localStorage.getItem("grantino:lastBatchId")).toBe("broiler-1");
   });
-  it("routes dashboard quick actions to validated forms with the last-used batch context", async () => {
+  it("routes global quick actions to validated forms with the last-used batch context", async () => {
     mockFarmApis({ currentBatches: batches });
     vi.mocked(feedApi.listTypes).mockResolvedValue([
       { id: "feed-layer", name: "Layer mash", unit: "bag", applicableType: "LAYER", applicableTypes: ["LAYER"], status: "ACTIVE" },
       { id: "feed-broiler", name: "Broiler starter", unit: "bag", applicableType: "BROILER", applicableTypes: ["BROILER"], status: "ACTIVE" },
     ]);
+    vi.mocked(feedApi.inventory).mockResolvedValue([
+      { feedTypeId: "feed-layer", remainingQuantityMilli: 5000, unit: "bag" },
+    ]);
     render(<App />);
     await screen.findByRole("heading", { name: "Farm dashboard" });
+
     const dashboardNav = () => fireEvent.click(within(screen.getByRole("navigation", { name: "Main navigation" })).getByRole("button", { name: "Dashboard" }));
+    const chooseQuickAction = async label => {
+      fireEvent.click(await screen.findByRole("button", { name: /Quick actions/ }));
+      const menu = await screen.findByRole("dialog", { name: "Quick actions" });
+      fireEvent.click(await within(menu).findByRole("button", { name: label }));
+    };
 
-    fireEvent.click(await screen.findByRole("button", { name: "Record mortality" }));
+    await chooseQuickAction(/^Mortality/);
     expect(window.location.hash).toContain("daily-work/mortality");
-    expect(await screen.findByRole("combobox", { name: "Batch" })).toHaveValue("layer-1");
+    const mortalityDialog = await screen.findByRole("dialog", { name: "Record mortality" });
+    expect(within(mortalityDialog).getByRole("combobox", { name: "Batch" })).toHaveValue("layer-1");
+    fireEvent.click(within(mortalityDialog).getByRole("button", { name: "Close dialog" }));
 
     dashboardNav();
-    fireEvent.click(await screen.findByRole("button", { name: "Collect eggs" }));
+    await chooseQuickAction(/^Egg collection/);
     expect(window.location.hash).toContain("production/eggs");
     expect(await screen.findByRole("combobox", { name: "Layer batch" })).toHaveValue("layer-1");
+    fireEvent.click(await screen.findByRole("button", { name: "Record collection" }));
+    expect(await screen.findByRole("dialog", { name: "Egg collection" })).toBeInTheDocument();
 
     dashboardNav();
-    fireEvent.click(await screen.findByRole("button", { name: "Record feed usage" }));
+    await chooseQuickAction(/^Feed usage/);
     expect(window.location.hash).toContain("daily-work/daily-record");
-    expect(await screen.findByRole("combobox", { name: "Batch" })).toHaveValue("layer-1");
-    expect(screen.getByRole("combobox", { name: "Feed type" })).toHaveValue("feed-layer");
+    const feedUsageDialog = await screen.findByRole("dialog", { name: "Feed usage" });
+    expect(within(feedUsageDialog).getByRole("combobox", { name: "Feed type" })).toHaveValue("feed-layer");
+    fireEvent.click(within(feedUsageDialog).getByRole("button", { name: "Close dialog" }));
+
+    fireEvent.click(await screen.findByRole("button", { name: "Save daily notes" }));
+    const dailyRecordDialog = await screen.findByRole("dialog", { name: "Daily record" });
+    expect(within(dailyRecordDialog).getByRole("combobox", { name: "Batch" })).toHaveValue("layer-1");
+    fireEvent.click(within(dailyRecordDialog).getByRole("button", { name: "Close dialog" }));
 
     dashboardNav();
-    fireEvent.click(await screen.findByRole("button", { name: "Record a sale" }));
+    await chooseQuickAction(/^Sale/);
     expect(window.location.hash).toContain("production/eggs");
     expect(await screen.findByRole("combobox", { name: "Layer batch" })).toHaveValue("layer-1");
 
     dashboardNav();
-    fireEvent.click(await screen.findByRole("button", { name: "Record an expense" }));
+    await chooseQuickAction(/^Expense/);
     expect(window.location.hash).toContain("sales-money/expenses");
-    expect(await screen.findByLabelText("Batch association")).toHaveValue("layer-1");
+    fireEvent.click(await screen.findByRole("button", { name: "Record expense" }));
+    fireEvent.click(await screen.findByText("Batch allocation"));
+    expect(await screen.findByLabelText(/Batch association/)).toHaveValue("layer-1");
   });
 
   it("preserves unsaved farm form input while retrying after a backend outage", async () => {
@@ -890,7 +954,8 @@ describe("App", () => {
     expect(screen.getByText("Open a batch")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Configure feed" })).toBeInTheDocument();
     expect(screen.getByText("Record a feed purchase")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Record purchase" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Record purchase" }));
+    expect(await screen.findByRole("heading", { name: "Feed purchase" })).toBeInTheDocument();
   });
 
   it("hides the getting-started checklist when all setup tasks have saved data", async () => {
@@ -921,6 +986,33 @@ describe("App", () => {
     await screen.findByText("Good eggs");
     expect(screen.getByText("29 crates, 5 eggs")).toBeInTheDocument();
     expect(screen.queryByText("875")).not.toBeInTheDocument();
+  });
+
+  it("opens a contextual quick action and preselects the active batch in the existing form", async () => {
+    mockFarmApis({ currentBatches: [batches[0]] });
+    render(<App />);
+
+    fireEvent.click(await screen.findByRole("button", { name: /Quick actions/ }));
+    const quickActionsDialog = await screen.findByRole("dialog", { name: "Quick actions" });
+    fireEvent.click(await within(quickActionsDialog).findByRole("button", { name: "Mortality Record birds that died" }));
+
+    expect(window.location.hash).toBe("#daily-work/mortality/batchId=layer-1");
+    const mortalityDialog = await screen.findByRole("dialog", { name: "Record mortality" });
+    expect(within(mortalityDialog).getByLabelText("Batch")).toHaveValue("layer-1");
+  });
+
+  it("does not trust a closed batch in a quick action route", async () => {
+    window.location.hash = "#daily-work/mortality/batchId=closed-1";
+    mockFarmApis({
+      currentBatches: [
+        { ...batches[0], id: "closed-1", status: "SOLD" },
+        batches[1],
+      ],
+    });
+    render(<App />);
+
+    const mortalityDialog = await screen.findByRole("dialog", { name: "Record mortality" });
+    expect(within(mortalityDialog).getByLabelText("Batch")).toHaveValue("broiler-1");
   });
 
 });

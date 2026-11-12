@@ -34,15 +34,26 @@ public class AuditRepository {
     }
 
     public List<Map<String, Object>> find(String farmId, int limit) {
+        return find(farmId, limit, null, null);
+    }
+
+    public List<Map<String, Object>> find(String farmId, int limit, String fromInclusive, String toInclusive) {
         int safeLimit = Math.max(1, Math.min(limit, 500));
-        return jdbc.query("""
+        String dateClause = fromInclusive == null || toInclusive == null
+                ? "" : " AND julianday(occurred_at) >= julianday(?) AND julianday(occurred_at) < julianday(?)";
+        String sql = """
                 SELECT id, user_id, farm_id, batch_id, occurred_at, action, entity_type,
                        entity_id, reason, changed_fields_json, before_json, after_json
                 FROM audit_logs
                 WHERE farm_id = ?
+                """ + dateClause + """
                 ORDER BY occurred_at DESC
                 LIMIT ?
-                """, (rs, n) -> {
+                """;
+        Object[] args = fromInclusive == null || toInclusive == null
+                ? new Object[]{farmId, safeLimit}
+                : new Object[]{farmId, fromInclusive, toInclusive, safeLimit};
+        return jdbc.query(sql, (rs, n) -> {
             Map<String,Object> row = new LinkedHashMap<>();
             row.put("id", rs.getString("id"));
             row.put("userId", rs.getString("user_id"));
@@ -57,7 +68,7 @@ public class AuditRepository {
             row.put("before", rs.getString("before_json"));
             row.put("after", rs.getString("after_json"));
             return row;
-        }, farmId, safeLimit);
+        }, args);
     }
 
     private String changedFields(String beforeJson, String afterJson) {
