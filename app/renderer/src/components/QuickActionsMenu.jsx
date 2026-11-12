@@ -46,8 +46,8 @@ export default function QuickActionsMenu({
   const groups = useMemo(() => actionGroups.map(group => ({
     ...group,
     actions: group.actions.filter(action => {
-      if (action.requiresBatch && !activeBatch) return false;
-      if (action.requiresLayer && activeBatch?.type !== "LAYER") return false;
+      if (action.requiresBatch && !(activeBatch?.status === "ACTIVE" && activeBatch?.id)) return false;
+      if (action.requiresLayer && (activeBatch?.status !== "ACTIVE" || activeBatch?.type !== "LAYER")) return false;
       if (action.requiresApplicableFeed && !hasApplicableFeed) return false;
       if (action.requiresFeedType && !hasFeedTypes) return false;
       if (action.requiresInventoryItem && !hasInventoryItems) return false;
@@ -56,6 +56,7 @@ export default function QuickActionsMenu({
   })).filter(group => group.actions.length > 0), [activeBatch, hasFeedTypes, hasApplicableFeed, hasInventoryItems]);
 
   const visibleActions = groups.flatMap(group => group.actions);
+  const hasActiveBatch = activeBatch?.status === "ACTIVE" && Boolean(activeBatch?.id);
 
   useEffect(() => {
     if (open) itemRefs.current[0]?.focus();
@@ -102,7 +103,7 @@ export default function QuickActionsMenu({
 
   function selectAction(action) {
     const targetTab = action.saleRoute && activeBatch?.type !== "LAYER" ? "broiler" : action.tab;
-    const context = (action.requiresBatch || action.supportsBatchContext) && activeBatch?.id
+    const context = (action.requiresBatch || action.supportsBatchContext) && hasActiveBatch
       ? `/batchId=${encodeURIComponent(activeBatch.id)}`
       : "";
     onNavigate?.(`#${action.page}/${targetTab}${context}`);
