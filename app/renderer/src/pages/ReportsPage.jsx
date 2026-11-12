@@ -23,8 +23,10 @@ import MetricHelp from "../components/MetricHelp.jsx";
 import { FinancialAnalytics, FlockAnalytics } from "../components/AnalyticsCharts.jsx";
 
 export default function ReportsPage() {
-  const { formatMoney, formatQuantity, formatPercent, formatKg, formatMetric, formatCount, feedQuantity, farm, houses, batches, selectedBatchId, setSelectedBatchId, farmReport, batchReport, dateRange, setDateRange, applicationSettings, loadReport, loadBatchReport, exportCsv, exportPdf, reportLoading, batchReportLoading, dataLoadError, retryData } = useContext(FarmManagerContext);
-  const selectedBatchIsVisible = batches.some(batch => batch.id === selectedBatchId);
+  const { formatMoney, formatQuantity, formatPercent, formatKg, formatMetric, formatCount, feedQuantity, farm, houses, batches, selectedBatchId, setSelectedBatchId, farmReport, batchReport, dateRange, setDateRange, applicationSettings, loadReport, loadBatchReport, exportCsv, exportPdf, reportLoading, batchReportLoading, reportExporting, dataLoadError, retryData } = useContext(FarmManagerContext);
+  const [reportHouseId, setReportHouseId] = useState("");
+  const visibleBatches = reportHouseId ? batches.filter(batch => batch.houseId === reportHouseId) : batches;
+  const selectedBatchIsVisible = visibleBatches.some(batch => batch.id === selectedBatchId);
 
   const farmPeriodProfitMinor = farmReport?.period
     ? calculatePeriodProfitMinor(farmReport.period.revenueMinor, farmReport.period.expensesMinor)
@@ -36,9 +38,10 @@ export default function ReportsPage() {
 
   return (
     <PageTemplate className="grid pomas-page page-reports">
+      {reportExporting && <p className="muted" role="status" aria-live="polite">Preparing report export. Larger reports may take a little longer.</p>}
       <PageSection page="reports" tab="farm-report"><section id="reports" className="card full">
           <div className="section-head"><div><p className="eyebrow">REPORTING</p><h2>Farm reports</h2></div>
-            <div className="report-range-actions"><DateRangeFilter value={dateRange} timezone={farm?.timezone} dateFormat={applicationSettings?.dateFormat} onChange={setDateRange} /><div className="inline-form"><button type="button" onClick={() => loadReport(dateRange.from, dateRange.to)}>Refresh</button><button type="button" onClick={() => exportCsv(() => reportApi.farmCsv(null, dateRange.from, dateRange.to, farmPeriodProfitMinor), "farm-report.csv")}>Export CSV</button><button type="button" onClick={() => exportPdf(() => reportApi.farmPdf(null, dateRange.from, dateRange.to, farmPeriodProfitMinor), "farm-report.pdf")}>Export PDF</button></div></div>
+            <div className="report-range-actions"><DateRangeFilter value={dateRange} timezone={farm?.timezone} dateFormat={applicationSettings?.dateFormat} onChange={setDateRange} /><div className="inline-form"><button type="button" onClick={() => loadReport(dateRange.from, dateRange.to)}>Refresh</button><button type="button" disabled={reportExporting} onClick={() => exportCsv(() => reportApi.farmCsv(null, dateRange.from, dateRange.to, farmPeriodProfitMinor), "farm-report.csv")}>{reportExporting ? "Preparing…" : "Export CSV"}</button><button type="button" disabled={reportExporting} onClick={() => exportPdf(() => reportApi.farmPdf(null, dateRange.from, dateRange.to, farmPeriodProfitMinor), "farm-report.pdf")}>{reportExporting ? "Preparing…" : "Export PDF"}</button></div></div>
           </div>
           {farmReport ? <>
             <div className="metric-grid">
@@ -80,12 +83,15 @@ export default function ReportsPage() {
             <div className="report-range-actions">
               <DateRangeFilter value={dateRange} timezone={farm?.timezone} onChange={setDateRange} />
               <div className="inline-form">
-              <select aria-label="Batch report" value={selectedBatchId} onChange={e => { setSelectedBatchId(e.target.value); rememberLastBatchId(e.target.value); }}>
-                <option value="">Select a batch</option>{batches.map(batch => <option key={batch.id} value={batch.id}>{batch.code} · {batch.type === "LAYER" ? "Layer" : batch.type === "BROILER" ? "Broiler" : batch.type === "TURKEY" ? "Turkey" : "Unknown type"}</option>)}
+              <select aria-label="Filter batches by house" value={reportHouseId} onChange={event => { const nextHouseId = event.target.value; setReportHouseId(nextHouseId); if (selectedBatchId && !batches.some(batch => batch.id === selectedBatchId && (!nextHouseId || batch.houseId === nextHouseId))) setSelectedBatchId(""); }}>
+                <option value="">All houses / pens</option>{houses.map(house => <option key={house.id} value={house.id}>{house.name || house.code}</option>)}
               </select>
-              <button type="button" onClick={() => loadBatchReport(selectedBatchId, dateRange.from, dateRange.to)}>Refresh</button>
-              <button type="button" disabled={!selectedBatchId} onClick={() => exportCsv(() => reportApi.batchCsv(selectedBatchId, null, dateRange.from, dateRange.to, batchPeriodProfitMinor), "batch-report.csv")}>Export CSV</button>
-              <button type="button" disabled={!selectedBatchId} onClick={() => exportPdf(() => reportApi.batchPdf(selectedBatchId, null, dateRange.from, dateRange.to, batchPeriodProfitMinor), "batch-report.pdf")}>Export PDF</button>
+              <select aria-label="Batch report" value={selectedBatchIsVisible ? selectedBatchId : ""} onChange={e => { setSelectedBatchId(e.target.value); rememberLastBatchId(e.target.value); if (e.target.value) loadBatchReport(e.target.value, dateRange.from, dateRange.to); }}>
+                <option value="">Select a batch</option>{visibleBatches.map(batch => <option key={batch.id} value={batch.id}>{batch.code} · {batch.type === "LAYER" ? "Layer" : batch.type === "BROILER" ? "Broiler" : batch.type === "TURKEY" ? "Turkey" : "Unknown type"}</option>)}
+              </select>
+              <button type="button" disabled={!selectedBatchIsVisible || reportExporting} onClick={() => loadBatchReport(selectedBatchId, dateRange.from, dateRange.to)}>Refresh</button>
+              <button type="button" disabled={!selectedBatchIsVisible || reportExporting} onClick={() => exportCsv(() => reportApi.batchCsv(selectedBatchId, null, dateRange.from, dateRange.to, batchPeriodProfitMinor), "batch-report.csv")}>{reportExporting ? "Preparing…" : "Export CSV"}</button>
+              <button type="button" disabled={!selectedBatchIsVisible || reportExporting} onClick={() => exportPdf(() => reportApi.batchPdf(selectedBatchId, null, dateRange.from, dateRange.to, batchPeriodProfitMinor), "batch-report.pdf")}>{reportExporting ? "Preparing…" : "Export PDF"}</button>
               </div>
             </div>
           </div>
