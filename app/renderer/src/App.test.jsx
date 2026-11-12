@@ -975,4 +975,31 @@ describe("App", () => {
     expect(screen.queryByText("875")).not.toBeInTheDocument();
   });
 
+  it("opens a contextual quick action and preselects the active batch in the existing form", async () => {
+    mockFarmApis({ currentBatches: [batches[0]] });
+    render(<App />);
+
+    fireEvent.click(await screen.findByRole("button", { name: /Quick actions/ }));
+    const quickActionsDialog = await screen.findByRole("dialog", { name: "Quick actions" });
+    fireEvent.click(await within(quickActionsDialog).findByRole("button", { name: "Mortality Record birds that died" }));
+
+    expect(window.location.hash).toBe("#daily-work/mortality/batchId=layer-1");
+    const mortalityDialog = await screen.findByRole("dialog", { name: "Record mortality" });
+    expect(within(mortalityDialog).getByLabelText("Batch")).toHaveValue("layer-1");
+  });
+
+  it("does not trust a closed batch in a quick action route", async () => {
+    window.location.hash = "#daily-work/mortality/batchId=closed-1";
+    mockFarmApis({
+      currentBatches: [
+        { ...batches[0], id: "closed-1", status: "SOLD" },
+        batches[1],
+      ],
+    });
+    render(<App />);
+
+    const mortalityDialog = await screen.findByRole("dialog", { name: "Record mortality" });
+    expect(within(mortalityDialog).getByLabelText("Batch")).toHaveValue("broiler-1");
+  });
+
 });
