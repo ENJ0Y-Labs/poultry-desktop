@@ -581,6 +581,29 @@ export default function App() {
     return () => window.removeEventListener("hashchange", applyAttentionContext);
   }, []);
 
+  useEffect(() => {
+    function applyQuickActionContext() {
+      const segments = String(window.location.hash || "").replace(/^#\/?/, "").split("/");
+      if (segments[0] !== "daily-work" || segments[1] !== "mortality") return;
+
+      const context = parseAttentionContext(window.location.hash);
+      const contextualBatch = batches.find(batch => batch.id === context.batchId && batch.status === "ACTIVE");
+      const fallbackBatch = batches.find(batch => batch.id === selectedBatchId && batch.status === "ACTIVE")
+        || batches.find(batch => batch.status === "ACTIVE");
+      const targetBatchId = contextualBatch?.id || fallbackBatch?.id || "";
+
+      if (targetBatchId) {
+        setSelectedBatchId(targetBatchId);
+        setMortalityForm(form => ({ ...form, batchId: targetBatchId }));
+      }
+      setMortalityModalSignal(signal => signal + 1);
+    }
+
+    window.addEventListener("hashchange", applyQuickActionContext);
+    applyQuickActionContext();
+    return () => window.removeEventListener("hashchange", applyQuickActionContext);
+  }, [batches, selectedBatchId]);
+
   useEffect(() => { initialize(); }, []);
   useEffect(() => {
     if (farm && isValidDateRange(dateRange)) {
