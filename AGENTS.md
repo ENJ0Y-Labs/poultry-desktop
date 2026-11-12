@@ -1370,3 +1370,13 @@ Validate the renderer with the backend available, during startup, and with the b
 Opening feed stock is stored in the existing `feed_opening_balances` table. Do not create a duplicate feed ledger or a purchase, supplier, invoice, or expense for opening stock. Opening balances enter the same FIFO sequence as purchased lots, ordered by effective date and then creation timestamp. Opening lots are unvalued: never assign zero or estimated cost. If a usage consumes any unvalued opening quantity, its total feed cost is unknown (`null`). Preserve and allocate the known cost portion consumed from purchased lots to the batch bird-cost pool, exposing it as `knownFeedCostMinor`; never invent cost for the unvalued portion. A usage consuming only opening stock has no known purchased-feed cost and creates no bird additional-cost event. Remaining or consumed inventory cost, batch feed cost, and per-bird feed cost must remain unknown whenever their included quantities contain unvalued stock. Render unknown as “Unknown”, never as currency zero.
 
 An opening balance may be dated before a later purchase, but cannot be dated before the latest existing usage or latest opening-balance entry for the same feed type. This prevents retroactive changes to FIFO allocations. Preserve the existing purchase rule that an actual purchase creates exactly one feed expense. See `docs/decisions/2026-10-02-feed-management.md`.
+
+
+## Global Quick Actions
+
+- Keep the global Quick Actions menu in the existing application shell and use the existing hash routes and forms. Never duplicate business workflows or write farm data directly from the menu.
+- Only expose operations supported by the current authenticated farm state. Batch-specific actions require a loaded ACTIVE batch. Egg collection is LAYER-only; sale routing follows the active batch type. Feed usage requires an active applicable feed type, feed purchase requires a registered feed type, and stock movement requires an existing inventory item.
+- Pass batch context only to operations that accept it. Validate the context against the loaded ACTIVE batch list before updating form state. Never trust a batch ID merely because it appears in the URL.
+- Keep the menu keyboard accessible: Ctrl+K opens it, arrow keys move through actions, Home/End jump to the boundaries, Enter activates, Escape closes and restores focus, and pointer interaction outside the panel dismisses it.
+- Preserve existing dashboard quick actions, route conventions, offline operation, and backend validation. The menu is navigation only; Spring Boot remains authoritative.
+- Update docs/frontend-navigation.md and tests when action availability, routes, context, or keyboard behavior changes.
