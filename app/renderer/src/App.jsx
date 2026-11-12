@@ -327,7 +327,7 @@ export default function App() {
     try {
       const saved = await window.poultryDesktop.saveDraft({ id, form, references: draftReferences(form) });
       setDrafts(current => ({ ...current, [id]: saved }));
-      setDraftStatuses(current => ({ ...current, [id]: { hasDraft: true, saving: false, stale: false, savedAt: saved.savedAt } }));
+      setDraftStatuses(current => ({ ...current, [id]: { hasDraft: true, saving: false, stale: false, staleReferences: [], savedAt: saved.savedAt } }));
     } catch (err) {
       setError("Draft review could not be saved: " + displayApiError(err));
     }
@@ -351,8 +351,9 @@ export default function App() {
         for (const [id, draft] of Object.entries(saved)) {
           if (!setters[id] || !draft?.form) continue;
           setters[id](draft.form);
-          const stale = JSON.stringify(draftReferences(draft.form)) !== JSON.stringify(draft.references || {});
-          statuses[id] = { hasDraft: true, saving: false, stale, savedAt: draft.savedAt || null };
+          const currentReferences = draftReferences(draft.form);
+          const staleReferences = Object.keys(currentReferences).filter(key => JSON.stringify(currentReferences[key]) !== JSON.stringify(draft.references?.[key] ?? null));
+          statuses[id] = { hasDraft: true, saving: false, stale: staleReferences.length > 0, staleReferences, savedAt: draft.savedAt || null };
         }
         setDrafts(saved);
         setDraftStatuses(statuses);
@@ -388,7 +389,7 @@ export default function App() {
             ? existing.references : draftReferences(id, form);
           const saved = await window.poultryDesktop.saveDraft({ id, form, references });
           setDrafts(current => ({ ...current, [id]: saved }));
-          setDraftStatuses(current => ({ ...current, [id]: { hasDraft: true, saving: false, stale: current[id]?.stale || false, savedAt: saved.savedAt } }));
+          setDraftStatuses(current => ({ ...current, [id]: { hasDraft: true, saving: false, stale: current[id]?.stale || false, staleReferences: current[id]?.staleReferences || [], savedAt: saved.savedAt } }));
         } catch {
           setDraftStatuses(current => ({ ...current, [id]: { ...current[id], saving: false, saveError: true, failedForm: form } }));
         }
