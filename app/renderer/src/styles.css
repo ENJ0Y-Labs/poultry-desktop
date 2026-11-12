@@ -1273,3 +1273,49 @@ body { min-width: 0; }
 .table-filter-chip span[aria-hidden="true"]{color:var(--amber);font-size:1rem}
 .table-filter-count{margin:0;color:var(--muted);font-size:.75rem}
 @media(max-width:700px){.table-filter-controls{align-items:stretch}.table-filter-controls label{flex-basis:100%}.table-filter-controls>.secondary-button{align-self:flex-start}}
+
+
+/* Progressive disclosure for optional farm-record fields. */
+.optional-fields {
+  grid-column: 1 / -1;
+  min-width: 0;
+  margin: 2px 0;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--panel-soft);
+}
+.optional-fields > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 40px;
+  padding: 9px 12px;
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+  list-style-position: inside;
+}
+.optional-fields > summary::marker { color: var(--muted); }
+.optional-fields-hint {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 500;
+}
+.optional-fields-description {
+  margin: 0;
+  padding: 0 12px 8px;
+  font-size: 11px;
+}
+.optional-fields-content {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  padding: 0 12px 12px;
+}
+.optional-fields-content > .full { grid-column: 1 / -1; }
+.optional-fields:focus-within { border-color: var(--focus, var(--amber)); }
+@media (max-width: 560px) {
+  .optional-fields-content { grid-template-columns: minmax(0, 1fr); }
+}
