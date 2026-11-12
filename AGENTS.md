@@ -1438,3 +1438,11 @@ An opening balance may be dated before a later purchase, but cannot be dated bef
 - Page sizes are 10, 25, 50 and 100. Apply filtering, sorting, then pagination. Reset to page one when filters or page size change and clamp the current page when rows are removed.
 - The current shared renderer component paginates loaded rows only. This is not database pagination. Do not describe large histories as scalable until relevant API and SQL repository queries are bounded and return total counts. Preserve existing API response behavior when introducing paged responses.
 - See `docs/data-table-pagination.md` for the current contract and server-pagination limitation.
+
+
+## Contextual row actions (Issue #236)
+
+- Use the shared `RowActionsMenu` through the optional `DataTable rowActions(row)` callback for contextual record actions. Return stable action IDs and use `visible`, `disabled`, `disabledReason`, and `destructive` to communicate applicability and lifecycle restrictions.
+- The page/context owns action configuration and must call existing backend-backed workflows. The menu is presentation-only; Spring Boot remains authoritative for authorization, lifecycle validation, transaction safety, persistence and audit.
+- Never expose unrestricted edit/delete for posted financial or stock transactions. Use the audited reversal-plus-replacement workflow and existing confirmation UI.
+- See `docs/contextual-row-actions.md`. The shared primitive is not a completed domain integration: migrate relevant module pages and add backend invalid-operation and audit tests before closing Issue #236.
