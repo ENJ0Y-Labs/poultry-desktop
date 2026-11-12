@@ -145,7 +145,7 @@ public class ReportExportService {
                 amount.setMaximumFractionDigits(2);
                 java.math.BigDecimal minorAmount = java.math.BigDecimal.valueOf(value.asLong(), 2);
                 return (minorAmount.signum() < 0 ? "-" : "")
-                        + currency.getSymbol(Locale.forLanguageTag("en-NG"))
+                        + currencySymbol(currencyCode)
                         + amount.format(minorAmount.abs());
             } catch (RuntimeException ignored) {
                 return value.asText();
@@ -168,6 +168,11 @@ public class ReportExportService {
         if (lower.contains("quantitymilli")) return "units";
         if (lower.contains("eggs") || lower.contains("birds") || lower.contains("mortality") || lower.contains("culling")) return "count";
         return "";
+    }
+
+    private String currencySymbol(String currencyCode) {
+        if ("NGN".equals(currencyCode)) return "₦";
+        return java.util.Currency.getInstance(currencyCode).getSymbol(Locale.forLanguageTag("en-NG"));
     }
 
     private String currencyCode(Map<String, Object> report) {
