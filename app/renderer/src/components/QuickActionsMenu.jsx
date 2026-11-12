@@ -37,6 +37,7 @@ export default function QuickActionsMenu({
   hasApplicableFeed = false,
   hasInventoryItems = false,
   onNavigate,
+  onAction,
 }) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef(null);
@@ -101,6 +102,7 @@ export default function QuickActionsMenu({
     const context = (action.requiresBatch || action.supportsBatchContext) && hasActiveBatch
       ? `/batchId=${encodeURIComponent(activeBatch.id)}`
       : "";
+    onAction?.(action.id);
     onNavigate?.(`#${action.page}/${targetTab}${context}`);
     setOpen(false);
   }
