@@ -92,4 +92,12 @@ describe("QuickActionsMenu", () => {
     expect(onNavigate).toHaveBeenCalledWith(target);
   });
 
+  it("hides batch actions when the supplied batch is closed", async () => {
+    render(<QuickActionsMenu activeBatch={{ id: "closed-1", type: "LAYER", status: "SOLD" }} />);
+    fireEvent.click(screen.getByRole("button", { name: /Quick actions/ }));
+    expect(await screen.findByRole("button", { name: /Expense/ })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Mortality/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Egg collection/ })).not.toBeInTheDocument();
+  });
+
 });
