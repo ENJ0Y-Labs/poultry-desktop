@@ -128,7 +128,7 @@ export default function GuidedTour({ open, onClose, onNavigate, guideId = "" }) 
         <p id="guided-tour-description">{step.description}</p>
         <div className="guided-tour-actions">
             {step.complete && <button type="button" className="guided-tour-skip" onClick={() => setIndex(0)}>Repeat guide</button>}
-            {!step.complete && <button type="button" className="guided-tour-skip" onClick={finish}>Exit guide</button>}
+            {!step.complete && <button type="button" className="guided-tour-skip" onClick={finish}>{guide ? "Exit guide" : "Skip tour"}</button>}
           <div>
             <button type="button" className="guided-tour-back" onClick={() => setIndex(current => Math.max(0, current - 1))} disabled={index === 0}>Back</button>
             <button type="button" className="guided-tour-next" onClick={next}>{step.complete ? "Try with farm data" : !guide && index === activeSteps.length - 1 ? "Finish tour" : "Next"}</button>
