@@ -1,6 +1,7 @@
 import { useContext, useState } from "react";
 // eslint-disable-next-line no-unused-vars -- JSX component usage is not detected by the core rule
 import ValidatedForm from "../components/ValidatedForm.jsx";
+import OptionalFields from "../components/OptionalFields.jsx";
 import { FarmManagerContext } from "../components/FarmManagerContext.jsx";
 // eslint-disable-next-line no-unused-vars -- JSX component usage is not detected by the core rule
 import { ModalForm } from "../components/Modal.jsx";
@@ -132,10 +133,10 @@ export default function SalesMoneyPage() {
             <label className="field"><span>Category</span><select required value={expenseForm.category} onChange={e => setExpenseForm({ ...expenseForm, category: e.target.value })}>
               {expenseCategories.map(category => <option key={category.id} value={category.name}>{category.name}</option>)}
             </select></label>
-            <label className="field"><span>Batch association</span><select value={expenseForm.batchId} onChange={e => setExpenseForm({ ...expenseForm, batchId: e.target.value })}>
+            <OptionalFields title="Batch allocation" description="Keep this expense at farm level unless it belongs to a specific batch."><label className="field"><span>Batch association (optional)</span><select value={expenseForm.batchId} onChange={e => setExpenseForm({ ...expenseForm, batchId: e.target.value })}>
               <option value="">Farm-level</option>
               {batches.map(batch => <option key={batch.id} value={batch.id}>{batch.code}</option>)}
-            </select></label>
+            </select></label></OptionalFields>
             <button disabled={saving}>Record expense</button>
           </ValidatedForm>
         </ModalForm>
