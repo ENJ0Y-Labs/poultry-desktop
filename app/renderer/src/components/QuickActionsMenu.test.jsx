@@ -58,9 +58,9 @@ describe("QuickActionsMenu", () => {
     expect(trigger).toHaveFocus();
     expect(screen.queryByRole("dialog", { name: "Quick actions" })).not.toBeInTheDocument();
   });
-  it("opens from the Ctrl+K shortcut", async () => {
+  it("opens when the central shortcut manager dispatches its event", async () => {
     render(<QuickActionsMenu activeBatch={{ id: "batch-1", type: "LAYER", status: "ACTIVE" }} />);
-    fireEvent.keyDown(window, { key: "k", ctrlKey: true });
+    window.dispatchEvent(new Event("pomas:open-quick-actions"));
     expect(await screen.findByRole("dialog", { name: "Quick actions" })).toBeInTheDocument();
     await waitFor(() => expect(screen.getByRole("button", { name: /Daily record/ })).toHaveFocus());
   });
