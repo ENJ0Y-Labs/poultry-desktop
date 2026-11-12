@@ -19,14 +19,6 @@ import GettingStartedChecklist from "../components/GettingStartedChecklist.jsx";
 // eslint-disable-next-line no-unused-vars
 import DashboardKpiCard from "../components/DashboardKpiCard.jsx";
 
-function todayLocalDate() {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, "0");
-  const day = String(now.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
-
 function formatBusinessDate(value, pattern = "YYYY-MM-DD") {
   if (!value || typeof value !== "string") return "—";
   pattern = pattern || "YYYY-MM-DD";
@@ -55,21 +47,7 @@ export default function DashboardPage() {
     applicationSettings,
     dateRange,
     setDateRange,
-    selectedBatchId,
-    setMortalityForm,
-    setMortalityModalSignal,
-    setFeedUsageModalSignal,
-    setEggBatchId,
-    setEggCollectionForm,
-    setFeedUsageForm,
-    setDailyForm,
-    setBroilerBatchId,
-    setBirdSaleForm,
-    setEggSaleForm,
-    setExpenseForm,
     setFeedPurchaseModalSignal,
-    loadEggsForBatch,
-    loadBroilerForBatch,
   } = useContext(FarmManagerContext);
 
   const [drawerRecord, setDrawerRecord] = useState(null);
@@ -161,57 +139,6 @@ export default function DashboardPage() {
         ) : (
           <>
             <GettingStartedChecklist houses={houses} batches={batches} feedTypes={feedTypes} feedInventory={feedInventory} onTaskAction={route => { if (route === "feed-stock/purchases") setFeedPurchaseModalSignal(value => value + 1); }} />
-            <section className="subsection quick-actions" aria-labelledby="quick-actions-title">
-              <div className="section-head"><div><p className="eyebrow">DAILY WORK</p><h3 id="quick-actions-title">Quick actions</h3></div><p className="muted">Jump straight to a validated entry form.</p></div>
-              <div className="quick-action-grid">
-                <button type="button" onClick={() => {
-                  const batch = batches.find(item => item.id === selectedBatchId && item.status === "ACTIVE") || batches.find(item => item.status === "ACTIVE");
-                  setMortalityForm(form => ({ ...form, batchId: batch?.id || form.batchId, date: todayLocalDate() }));
-                  setMortalityModalSignal(value => value + 1);
-                  navigateTo("daily-work/mortality");
-                }}>Record mortality</button>
-                <button type="button" onClick={() => {
-                  const batch = batches.find(item => item.id === selectedBatchId && item.type === "LAYER" && item.status === "ACTIVE") || batches.find(item => item.type === "LAYER" && item.status === "ACTIVE");
-                  if (batch) {
-                    setEggBatchId(batch.id);
-                    setEggCollectionForm(form => ({ ...form, batchId: batch.id, date: todayLocalDate() }));
-                    loadEggsForBatch(batch.id);
-                  }
-                  navigateTo("production/eggs");
-                }}>Collect eggs</button>
-                <button type="button" onClick={() => {
-                  const batch = batches.find(item => item.id === selectedBatchId && item.status === "ACTIVE") || batches.find(item => item.status === "ACTIVE");
-                  const type = feedTypes.find(item => item.status === "ACTIVE" && (!batch || item.applicableType === "BOTH" || item.applicableType === batch.type));
-                  const batchId = batch?.id || "";
-                  setDailyForm(form => ({ ...form, batchId, date: todayLocalDate() }));
-                  setFeedUsageForm(form => ({ ...form, batchId, feedTypeId: type?.id || form.feedTypeId, unit: type?.unit || form.unit, usageDate: todayLocalDate() }));
-                  setFeedUsageModalSignal(value => value + 1);
-                  navigateTo("daily-work/daily-record");
-                }}>Record feed usage</button>
-                <button type="button" onClick={() => {
-                  const batch = batches.find(item => item.id === selectedBatchId && item.status === "ACTIVE") || batches.find(item => item.status === "ACTIVE");
-                  if (batch?.type === "BROILER") {
-                    setBroilerBatchId(batch.id);
-                    setBirdSaleForm(form => ({ ...form, batchId: batch.id, date: todayLocalDate() }));
-                    loadBroilerForBatch(batch.id);
-                    navigateTo("production/broiler");
-                  } else {
-                    const layer = batch?.type === "LAYER" ? batch : batches.find(item => item.type === "LAYER" && item.status === "ACTIVE");
-                    if (layer) {
-                      setEggBatchId(layer.id);
-                      setEggSaleForm(form => ({ ...form, batchId: layer.id, date: todayLocalDate() }));
-                      loadEggsForBatch(layer.id);
-                    }
-                    navigateTo("production/eggs");
-                  }
-                }}>Record a sale</button>
-                <button type="button" onClick={() => {
-                  const batch = batches.find(item => item.id === selectedBatchId && item.status === "ACTIVE") || batches.find(item => item.status === "ACTIVE");
-                  setExpenseForm(form => ({ ...form, batchId: batch?.id || form.batchId, occurredDate: todayLocalDate() }));
-                  navigateTo("sales-money/expenses");
-                }}>Record an expense</button>
-              </div>
-            </section>
             <section className="dashboard-kpi-section" aria-label="Farm key performance indicators">
               <div className="dashboard-kpi-primary">
                 <DashboardKpiCard label="Total birds" value={formatCount(dashboard.totalBirds)} primary href="#flocks/batch-dashboard" description="View flock populations and batch details" />

@@ -1390,40 +1390,19 @@ export default function App() {
 
           <section className="auth-whats-new" aria-labelledby="auth-whats-new-title">
             <div className="auth-whats-new-heading">
-              <p className="auth-whats-new-kicker">POMAS v1.0.4</p>
+              <p className="auth-whats-new-kicker">{appVersionLabel(appInfo)}</p>
               <h2 id="auth-whats-new-title">What's new</h2>
-              <p>More flexible egg and bird sales, better feed and stock controls, and a clearer experience across the farm workspace.</p>
+              <p>Reach common farm tasks faster, with one Quick actions menu and keyboard shortcuts across the workspace.</p>
             </div>
             <div className="auth-whats-new-grid">
               <article className="auth-whats-new-item">
-                <span>01</span><div><h3>Egg production in crates</h3><p>See dashboard egg totals as crates and remaining eggs, using your farm's configured crate size.</p></div>
+                <span>01</span><div><h3>Quick actions in one place</h3><p>Start common daily, production, finance, and stock workflows from the top bar.</p></div>
               </article>
               <article className="auth-whats-new-item">
-                <span>02</span><div><h3>Flexible bird sales</h3><p>Record partial or individual bird sales without having to close the entire batch.</p></div>
+                <span>02</span><div><h3>Keyboard-first navigation</h3><p>Use Ctrl+1 through Ctrl+0 to navigate, Ctrl+K for Quick actions, and Ctrl+F to focus page search when available.</p></div>
               </article>
               <article className="auth-whats-new-item">
-                <span>03</span><div><h3>Clearer Windows installer</h3><p>The Windows installer filename now identifies the x64 architecture clearly.</p></div>
-              </article>
-              <article className="auth-whats-new-item">
-                <span>04</span><div><h3>Theme preference on sign-in</h3><p>Your Light or Dark theme preference now applies to the landing and sign-in screens.</p></div>
-              </article>
-              <article className="auth-whats-new-item">
-                <span>05</span><div><h3>More readable dashboard alerts</h3><p>Improved text contrast makes alerts on gold warning backgrounds easier to read.</p></div>
-              </article>
-              <article className="auth-whats-new-item">
-                <span>06</span><div><h3>Feed product identity and editing</h3><p>Manage brand-specific feed product details and edit feed products more clearly.</p></div>
-              </article>
-              <article className="auth-whats-new-item">
-                <span>07</span><div><h3>Opening feed stock</h3><p>Enter existing feed stock even when it did not come from a recorded purchase.</p></div>
-              </article>
-              <article className="auth-whats-new-item">
-                <span>08</span><div><h3>Editable farm records</h3><p>Correct supported farm master records after creation instead of having to recreate them.</p></div>
-              </article>
-              <article className="auth-whats-new-item">
-                <span>09</span><div><h3>Multiple bird-type feed applicability</h3><p>Select more than one applicable bird type for a feed product using checkboxes.</p></div>
-              </article>
-              <article className="auth-whats-new-item">
-                <span>10</span><div><h3>Cleaner text rendering</h3><p>Literal escape sequences now display as normal text in the interface.</p></div>
+                <span>03</span><div><h3>A cleaner dashboard</h3><p>Dashboard space is reserved for farm performance, attention items, and recent activity.</p></div>
               </article>
             </div>
           </section>
@@ -1524,10 +1503,77 @@ export default function App() {
     </main>
   );
 
+  function handleQuickAction(actionId) {
+    const batch = batches.find(item => item.id === selectedBatchId && item.status === "ACTIVE")
+      || batches.find(item => item.status === "ACTIVE");
+    const today = todayLocalDate();
+
+    switch (actionId) {
+      case "mortality":
+        if (!batch) return;
+        setMortalityForm(form => ({ ...form, batchId: batch.id, date: today }));
+        setMortalityModalSignal(signal => signal + 1);
+        break;
+      case "egg-collection": {
+        const layer = batch?.type === "LAYER"
+          ? batch
+          : batches.find(item => item.type === "LAYER" && item.status === "ACTIVE");
+        if (!layer) return;
+        setEggBatchId(layer.id);
+        setEggCollectionForm(form => ({ ...form, batchId: layer.id, date: today }));
+        loadEggsForBatch(layer.id);
+        break;
+      }
+      case "feed-usage": {
+        if (!batch) return;
+        const feedType = feedTypes.find(type => type.status === "ACTIVE"
+          && (type.applicableTypes || []).includes(batch.type)
+          && feedInventory.some(item => item.feedTypeId === type.id && Number(item.remainingQuantityMilli) > 0));
+        setDailyForm(form => ({ ...form, batchId: batch.id, date: today }));
+        setFeedUsageForm(form => ({
+          ...form,
+          batchId: batch.id,
+          feedTypeId: feedType?.id || "",
+          unit: feedType?.unit || form.unit,
+          usageDate: today,
+        }));
+        setFeedUsageModalSignal(signal => signal + 1);
+        break;
+      }
+      case "feed-purchase": {
+        const feedType = feedTypes.find(type => type.status === "ACTIVE");
+        setFeedPurchaseForm(form => ({
+          ...form,
+          feedTypeId: feedType?.id || form.feedTypeId,
+          unit: feedType?.unit || form.unit,
+          purchaseDate: today,
+        }));
+        setFeedPurchaseModalSignal(signal => signal + 1);
+        break;
+      }
+      case "sale":
+        if (batch?.type === "LAYER") {
+          setEggBatchId(batch.id);
+          setEggSaleForm(form => ({ ...form, batchId: batch.id, date: today }));
+          loadEggsForBatch(batch.id);
+        } else if (batch && (batch.type === "BROILER" || batch.type === "TURKEY")) {
+          setBroilerBatchId(batch.id);
+          setBirdSaleForm(form => ({ ...form, batchId: batch.id, date: today }));
+          loadBroilerForBatch(batch.id);
+        }
+        break;
+      case "expense":
+        setExpenseForm(form => ({ ...form, batchId: batch?.id || "", occurredDate: today }));
+        break;
+      default:
+        break;
+    }
+  }
+
   const pageModel = { signOut, themePreference, dataLoadError, retryData, dateRange, setDateRange: updateDateRange, batchDashboardLoading, reportLoading, batchReportLoading, changeThemePreference, dailyRecordLoading, suppliers, supplierForm, setSupplierForm, saveSupplier, archiveSupplier, editingSupplierId, editSupplier, cancelSupplierEdit, editingCustomerId, editCustomer, cancelCustomerEdit, editingInventoryItemId, editInventoryItem, cancelInventoryItemEdit, editingFeedTypeId, editFeedType, cancelFeedTypeEdit, editingBatchId, setEditingBatchId, batchSetupForm, setBatchSetupForm, saveBatchSetup, editBatchSetup, cancelBatchSetup, formatMoney, formatQuantity, formatPercent, formatKg, formatMetric, formatCount, displayApiError, notify, emptyWeight, emptyBirdSale, emptyPricing, emptyFarm, emptyHouse, emptyBatch, emptyCost, emptyFeedType, emptyFeedPurchase, emptyFeedUsage, emptyDaily, emptyPopulationEvent, emptyHealth, emptyDrug, emptyVaccination, emptyExpense, emptyCustomer, emptyInventoryItem, emptyInventoryMovement, farm, setFarm, farmForm, setFarmForm, houses, setHouses, batches, setBatches, batchForm, setBatchForm, costForm, setCostForm, feedTypes, setFeedTypes, feedInventory, setFeedInventory, feedTypeForm, setFeedTypeForm, feedPurchaseForm, setFeedPurchaseForm, feedUsageForm, setFeedUsageForm, dailyForm, setDailyForm, dailyRecord, setDailyRecord, mortalityForm, setMortalityForm, mortalityModalSignal, setMortalityModalSignal, feedUsageModalSignal, setFeedUsageModalSignal, feedPurchaseModalSignal, setFeedPurchaseModalSignal, cullingForm, setCullingForm, healthForm, setHealthForm, drugForm, setDrugForm, vaccinationForm, setVaccinationForm, healthRecords, setHealthRecords, drugRecords, setDrugRecords, vaccinationRecords, setVaccinationRecords, expenseForm, setExpenseForm, expenses, setExpenses, expenseBatchFilter, setExpenseBatchFilter, inventoryItems, setInventoryItems, inventoryItemForm, setInventoryItemForm, inventoryMovementForm, setInventoryMovementForm, inventoryMovements, setInventoryMovements, customers, setCustomers, customerForm, setCustomerForm, sales, setSales, eggBatchId, setEggBatchId, broilerBatchId, setBroilerBatchId, broilerGrowth, setBroilerGrowth, broilerWeights, setBroilerWeights, broilerSales, setBroilerSales, weightForm, setWeightForm, birdSaleForm, setBirdSaleForm, pricingSettings, setPricingSettings, pricing, setPricing, pricingForm, setPricingForm, eggInventory, setEggInventory, eggCollections, setEggCollections, eggSales, setEggSales, eggCollectionForm, setEggCollectionForm, eggSaleForm, setEggSaleForm, houseForm, setHouseForm, crateSize, setCrateSize, defaultWater, setDefaultWater, waterSizes, setWaterSizes, waterUnitLabel, setWaterUnitLabel, loading, setLoading, saving, setSaving, error, setError, dashboard, setDashboard, attention, setAttention, auditRows, setAuditRows, expenseCategories, setExpenseCategories, expenseCategoryForm, setExpenseCategoryForm, account, setAccount, accountForm, setAccountForm, applicationSettings, setApplicationSettings, backupSettings, setBackupSettings, selectedBatchId, setSelectedBatchId, batchDashboard, setBatchDashboard, farmReport, setFarmReport, batchReport, setBatchReport, reportAsOf, setReportAsOf, load, loadReport, loadBatchReport, exportCsv, exportPdf, loadBatchDashboard, loadDashboard, submitFarm, saveFarm, createExpenseCategory, archiveExpenseCategory, saveAccount, saveApplicationSettings, chooseBackupSettingsDirectory, saveBackupSettings, createBackup, restoreBackup, saveSettings, loadExpenses, loadSales, saveCustomer, saveInventoryItem, loadInventoryMovements, saveInventoryMovement, saveExpense, createBatch, addBirdCost, purchaseFeed, useFeed, feedQuantity, parseWaterEntries, saveDailyRecord, recordPopulationEvent, loadPricingForBatch, savePricingSettings, loadBroilerForBatch, saveWeight, saveBirdSale, loadEggsForBatch, saveEggCollection, saveEggSale, saveHealth, saveDrug, saveVaccination, loadHealthForBatch, markBatchSold, reopenBatch, addHouse: saveHouse, editHouse, editingHouseId, cancelHouseEdit, populationAdjustmentForm, setPopulationAdjustmentForm, populationAdjustments, savePopulationAdjustment, markPopulationEstimated };
 
   return (
-    <AppShell farm={farm} error={error} appInfo={appInfo} onRetry={retryData} batches={batches} selectedBatchId={selectedBatchId} feedTypes={feedTypes} feedInventory={feedInventory} inventoryItems={inventoryItems} startPage={applicationSettings.startPage} startPageReady={settingsReady}>
+    <AppShell farm={farm} error={error} appInfo={appInfo} onRetry={retryData} onQuickAction={handleQuickAction} batches={batches} selectedBatchId={selectedBatchId} feedTypes={feedTypes} feedInventory={feedInventory} inventoryItems={inventoryItems} startPage={applicationSettings.startPage} startPageReady={settingsReady}>
       <FarmManagerContext.Provider value={{ ...pageModel, createFeedType }}>
         <PageSection page="dashboard"><DashboardPage /></PageSection>
         <PageSection page="flocks"><FlocksPage /></PageSection>

@@ -24,15 +24,18 @@
 - Supplier records are loaded and managed through the existing supplier API; feed purchases can reference a registered supplier.
 - The connection indicator probes the backend health endpoint and refreshes periodically. It reports healthy status only when the backend responds successfully and reports a valid database schema.
 - The API base can be configured with `VITE_API_BASE_URL` or the desktop bridge's `getApiBaseUrl`; the local loopback address is only the development fallback.
-- Keyboard navigation shortcuts follow the ten-destination sidebar order: Ctrl+1 through Ctrl+8 open Dashboard through Reports, Ctrl+9 opens Import / Export, and Ctrl+0 opens Settings (the tenth destination, since keyboards have no 10 key). The sidebar displays the matching shortcut beside each destination.
-- Navigation is fully local and adds no package dependency.
+- Keyboard shortcuts are centrally registered in `app/renderer/src/utils/keyboardShortcuts.js`. Ctrl+1 through Ctrl+8 open Dashboard through Reports, Ctrl+9 opens Import / Export, Ctrl+0 opens Settings, Ctrl+K opens Quick actions, and Ctrl+F focuses the current page record search when one exists.
+- Shortcuts are ignored while typing in inputs, textareas, selects, content-editable elements, or during IME composition. Ctrl+N and Ctrl+S are intentionally not intercepted because they are native commands without a single safe app-wide meaning. Alt+number shortcuts are avoided because they may conflict with operating-system menu behavior.
+- Escape remains owned by the active modal, drawer, or menu so dirty-form confirmation and focus restoration continue to work. The top-bar Keyboard shortcuts reference documents active shortcuts. Navigation remains usable without shortcuts and adds no dependency.
 - Only the active page/tab sections are mounted. The backend remains the source of truth for farm calculations and records.
 
 The top-level page components live under `app/renderer/src/pages/`. Shared form state and API handlers remain in `App.jsx` and are exposed through `FarmManagerContext`; future cleanup can move domain-specific state/handlers into focused hooks.
 
 
 ## Farm dashboard presentation
-- The dashboard “Record feed usage” quick action opens Daily Work / Daily record and preselects the active batch, compatible feed type, and current farm-local date. Keep this aligned with the feed-usage form location.
+- Keep the dashboard focused on farm status, attention, and recent activity. Do not render a second page-level Quick actions grid; task shortcuts belong in the single global Quick actions menu in the top bar.
+- The global Quick actions menu is the single entry point for common tasks: daily record, mortality, culling, feed usage, egg collection, vaccination, health event, feed purchase, sale, expense, inventory item, and stock movement. Show batch-dependent actions only when the selected batch is active and compatible; show feed and inventory actions only when their required active records and stock exist.
+- Quick action routes must preserve the selected batch context and open the existing workflow. Do not create duplicate forms, duplicate business logic, or alternate API paths for quick actions.
 
 - The farm dashboard provides the shared reporting-period selector used by farm and batch reports. Preset dates are derived from the farm's IANA timezone and the active application date-format preference.
 - The dashboard labels its current population/stock date separately from the selected activity period. Current birds, house occupancy, and feed stock are not filtered by a historical activity range.

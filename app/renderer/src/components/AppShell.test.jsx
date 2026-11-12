@@ -119,6 +119,28 @@ describe("AppShell", () => {
     expect(within(navigation).getByRole("button", { name: "Settings" })).toHaveAttribute("aria-current", "page");
   });
 
+  it("uses Ctrl+F to focus the active page search and Ctrl+K to open quick actions", async () => {
+    render(
+      <AppShell farm={{ name: "Grantino", location: "", currency: "NGN", timezone: "Africa/Lagos" }}>
+        <PageSection page="dashboard"><label>Search records<input type="search" aria-label="Search records" /></label></PageSection>
+      </AppShell>
+    );
+    fireEvent.keyDown(window, { key: "f", ctrlKey: true });
+    expect(screen.getByRole("searchbox", { name: "Search records" })).toHaveFocus();
+    fireEvent.keyDown(window, { key: "k", ctrlKey: true });
+    expect(await screen.findByRole("dialog", { name: "Quick actions" })).toBeInTheDocument();
+  });
+
+  it("does not trigger navigation shortcuts while typing", () => {
+    render(
+      <AppShell farm={{ name: "Grantino", location: "", currency: "NGN", timezone: "Africa/Lagos" }}>
+        <PageSection page="dashboard"><label>Notes<input aria-label="Notes" /></label></PageSection>
+      </AppShell>
+    );
+    fireEvent.keyDown(screen.getByRole("textbox", { name: "Notes" }), { key: "2", ctrlKey: true });
+    expect(window.location.hash).toBe("#dashboard/overview");
+  });
+
   it("does not accept Import / Export as a saved start page", () => {
     render(
       <AppShell farm={{ name: "Grantino", location: "", currency: "NGN", timezone: "Africa/Lagos" }} startPage="import-export">

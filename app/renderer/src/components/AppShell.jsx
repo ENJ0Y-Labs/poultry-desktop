@@ -10,6 +10,9 @@ import PageHelp from "./PageHelp.jsx";
 import GuidedTour from "./GuidedTour.jsx";
 // eslint-disable-next-line no-unused-vars
 import QuickActionsMenu from "./QuickActionsMenu.jsx";
+// eslint-disable-next-line no-unused-vars
+import { Modal } from "./Modal.jsx";
+import { registerGlobalShortcuts } from "../utils/keyboardShortcuts.js";
 
 const groups = [
   { label: "WORKSPACE", items: [
@@ -161,13 +164,14 @@ function SidebarToggleIcon({ expanded }) {
   );
 }
 
-export default function AppShell({ farm, error, appInfo, onRetry, children, batches = [], selectedBatchId = "", feedTypes = [], feedInventory = [], inventoryItems = [], startPage = "dashboard", startPageReady = true }) {
+export default function AppShell({ farm, error, appInfo, onRetry, onQuickAction, children, batches = [], selectedBatchId = "", feedTypes = [], feedInventory = [], inventoryItems = [], startPage = "dashboard", startPageReady = true }) {
   const [active, setActive] = useState(() => resolvePage(window.location.hash, startPage));
   const [activeTab, setActiveTab] = useState(() => resolveTab(window.location.hash, resolvePage(window.location.hash, startPage)));
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => localStorage.getItem("pomas:sidebar-collapsed") === "true");
   const [backendConnected, setBackendConnected] = useState(null);
   const [recoveryNeeded, setRecoveryNeeded] = useState(false);
   const [tourOpen, setTourOpen] = useState(false);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [retrying, setRetrying] = useState(false);
   const [hasUserNavigated, setHasUserNavigated] = useState(Boolean(window.location.hash));
   const mainContentRef = useRef(null);
@@ -273,21 +277,22 @@ export default function AppShell({ farm, error, appInfo, onRetry, children, batc
     };
   }, []);
 
-  useEffect(() => {
-    const onKeyDown = (event) => {
-      if (!event.ctrlKey || event.altKey || event.shiftKey) return;
-      const shortcuts = { "1": "dashboard", "2": "flocks", "3": "daily-work", "4": "feed-stock", "5": "health", "6": "production", "7": "sales-money", "8": "reports", "9": "import-export", "0": "settings" };
-      const target = shortcuts[event.key];
-      if (!target) return;
-      event.preventDefault();
-      window.location.hash = `${target}/${defaultTabs[target] || "overview"}`;
+  useEffect(() => registerGlobalShortcuts({
+    navigate: target => {
+      const tab = defaultTabs[target] || "overview";
+      window.location.hash = "#" + target + "/" + tab;
       setActive(target);
-      setActiveTab(defaultTabs[target] || "overview");
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, []);
-
+      setActiveTab(tab);
+    },
+    openQuickActions: () => window.dispatchEvent(new CustomEvent("pomas:open-quick-actions")),
+    focusPageSearch: () => {
+      const search = mainContentRef.current?.querySelector('input[type="search"]');
+      if (!search) return false;
+      search.focus();
+      search.select?.();
+      return true;
+    },
+  }), []);
 
 
   return (
@@ -388,7 +393,8 @@ export default function AppShell({ farm, error, appInfo, onRetry, children, batc
               <p className="muted">{farm.location || "Farm profile"} · {farm.currency} · {farm.timezone}</p>
             </div>
             <div className="topbar-actions">
-              <QuickActionsMenu activeBatch={activeBatch} hasFeedTypes={hasActiveFeedTypes} hasApplicableFeed={hasApplicableFeed} hasInventoryItems={hasActiveInventoryItems} onNavigate={navigateQuickAction} />
+              <QuickActionsMenu activeBatch={activeBatch} hasFeedTypes={hasActiveFeedTypes} hasApplicableFeed={hasApplicableFeed} hasInventoryItems={hasActiveInventoryItems} onAction={onQuickAction} onNavigate={navigateQuickAction} />
+              <button type="button" className="secondary-button keyboard-shortcuts-trigger" onClick={() => setShortcutsOpen(true)} aria-haspopup="dialog">Keyboard shortcuts</button>
               <div className={backendConnected === true && !recoveryNeeded ? "system-pill connected" : backendConnected === false || recoveryNeeded ? "system-pill disconnected" : "system-pill"} role="status" aria-live="polite">
                 <span className={backendConnected === true && !recoveryNeeded ? "status-dot online" : backendConnected === false || recoveryNeeded ? "status-dot offline" : "status-dot"} />
                 {connectionLabel}
@@ -433,6 +439,15 @@ export default function AppShell({ farm, error, appInfo, onRetry, children, batc
             <span>Grantino Farms · Local-first</span>
           </footer>
         </div>
+        <Modal open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} title="Keyboard shortcuts" description="Shortcuts available in Pomas. Native browser and operating-system commands are left untouched." size="medium" footer={<div className="pomas-modal-actions"><button type="button" className="secondary-button" onClick={() => setShortcutsOpen(false)}>Close</button></div>}>
+          <div className="keyboard-shortcut-reference">
+            <div><span>Open quick actions</span><kbd>Ctrl + K</kbd></div>
+            <div><span>Focus page record search</span><kbd>Ctrl + F</kbd></div>
+            {groups[0].items.map(item => <div key={item.target}><span>Go to {item.label}</span><kbd>{item.shortcut}</kbd></div>)}
+            <div><span>Close active modal or drawer</span><kbd>Esc</kbd></div>
+            <p>Ctrl + N and Ctrl + S are not intercepted. They retain native behavior until a single safe app-wide create/save action exists.</p>
+          </div>
+        </Modal>
         <GuidedTour open={tourOpen} onClose={() => setTourOpen(false)} onNavigate={navigateTourTarget} />
       </main>
 

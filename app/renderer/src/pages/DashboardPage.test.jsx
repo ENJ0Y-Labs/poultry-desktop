@@ -99,3 +99,17 @@ describe("DashboardPage audit context drawer", () => {
     expect(within(drawer).queryByText("Corrected customer phone")).not.toBeInTheDocument();
   });
 });
+
+describe("DashboardPage quick actions", () => {
+  it("keeps duplicate task shortcuts out of the dashboard because they live in the global menu", () => {
+    render(
+      <NavigationContext.Provider value={{ activePage: "dashboard", activeTab: "overview" }}>
+        <FarmManagerContext.Provider value={contextValue}>
+          <DashboardPage />
+        </FarmManagerContext.Provider>
+      </NavigationContext.Provider>
+    );
+
+    expect(screen.queryByRole("heading", { name: "Quick actions" })).not.toBeInTheDocument();
+  });
+});

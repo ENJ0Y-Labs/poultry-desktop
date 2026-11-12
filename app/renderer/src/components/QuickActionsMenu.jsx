@@ -37,6 +37,7 @@ export default function QuickActionsMenu({
   hasApplicableFeed = false,
   hasInventoryItems = false,
   onNavigate,
+  onAction,
 }) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef(null);
@@ -63,14 +64,9 @@ export default function QuickActionsMenu({
   }, [open]);
 
   useEffect(() => {
-    function handleGlobalShortcut(event) {
-      if (event.ctrlKey && !event.altKey && !event.shiftKey && event.key.toLowerCase() === "k") {
-        event.preventDefault();
-        setOpen(true);
-      }
-    }
-    window.addEventListener("keydown", handleGlobalShortcut);
-    return () => window.removeEventListener("keydown", handleGlobalShortcut);
+    const openFromShortcut = () => setOpen(true);
+    window.addEventListener("pomas:open-quick-actions", openFromShortcut);
+    return () => window.removeEventListener("pomas:open-quick-actions", openFromShortcut);
   }, []);
 
   useEffect(() => {
@@ -106,6 +102,7 @@ export default function QuickActionsMenu({
     const context = (action.requiresBatch || action.supportsBatchContext) && hasActiveBatch
       ? `/batchId=${encodeURIComponent(activeBatch.id)}`
       : "";
+    onAction?.(action.id);
     onNavigate?.(`#${action.page}/${targetTab}${context}`);
     setOpen(false);
   }

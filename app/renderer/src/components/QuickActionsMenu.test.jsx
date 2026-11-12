@@ -19,6 +19,20 @@ describe("QuickActionsMenu", () => {
     expect(screen.getByRole("button", { name: /Stock movement/ })).toBeInTheDocument();
   });
 
+  it("contains the former dashboard shortcuts in one global action menu", async () => {
+    render(<QuickActionsMenu
+      activeBatch={{ id: "batch-1", type: "LAYER", status: "ACTIVE" }}
+      hasFeedTypes
+      hasApplicableFeed
+      onNavigate={vi.fn()}
+    />);
+    fireEvent.click(screen.getByRole("button", { name: /Quick actions/ }));
+
+    for (const label of ["Mortality", "Egg collection", "Feed usage", "Sale", "Expense"]) {
+      expect(await screen.findByRole("button", { name: new RegExp(label) })).toBeInTheDocument();
+    }
+  });
+
   it("hides batch-specific and incompatible actions when no active batch exists", async () => {
     render(<QuickActionsMenu hasFeedTypes={false} hasInventoryItems={false} onNavigate={vi.fn()} />);
     fireEvent.click(screen.getByRole("button", { name: /Quick actions/ }));
@@ -35,6 +49,21 @@ describe("QuickActionsMenu", () => {
     render(<QuickActionsMenu activeBatch={{ id: "batch-1", type: "LAYER", status: "ACTIVE" }} onNavigate={onNavigate} />);
     fireEvent.click(screen.getByRole("button", { name: /Quick actions/ }));
     fireEvent.click(await screen.findByRole("button", { name: /Mortality/ }));
+    expect(onNavigate).toHaveBeenCalledWith("#daily-work/mortality/batchId=batch-1");
+  });
+
+  it("dispatches the selected action to the app before navigating", async () => {
+    const onAction = vi.fn();
+    const onNavigate = vi.fn();
+    render(<QuickActionsMenu
+      activeBatch={{ id: "batch-1", type: "LAYER", status: "ACTIVE" }}
+      onAction={onAction}
+      onNavigate={onNavigate}
+    />);
+    fireEvent.click(screen.getByRole("button", { name: /Quick actions/ }));
+    fireEvent.click(await screen.findByRole("button", { name: /Mortality/ }));
+
+    expect(onAction).toHaveBeenCalledWith("mortality");
     expect(onNavigate).toHaveBeenCalledWith("#daily-work/mortality/batchId=batch-1");
   });
 
@@ -58,9 +87,9 @@ describe("QuickActionsMenu", () => {
     expect(trigger).toHaveFocus();
     expect(screen.queryByRole("dialog", { name: "Quick actions" })).not.toBeInTheDocument();
   });
-  it("opens from the Ctrl+K shortcut", async () => {
+  it("opens when the central shortcut manager dispatches its event", async () => {
     render(<QuickActionsMenu activeBatch={{ id: "batch-1", type: "LAYER", status: "ACTIVE" }} />);
-    fireEvent.keyDown(window, { key: "k", ctrlKey: true });
+    window.dispatchEvent(new Event("pomas:open-quick-actions"));
     expect(await screen.findByRole("dialog", { name: "Quick actions" })).toBeInTheDocument();
     await waitFor(() => expect(screen.getByRole("button", { name: /Daily record/ })).toHaveFocus());
   });
