@@ -6,7 +6,21 @@ export const NAVIGATION_SHORTCUTS = Object.freeze({
 
 export function isTypingTarget(target) {
   if (!target || typeof target.closest !== "function") return false;
-  return Boolean(target.closest('input, textarea, select, [contenteditable=""], [contenteditable="true"], [role="textbox"]'));
+  if (target.closest('input, textarea, select, [role="textbox"]')) return true;
+
+  // contenteditable is inherited. Check the nearest explicit value so a
+  // contenteditable="false" child is not treated as editable just because
+  // one of its ancestors is an editor.
+  let element = target;
+  while (element) {
+    const contentEditable = element.getAttribute?.("contenteditable");
+    if (contentEditable !== null && contentEditable !== undefined) {
+      return contentEditable.toLowerCase() !== "false";
+    }
+    if (element.isContentEditable) return true;
+    element = element.parentElement;
+  }
+  return false;
 }
 
 export function registerGlobalShortcuts({ navigate, openQuickActions, focusPageSearch }) {
