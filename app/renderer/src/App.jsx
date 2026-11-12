@@ -242,6 +242,8 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
+  const [reportExporting, setReportExporting] = useState(false);
   const [dataLoadError, setDataLoadError] = useState("");
   const [authStatus, setAuthStatus] = useState(null);
   const [showAuthPassword, setShowAuthPassword] = useState(false);
@@ -460,6 +462,20 @@ export default function App() {
       setSaving(false);
     }
   }
+  // Clear any persisted draft after a successful transaction. Keep this best-effort
+  // bridge call separate from form state because draft recovery is owned by Electron.
+  async function discardDraft(id, resetForm = true) {
+    try {
+      await window.poultryDesktop?.discardDraft?.(id);
+    } catch (err) {
+      if (resetForm) {
+        setError(displayApiError(err));
+        return;
+      }
+      throw new Error("The transaction was recorded, but its saved draft could not be cleared. Do not submit this form again.");
+    }
+  }
+
   async function loadReport(from = dateRange.from, to = dateRange.to) {
     if (!isValidDateRange({ from, to })) return;
     const requestId = ++farmReportRequestSequence.current;
