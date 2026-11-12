@@ -579,3 +579,14 @@ input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-
   background: var(--pomas-panel-bg);
   border-color: var(--pomas-focus-ring);
 }
+
+/* Shared data-table sorting and pagination controls */
+.data-table__sort{display:inline-flex;align-items:center;gap:.4rem;padding:0;border:0;background:transparent;color:inherit;font:inherit;font-weight:650;cursor:pointer}
+.data-table__sort:focus-visible{outline:2px solid var(--focus-ring,var(--a11y-primary));outline-offset:3px;border-radius:3px}
+.data-table__sort-indicator{opacity:.75;min-width:1em;text-align:center}
+.data-table__pagination{display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:.5rem;padding:.75rem 0;color:var(--a11y-secondary);font-size:.875rem}
+.data-table__page-summary{margin-right:auto}
+.data-table__page-size{display:inline-flex;align-items:center;gap:.4rem}
+.data-table__page-size select{min-height:2rem;border:1px solid var(--border-color,currentColor);border-radius:6px;padding:.2rem .4rem;background:var(--surface,transparent);color:inherit}
+.data-table__page-number{white-space:nowrap}
+@media(max-width:1200px){.data-table__pagination{justify-content:flex-start}.data-table__page-summary{flex-basis:100%}}
