@@ -50,3 +50,20 @@ Use a disposable farm/database only. Do not reset or replace a real farm databas
 9. Verify valid records still save and appear in their existing tables/drawers. Confirm posted transactions, audit behavior, and backend calculations are unchanged.
 
 The manual runtime checks above must be recorded as not run unless actually performed in the desktop application with a disposable database.
+
+
+## Progressive disclosure for optional fields (Issue #239)
+
+- Use the shared `OptionalFields` component for optional secondary details in long farm-entry forms. It uses native `details/summary`, starts collapsed, and keeps its child controls mounted so values survive collapse and expansion.
+- Keep batch, date, quantity, transaction amount, required descriptions/reasons, and all other API/domain-required values immediately visible. Do not move a required field into a collapsed section.
+- Mortality reason/notes, daily notes, feed-usage reason, optional feed-purchase supplier, inventory reorder level, inventory movement batch allocation, vaccination notes, and expense batch allocation are grouped as optional details.
+- Optional sections must not disable controls or bypass `ValidatedForm`. Existing client and backend validation continues to apply. The backend remains authoritative.
+- Only disclose fields that exist in the current renderer/API contract. The current feed-purchase request does not expose invoice number, expiry date, purchase notes, or separate additional-cost fields. Current expense and sales requests do not expose receipt attachments or payment-method/payment-reference fields. Health records currently require condition, description, and action; they do not expose separate diagnosis-note fields. Do not add UI-only values that cannot be persisted. Extend the backend DTO, service, schema/migration and audit behavior first when those fields are approved.
+- The existing sales workflows remain in Production. Customer selection and walk-in customer entry are conditional on whether a saved customer is selected; do not hide required sale date, quantity, or price.
+- Verify collapsed and expanded states, keyboard activation, value retention, invalid form submission with optional groups collapsed, and existing successful saves.
+
+Focused test:
+
+```powershell
+npm test -- app/renderer/src/components/OptionalFields.test.jsx app/renderer/src/pages/DailyWorkPage.test.jsx app/renderer/src/pages/FeedStockPage.test.jsx app/renderer/src/pages/SalesMoneyPage.test.jsx
+```

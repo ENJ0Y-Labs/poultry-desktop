@@ -1446,3 +1446,12 @@ An opening balance may be dated before a later purchase, but cannot be dated bef
 - The page/context owns action configuration and must call existing backend-backed workflows. The menu is presentation-only; Spring Boot remains authoritative for authorization, lifecycle validation, transaction safety, persistence and audit.
 - Never expose unrestricted edit/delete for posted financial or stock transactions. Use the audited reversal-plus-replacement workflow and existing confirmation UI.
 - See `docs/contextual-row-actions.md`. The shared primitive is not a completed domain integration: migrate relevant module pages and add backend invalid-operation and audit tests before closing Issue #236.
+
+
+## Progressive disclosure for farm-entry forms (Issue #239)
+
+- Use `app/renderer/src/components/OptionalFields.jsx` to group optional secondary form fields. It uses native `details/summary` and keeps field controls mounted while collapsed, preserving their values.
+- Essential and domain-required fields remain visible. Never hide required values to shorten a form.
+- Keep optional controls inside the existing `ValidatedForm` and preserve current validation, API payloads, backend authority, and offline operation.
+- Do not add optional UI fields that the current API cannot persist. Add the complete backend contract and migration first when new invoice, expiry, receipt, payment, or diagnosis metadata is approved.
+- See `docs/form-validation.md` for current module coverage and test steps.

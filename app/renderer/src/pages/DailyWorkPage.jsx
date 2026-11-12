@@ -1,6 +1,8 @@
 import { useContext } from "react";
 // eslint-disable-next-line no-unused-vars -- JSX component usage is not detected by the core rule
 import ValidatedForm from "../components/ValidatedForm.jsx";
+// eslint-disable-next-line no-unused-vars -- JSX component usage is not detected by the core rule
+import OptionalFields from "../components/OptionalFields.jsx";
 import { FarmManagerContext } from "../components/FarmManagerContext.jsx";
 // eslint-disable-next-line no-unused-vars -- JSX component usage is not detected by the core rule
 import { ModalForm } from "../components/Modal.jsx";
@@ -58,7 +60,7 @@ export default function DailyWorkPage() {
 <ValidatedForm className="form-grid" onSubmit={event => saveDailyRecord(event, "notes")}>
             <label>Batch<select required value={dailyForm.batchId} onChange={event => updateDailyBatch(event.target.value)}>{batchOptions}</select></label>
             <label>Date<input required type="date" value={dailyForm.date} onChange={event => updateDailyDate(event.target.value)}/></label>
-            <label className="full">Daily notes<input value={dailyForm.notes} onChange={event => setDailyForm({...dailyForm,notes:event.target.value})}/></label>
+            <OptionalFields title="Daily notes" description="Add context that may help explain the day’s activity."><label className="full">Daily notes<input value={dailyForm.notes} onChange={event => setDailyForm({...dailyForm,notes:event.target.value})}/></label></OptionalFields>
             <button disabled={saving}>Save daily notes</button>
           </ValidatedForm>
 </ModalForm>
@@ -75,7 +77,7 @@ export default function DailyWorkPage() {
                 <option value="">Feed type</option>{applicableFeedTypes.map(type => <option key={type.id} value={type.id}>{type.name}{type.brand ? ` · ${type.brand}` : ""} ({type.unit})</option>)}
               </select></label>
               <label>Quantity<input required min="0.001" step="0.001" type="number" value={feedUsageForm.quantity} onChange={event => setFeedUsageForm({...feedUsageForm,quantity:event.target.value})}/></label>
-              <label className="full">Reason (optional)<input value={feedUsageForm.reason} onChange={event => setFeedUsageForm({...feedUsageForm,reason:event.target.value})} placeholder="e.g. Morning feeding"/></label>
+              <OptionalFields title="Additional details"><label className="full">Reason (optional)<input value={feedUsageForm.reason} onChange={event => setFeedUsageForm({...feedUsageForm,reason:event.target.value})} placeholder="e.g. Morning feeding"/></label></OptionalFields>
               <button disabled={saving || !dailyForm.batchId || applicableFeedTypes.length === 0}>Record feed usage</button>
             </ValidatedForm>
 </ModalForm>
@@ -103,8 +105,8 @@ export default function DailyWorkPage() {
             <label>Batch<select required value={mortalityForm.batchId} onChange={event => setMortalityForm({...mortalityForm,batchId:event.target.value})}>{batchOptions}</select></label>
             <label>Date<input required type="date" value={mortalityForm.date} onChange={event => setMortalityForm({...mortalityForm,date:event.target.value})}/></label>
             <label>Quantity<input required min="1" step="1" type="number" value={mortalityForm.quantity} onChange={event => setMortalityForm({...mortalityForm,quantity:event.target.value})}/></label>
-            <label>Reason<input value={mortalityForm.reason} onChange={event => setMortalityForm({...mortalityForm,reason:event.target.value})}/></label>
-            <label className="full">Notes<input value={mortalityForm.notes} onChange={event => setMortalityForm({...mortalityForm,notes:event.target.value})}/></label>
+            <OptionalFields title="Mortality details" description="Optional reason and notes. The batch, date and quantity remain the required record."><label>Reason<input value={mortalityForm.reason} onChange={event => setMortalityForm({...mortalityForm,reason:event.target.value})}/></label>
+              <label className="full">Notes<input value={mortalityForm.notes} onChange={event => setMortalityForm({...mortalityForm,notes:event.target.value})}/></label></OptionalFields>
             <button disabled={saving}>Record mortality</button>
           </ValidatedForm>
 </ModalForm>
