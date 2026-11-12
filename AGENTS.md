@@ -1373,3 +1373,8 @@ Validate the renderer with the backend available, during startup, and with the b
 Opening feed stock is stored in the existing `feed_opening_balances` table. Do not create a duplicate feed ledger or a purchase, supplier, invoice, or expense for opening stock. Opening balances enter the same FIFO sequence as purchased lots, ordered by effective date and then creation timestamp. Opening lots are unvalued: never assign zero or estimated cost. If a usage consumes any unvalued opening quantity, its total feed cost is unknown (`null`). Preserve and allocate the known cost portion consumed from purchased lots to the batch bird-cost pool, exposing it as `knownFeedCostMinor`; never invent cost for the unvalued portion. A usage consuming only opening stock has no known purchased-feed cost and creates no bird additional-cost event. Remaining or consumed inventory cost, batch feed cost, and per-bird feed cost must remain unknown whenever their included quantities contain unvalued stock. Render unknown as “Unknown”, never as currency zero.
 
 An opening balance may be dated before a later purchase, but cannot be dated before the latest existing usage or latest opening-balance entry for the same feed type. This prevents retroactive changes to FIFO allocations. Preserve the existing purchase rule that an actual purchase creates exactly one feed expense. See `docs/decisions/2026-10-02-feed-management.md`.
+
+
+## Progressive disclosure
+
+Follow [docs/progressive-disclosure.md](docs/progressive-disclosure.md) when changing long data-entry forms. Keep required business/accounting fields visible, use native accessible disclosure for optional fields, preserve values when collapsed, and never render fields unsupported by the backend/API as if they were saved.
