@@ -60,12 +60,41 @@ public class BroilerProductionRepository {
                 id, batchId, date.toString(), sampleQuantity, totalWeightGrams, notes, createdAt);
     }
 
+    public java.util.Map<String, Object> findWeightForUndo(String batchId, String weightId) {
+        try {
+            return jdbc.queryForMap("""
+                    SELECT id, batch_id, record_date, sample_quantity, total_weight_grams, notes, created_at
+                    FROM weight_records WHERE id = ? AND batch_id = ?
+                    """, weightId, batchId);
+        } catch (org.springframework.dao.EmptyResultDataAccessException ex) { return null; }
+    }
+    public boolean hasLaterEffectiveWeight(String batchId, String date, String createdAt) {
+        Integer count = jdbc.queryForObject("""
+                SELECT COUNT(*) FROM weight_records w
+                WHERE w.batch_id = ? AND (w.record_date > ? OR (w.record_date = ? AND w.created_at > ?))
+                  AND NOT EXISTS (SELECT 1 FROM transaction_reversals r WHERE r.original_type='WEIGHT_RECORD' AND r.original_id=w.id)
+                """, Integer.class, batchId, date, date, createdAt);
+        return count != null && count > 0;
+    }
+    public boolean isWeightReversed(String weightId) {
+        Integer count = jdbc.queryForObject("SELECT COUNT(*) FROM transaction_reversals WHERE original_type='WEIGHT_RECORD' AND original_id=?", Integer.class, weightId);
+        return count != null && count > 0;
+    }
+    public void insertWeightReversal(String id, String farmId, String batchId, String weightId, String reason, String actorId, String now) {
+        jdbc.update("""
+                INSERT INTO transaction_reversals
+                    (id,farm_id,batch_id,original_type,original_id,operation_type,reason,actor_user_id,occurred_at)
+                VALUES (?, ?, ?, 'WEIGHT_RECORD', ?, 'VOID', ?, ?, ?)
+                """, id, farmId, batchId, weightId, reason, actorId, now);
+    }
+
     public List<WeightRecordResponse> findWeights(String batchId, LocalDate asOf) {
         return jdbc.query("""
-                SELECT id, batch_id, record_date, sample_quantity, total_weight_grams, notes
-                FROM weight_records
-                WHERE batch_id = ? AND record_date <= ?
-                ORDER BY record_date, created_at
+                SELECT w.id, w.batch_id, w.record_date, w.sample_quantity, w.total_weight_grams, w.notes
+                FROM weight_records w
+                WHERE w.batch_id = ? AND w.record_date <= ?
+                  AND NOT EXISTS (SELECT 1 FROM transaction_reversals r WHERE r.original_type='WEIGHT_RECORD' AND r.original_id=w.id)
+                ORDER BY w.record_date, w.created_at
                 """,
                 (rs, rowNum) -> {
                     BigDecimal total = BigDecimal.valueOf(rs.getLong("total_weight_grams"))

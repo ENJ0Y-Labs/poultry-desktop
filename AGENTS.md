@@ -1466,3 +1466,11 @@ An opening balance may be dated before a later purchase, but cannot be dated bef
 - Place creation wizards inside `ModalForm` where cancellation must warn about unsaved work. Preserve values after API failures; reset only after successful save or confirmed discard.
 - Spring Boot remains authoritative for business validation, transactions, calculations and persistence. Do not add UI-only fields or duplicate financial/stock writes.
 - See `docs/multi-step-forms.md` for current batch/feed purchase coverage and manual mock-data steps.
+
+
+## Safe undo and correction (Issue #241)
+
+- A short-lived toast action is permitted only when a matching transaction-specific backend undo endpoint revalidates eligibility. Toast expiry is a UI affordance, not the security check.
+- Currently supported: Undo for the latest effective BROILER/TURKEY weight record only. It requires an authenticated owner, a reason, no later effective measurement, and an append-only WEIGHT_RECORD reversal plus audit event. Original rows remain stored; effective weight history excludes reversed rows.
+- Do not expose Undo for feed, stock, expenses, drugs, population, transfers, egg records, bird sales, or inventory until each owning domain has atomic audited reversal and dependent-ledger recalculation. Feed usage must rebuild FIFO and bird-cost allocations or reject.
+- See docs/safe-undo.md and docs/decisions/2026-10-26-auditable-transaction-corrections.md.
