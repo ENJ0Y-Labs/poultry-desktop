@@ -290,6 +290,8 @@ export default function App() {
     applyQuickActionContext();
     window.addEventListener("hashchange", applyQuickActionContext);
     return () => window.removeEventListener("hashchange", applyQuickActionContext);
+  // The handlers intentionally capture the current loaders; re-register only when batch context changes.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [batches, feedTypes]);
 
   function changeAuthTheme(event) {
