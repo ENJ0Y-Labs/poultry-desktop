@@ -984,10 +984,8 @@ describe("App", () => {
     fireEvent.click(within(quickActionsDialog).getByRole("button", { name: "Mortality" }));
 
     expect(window.location.hash).toBe("#daily-work/mortality/batchId=layer-1");
-    await waitFor(() => {
-      const mortalitySection = screen.getByRole("heading", { name: "Mortality" }).closest("section");
-      expect(within(mortalitySection).getByLabelText("Batch")).toHaveValue("layer-1");
-    });
+    const mortalityDialog = await screen.findByRole("dialog", { name: "Record mortality" });
+    expect(within(mortalityDialog).getByLabelText("Batch")).toHaveValue("layer-1");
   });
 
   it("does not trust a closed batch in a quick action route", async () => {
@@ -1000,10 +998,8 @@ describe("App", () => {
     });
     render(<App />);
 
-    await waitFor(() => {
-      const mortalitySection = screen.getByRole("heading", { name: "Mortality" }).closest("section");
-      expect(within(mortalitySection).getByLabelText("Batch")).toHaveValue("broiler-1");
-    });
+    const mortalityDialog = await screen.findByRole("dialog", { name: "Record mortality" });
+    expect(within(mortalityDialog).getByLabelText("Batch")).toHaveValue("broiler-1");
   });
 
 });
