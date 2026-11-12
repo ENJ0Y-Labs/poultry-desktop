@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 // eslint-disable-next-line no-unused-vars -- Modal is rendered in JSX.
+// eslint-disable-next-line no-unused-vars -- Modal is referenced through JSX.
 import { Modal } from "./Modal.jsx";
 import "./TutorialLibrary.css";
 
