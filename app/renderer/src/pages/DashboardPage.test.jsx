@@ -1,5 +1,15 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
+vi.mock("../services/api.js", async importOriginal => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    reportApi: {
+      ...actual.reportApi,
+      farm: vi.fn().mockResolvedValue({ sales: [], expenses: [], birdPopulation: [] }),
+    },
+  };
+});
 // eslint-disable-next-line no-unused-vars -- JSX component usage is not detected by the core rule
 import DashboardPage from "./DashboardPage.jsx";
 // eslint-disable-next-line no-unused-vars -- JSX provider usage is not detected by the core rule
@@ -111,5 +121,53 @@ describe("DashboardPage quick actions", () => {
     );
 
     expect(screen.queryByRole("heading", { name: "Quick actions" })).not.toBeInTheDocument();
+  });
+
+  it("shows all farm metrics in one five-column grid in the requested reading order", () => {
+    render(
+      <NavigationContext.Provider value={{ activePage: "dashboard", activeTab: "overview" }}>
+        <FarmManagerContext.Provider value={contextValue}>
+          <DashboardPage />
+        </FarmManagerContext.Provider>
+      </NavigationContext.Provider>
+    );
+
+    const kpis = screen.getByRole("region", { name: "Farm key performance indicators" });
+    expect(kpis.querySelectorAll(".dashboard-kpi-grid .dashboard-kpi-card")).toHaveLength(18);
+    expect(kpis.querySelectorAll(".dashboard-kpi-card-primary")).toHaveLength(3);
+    expect(within(kpis).queryByText("FLOCK & FACILITY BREAKDOWN")).not.toBeInTheDocument();
+    expect(Array.from(kpis.querySelectorAll(".dashboard-kpi-card-label"), node => node.textContent)).toEqual([
+      "Total birds", "Estimated birds", "Estimated batches", "Layer birds", "Broiler birds",
+      "Turkey birds", "Active batches", "Total houses", "Permanent houses", "Temporary houses",
+      "Occupied houses", "Empty houses", "Mortality", "Good eggs", "Revenue today",
+      "Expenses today", "Profit today", "Inventory alerts",
+    ]);
+  });
+
+  it("keeps date-range reporting controls off the dashboard and displays today's activity", () => {
+    const dailyContext = {
+      ...contextValue,
+      dashboard: {
+        ...contextValue.dashboard,
+        revenueMinor: 900,
+        expensesMinor: 400,
+        period: { revenueMinor: 120, expensesMinor: 20, mortality: 1, eggsGood: 30 },
+      },
+    };
+
+    render(
+      <NavigationContext.Provider value={{ activePage: "dashboard", activeTab: "overview" }}>
+        <FarmManagerContext.Provider value={dailyContext}>
+          <DashboardPage />
+        </FarmManagerContext.Provider>
+      </NavigationContext.Provider>
+    );
+
+    expect(screen.getByText("Today’s farm overview")).toBeInTheDocument();
+    expect(screen.queryByText("Reporting period")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Reporting period")).not.toBeInTheDocument();
+    expect(screen.getByText("Revenue today").parentElement).toHaveTextContent("NGN 120");
+    expect(screen.getByText("Expenses today").parentElement).toHaveTextContent("NGN 20");
+    expect(screen.getByText("Mortality").parentElement).toHaveTextContent("1");
   });
 });

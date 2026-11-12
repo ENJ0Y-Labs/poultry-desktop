@@ -19,6 +19,8 @@ import EmptyState from "../components/EmptyState.jsx";
 import DataTable from "../components/DataTable.jsx";
 // eslint-disable-next-line no-unused-vars
 import MetricHelp from "../components/MetricHelp.jsx";
+// eslint-disable-next-line no-unused-vars
+import { FinancialAnalytics, FlockAnalytics } from "../components/AnalyticsCharts.jsx";
 
 export default function ReportsPage() {
   const { formatMoney, formatQuantity, formatPercent, formatKg, formatMetric, formatCount, feedQuantity, farm, houses, batches, selectedBatchId, setSelectedBatchId, farmReport, batchReport, dateRange, setDateRange, applicationSettings, loadReport, loadBatchReport, exportCsv, exportPdf, reportLoading, batchReportLoading, dataLoadError, retryData } = useContext(FarmManagerContext);
@@ -53,6 +55,8 @@ export default function ReportsPage() {
               ].map(([label,value]) => <div className="metric-card" key={label}><span>{label}</span><strong>{value ?? "—"}</strong></div>)}
             </div>
             <p className="muted">Activity period: {farmReport.from || dateRange.from} to {farmReport.to || dateRange.to}. Bird population and feed inventory are current snapshots; activity totals include both selected boundary dates. Water quantities use {farmReport.waterUnitLabel || "litres"}.</p>
+            <FinancialAnalytics sales={farmReport.sales || []} expenses={farmReport.expenses || []} dateRange={dateRange} batches={batches} houses={houses} formatMoney={formatMoney} currency={farm.currency} />
+            <FlockAnalytics populationRows={farmReport.birdPopulation || []} houses={houses} formatCount={formatCount} />
             <div className="subsection">
               <h3>Feed inventory by product</h3>
               <DataTable caption="Feed inventory by product" columns={[

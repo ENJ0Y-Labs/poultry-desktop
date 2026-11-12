@@ -10,7 +10,7 @@ const FOCUSABLE = [
 
 export function Modal({
   open, onClose, title, description, icon, size = "medium",
-  loading = false, error = "", isDirty = false, onDiscard, children, footer,
+  loading = false, error = "", isDirty = false, onDiscard, children, footer, initialFocusSelector,
 }) {
   const dialogRef = useRef(null);
   const previousFocusRef = useRef(null);
@@ -25,7 +25,8 @@ export function Modal({
     document.body.style.overflow = "hidden";
 
     const focusTimer = window.setTimeout(() => {
-      const first = dialogRef.current?.querySelector("input:not([disabled]), select:not([disabled]), textarea:not([disabled])") || dialogRef.current?.querySelector(FOCUSABLE);
+      const preferred = initialFocusSelector ? dialogRef.current?.querySelector(initialFocusSelector) : null;
+      const first = preferred || dialogRef.current?.querySelector("input:not([disabled]), select:not([disabled]), textarea:not([disabled])") || dialogRef.current?.querySelector(FOCUSABLE);
       (first || dialogRef.current)?.focus();
     }, 0);
 

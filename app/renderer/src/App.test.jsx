@@ -243,11 +243,14 @@ describe("App", () => {
     render(<App />);
 
     expect(await screen.findByRole("heading", { name: "Sign in to Pomas" })).toBeInTheDocument();
-    const systemThemeSwitch = screen.getByRole("switch", { name: "Follow system appearance" });
-    expect(systemThemeSwitch).toBeChecked();
-    fireEvent.click(systemThemeSwitch);
+    expect(screen.queryByRole("switch", { name: "Follow system appearance" })).not.toBeInTheDocument();
     const darkThemeSwitch = screen.getByRole("switch", { name: "Dark appearance" });
-    if (darkThemeSwitch.checked) fireEvent.click(darkThemeSwitch);
+    if (darkThemeSwitch.checked) {
+      fireEvent.click(darkThemeSwitch);
+    } else {
+      fireEvent.click(darkThemeSwitch);
+      fireEvent.click(screen.getByRole("switch", { name: "Dark appearance" }));
+    }
     expect(document.documentElement.dataset.theme).toBe("light");
     expect(localStorage.getItem("pomas:theme")).toBe("light");
     expect(screen.getByRole("heading", { name: "What's new" })).toBeInTheDocument();
@@ -332,11 +335,14 @@ describe("App", () => {
     render(<App />);
 
     await screen.findByRole("heading", { name: "Create your owner account" });
-    const setupSystemSwitch = screen.getByRole("switch", { name: "Follow system appearance" });
-    expect(setupSystemSwitch).toBeChecked();
-    fireEvent.click(setupSystemSwitch);
+    expect(screen.queryByRole("switch", { name: "Follow system appearance" })).not.toBeInTheDocument();
     const setupDarkSwitch = screen.getByRole("switch", { name: "Dark appearance" });
-    if (!setupDarkSwitch.checked) fireEvent.click(setupDarkSwitch);
+    if (setupDarkSwitch.checked) {
+      fireEvent.click(setupDarkSwitch);
+      fireEvent.click(screen.getByRole("switch", { name: "Dark appearance" }));
+    } else {
+      fireEvent.click(setupDarkSwitch);
+    }
     expect(document.documentElement.dataset.theme).toBe("dark");
     expect(screen.getByRole("button", { name: "Create account and continue" })).toBeInTheDocument();
     expect(screen.queryByLabelText("Username or email")).not.toBeInTheDocument();
@@ -411,7 +417,7 @@ describe("App", () => {
 
     await waitFor(() => expect(screen.getByRole("heading", { name: "Farm dashboard" })).toBeInTheDocument());
     await waitFor(() => expect(screen.getByText("03/10/2026")).toBeInTheDocument());
-    expect(screen.getByText("Dashboard as of")).toBeInTheDocument();
+    expect(screen.getByText("Today’s farm overview")).toBeInTheDocument();
 
     const primaryMetric = screen.getByText("Total birds").closest(".dashboard-kpi-card");
     const secondaryMetric = screen.getByText("Layer birds").closest(".dashboard-kpi-card");
@@ -485,9 +491,9 @@ describe("App", () => {
 
     await waitFor(() => expect(screen.getByRole("heading", { name: "Farm dashboard" })).toBeInTheDocument());
     await waitFor(() => expect(screen.getAllByText("5,000")).toHaveLength(1));
-    expect(within(screen.getByText("Revenue").parentElement).getByText("₦1,000.00")).toBeInTheDocument();
-    expect(within(screen.getByText("Expenses").parentElement).getByText("₦700.00")).toBeInTheDocument();
-    expect(within(screen.getByText("Profit").parentElement).getByText("₦300.00")).toBeInTheDocument();
+    expect(within(screen.getByText("Revenue today").parentElement).getByText(/1,000\.00/)).toBeInTheDocument();
+    expect(within(screen.getByText("Expenses today").parentElement).getByText(/700\.00/)).toBeInTheDocument();
+    expect(within(screen.getByText("Profit today").parentElement).getByText(/300\.00/)).toBeInTheDocument();
     expect(screen.getByText("Nothing currently requires attention.")).toBeInTheDocument();
     expect(screen.getByText("No audit records yet.")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Sales & Money" }));
@@ -683,13 +689,14 @@ describe("App", () => {
     expect(within(unknownAuditRow).getByText("—")).toBeInTheDocument();
   });
 
-  it("renders backend-derived attention items on the dashboard", async () => {
+  it("renders actionable backend attention items in the persistent attention panel", async () => {
     mockFarmApis();
     vi.mocked(attentionApi.list).mockResolvedValue([{
       type: "LOW_FEED_STOCK",
       severity: "WARNING",
       title: "Low feed stock",
       message: "Layer Mash has about 2.0 days of stock.",
+      feedTypeId: "feed-layer-mash",
       affectedMetric: "Feed",
       detectedAt: "2026-11-11",
       ruleDescription: "Feed stock cover is 3 days or less at the recent usage rate.",
@@ -699,14 +706,10 @@ describe("App", () => {
 
     render(<App />);
 
-    await waitFor(() => expect(screen.getByRole("heading", { name: "Farm dashboard" })).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByRole("complementary", { name: "Farm attention panel" })).toBeInTheDocument());
     expect(await screen.findByText("Low feed stock")).toBeInTheDocument();
     expect(screen.getByText("Layer Mash has about 2.0 days of stock.")).toBeInTheDocument();
     expect(screen.getAllByText("Feed").length).toBeGreaterThan(0);
-    expect(screen.getByText("Detected: 2026-11-11")).toBeInTheDocument();
-    expect(screen.getByText("Feed stock cover is 3 days or less at the recent usage rate.")).toBeInTheDocument();
-    expect(screen.getByText("Threshold: Warning at 3 days of cover or less.")).toBeInTheDocument();
-    expect(screen.getByText(/Suggested action: Review feed stock/)).toBeInTheDocument();
   });
 
   it("opens a missing daily-record alert with batch and date prefilled", async () => {
@@ -730,8 +733,9 @@ describe("App", () => {
       "#daily-work/daily-record/batchId=layer-1/date=2026-10-25"
     ));
     fireEvent.click(await screen.findByRole("button", { name: "Save daily notes" }));
-    expect(await screen.findByLabelText("Batch")).toHaveValue("layer-1");
-    expect(screen.getByLabelText("Date")).toHaveValue("2026-10-25");
+    const dailyRecordDialog = screen.getByRole("dialog", { name: "Daily record" });
+    expect(within(dailyRecordDialog).getByLabelText("Batch")).toHaveValue("layer-1");
+    expect(within(dailyRecordDialog).getByLabelText("Date")).toHaveValue("2026-10-25");
   });
 
   it("preserves a contextual batch when opening an alert route directly", async () => {
@@ -745,7 +749,7 @@ describe("App", () => {
     });
   });
 
-  it("keeps alerts with missing required identifiers non-clickable", async () => {
+  it("omits alerts without required context from the actionable attention panel", async () => {
     mockFarmApis();
     vi.mocked(attentionApi.list).mockResolvedValue([{
       type: "LOW_FEED_STOCK",
@@ -757,8 +761,8 @@ describe("App", () => {
 
     render(<App />);
 
-    expect(await screen.findByText("Low feed stock")).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /Low feed stock/ })).not.toBeInTheDocument();
+    await waitFor(() => expect(screen.getByRole("complementary", { name: "Farm attention panel" })).toBeInTheDocument());
+    expect(screen.queryByText("Low feed stock")).not.toBeInTheDocument();
   });
 
   it("renders an em dash for undefined backend metrics", async () => {

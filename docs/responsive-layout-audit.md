@@ -22,6 +22,7 @@ A 360px browser viewport is not a supported layout width. The supported-width ac
 
 ## Source findings and changes
 
+- 2026-11-12 follow-up: a trailing renderer rule had reset `body` to `min-width: 0` and restored narrow-screen shell overrides, contradicting the desktop-only canvas contract above. The renderer now keeps `min-width: 1100px` and no longer changes the sidebar/topbar shell below 900px. A stylesheet regression test guards this contract. Runtime visual checks below remain unrun.
 - Electron's `BrowserWindow` opens at 1366×768 and already sets `minWidth: 1100` and `minHeight: 650`.
 - The stylesheet's base `body` rule sets `min-width: 1100px`, but an older `max-width: 700px` rule overrode it to `0` and changed the shell/navigation to a mobile-like layout.
 - A second `max-width: 700px` rule also moved navigation into a stacked mobile layout.

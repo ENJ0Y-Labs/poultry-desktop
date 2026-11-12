@@ -8,6 +8,11 @@ const stylesheet = readFileSync(
 );
 
 describe("navigation theme tokens", () => {
+  it("keeps the renderer canvas at the documented desktop minimum", () => {
+    expect(stylesheet).toMatch(/body\s*\{[^}]*min-width:\s*1100px;/);
+    expect(stylesheet).not.toMatch(/@media\s*\(max-width:\s*620px\)\s*\{[^}]*\.sidebar/);
+  });
+
   it("defines light-theme values for every IDE shell surface and interaction token", () => {
     const lightTheme = stylesheet.match(/:root\[data-theme="light"\]\s*\{([^}]*)\}/g)?.join("\n") ?? "";
 
@@ -79,15 +84,11 @@ describe("navigation theme tokens", () => {
     expect(stylesheet).toContain("--ide-sidebar-header-height: 48px;");
   });
 
-  it("centers the application logo inside the collapsed expand target", () => {
-    expect(stylesheet).toContain(".brand-mark-button img { width: 26px; height: 26px;");
-    expect(stylesheet).toContain(".app-shell.sidebar-collapsed .sidebar .brand-mark-button");
-    expect(stylesheet).toMatch(/\.app-shell\.sidebar-collapsed \.sidebar \.brand-mark-button\s*\{[^}]*width:\s*40px;[^}]*height:\s*40px;/);
-    expect(stylesheet).toMatch(/\.brand-mark-button\s*\{[^}]*border:\s*0;[^}]*border-radius:\s*0;[^}]*background:\s*transparent;/);
-    expect(stylesheet).toContain(".brand-mark-button:hover:not(:disabled) .brand-logo");
-    expect(stylesheet).toContain(".brand-mark-button:hover:not(:disabled) .brand-hover-icon");
-    expect(stylesheet).toMatch(/\.brand-mark-button \.brand-logo,\s*\.brand-mark-button \.brand-hover-icon\s*\{\s*grid-area:\s*1 \/ 1;/);
-    expect(stylesheet).toMatch(/\.brand-mark-button:focus-visible\s*\{[^}]*outline:\s*2px solid var\(--text\)/);
+  it("centers the application logo in the expanded and collapsed sidebar", () => {
+    expect(stylesheet).toMatch(/\.brand-mark\s*\{[^}]*display:\s*grid;[^}]*place-items:\s*center;/s);
+    expect(stylesheet).toMatch(/\.brand-mark img\s*\{[^}]*display:\s*block;[^}]*object-fit:\s*cover;/s);
+    expect(stylesheet).toMatch(/\.app-shell\.sidebar-collapsed \.sidebar \.brand-mark\s*\{[^}]*width:\s*26px;[^}]*height:\s*26px;/s);
+    expect(stylesheet).toMatch(/\.sidebar-toggle:focus-visible\s*\{[^}]*outline:\s*2px solid var\(--ide-accent\)/s);
   });
 
   it("styles accessible switches with Pomas theme colors and visible interaction states", () => {
@@ -126,5 +127,46 @@ describe("dashboard attention theme contrast", () => {
 
     expect(accessibility).toMatch(/button:not\([^\n]*:not\(\.brand-mark-button\)/);
     expect(accessibility).toMatch(/button:not\([^\n]*:not\(\.brand-mark-button\)[^\n]*:hover/);
+  });
+});
+
+describe("responsive data presentation", () => {
+  it("keeps table values and actions readable inside the scrollable table region", () => {
+    const accessibility = readFileSync(
+      resolve(process.cwd(), "app/renderer/src/accessibility.css"),
+      "utf8"
+    );
+
+    expect(accessibility).toMatch(/\.table-scroll\s*\{\s*max-width:\s*100%;\s*overflow-x:\s*auto;/);
+    expect(accessibility).toMatch(/\.data-table td\s*\{\s*overflow-wrap:\s*normal;\s*word-break:\s*normal;/);
+    expect(accessibility).toMatch(/\.data-table td:first-child\s*\{\s*white-space:\s*nowrap;/);
+    expect(accessibility).toMatch(/\.data-table td > button,\s*\.data-table td > a\s*\{\s*white-space:\s*nowrap;/);
+    expect(accessibility).toMatch(/button:not\([^\n]*:not\(\.data-table__sort\)/);
+    expect(accessibility).toMatch(/\.data-table__sort\s*\{[^}]*min-height:\s*2rem;[^}]*padding:\s*\.4rem \.55rem;/);
+  });
+
+  it("vertically centers dashboard reporting controls alongside its heading", () => {
+    expect(stylesheet).toMatch(/\.dashboard-page > \.section-head\s*\{[^}]*align-items:\s*center;/s);
+  });
+
+  it("keeps multi-step progress markers compact while retaining accessible step names", () => {
+    expect(stylesheet).toMatch(/\.workflow-progress ol\s*\{[^}]*grid-template-columns:\s*repeat\(5,23px\);[^}]*justify-content:\s*space-between;/s);
+    const multiStepForm = readFileSync(
+      resolve(process.cwd(), "app/renderer/src/components/MultiStepForm.jsx"),
+      "utf8"
+    );
+    expect(multiStepForm).toContain('className="workflow-step-label sr-only"');
+  });
+
+  it("lays dashboard KPIs out in one responsive five-column metric grid", () => {
+    expect(stylesheet).toMatch(/\.dashboard-kpi-grid\s*\{[^}]*grid-template-columns:\s*repeat\(5, minmax\(0, 1fr\)\);[^}]*gap:\s*10px;/);
+    expect(stylesheet).toMatch(/@media \(max-width:\s*900px\)\s*\{[^}]*\.dashboard-kpi-grid\s*\{[^}]*repeat\(3, minmax\(0, 1fr\)\)/s);
+    expect(stylesheet).toMatch(/@media \(max-width:\s*600px\)\s*\{[^}]*\.dashboard-kpi-grid\s*\{[^}]*repeat\(2, minmax\(0, 1fr\)\)/s);
+    expect(stylesheet).toMatch(/\.dashboard-kpi-card\s*\{[^}]*display:\s*flex;[^}]*flex-direction:\s*column;/s);
+    const accessibility = readFileSync(
+      resolve(process.cwd(), "app/renderer/src/accessibility.css"),
+      "utf8"
+    );
+    expect(accessibility).toMatch(/button:not\([^\n]*:not\(\.dashboard-kpi-card\)/);
   });
 });

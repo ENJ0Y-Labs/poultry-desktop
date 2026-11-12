@@ -19,6 +19,18 @@ describe("QuickActionsMenu", () => {
     expect(screen.getByRole("button", { name: /Stock movement/ })).toBeInTheDocument();
   });
 
+  it("uses the shared modal behavior and closes when the backdrop is pressed", async () => {
+    render(<QuickActionsMenu activeBatch={{ id: "batch-1", type: "BROILER", status: "ACTIVE" }} />);
+    const trigger = screen.getByRole("button", { name: /Quick actions/ });
+    fireEvent.click(trigger);
+    const dialog = await screen.findByRole("dialog", { name: "Quick actions" });
+
+    expect(dialog).toHaveAttribute("aria-modal", "true");
+    expect(dialog.querySelector(".quick-actions-panel")).toBeInTheDocument();
+    fireEvent.mouseDown(dialog.parentElement);
+    expect(screen.queryByRole("dialog", { name: "Quick actions" })).not.toBeInTheDocument();
+  });
+
   it("contains the former dashboard shortcuts in one global action menu", async () => {
     render(<QuickActionsMenu
       activeBatch={{ id: "batch-1", type: "LAYER", status: "ACTIVE" }}

@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+// eslint-disable-next-line no-unused-vars -- JSX component usage is not detected by the core rule
+import { Modal } from "./Modal.jsx";
 import "./QuickActionsMenu.css";
 
 const actionGroups = [
@@ -40,7 +42,6 @@ export default function QuickActionsMenu({
   onAction,
 }) {
   const [open, setOpen] = useState(false);
-  const rootRef = useRef(null);
   const triggerRef = useRef(null);
   const itemRefs = useRef([]);
 
@@ -68,15 +69,6 @@ export default function QuickActionsMenu({
     window.addEventListener("pomas:open-quick-actions", openFromShortcut);
     return () => window.removeEventListener("pomas:open-quick-actions", openFromShortcut);
   }, []);
-
-  useEffect(() => {
-    if (!open) return undefined;
-    function closeOnOutsidePointer(event) {
-      if (!rootRef.current?.contains(event.target)) setOpen(false);
-    }
-    document.addEventListener("pointerdown", closeOnOutsidePointer);
-    return () => document.removeEventListener("pointerdown", closeOnOutsidePointer);
-  }, [open]);
 
   function handleMenuKeyDown(event) {
     if (event.key === "Escape") {
@@ -108,7 +100,7 @@ export default function QuickActionsMenu({
   }
 
   return (
-    <div className="global-quick-actions" ref={rootRef}>
+    <div className="global-quick-actions">
       <button
         ref={triggerRef}
         type="button"
@@ -128,24 +120,15 @@ export default function QuickActionsMenu({
         Quick actions
         <kbd>Ctrl K</kbd>
       </button>
-      {open && (
-        <div
-          className="quick-actions-panel"
-          id="quick-actions-panel"
-          role="dialog"
-          aria-label="Quick actions"
-          onKeyDown={handleMenuKeyDown}
-        >
-          <div className="quick-actions-heading">
-            <div>
-              <strong>Quick actions</strong>
-              <p>Start a farm task without leaving your current workflow.</p>
-            </div>
-            <button type="button" className="quick-actions-close" aria-label="Close quick actions" onClick={() => {
-              setOpen(false);
-              triggerRef.current?.focus();
-            }}>×</button>
-          </div>
+      <Modal
+        open={open}
+        onClose={() => setOpen(false)}
+        title="Quick actions"
+        description="Start a farm task without leaving your current workflow."
+        size="medium"
+        initialFocusSelector=".quick-action-item"
+      >
+        <div className="quick-actions-panel" id="quick-actions-panel" onKeyDown={handleMenuKeyDown}>
           {groups.length > 0 ? groups.map(group => (
             <section className="quick-actions-group" aria-label={group.label} key={group.label}>
               <h3>{group.label}</h3>
@@ -157,7 +140,7 @@ export default function QuickActionsMenu({
                       key={action.id}
                       ref={element => { itemRefs.current[index] = element; }}
                       type="button"
-                      className="quick-action-item"
+                      className="quick-action-item secondary"
                       onClick={() => selectAction(action)}
                     >
                       <span className="quick-action-copy">
@@ -173,7 +156,7 @@ export default function QuickActionsMenu({
           )) : <p className="quick-actions-empty">No quick actions are available yet. Set up a batch, feed type, or stock item first.</p>}
           <p className="quick-actions-hint"><kbd>↑</kbd><kbd>↓</kbd> Navigate <kbd>Enter</kbd> Open <kbd>Esc</kbd> Close</p>
         </div>
-      )}
+      </Modal>
     </div>
   );
 }

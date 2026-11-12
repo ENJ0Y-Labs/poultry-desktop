@@ -13,6 +13,9 @@ import QuickActionsMenu from "./QuickActionsMenu.jsx";
 // eslint-disable-next-line no-unused-vars
 import { Modal } from "./Modal.jsx";
 import { registerGlobalShortcuts } from "../utils/keyboardShortcuts.js";
+import { attentionTarget } from "../utils/attentionNavigation.js";
+// eslint-disable-next-line no-unused-vars
+import DesktopTitleBar from "./DesktopTitleBar.jsx";
 
 const groups = [
   { label: "WORKSPACE", items: [
@@ -164,10 +167,12 @@ function SidebarToggleIcon({ expanded }) {
   );
 }
 
-export default function AppShell({ farm, error, appInfo, onRetry, onQuickAction, children, batches = [], selectedBatchId = "", feedTypes = [], feedInventory = [], inventoryItems = [], startPage = "dashboard", startPageReady = true }) {
+export default function AppShell({ farm, error, appInfo, onRetry, onQuickAction, children, batches = [], selectedBatchId = "", feedTypes = [], feedInventory = [], inventoryItems = [], attention = [], startPage = "dashboard", startPageReady = true }) {
   const [active, setActive] = useState(() => resolvePage(window.location.hash, startPage));
   const [activeTab, setActiveTab] = useState(() => resolveTab(window.location.hash, resolvePage(window.location.hash, startPage)));
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => localStorage.getItem("pomas:sidebar-collapsed") === "true");
+  const [attentionCollapsed, setAttentionCollapsed] = useState(() => localStorage.getItem("pomas:attention-collapsed") === "true");
+  const [attentionMobileOpen, setAttentionMobileOpen] = useState(false);
   const [backendConnected, setBackendConnected] = useState(null);
   const [recoveryNeeded, setRecoveryNeeded] = useState(false);
   const [tourOpen, setTourOpen] = useState(false);
@@ -200,12 +205,17 @@ export default function AppShell({ farm, error, appInfo, onRetry, onQuickAction,
   useEffect(() => {
     localStorage.setItem("pomas:sidebar-collapsed", String(sidebarCollapsed));
   }, [sidebarCollapsed]);
-  const connectionLabel = backendConnected === null
-    ? "CONNECTING TO BACKEND"
-    : recoveryNeeded
-      ? (backendConnected ? "RECONNECTED · RETRY DATA" : "BACKEND UNAVAILABLE")
-      : backendConnected ? "BACKEND CONNECTED" : "BACKEND UNAVAILABLE";
-
+  useEffect(() => {
+    localStorage.setItem("pomas:attention-collapsed", String(attentionCollapsed));
+  }, [attentionCollapsed]);
+  const activePageLabel = groups.flatMap(group => group.items).find(item => item.target === active)?.label || "Dashboard";
+  const activeTabLabel = (pageTabs[active] || []).find(tab => tab.id === activeTab)?.label;
+  const actionableAttention = attention.filter(item => attentionTarget(item));
+  const attentionCount = actionableAttention.length;
+  const customTitleBar = Boolean(appInfo?.customTitleBar && window.poultryDesktop?.quit);
+  const databaseStatus = recoveryNeeded
+    ? backendConnected ? "Connected · refresh needed" : "Offline"
+    : backendConnected ? "Connected" : "Connecting";
   function navigate(target) {
     const page = resolvePage(`#${target}`, startPage);
     const tab = defaultTabs[page] || "overview";
@@ -296,7 +306,7 @@ export default function AppShell({ farm, error, appInfo, onRetry, onQuickAction,
 
 
   return (
-    <div className={sidebarCollapsed ? "app-shell sidebar-collapsed" : "app-shell"}>
+    <div className={`app-shell${sidebarCollapsed ? " sidebar-collapsed" : ""}${attentionCollapsed ? " attention-collapsed" : ""}${attentionMobileOpen ? " attention-open" : ""}${customTitleBar ? " desktop-titlebar-enabled" : ""}`}>
       <a
         className="skip-link"
         href="#main-content"
@@ -307,43 +317,37 @@ export default function AppShell({ farm, error, appInfo, onRetry, onQuickAction,
       >
         Skip to main content
       </a>
+      {customTitleBar && <DesktopTitleBar
+        onNavigate={navigateQuickAction}
+        onQuickActions={() => window.dispatchEvent(new CustomEvent("pomas:open-quick-actions"))}
+        onToggleSidebar={() => setSidebarCollapsed(value => !value)}
+        onToggleAttention={() => {
+          if (window.innerWidth <= 1150) setAttentionMobileOpen(value => !value);
+          else setAttentionCollapsed(value => !value);
+        }}
+        onShortcuts={() => setShortcutsOpen(true)}
+        sidebarCollapsed={sidebarCollapsed}
+        attentionCollapsed={attentionCollapsed}
+      />}
       <aside className={sidebarCollapsed ? "sidebar collapsed" : "sidebar"}>
         <div className="brand" data-tour="brand">
-          {sidebarCollapsed ? (
-            <button
-              type="button"
-              className="brand-mark-button"
-              aria-label="Expand sidebar"
-              aria-expanded="false"
-              title="Expand sidebar"
-              onClick={() => setSidebarCollapsed(false)}
-            >
-              <img className="brand-logo" src={pomasLogo} alt="" draggable="false" />
-              <span className="brand-hover-icon" aria-hidden="true">
-                <SidebarToggleIcon expanded={false} />
-              </span>
-            </button>
-          ) : (
-            <div className="brand-mark" aria-hidden="true">
-              <img src={pomasLogo} alt="" draggable="false" />
-            </div>
-          )}
+          <div className="brand-mark" aria-hidden="true">
+            <img src={pomasLogo} alt="" draggable="false" />
+          </div>
           <div className="brand-copy">
             <strong>Pomas</strong>
             <small>Farm management</small>
           </div>
-          {!sidebarCollapsed && (
-            <button
-              type="button"
-              className="sidebar-toggle"
-              aria-label="Collapse sidebar"
-              aria-expanded="true"
-              title="Collapse sidebar"
-              onClick={() => setSidebarCollapsed(true)}
-            >
-              <SidebarToggleIcon expanded />
-            </button>
-          )}
+          <button
+            type="button"
+            className="sidebar-toggle"
+            aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            aria-expanded={!sidebarCollapsed}
+            title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            onClick={() => setSidebarCollapsed(value => !value)}
+          >
+            <SidebarToggleIcon expanded={!sidebarCollapsed} />
+          </button>
         </div>
 
         <nav className="sidebar-nav" aria-label="Main navigation">
@@ -388,18 +392,14 @@ export default function AppShell({ farm, error, appInfo, onRetry, onQuickAction,
         <div className="shell">
           <header className="app-topbar">
             <div className="topbar-title">
-              <p className="eyebrow">{farm.name || "LOCAL FARM"} / POULTRY MANAGER</p>
-              <h1>{farm.name}</h1>
+              <p className="eyebrow">{farm.name || "LOCAL FARM"} / {activePageLabel.toUpperCase()}</p>
+              <h1>{activeTabLabel || activePageLabel}</h1>
               <p className="muted">{farm.location || "Farm profile"} · {farm.currency} · {farm.timezone}</p>
             </div>
             <div className="topbar-actions">
+              <button type="button" className="secondary-button attention-mobile-toggle" onClick={() => setAttentionMobileOpen(true)} aria-label={`Open attention panel, ${attentionCount} actionable alerts`} aria-expanded={attentionMobileOpen}>Attention <span>{attentionCount}</span></button>
               <QuickActionsMenu activeBatch={activeBatch} hasFeedTypes={hasActiveFeedTypes} hasApplicableFeed={hasApplicableFeed} hasInventoryItems={hasActiveInventoryItems} onAction={onQuickAction} onNavigate={navigateQuickAction} />
               <button type="button" className="secondary-button keyboard-shortcuts-trigger" onClick={() => setShortcutsOpen(true)} aria-haspopup="dialog">Keyboard shortcuts</button>
-              <div className={backendConnected === true && !recoveryNeeded ? "system-pill connected" : backendConnected === false || recoveryNeeded ? "system-pill disconnected" : "system-pill"} role="status" aria-live="polite">
-                <span className={backendConnected === true && !recoveryNeeded ? "status-dot online" : backendConnected === false || recoveryNeeded ? "status-dot offline" : "status-dot"} />
-                {connectionLabel}
-              </div>
-              <div className="system-pill" title="Designed to keep farm records on this computer">LOCAL-FIRST</div>
               <div className="date-chip">{today}</div>
             </div>
           </header>
@@ -434,10 +434,6 @@ export default function AppShell({ farm, error, appInfo, onRetry, onQuickAction,
           <NavigationContext.Provider value={{ activePage: active, activeTab }}>
             {children}
           </NavigationContext.Provider>
-          <footer className="app-version-footer" aria-label="Application information">
-            <span>{appVersionLabel(appInfo)}</span>
-            <span>Grantino Farms · Local-first</span>
-          </footer>
         </div>
         <Modal open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} title="Keyboard shortcuts" description="Shortcuts available in Pomas. Native browser and operating-system commands are left untouched." size="medium" footer={<div className="pomas-modal-actions"><button type="button" className="secondary-button" onClick={() => setShortcutsOpen(false)}>Close</button></div>}>
           <div className="keyboard-shortcut-reference">
@@ -450,6 +446,42 @@ export default function AppShell({ farm, error, appInfo, onRetry, onQuickAction,
         </Modal>
         <GuidedTour open={tourOpen} onClose={() => setTourOpen(false)} onNavigate={navigateTourTarget} />
       </main>
+
+      {attentionMobileOpen && <button type="button" className="attention-backdrop" aria-label="Close attention panel" onClick={() => setAttentionMobileOpen(false)} />}
+      <aside className={`attention-sidebar${attentionCollapsed ? " collapsed" : ""}`} aria-label="Farm attention panel">
+        <header className="attention-sidebar-header">
+          <div className="attention-sidebar-heading"><h2>Attention</h2><span className="attention-count">{attentionCount}</span></div>
+          <button type="button" className="attention-panel-toggle" onClick={() => { setAttentionCollapsed(value => !value); setAttentionMobileOpen(false); }} aria-label={attentionCollapsed ? "Expand attention panel" : "Collapse attention panel"} aria-expanded={!attentionCollapsed} title={attentionCollapsed ? "Expand attention panel" : "Collapse attention panel"}>
+            <span aria-hidden="true">{attentionCollapsed ? "‹" : "›"}</span>
+          </button>
+          <button type="button" className="attention-panel-close" onClick={() => setAttentionMobileOpen(false)} aria-label="Close attention panel">×</button>
+        </header>
+        <div className="attention-sidebar-content">
+          {attentionCount === 0 ? <p className="muted">Nothing currently requires attention.</p> : <>
+            {[["CRITICAL", "Critical"], ["WARNING", "Warnings"], ["INFO", "Information"]].map(([severity, label]) => {
+              const items = actionableAttention.filter(item => String(item.severity).toUpperCase() === severity);
+              return items.length > 0 && <section className="attention-severity-group" key={severity}>
+                <h3>{label}<span>{items.length}</span></h3>
+                <div className="attention-list">{items.map((item, index) => {
+                  const target = attentionTarget(item);
+                  const context = item.batchCode || item.item || "";
+                  return <button type="button" className="attention-item attention-item-clickable" key={`${item.type}-${item.batchId || item.itemId || index}`} onClick={() => { navigateQuickAction(target); setAttentionMobileOpen(false); }} aria-label={`${item.title}. ${item.message}. Open related record`}>
+                    <span className={`severity ${String(item.severity).toLowerCase()}`}>{item.severity}</span>
+                    <span className="attention-item-copy"><strong>{item.title}</strong><span>{item.message}</span>{context && <span className="attention-item-meta">{context}</span>}</span>
+                  </button>;
+                })}</div>
+              </section>;
+            })}
+            <button type="button" className="attention-view-all" onClick={() => navigate("dashboard")}>Review farm dashboard <span aria-hidden="true">→</span></button>
+          </>}
+        </div>
+      </aside>
+
+      <footer className="system-status-bar" aria-label="System status">
+        <span className={backendConnected === true && !recoveryNeeded ? "system-status-connected" : backendConnected === false || recoveryNeeded ? "system-status-disconnected" : "system-status-connecting"} role="status" aria-live="polite"><i />Database · {databaseStatus}</span>
+        <span>Local mode</span>
+        <span className="system-status-version">{appVersionLabel(appInfo)}</span>
+      </footer>
 
     </div>
   );

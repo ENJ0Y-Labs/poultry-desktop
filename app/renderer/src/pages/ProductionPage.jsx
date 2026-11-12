@@ -21,6 +21,8 @@ import PageSection from "../components/PageSection.jsx";
 import PageTemplate from "../components/PageTemplate.jsx";
 // eslint-disable-next-line no-unused-vars
 import MetricHelp from "../components/MetricHelp.jsx";
+// eslint-disable-next-line no-unused-vars
+import { ProductionDistributionCharts } from "../components/AnalyticsCharts.jsx";
 
 export default function ProductionPage() {
   const { error } = useContext(FarmManagerContext);
@@ -68,6 +70,7 @@ export default function ProductionPage() {
                 loadTrend={productionTrendApi.layerHdp}
                 dateRange={dateRange}
               />
+              <ProductionDistributionCharts eggCollections={periodEggCollections} batch={batches.find(batch => batch.id === eggBatchId)} dateRange={dateRange} />
               <div className="subsection">
                 <h3>Egg inventory</h3>
                 <p className="muted">Current egg balances are a live snapshot and are not rewound by the selected activity period.</p>
@@ -158,6 +161,7 @@ export default function ProductionPage() {
                 loadTrend={productionTrendApi.broilerAverageWeight}
                 dateRange={dateRange}
               />
+              <ProductionDistributionCharts weights={periodBroilerWeights} batch={batches.find(batch => batch.id === broilerBatchId)} dateRange={dateRange} />
               <div className="subsection">
                 <h3>Growth summary</h3>
                 <DataTable caption="Meat-bird growth summary" columns={[

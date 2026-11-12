@@ -14,6 +14,8 @@ import PageSection from "../components/PageSection.jsx";
 import PageTemplate from "../components/PageTemplate.jsx";
 // eslint-disable-next-line no-unused-vars
 import DataTable from "../components/DataTable.jsx";
+// eslint-disable-next-line no-unused-vars
+import { FinancialAnalytics } from "../components/AnalyticsCharts.jsx";
 
 const saleTypeLabel = type => type === "EGG" ? "Eggs" : type === "BROILER" ? "Broiler birds" : type === "TURKEY" ? "Turkey birds" : String(type || "Unknown").toLowerCase().replace(/\b\w/g, letter => letter.toUpperCase());
 const customerKey = value => String(value || "").trim().toLocaleLowerCase();
@@ -22,7 +24,7 @@ export default function SalesMoneyPage() {
   const { error } = useContext(FarmManagerContext);
   const [customerOpenSignal, setCustomerOpenSignal] = useState(0);
   const [drawerRecord, setDrawerRecord] = useState(null);
-  const { formatMoney, farm, batches, expenseForm, setExpenseForm, expenses, expenseBatchFilter, setExpenseBatchFilter, customers, customerForm, setCustomerForm, emptyCustomer, emptyExpense, editingCustomerId, editCustomer, cancelCustomerEdit, sales, saving, expenseCategories, loadExpenses, saveCustomer, saveExpense } = useContext(FarmManagerContext);
+  const { formatMoney, farm, batches, houses, dateRange, setDateRange, applicationSettings, expenseForm, setExpenseForm, expenses, expenseBatchFilter, setExpenseBatchFilter, customers, customerForm, setCustomerForm, emptyCustomer, emptyExpense, editingCustomerId, editCustomer, cancelCustomerEdit, sales, saving, expenseCategories, loadExpenses, saveCustomer, saveExpense } = useContext(FarmManagerContext);
 
   function salesForCustomer(customer) {
     return sales
@@ -110,6 +112,7 @@ export default function SalesMoneyPage() {
           <h2>Sales</h2>
           <p className="muted">Common commercial ledger for Layer egg, Broiler bird, and Turkey bird sales. Type-specific rules remain in their production modules.</p>
         </div>
+        <FinancialAnalytics sales={sales} expenses={expenses} dateRange={dateRange} setDateRange={setDateRange} timezone={farm?.timezone} dateFormat={applicationSettings?.dateFormat} batches={batches} houses={houses} showDateFilter formatMoney={formatMoney} currency={farm.currency} />
         <div className="subsection">
           <DataTable caption="Sales ledger" columns={[
             { key: "saleDate", label: "Date" },

@@ -19,7 +19,6 @@ export default function DashboardKpiCard({
         </span>
       ) : null}
       {status ? <span className="dashboard-kpi-card-hint">{status}</span> : null}
-      {href ? <span className="dashboard-kpi-card-hint" aria-hidden="true">View details <span>→</span></span> : null}
     </>
   );
 

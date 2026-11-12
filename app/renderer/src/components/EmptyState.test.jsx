@@ -38,6 +38,14 @@ describe("EmptyState", () => {
     expect(onRetry).toHaveBeenCalledOnce();
     expect(onClearFilters).toHaveBeenCalledOnce();
   });
+
+  it("does not show an add icon when empty data has no add action", () => {
+    const { container } = render(<EmptyState variant="no-records" description="No suppliers recorded yet." />);
+
+    expect(screen.getByRole("status")).toHaveTextContent("Nothing here yet");
+    expect(screen.getByText("No suppliers recorded yet.")).toBeInTheDocument();
+    expect(container.querySelector(".empty-state__icon")).not.toBeInTheDocument();
+  });
 });
 
 describe("DataTable", () => {

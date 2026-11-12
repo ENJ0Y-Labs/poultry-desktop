@@ -266,11 +266,11 @@ button:focus-visible {
 }
 
 /* Primary actions use teal with white text; gold remains an accent, not body text. */
-button:not(.secondary):not(.danger):not(.nav-item):not(.page-tab):not(.sidebar-toggle):not(.brand-mark-button):not(.attention-item) {
+button:not(.secondary):not(.danger):not(.nav-item):not(.page-tab):not(.sidebar-toggle):not(.brand-mark-button):not(.dashboard-kpi-card):not(.attention-item):not(.data-table__sort) {
   background: var(--brand-teal);
   color: #ffffff;
 }
-button:not(.secondary):not(.danger):not(.nav-item):not(.page-tab):not(.sidebar-toggle):not(.brand-mark-button):not(.attention-item):hover:not(:disabled) {
+button:not(.secondary):not(.danger):not(.nav-item):not(.page-tab):not(.sidebar-toggle):not(.brand-mark-button):not(.dashboard-kpi-card):not(.attention-item):not(.data-table__sort):hover:not(:disabled) {
   background: #246779;
   color: #ffffff;
 }
@@ -388,15 +388,15 @@ button:focus-visible {
   color: var(--brand-teal);
   background: var(--a11y-nav-active-bg);
 }
-button:not(.secondary):not(.danger):not(.nav-item):not(.page-tab):not(.sidebar-toggle):not(.brand-mark-button):not(.attention-item) {
+button:not(.secondary):not(.danger):not(.nav-item):not(.page-tab):not(.sidebar-toggle):not(.brand-mark-button):not(.dashboard-kpi-card):not(.attention-item):not(.data-table__sort) {
   background: var(--pomas-primary-action-bg);
   color: var(--pomas-primary-action-text);
 }
-button:not(.secondary):not(.danger):not(.nav-item):not(.page-tab):not(.sidebar-toggle):not(.brand-mark-button):not(.attention-item):hover:not(:disabled) {
+button:not(.secondary):not(.danger):not(.nav-item):not(.page-tab):not(.sidebar-toggle):not(.brand-mark-button):not(.dashboard-kpi-card):not(.attention-item):not(.data-table__sort):hover:not(:disabled) {
   background: var(--pomas-primary-action-hover);
   color: var(--pomas-primary-action-text);
 }
-:root[data-theme="light"] button:not(.secondary):not(.danger):not(.nav-item):not(.page-tab):not(.sidebar-toggle):not(.brand-mark-button):not(.attention-item) {
+:root[data-theme="light"] button:not(.secondary):not(.danger):not(.nav-item):not(.page-tab):not(.sidebar-toggle):not(.brand-mark-button):not(.dashboard-kpi-card):not(.attention-item):not(.data-table__sort) {
   background: var(--pomas-primary-action-bg);
   color: var(--pomas-primary-action-text);
 }
@@ -440,7 +440,10 @@ input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-
   white-space: nowrap;
 }
 .data-table tr:last-child td { border-bottom: 0; }
-.data-table td { overflow-wrap: anywhere; }
+.data-table td { overflow-wrap: normal; word-break: normal; }
+.data-table td:first-child { white-space: nowrap; }
+.data-table td > button,
+.data-table td > a { white-space: nowrap; }
 .data-table .empty { color: var(--a11y-secondary); text-align: center; padding: 18px; }
 
 /* Keep navigation labels readable at compact desktop sizes. */
@@ -581,7 +584,8 @@ input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-
 }
 
 /* Shared data-table sorting and pagination controls */
-.data-table__sort{display:inline-flex;align-items:center;gap:.4rem;padding:0;border:0;background:transparent;color:inherit;font:inherit;font-weight:650;cursor:pointer}
+.data-table__sort{display:inline-flex;align-items:center;gap:.4rem;min-height:2rem;padding:.4rem .55rem;border:0;border-radius:6px;background:transparent;color:inherit;font:inherit;font-weight:650;cursor:pointer}
+.data-table__sort:hover:not(:disabled){background:var(--pomas-panel-raised);color:var(--a11y-text)}
 .data-table__sort:focus-visible{outline:2px solid var(--focus-ring,var(--a11y-primary));outline-offset:3px;border-radius:3px}
 .data-table__sort-indicator{opacity:.75;min-width:1em;text-align:center}
 .data-table__pagination{display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:.5rem;padding:.75rem 0;color:var(--a11y-secondary);font-size:.875rem}

@@ -1,0 +1,86 @@
+.desktop-titlebar {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  height: 40px;
+  padding: 0 max(8px, calc(100vw - env(titlebar-area-x, 0px) - env(titlebar-area-width, calc(100vw - 138px)))) 0 10px;
+  border-bottom: 1px solid var(--ide-border);
+  background: var(--ide-sidebar);
+  color: var(--ide-text);
+  -webkit-app-region: drag;
+  user-select: none;
+}
+.desktop-titlebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex: 0 0 auto;
+  height: 100%;
+  padding: 0 10px 0 2px;
+  color: var(--ide-text);
+  font-size: 12px;
+  letter-spacing: -.01em;
+  -webkit-app-region: no-drag;
+}
+.desktop-titlebar-brand img { width: 23px; height: 23px; object-fit: contain; }
+.desktop-menu-bar { display: flex; align-items: center; gap: 2px; height: 100%; -webkit-app-region: no-drag; }
+.desktop-menu { position: relative; display: flex; align-items: center; height: 100%; }
+.desktop-menu-trigger {
+  min-height: 28px;
+  padding: 0 9px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--ide-text);
+  font: inherit;
+  font-size: 12px;
+  cursor: default;
+}
+.desktop-menu-trigger:hover,
+.desktop-menu-trigger.open { border-color: var(--ide-border); background: var(--ide-hover); }
+.desktop-menu-trigger:focus-visible,
+.desktop-menu-popup button:focus-visible { outline: 2px solid var(--amber); outline-offset: 1px; }
+.desktop-menu-popup {
+  position: absolute;
+  top: calc(100% - 2px);
+  left: 0;
+  z-index: 42;
+  display: grid;
+  min-width: 220px;
+  padding: 5px;
+  border: 1px solid var(--ide-border);
+  border-radius: 7px;
+  background: var(--panel-raised, var(--ide-sidebar));
+  box-shadow: 0 12px 32px rgba(0, 0, 0, .38);
+}
+.desktop-menu-popup button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 22px;
+  min-height: 31px;
+  padding: 5px 9px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--ide-text);
+  font: inherit;
+  font-size: 12px;
+  text-align: left;
+  cursor: default;
+}
+.desktop-menu-popup button:hover { border-color: var(--ide-border); background: var(--ide-hover); }
+.desktop-menu-popup kbd { margin-left: auto; color: var(--muted); font-size: 10px; font-weight: 500; }
+.desktop-menu-separator { height: 1px; margin: 4px 5px; background: var(--ide-border); }
+.desktop-titlebar-drag { align-self: stretch; flex: 1; min-width: 12px; -webkit-app-region: drag; }
+.app-shell.desktop-titlebar-enabled .sidebar { top: 40px; bottom: 28px; }
+.app-shell.desktop-titlebar-enabled .app-main { padding-top: 40px; }
+.app-shell.desktop-titlebar-enabled .app-topbar { top: 40px; }
+.app-shell.desktop-titlebar-enabled .attention-sidebar { top: 40px; }
+@media (max-width: 720px) {
+  .desktop-titlebar-brand { padding-right: 4px; }
+  .desktop-titlebar-brand strong { display: none; }
+  .desktop-menu-trigger { padding-inline: 6px; font-size: 11px; }
+}

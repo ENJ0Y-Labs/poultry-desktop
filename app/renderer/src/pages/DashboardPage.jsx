@@ -9,15 +9,14 @@ import PageTemplate from "../components/PageTemplate.jsx";
 import { formatAuditAction, formatAuditEntity, formatAuditTimestamp } from "../utils/auditFormatting.js";
 // eslint-disable-next-line no-unused-vars -- JSX component usage is not detected by the core rule
 import ContextDrawer, { DrawerDetails } from "../components/ContextDrawer.jsx";
-import { attentionTarget } from "../utils/attentionNavigation.js";
 import { calculatePeriodProfitMinor } from "../utils/reportMetrics.js";
-// eslint-disable-next-line no-unused-vars
-import DateRangeFilter from "../components/DateRangeFilter.jsx";
 import { formatEggQuantity } from "../utils/eggFormatting.js";
 // eslint-disable-next-line no-unused-vars
 import GettingStartedChecklist from "../components/GettingStartedChecklist.jsx";
 // eslint-disable-next-line no-unused-vars
 import DashboardKpiCard from "../components/DashboardKpiCard.jsx";
+// eslint-disable-next-line no-unused-vars
+import { DashboardAnalyticsCharts } from "../components/AnalyticsCharts.jsx";
 
 function formatBusinessDate(value, pattern = "YYYY-MM-DD") {
   if (!value || typeof value !== "string") return "—";
@@ -42,11 +41,8 @@ export default function DashboardPage() {
     feedTypes,
     feedInventory = [],
     dashboard,
-    attention,
     auditRows,
     applicationSettings,
-    dateRange,
-    setDateRange,
     setFeedPurchaseModalSignal,
   } = useContext(FarmManagerContext);
 
@@ -114,10 +110,9 @@ export default function DashboardPage() {
         <div className="section-head">
           <div><p className="eyebrow">OVERVIEW</p><h2>Farm dashboard</h2></div>
           <div className="dashboard-range-controls">
-            <DateRangeFilter value={dateRange} timezone={farm?.timezone} dateFormat={applicationSettings?.dateFormat} onChange={setDateRange} />
             <p className="dashboard-as-of muted">
-              <span>Dashboard as of</span>
-              <small className="muted">Current snapshot</small>
+              <span>Today’s farm overview</span>
+              <small className="muted">Activity recorded today · current farm snapshot</small>
               <strong>{dashboard ? formatBusinessDate(dashboard.asOf, applicationSettings?.dateFormat) : "Loading..."}</strong>
             </p>
           </div>
@@ -140,33 +135,29 @@ export default function DashboardPage() {
           <>
             <GettingStartedChecklist houses={houses} batches={batches} feedTypes={feedTypes} feedInventory={feedInventory} onTaskAction={route => { if (route === "feed-stock/purchases") setFeedPurchaseModalSignal(value => value + 1); }} />
             <section className="dashboard-kpi-section" aria-label="Farm key performance indicators">
-              <div className="dashboard-kpi-primary">
+              <div className="dashboard-kpi-grid">
                 <DashboardKpiCard label="Total birds" value={formatCount(dashboard.totalBirds)} primary href="#flocks/batch-dashboard" description="View flock populations and batch details" />
-                <DashboardKpiCard label="Revenue" value={formatMoney(dashboard.revenueMinor, farm.currency)} primary href="#sales-money/sales" description="View recorded farm sales" />
-                <DashboardKpiCard label="Profit" value={formatMoney(periodProfitMinor, farm.currency)} primary href="#reports/farm-report" description="Review the farm financial report" />
-              </div>
-              <div className="dashboard-kpi-secondary">
-                <DashboardKpiCard label="Mortality" value={formatCount(dashboard.mortality)} unit="birds" href="#daily-work/mortality" description="Review mortality records" />
-                <DashboardKpiCard label="Good eggs" value={formatEggQuantity(dashboard.eggsGood, crateSize)} href="#production/eggs" description="Review layer egg production" />
-                <DashboardKpiCard label="Expenses" value={formatMoney(dashboard.expensesMinor, farm.currency)} href="#sales-money/expenses" description="Review recorded farm expenses" />
+                <DashboardKpiCard label="Estimated birds" value={formatCount(dashboard.estimatedBirds)} href="#flocks/batch-dashboard" description="View estimated flock populations" />
+                <DashboardKpiCard label="Estimated batches" value={formatCount(dashboard.estimatedBatches)} href="#flocks/flocks" description="View batches with estimated populations" />
+                <DashboardKpiCard label="Layer birds" value={formatCount(dashboard.layerBirds)} href="#flocks/batch-dashboard" description="View layer flock populations" />
+                <DashboardKpiCard label="Broiler birds" value={formatCount(dashboard.broilerBirds)} href="#flocks/batch-dashboard" description="View broiler flock populations" />
+                <DashboardKpiCard label="Turkey birds" value={formatCount(dashboard.turkeyBirds)} href="#flocks/batch-dashboard" description="View turkey flock populations" />
                 <DashboardKpiCard label="Active batches" value={formatCount(dashboard.activeBatches)} href="#flocks/flocks" description="View active flocks" />
+                <DashboardKpiCard label="Total houses" value={formatCount(dashboard.totalHouses)} href="#flocks/houses" description="View farm houses and pens" />
+                <DashboardKpiCard label="Permanent houses" value={formatCount(dashboard.permanentHouses)} href="#flocks/houses" description="View permanent houses" />
+                <DashboardKpiCard label="Temporary houses" value={formatCount(dashboard.temporaryHouses)} href="#flocks/houses" description="View temporary houses" />
+                <DashboardKpiCard label="Occupied houses" value={formatCount(dashboard.occupiedHouses)} href="#flocks/houses" description="View occupied houses" />
+                <DashboardKpiCard label="Empty houses" value={formatCount(dashboard.emptyHouses)} href="#flocks/houses" description="View empty houses" />
+                <DashboardKpiCard label="Mortality" value={formatCount(dashboard.period?.mortality ?? dashboard.mortality)} unit="birds" href="#daily-work/mortality" description="Review today's mortality records" />
+                <DashboardKpiCard label="Good eggs" value={formatEggQuantity(dashboard.period?.eggsGood ?? dashboard.eggsGood, crateSize)} href="#production/eggs" description="Review today's layer egg production" />
+                <DashboardKpiCard label="Revenue today" value={formatMoney(dashboard.period?.revenueMinor ?? dashboard.revenueMinor, farm.currency)} primary href="#sales-money/sales" description="View today's recorded farm sales" />
+                <DashboardKpiCard label="Expenses today" value={formatMoney(dashboard.period?.expensesMinor ?? dashboard.expensesMinor, farm.currency)} href="#sales-money/expenses" description="Review today's recorded farm expenses" />
+                <DashboardKpiCard label="Profit today" value={formatMoney(periodProfitMinor, farm.currency)} primary href="#reports/farm-report" description="Review today's farm financial activity" />
                 <DashboardKpiCard label="Inventory alerts" value={formatCount(dashboard.inventoryAlerts)} href="#feed-stock/inventory" description="Review low and insufficient stock alerts" />
               </div>
-              <div className="dashboard-kpi-detail-group" aria-label="Additional farm metrics">
-                <p className="eyebrow">FLOCK & FACILITY BREAKDOWN</p>
-                <div className="dashboard-kpi-detail-grid">
-                  <DashboardKpiCard label="Estimated birds" value={formatCount(dashboard.estimatedBirds)} href="#flocks/batch-dashboard" description="View estimated flock populations" />
-                  <DashboardKpiCard label="Estimated batches" value={formatCount(dashboard.estimatedBatches)} href="#flocks/flocks" description="View batches with estimated populations" />
-                  <DashboardKpiCard label="Layer birds" value={formatCount(dashboard.layerBirds)} href="#flocks/batch-dashboard" description="View layer flock populations" />
-                  <DashboardKpiCard label="Broiler birds" value={formatCount(dashboard.broilerBirds)} href="#flocks/batch-dashboard" description="View broiler flock populations" />
-                  <DashboardKpiCard label="Turkey birds" value={formatCount(dashboard.turkeyBirds)} href="#flocks/batch-dashboard" description="View turkey flock populations" />
-                  <DashboardKpiCard label="Total houses" value={formatCount(dashboard.totalHouses)} href="#flocks/houses" description="View farm houses and pens" />
-                  <DashboardKpiCard label="Permanent houses" value={formatCount(dashboard.permanentHouses)} href="#flocks/houses" description="View permanent houses" />
-                  <DashboardKpiCard label="Temporary houses" value={formatCount(dashboard.temporaryHouses)} href="#flocks/houses" description="View temporary houses" />
-                  <DashboardKpiCard label="Occupied houses" value={formatCount(dashboard.occupiedHouses)} href="#flocks/houses" description="View occupied houses" />
-                  <DashboardKpiCard label="Empty houses" value={formatCount(dashboard.emptyHouses)} href="#flocks/houses" description="View empty houses" />
-                </div>
-              </div>
+            </section>
+            <section className="dashboard-analytics" aria-label="Farm charts">
+              <DashboardAnalyticsCharts farm={farm} dashboard={dashboard} batches={batches} houses={houses} />
             </section>
             <div className="dashboard-columns">
               <div className="subsection dashboard-feed-panel"><h3>Feed</h3><div className="dashboard-list">
@@ -175,19 +166,6 @@ export default function DashboardPage() {
                 <div><span>Stock value</span><strong>{dashboard.feedSummary?.remainingCostMinor == null ? "Unknown" : formatMoney(dashboard.feedSummary.remainingCostMinor, farm.currency)}</strong></div>
                 <div><span>Consumed cost</span><strong>{dashboard.feedSummary?.consumedCostMinor == null ? "Unknown" : formatMoney(dashboard.feedSummary.consumedCostMinor, farm.currency)}</strong></div>
               </div></div>
-              <div className="subsection dashboard-attention-panel"><h3>Attention</h3>
-                {attention.length === 0 ? <p className="muted">Nothing currently requires attention.</p> :
-                  <div className="attention-list">{attention.map((item, index) => {
-                    const target = attentionTarget(item);
-                    const contextLabel = item.batchCode
-                      ? `${item.batchCode}${item.houseName ? ` · ${item.houseName}` : ""}`
-                      : item.item || "";
-                    const content = <><span className={"severity " + String(item.severity).toLowerCase()}>{item.severity}</span><span className="attention-item-copy"><strong>{item.title}</strong><span>{item.message}</span>{(item.affectedMetric || contextLabel) && <span className="attention-item-meta">{[item.affectedMetric, contextLabel].filter(Boolean).join(" · ")}</span>}{item.detectedAt && <span className="attention-item-meta">Detected: {item.detectedAt}</span>}{item.ruleDescription && <span className="attention-item-rule">{item.ruleDescription}</span>}{item.thresholdContext && <span className="attention-item-rule">Threshold: {item.thresholdContext}</span>}{item.suggestedAction && <span className="attention-item-action-copy">Suggested action: {item.suggestedAction}</span>}</span>{target && <span className="attention-item-action" aria-hidden="true">Open <span>→</span></span>}</>;
-                    return target
-                      ? <button type="button" className="attention-item attention-item-clickable" key={item.type + index} onClick={() => { window.location.hash = target; }} aria-label={`${item.title}. ${item.message}. ${item.affectedMetric || ""}. ${item.detectedAt || ""}. ${item.ruleDescription || ""}. ${item.thresholdContext || ""}. ${item.suggestedAction || ""}. Open related record`}>{content}</button>
-                      : <div className="attention-item" key={item.type + index}>{content}</div>;
-                  })}</div>}
-              </div>
             </div>
             <div className="subsection"><h3>Recent audit activity</h3>{auditRows.length === 0 ? <p className="muted">No audit records yet.</p> :
               <DataTable caption="Recent audit activity" columns={[

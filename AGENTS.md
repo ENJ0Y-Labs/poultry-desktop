@@ -132,6 +132,8 @@ React must not:
 - mutate database files
 - bypass the Spring Boot API
 
+For chart selection, data-source constraints, aggregation, units, and empty states, follow `docs/charting-and-analytics.md`. Charts are display-only; do not duplicate authoritative backend calculations in the renderer.
+
 ### Spring Boot
 
 Spring Boot owns:
@@ -206,6 +208,10 @@ The Import / Export screen supports versioned CSV imports for layer egg collecti
 - Filter state is a local renderer preference keyed by table identity; it must not mutate records or issue write requests. Empty filtered results must remain distinct from empty source data and API failures.
 - Client-side filtering may only claim to search rows already loaded. Do not silently fetch unbounded collections. Add bounded backend pagination/filter parameters before claiming complete search over large datasets.
 
+## Desktop renderer width
+
+- Pomas is a desktop-only Windows application with a supported minimum window size of 1100×650 CSS pixels. Keep the renderer canvas at least 1100px wide; do not introduce phone-style shell/navigation transformations below that width. Narrow browser viewports below 1100px are unsupported diagnostics, not a mobile-support target. See `docs/responsive-layout-audit.md`.
+
 ## Toast notifications
 
 Use the single app-wide React `ToastProvider` mounted in `app/renderer/src/main.jsx` and its `useToast()` API for routine success, warning, informational, and non-blocking error feedback. Do not create page-local toast providers or restore page-local success banners. Keep field validation inline and destructive confirmations / decisions in dialogs. Never display raw SQL, stack traces, filesystem paths, or raw backend exceptions. Follow `docs/toast-notifications.md` for API, accessibility, placement, and verification requirements.
@@ -218,6 +224,7 @@ Use:
 - `nodeIntegration: false`
 - `sandbox: true` where compatible with the application
 - narrow typed `contextBridge`
+- a sender-validated `app:quit` operation for the custom Windows application menu; native window controls use Electron's title-bar overlay
 - no direct `ipcRenderer` exposure
 - no direct `fs` exposure
 - strict CSP: packaged renderer allows bundled same-origin resources and the local API only on `127.0.0.1` using a dynamic port; development-only Vite HMR sources are injected only in serve mode and must never ship

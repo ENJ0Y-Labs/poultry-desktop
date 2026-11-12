@@ -17,12 +17,14 @@ import DataTable from "../components/DataTable.jsx";
 import PageSection from "../components/PageSection.jsx";
 // eslint-disable-next-line no-unused-vars
 import PageTemplate from "../components/PageTemplate.jsx";
+// eslint-disable-next-line no-unused-vars
+import { InventoryAnalytics } from "../components/AnalyticsCharts.jsx";
 
 export default function FeedStockPage() {
   const { error } = useContext(FarmManagerContext);
   const [inventoryItemOpenSignal, setInventoryItemOpenSignal] = useState(0);
   const [supplierOpenSignal, setSupplierOpenSignal] = useState(0);
-  const { dataLoadError, retryData, setDataLoadError, formatMoney, farm, batches, feedTypes, setFeedTypes, feedInventory, feedTypeForm, setFeedTypeForm, setError, setSaving, feedPurchaseForm, setFeedPurchaseForm, inventoryItems, inventoryItemForm, setInventoryItemForm, emptyInventoryItem, emptyInventoryMovement, emptyFeedPurchase, emptySupplier, feedPurchaseModalSignal, editingInventoryItemId, editInventoryItem, cancelInventoryItemEdit, inventoryMovementForm, setInventoryMovementForm, inventoryMovements, suppliers, supplierForm, setSupplierForm, editingSupplierId, editSupplier, cancelSupplierEdit, saveSupplier, archiveSupplier, saving, saveInventoryItem, loadInventoryMovements, saveInventoryMovement, createFeedType, purchaseFeed, feedQuantity } = useContext(FarmManagerContext);
+  const { dataLoadError, retryData, setDataLoadError, formatMoney, farm, dateRange, setDateRange, applicationSettings, batches, feedTypes, setFeedTypes, feedInventory, feedTypeForm, setFeedTypeForm, setError, setSaving, feedPurchaseForm, setFeedPurchaseForm, inventoryItems, inventoryItemForm, setInventoryItemForm, emptyInventoryItem, emptyInventoryMovement, emptyFeedPurchase, emptySupplier, feedPurchaseModalSignal, editingInventoryItemId, editInventoryItem, cancelInventoryItemEdit, inventoryMovementForm, setInventoryMovementForm, inventoryMovements, suppliers, supplierForm, setSupplierForm, editingSupplierId, editSupplier, cancelSupplierEdit, saveSupplier, archiveSupplier, saving, saveInventoryItem, loadInventoryMovements, saveInventoryMovement, createFeedType, purchaseFeed, feedQuantity } = useContext(FarmManagerContext);
   const [openingStockForm, setOpeningStockForm] = useState({
     feedTypeId: "", effectiveDate: "", quantity: "", reason: "",
   });
@@ -190,7 +192,7 @@ export default function FeedStockPage() {
               <label className="field"><span>Package weight in kg (leave blank if unknown)</span><input min="0.001" step="0.001" type="number" value={feedTypeForm.packageWeightKg} onChange={e=>setFeedTypeForm({...feedTypeForm,packageWeightKg:e.target.value})}/></label>
               <label className="field"><span>Unit e.g. bag or kg</span><input required value={feedTypeForm.unit} onChange={e=>setFeedTypeForm({...feedTypeForm,unit:e.target.value,kgPerUnit:e.target.value.trim().toLowerCase()==="kg"?"1":feedTypeForm.kgPerUnit})}/></label>
               <label className="field"><span>Kg per unit (leave blank if unknown)</span><input min="0.001" step="0.001" type="number" value={feedTypeForm.unit.trim().toLowerCase()==="kg"?"1":feedTypeForm.kgPerUnit} disabled={feedTypeForm.unit.trim().toLowerCase()==="kg"} onChange={e=>setFeedTypeForm({...feedTypeForm,kgPerUnit:e.target.value})}/></label>
-              <fieldset className="field">
+              <fieldset className="field applicability-selector">
                 <legend>Applicable to</legend>
                 {[
                   ["LAYER", "Layers"],
@@ -280,6 +282,8 @@ export default function FeedStockPage() {
             <h2>Inventory</h2>
             <p className="muted">Track drugs, vaccines, and farm supplies with explicit stock movements. Feed remains in the dedicated Feed module because its FIFO cost ledger is authoritative.</p>
           </div>
+
+          <InventoryAnalytics items={inventoryItems} movements={inventoryMovements} selectedItemId={inventoryMovementForm.itemId || drawerMovementItemId} dateRange={dateRange} setDateRange={setDateRange} timezone={farm?.timezone} dateFormat={applicationSettings?.dateFormat} />
 
           <div className="subsection">
             <h3>Inventory items</h3>

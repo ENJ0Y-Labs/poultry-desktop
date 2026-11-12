@@ -14,6 +14,7 @@ describe("DashboardKpiCard", () => {
     render(<DashboardKpiCard label="Total birds" value="4,842" primary href="#flocks/batch-dashboard" description="View flock populations" />);
     const card = screen.getByRole("button", { name: "Total birds: 4,842. View flock populations" });
     expect(card).toHaveClass("dashboard-kpi-card-primary");
+    expect(screen.queryByText("View details")).not.toBeInTheDocument();
     fireEvent.click(card);
     expect(window.location.hash).toBe("#flocks/batch-dashboard");
   });

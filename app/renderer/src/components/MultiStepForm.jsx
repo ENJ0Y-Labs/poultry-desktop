@@ -52,7 +52,7 @@ export default function MultiStepForm({
           {steps.map((item, index) => (
             <li key={item.title} className={index < activeStep ? "is-complete" : index === activeStep ? "is-current" : ""}>
               <span aria-hidden="true">{index < activeStep ? "✓" : index + 1}</span>
-              <span className="workflow-step-label">{item.title}</span>
+              <span className="workflow-step-label sr-only">{item.title}</span>
             </li>
           ))}
         </ol>

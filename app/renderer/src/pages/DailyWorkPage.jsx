@@ -14,11 +14,13 @@ import PageSection from "../components/PageSection.jsx";
 import PageTemplate from "../components/PageTemplate.jsx";
 // eslint-disable-next-line no-unused-vars -- JSX component usage is not detected by the core rule
 import EmptyState from "../components/EmptyState.jsx";
+// eslint-disable-next-line no-unused-vars
+import { DailyOperationsAnalytics } from "../components/AnalyticsCharts.jsx";
 
 export default function DailyWorkPage() {
   const { error } = useContext(FarmManagerContext);
   const {
-    batches, dailyForm, setDailyForm, emptyDaily, emptyFeedUsage, emptyPopulationEvent, dailyRecord, dailyRecordLoading, waterUnitLabel,
+    batches, dateRange, setDateRange, farm, applicationSettings, dailyForm, setDailyForm, emptyDaily, emptyFeedUsage, emptyPopulationEvent, dailyRecord, dailyRecordLoading, waterUnitLabel,
     mortalityForm, setMortalityForm, mortalityModalSignal, feedUsageModalSignal, cullingForm, setCullingForm, saving,
     saveDailyRecord, recordPopulationEvent, feedTypes, feedUsageForm, setFeedUsageForm,
     useFeed, feedQuantity, dataLoadError, retryData,
@@ -96,6 +98,7 @@ export default function DailyWorkPage() {
             </> : <EmptyState variant="no-records" heading="No daily record for this date" description="Record feed usage, water or daily notes to begin this day’s activity." compact />}
           </div>
         </section>
+        <DailyOperationsAnalytics batches={activeBatches} initialBatchId={dailyForm.batchId} dateRange={dateRange} setDateRange={setDateRange} timezone={farm?.timezone} dateFormat={applicationSettings?.dateFormat} />
       </PageSection>
 
       <PageSection page="daily-work" tab="mortality">

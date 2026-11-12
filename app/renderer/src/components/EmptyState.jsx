@@ -1,6 +1,6 @@
 const STATE_COPY = {
   "no-records": {
-    icon: "＋",
+    icon: null,
     heading: "Nothing here yet",
     description: "There are no records to show yet. Add the first record when you are ready.",
     role: "status",

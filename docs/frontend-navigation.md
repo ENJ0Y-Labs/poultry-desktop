@@ -57,12 +57,12 @@ The top-level page components live under `app/renderer/src/pages/`. Shared form 
 
 ## Single collapsible navigation
 
-- One sidebar contains the nine existing top-level destinations. Do not render a second activity rail with duplicate destinations.
-- The collapse/expand control switches between a labeled sidebar and a compact icon rail. Each icon retains an accessible name and tooltip.
+- One sidebar contains the ten existing top-level destinations. Do not render a second activity rail with duplicate destinations.
+- A dedicated collapse/expand button remains visible in both sidebar states, uses a state-specific panel icon, accessible name, tooltip, and keyboard focus treatment, and switches between a labeled sidebar and compact icon rail. The Pomas mark remains branding rather than a hidden hover control.
 - The compact-mode preference is stored locally in renderer localStorage under `pomas:sidebar-collapsed`; it does not require a backend request or network access.
 - The active page and subpage remain encoded in the URL hash when the sidebar is collapsed or expanded.
 - Account opens the existing Settings → App, appearance & account section. Settings remains available in the main navigation.
-- The sidebar and main-content offset adapt at narrow viewport widths without introducing another route system or farm module.
+- Keep the renderer canvas aligned with the supported 1100×650 desktop minimum; narrower browser viewports are unsupported diagnostics and must not trigger a phone-style shell.
 
 ## Theme selector accessibility
 
@@ -108,7 +108,7 @@ The top-level page components live under `app/renderer/src/pages/`. Shared form 
 
 - The dashboard uses a persistent, dismissible getting-started checklist after the farm has moved beyond the completely empty first-run state. Checklist completion is derived from current houses, batches, active feed-type setup, and positive feed stock reported by the backend dashboard; it is not inferred from house creation alone.
 - The checklist disappears automatically when every setup task is complete. Dismissal is stored as a renderer preference only and never changes farm records. No demo records are created.
-- The application shell shows concise purpose, primary workflow, and a relevant next action for each of the nine top-level pages. Actions use existing local hash routes and remain usable offline.
+- The application shell shows concise purpose, primary workflow, and a relevant next action for each of the ten top-level pages. Actions use existing local hash routes and remain usable offline.
 - Keep help copy short and actionable. Empty states should tell the operator what to do next rather than presenting unexplained blank tables.
 - Vitest covers checklist completion/dismissal and page-help route actions. Runtime review should inspect the dashboard with a clean disposable farm, a partially configured farm, and a fully configured farm, plus help on every top-level page.
 
