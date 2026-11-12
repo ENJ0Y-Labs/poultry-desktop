@@ -288,7 +288,7 @@ class AttentionServiceIntegrationTest {
                 INSERT INTO feed_opening_balances(id,farm_id,feed_type_id,effective_date,quantity_milli,unit,reason,created_at)
                 VALUES(?,?,?,?,?,?,?,?)
                 """, UUID.randomUUID().toString(), farmId, feedType.id(), AS_OF.minusDays(2).toString(),
-                10_000L, "kg", "Opening stock for attention test", AS_OF.minusDays(2).atStartOfDay().toString());
+                10_000L, "kg", "Opening stock for attention test", AS_OF.minusDays(2).atStartOfDay(java.time.ZoneOffset.UTC).toInstant().toString());
         feedService.use(layer.id(), new FeedUsageRequest(
                 feedType.id(), AS_OF.minusDays(1), new BigDecimal("9"), "kg"));
 
