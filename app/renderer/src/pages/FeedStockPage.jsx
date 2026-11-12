@@ -298,7 +298,7 @@ export default function FeedStockPage() {
               <label className="field"><span>Quantity</span><input required min="0.001" step="0.001" type="number" value={feedPurchaseForm.quantity} onChange={e=>setFeedPurchaseForm({...feedPurchaseForm,quantity:e.target.value})}/></label>
               <label className="field"><span>Supplier (optional)</span><select value={feedPurchaseForm.supplierId} onChange={e=>setFeedPurchaseForm({...feedPurchaseForm,supplierId:e.target.value})}><option value="">No supplier recorded</option>{suppliers.filter(supplier=>supplier.status!=="ARCHIVED").map(supplier=><option key={supplier.id} value={supplier.id}>{supplier.name}</option>)}</select></label>
               <label className="field"><span>Total cost (₦)</span><input required type="text" inputMode="decimal" value={feedPurchaseForm.totalCostMinor} onChange={e=>setFeedPurchaseForm({...feedPurchaseForm,totalCostMinor:e.target.value})}/></label>
-              <button disabled={saving || feedTypes.filter(t=>t.status==="ACTIVE").length===0 || draftStatuses.feedPurchase?.stale}>Record purchase</button>
+              <button disabled={saving || feedTypes.filter(t=>t.status==="ACTIVE").length===0 || draftStatuses.feedPurchase?.stale || draftStatuses.feedPurchase?.posted}>Record purchase</button>
             </form>
           </div>
 
