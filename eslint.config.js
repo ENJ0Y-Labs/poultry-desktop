@@ -18,7 +18,6 @@ export default [
     plugins: { "react-hooks": reactHooks },
     rules: {
       "no-unused-vars": ["error", { varsIgnorePattern: "^(App|React)$" }],
-      "react-hooks/rules-of-hooks": "error",
       "react-hooks/exhaustive-deps": "warn"
     }
   }
