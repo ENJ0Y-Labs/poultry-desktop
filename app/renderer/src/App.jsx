@@ -257,7 +257,9 @@ export default function App() {
     const snapshot = record => record ? {
       id: record.id, name: record.name, code: record.code, type: record.type,
       status: record.status, unit: record.unit, brand: record.brand,
-      houseId: record.houseId, applicableTypes: record.applicableTypes
+      houseId: record.houseId, houseType: record.houseType, placementDate: record.placementDate,
+      initialBirdCount: record.initialBirdCount, populationCountStatus: record.populationCountStatus,
+      phone: record.phone, email: record.email, applicableTypes: record.applicableTypes
     } : null;
     const batchId = form.batchId || "";
     const houseId = form.houseId || "";
