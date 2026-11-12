@@ -164,7 +164,7 @@ function SidebarToggleIcon({ expanded }) {
   );
 }
 
-export default function AppShell({ farm, error, appInfo, onRetry, children, batches = [], selectedBatchId = "", feedTypes = [], feedInventory = [], inventoryItems = [], startPage = "dashboard", startPageReady = true }) {
+export default function AppShell({ farm, error, appInfo, onRetry, onQuickAction, children, batches = [], selectedBatchId = "", feedTypes = [], feedInventory = [], inventoryItems = [], startPage = "dashboard", startPageReady = true }) {
   const [active, setActive] = useState(() => resolvePage(window.location.hash, startPage));
   const [activeTab, setActiveTab] = useState(() => resolveTab(window.location.hash, resolvePage(window.location.hash, startPage)));
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => localStorage.getItem("pomas:sidebar-collapsed") === "true");
@@ -393,7 +393,7 @@ export default function AppShell({ farm, error, appInfo, onRetry, children, batc
               <p className="muted">{farm.location || "Farm profile"} · {farm.currency} · {farm.timezone}</p>
             </div>
             <div className="topbar-actions">
-              <QuickActionsMenu activeBatch={activeBatch} hasFeedTypes={hasActiveFeedTypes} hasApplicableFeed={hasApplicableFeed} hasInventoryItems={hasActiveInventoryItems} onNavigate={navigateQuickAction} />
+              <QuickActionsMenu activeBatch={activeBatch} hasFeedTypes={hasActiveFeedTypes} hasApplicableFeed={hasApplicableFeed} hasInventoryItems={hasActiveInventoryItems} onAction={onQuickAction} onNavigate={navigateQuickAction} />
               <button type="button" className="secondary-button keyboard-shortcuts-trigger" onClick={() => setShortcutsOpen(true)} aria-haspopup="dialog">Keyboard shortcuts</button>
               <div className={backendConnected === true && !recoveryNeeded ? "system-pill connected" : backendConnected === false || recoveryNeeded ? "system-pill disconnected" : "system-pill"} role="status" aria-live="polite">
                 <span className={backendConnected === true && !recoveryNeeded ? "status-dot online" : backendConnected === false || recoveryNeeded ? "status-dot offline" : "status-dot"} />
