@@ -251,22 +251,14 @@ describe("App", () => {
     expect(document.documentElement.dataset.theme).toBe("light");
     expect(localStorage.getItem("pomas:theme")).toBe("light");
     expect(screen.getByRole("heading", { name: "What's new" })).toBeInTheDocument();
-    expect(screen.getByText("POMAS v1.0.4")).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Egg production in crates" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Flexible bird sales" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Clearer Windows installer" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Theme preference on sign-in" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "More readable dashboard alerts" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Feed product identity and editing" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Opening feed stock" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Editable farm records" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Multiple bird-type feed applicability" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Cleaner text rendering" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Quick actions in one place" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Keyboard-first navigation" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "A cleaner dashboard" })).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Independent turkey management" })).not.toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "House and pen classification" })).not.toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Verified bird counts" })).not.toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "More detailed feed records" })).not.toBeInTheDocument();
-    expect(screen.getByText("POMAS · DEVELOPMENT BUILD")).toBeInTheDocument();
+    expect(screen.getAllByText("POMAS · DEVELOPMENT BUILD")).toHaveLength(2);
     expect(screen.getByRole("button", { name: /Sign in to your farm/ })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /create account/i })).not.toBeInTheDocument();
     expect(screen.queryByLabelText("Full name")).not.toBeInTheDocument();
@@ -858,46 +850,57 @@ describe("App", () => {
     expect(screen.getByRole("option", { name: /B-2026-001 · Broiler/ })).toBeInTheDocument();
     expect(localStorage.getItem("grantino:lastBatchId")).toBe("broiler-1");
   });
-  it("routes dashboard quick actions to validated forms with the last-used batch context", async () => {
+  it("routes global quick actions to validated forms with the last-used batch context", async () => {
     mockFarmApis({ currentBatches: batches });
     vi.mocked(feedApi.listTypes).mockResolvedValue([
       { id: "feed-layer", name: "Layer mash", unit: "bag", applicableType: "LAYER", applicableTypes: ["LAYER"], status: "ACTIVE" },
       { id: "feed-broiler", name: "Broiler starter", unit: "bag", applicableType: "BROILER", applicableTypes: ["BROILER"], status: "ACTIVE" },
     ]);
+    vi.mocked(feedApi.inventory).mockResolvedValue([
+      { feedTypeId: "feed-layer", remainingQuantityMilli: 5000, unit: "bag" },
+    ]);
     render(<App />);
     await screen.findByRole("heading", { name: "Farm dashboard" });
+
     const dashboardNav = () => fireEvent.click(within(screen.getByRole("navigation", { name: "Main navigation" })).getByRole("button", { name: "Dashboard" }));
+    const chooseQuickAction = async label => {
+      fireEvent.click(await screen.findByRole("button", { name: /Quick actions/ }));
+      const menu = await screen.findByRole("dialog", { name: "Quick actions" });
+      fireEvent.click(await within(menu).findByRole("button", { name: label }));
+    };
 
-    fireEvent.click(await screen.findByRole("button", { name: "Record mortality" }));
+    await chooseQuickAction(/^Mortality/);
     expect(window.location.hash).toContain("daily-work/mortality");
-    await screen.findByRole("heading", { name: "Record mortality" });
-    expect(await screen.findByRole("combobox", { name: "Batch" })).toHaveValue("layer-1");
+    const mortalityDialog = await screen.findByRole("dialog", { name: "Record mortality" });
+    expect(within(mortalityDialog).getByRole("combobox", { name: "Batch" })).toHaveValue("layer-1");
+    fireEvent.click(within(mortalityDialog).getByRole("button", { name: "Close dialog" }));
 
     dashboardNav();
-    fireEvent.click(await screen.findByRole("button", { name: "Collect eggs" }));
+    await chooseQuickAction(/^Egg collection/);
     expect(window.location.hash).toContain("production/eggs");
-    fireEvent.click(await screen.findByRole("button", { name: "Record collection" }));
     expect(await screen.findByRole("combobox", { name: "Layer batch" })).toHaveValue("layer-1");
+    fireEvent.click(await screen.findByRole("button", { name: "Record collection" }));
+    expect(await screen.findByRole("dialog", { name: "Egg collection" })).toBeInTheDocument();
 
     dashboardNav();
-    fireEvent.click(await screen.findByRole("button", { name: "Record feed usage" }));
-    await waitFor(() => expect(window.location.hash).toContain("daily-work/daily-record"));
-    fireEvent(window, new HashChangeEvent("hashchange"));
+    await chooseQuickAction(/^Feed usage/);
+    expect(window.location.hash).toContain("daily-work/daily-record");
     const feedUsageDialog = await screen.findByRole("dialog", { name: "Feed usage" });
     expect(within(feedUsageDialog).getByRole("combobox", { name: "Feed type" })).toHaveValue("feed-layer");
-
     fireEvent.click(within(feedUsageDialog).getByRole("button", { name: "Close dialog" }));
+
     fireEvent.click(await screen.findByRole("button", { name: "Save daily notes" }));
     const dailyRecordDialog = await screen.findByRole("dialog", { name: "Daily record" });
     expect(within(dailyRecordDialog).getByRole("combobox", { name: "Batch" })).toHaveValue("layer-1");
+    fireEvent.click(within(dailyRecordDialog).getByRole("button", { name: "Close dialog" }));
 
     dashboardNav();
-    fireEvent.click(await screen.findByRole("button", { name: "Record a sale" }));
+    await chooseQuickAction(/^Sale/);
     expect(window.location.hash).toContain("production/eggs");
     expect(await screen.findByRole("combobox", { name: "Layer batch" })).toHaveValue("layer-1");
 
     dashboardNav();
-    fireEvent.click(await screen.findByRole("button", { name: "Record an expense" }));
+    await chooseQuickAction(/^Expense/);
     expect(window.location.hash).toContain("sales-money/expenses");
     fireEvent.click(await screen.findByRole("button", { name: "Record expense" }));
     fireEvent.click(await screen.findByText("Batch allocation"));
