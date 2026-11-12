@@ -317,7 +317,12 @@ export default function App() {
       };
       if (resetForm) resetters[id]?.();
     } catch (err) {
-      setError(displayApiError(err));
+      if (resetForm) {
+        setError(displayApiError(err));
+      } else {
+        setDraftStatuses(current => ({ ...current, [id]: { ...current[id], hasDraft: true, saving: false, posted: true } }));
+        throw new Error("The transaction was recorded, but its draft could not be cleared. Do not submit this form again. Use Discard draft to remove it.");
+      }
     }
   }
 
