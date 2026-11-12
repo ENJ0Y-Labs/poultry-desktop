@@ -1430,3 +1430,11 @@ An opening balance may be dated before a later purchase, but cannot be dated bef
 - Feed quantities are recorded in configured feed units. Never sum quantities across different units within one batch; return a missing quantity in that case while retaining a valid FIFO cost. Show each batch's actual unit in the table and chart feed quantity only when every selected batch has the same single unit. Money remains integer minor units and must use the shared money formatter.
 - The comparison chart must show one unit-consistent metric at a time. The accessible comparison table must expose metric units, each batch's type and placement date, and the common reporting period.
 - Test layer-only, meat-bird-only, mixed selections, missing histories, duplicate/invalid selections, FIFO costs across period boundaries, and batches with different placement dates. Do not fabricate missing metrics.
+
+## Shared data-table sorting and pagination (Issue #235)
+
+- Use the shared `DataTable` for consistent column sorting and page controls. Columns may provide `sortValue(row)` when the displayed field differs from the sort value; mark action columns `sortable: false`.
+- Sorting is stable: equal primary values are ordered by the row's unique ID in ascending order, independent of primary sort direction. Persisted farm records must expose stable IDs.
+- Page sizes are 10, 25, 50 and 100. Apply filtering, sorting, then pagination. Reset to page one when filters or page size change and clamp the current page when rows are removed.
+- The current shared renderer component paginates loaded rows only. This is not database pagination. Do not describe large histories as scalable until relevant API and SQL repository queries are bounded and return total counts. Preserve existing API response behavior when introducing paged responses.
+- See `docs/data-table-pagination.md` for the current contract and server-pagination limitation.
