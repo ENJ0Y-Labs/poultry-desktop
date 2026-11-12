@@ -35,7 +35,7 @@ describe("MultiStepForm", () => {
     fireEvent.click(screen.getByRole("button", { name: "Continue" }));
     fireEvent.change(screen.getByLabelText("Bird count"), { target: { value: "250" } });
     fireEvent.click(screen.getByRole("button", { name: "Continue" }));
-    fireEvent.click(screen.getByRole("button", { name: "Create batch" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
     expect(submit).toHaveBeenCalledTimes(1);
   });
 });
