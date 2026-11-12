@@ -65,7 +65,7 @@ export default function ProductionPage() {
                   <label className="field"><span>Good eggs</span><input required min="0" step="1" type="number" value={eggCollectionForm.good} onChange={e=>setEggCollectionForm({...eggCollectionForm,good:e.target.value})}/></label>
                   <label className="field"><span>Cracked eggs</span><input required min="0" step="1" type="number" value={eggCollectionForm.cracked} onChange={e=>setEggCollectionForm({...eggCollectionForm,cracked:e.target.value})}/></label>
                   <label className="field"><span>Notes</span><input value={eggCollectionForm.notes} onChange={e=>setEggCollectionForm({...eggCollectionForm,notes:e.target.value})}/></label>
-                  <button disabled={saving}>Record collection</button>
+                  <button disabled={saving || draftStatuses.eggCollection?.stale}>Record collection</button>
                 </form>
                 <DataTable caption="Egg collections" columns={[
                     { key: "recordDate", label: "Date" }, { key: "good", label: "Good" }, { key: "cracked", label: "Cracked" },
@@ -86,7 +86,7 @@ export default function ProductionPage() {
                   {!eggSaleForm.customerId && <label className="field"><span>Walk-in customer name</span><input required maxLength="120" value={eggSaleForm.customer} onChange={e=>setEggSaleForm({...eggSaleForm,customer:e.target.value})} placeholder="Enter buyer name"/></label>}
                   <label className="field"><span>Crates e.g. 0.5 or 2.5</span><input required min="0.001" step="0.001" type="number" value={eggSaleForm.crates} onChange={e=>setEggSaleForm({...eggSaleForm,crates:e.target.value})}/></label>
                   <label className="field"><span>Price per crate (₦)</span><input required type="text" inputMode="decimal" value={eggSaleForm.pricePerCrateMinor} onChange={e=>setEggSaleForm({...eggSaleForm,pricePerCrateMinor:e.target.value})}/></label>
-                  <button disabled={saving}>Record sale</button>
+                  <button disabled={saving || draftStatuses.eggSale?.stale}>Record sale</button>
                 </form>
                 <DataTable caption="Egg sales" columns={[
                     { key: "recordDate", label: "Date" }, { key: "customer", label: "Customer" },
@@ -150,7 +150,7 @@ export default function ProductionPage() {
                   <label className="field"><span>Sampled birds</span><input required min="1" type="number" value={weightForm.sampleQuantity} onChange={e=>setWeightForm({...weightForm,sampleQuantity:e.target.value})}/></label>
                   <label className="field"><span>Total sample weight (kg)</span><input required min="0.001" step="0.001" type="number" value={weightForm.totalWeightKg} onChange={e=>setWeightForm({...weightForm,totalWeightKg:e.target.value})}/></label>
                   <label className="field"><span>Notes</span><input value={weightForm.notes} onChange={e=>setWeightForm({...weightForm,notes:e.target.value})}/></label>
-                  <button disabled={saving}>Record weight</button>
+                  <button disabled={saving || draftStatuses.weight?.stale}>Record weight</button>
                 </form>
                 <DataTable caption="Meat-bird weight records" columns={[
                     { key: "recordDate", label: "Date" }, { key: "sampleQuantity", label: "Sample" }, { key: "totalWeightKg", label: "Total kg" },
@@ -187,7 +187,7 @@ export default function ProductionPage() {
                     {customers.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}
                   </select></label>
                   {!birdSaleForm.customerId && <label className="field"><span>Walk-in customer name</span><input required maxLength="120" value={birdSaleForm.customer} onChange={e=>setBirdSaleForm({...birdSaleForm,customer:e.target.value})} placeholder="Enter buyer name"/></label>}
-                  <button disabled={saving}>Record bird sale</button>
+                  <button disabled={saving || draftStatuses.birdSale?.stale}>Record bird sale</button>
                 </form>
                 <DataTable caption="Meat-bird sales" columns={[
                     { key: "recordDate", label: "Date" }, { key: "quantity", label: "Quantity" },
