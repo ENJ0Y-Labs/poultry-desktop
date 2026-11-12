@@ -253,7 +253,7 @@ export default function App() {
   const [draftsReady, setDraftsReady] = useState(false);
   const draftRestoreStarted = useRef(false);
 
-  function draftReferences(id, form) {
+  function draftReferences(form) {
     const snapshot = record => record ? {
       id: record.id, name: record.name, code: record.code, type: record.type,
       status: record.status, unit: record.unit, brand: record.brand,
@@ -325,7 +325,7 @@ export default function App() {
     const form = getDraftForm(id);
     if (!form || !window.poultryDesktop?.saveDraft) return;
     try {
-      const saved = await window.poultryDesktop.saveDraft({ id, form, references: draftReferences(id, form) });
+      const saved = await window.poultryDesktop.saveDraft({ id, form, references: draftReferences(form) });
       setDrafts(current => ({ ...current, [id]: saved }));
       setDraftStatuses(current => ({ ...current, [id]: { hasDraft: true, saving: false, stale: false, savedAt: saved.savedAt } }));
     } catch (err) {
@@ -351,7 +351,7 @@ export default function App() {
         for (const [id, draft] of Object.entries(saved)) {
           if (!setters[id] || !draft?.form) continue;
           setters[id](draft.form);
-          const stale = JSON.stringify(draftReferences(id, draft.form)) !== JSON.stringify(draft.references || {});
+          const stale = JSON.stringify(draftReferences(draft.form)) !== JSON.stringify(draft.references || {});
           statuses[id] = { hasDraft: true, saving: false, stale, savedAt: draft.savedAt || null };
         }
         setDrafts(saved);
