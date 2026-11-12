@@ -43,9 +43,9 @@ public class ReportExportService {
         String batchCode = text(report.get("batchCode"));
         String batchType = text(report.get("batchType"));
         String houseId = text(report.get("houseId"));
-        String generatedAt = formatGeneratedAt(text(report.get("generatedAt")), dateFormat);
         String currency = currencyCode(report);
         String dateFormat = dateFormat(report);
+        String generatedAt = formatGeneratedAt(text(report.get("generatedAt")), dateFormat);
         String asOf = formatDate(text(report.get("asOf")), dateFormat);
         String selectedPeriod = asOf.isBlank() ? "Not specified" : "As of " + asOf;
         StringBuilder csv = new StringBuilder("\uFEFF");
@@ -300,6 +300,7 @@ public class ReportExportService {
         private void continued() {
             writeText((farmName.isBlank() ? "Farm report" : farmName) + " · " + reportTitle + " (continued)", bold, 10f);
             if (!batchCode.isBlank()) writeText("Batch: " + batchCode + (batchType.isBlank() ? "" : " (" + batchType + ")"), regular, 8f);
+            if (!houseId.isBlank()) writeText("House ID: " + houseId, regular, 8f);
             writeText("As of: " + (asOf.isBlank() ? "Not specified" : formatDate(asOf, dateFormat)) + " · Currency: " + currency, regular, 8f);
             y -= 5;
         }
