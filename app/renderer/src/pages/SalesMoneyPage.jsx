@@ -23,8 +23,10 @@ export default function SalesMoneyPage() {
           </div>
           <form className="inline-form" onSubmit={saveCustomer}>
             <label className="field"><span>Customer name</span><input required value={customerForm.name} onChange={e=>setCustomerForm({...customerForm,name:e.target.value})}/></label>
-            <label className="field"><span>Phone</span><input value={customerForm.phone} onChange={e=>setCustomerForm({...customerForm,phone:e.target.value})}/></label>
-            <label className="field"><span>Notes</span><input value={customerForm.notes} onChange={e=>setCustomerForm({...customerForm,notes:e.target.value})}/></label>
+            <details className="optional-fields"><summary>Optional details</summary><div className="optional-fields-content">
+              <label className="field"><span>Phone</span><input value={customerForm.phone} onChange={e=>setCustomerForm({...customerForm,phone:e.target.value})}/></label>
+              <label className="field"><span>Notes</span><input value={customerForm.notes} onChange={e=>setCustomerForm({...customerForm,notes:e.target.value})}/></label>
+            </div></details>
             <button disabled={saving}>{editingCustomerId ? "Save customer" : "Add customer"}</button>{editingCustomerId && <button type="button" className="secondary-button" onClick={cancelCustomerEdit}>Cancel</button>}
           </form>
           <DataTable caption="Customers" columns={[
@@ -62,10 +64,10 @@ export default function SalesMoneyPage() {
             <label className="field"><span>Category</span><select required value={expenseForm.category} onChange={e=>setExpenseForm({...expenseForm,category:e.target.value})}>
               {expenseCategories.map(category => <option key={category.id} value={category.name}>{category.name}</option>)}
             </select></label>
-            <label className="field"><span>Batch association</span><select value={expenseForm.batchId} onChange={e=>setExpenseForm({...expenseForm,batchId:e.target.value})}>
+            <details className="optional-fields"><summary>Optional details</summary><div className="optional-fields-content"><label className="field"><span>Batch association</span><select value={expenseForm.batchId} onChange={e=>setExpenseForm({...expenseForm,batchId:e.target.value})}>
               <option value="">Farm-level</option>
               {batches.map(b=><option key={b.id} value={b.id}>{b.code}</option>)}
-            </select></label>
+            </select></label></div></details>
             <button disabled={saving}>Record expense</button>
           </form>
 
