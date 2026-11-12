@@ -200,6 +200,12 @@ Turkey is an independent `TURKEY` batch type, not a Broiler subtype. Farm dashbo
 
 The Import / Export screen supports versioned CSV imports for layer egg collections (`egg-collections`) and broiler weight records (`broiler-weights`) for existing ACTIVE batches. Batch references use human-readable batch codes. Egg imports must use LAYER batches and preserve good/cracked separation; weight imports must use BROILER batches and store sample count plus total sample weight in kilograms. All writes go through `EggManagementService` or `BroilerProductionService` in a single transaction so existing validation and audit behavior remain authoritative. Do not import derived averages, growth, sellable cracked eggs, or synthetic zero records for missing dates. See `docs/csv-bulk-import.md`.
 
+## Reusable record-table filters
+
+- Keep record-table search and applicable date, batch, house, and status criteria in the shared `DataTable` pattern. Criteria intersect (AND), date boundaries are inclusive, active criteria are removable, and Clear all resets every criterion.
+- Filter state is a local renderer preference keyed by table identity; it must not mutate records or issue write requests. Empty filtered results must remain distinct from empty source data and API failures.
+- Client-side filtering may only claim to search rows already loaded. Do not silently fetch unbounded collections. Add bounded backend pagination/filter parameters before claiming complete search over large datasets.
+
 ## Toast notifications
 
 Use the single app-wide React `ToastProvider` mounted in `app/renderer/src/main.jsx` and its `useToast()` API for routine success, warning, informational, and non-blocking error feedback. Do not create page-local toast providers or restore page-local success banners. Keep field validation inline and destructive confirmations / decisions in dialogs. Never display raw SQL, stack traces, filesystem paths, or raw backend exceptions. Follow `docs/toast-notifications.md` for API, accessibility, placement, and verification requirements.
