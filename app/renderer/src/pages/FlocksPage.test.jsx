@@ -117,4 +117,36 @@ describe("FlocksPage contextual details", () => {
     expect(within(drawer).getByText("NGN 125000")).toBeInTheDocument();
     expect(within(drawer).getByRole("button", { name: "Edit batch setup" })).toBeInTheDocument();
   });
+
+  it("completes batch registration through the review step", () => {
+    const context = {
+      ...contextValue,
+      batchForm: { ...contextValue.batchForm, initialBirdCount: "250", purchaseCostRecorded: false },
+    };
+    render(
+      <NavigationContext.Provider value={{ activePage: "flocks", activeTab: "flocks" }}>
+        <FarmManagerContext.Provider value={context}>
+          <FlocksPage />
+        </FarmManagerContext.Provider>
+      </NavigationContext.Provider>
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Register batch" }));
+    expect(screen.getByText("STEP 1 OF 5")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+    expect(screen.getByText("STEP 2 OF 5")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+    expect(screen.getByText("STEP 3 OF 5")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+    expect(screen.getByText("STEP 4 OF 5")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+    expect(screen.getByText("STEP 5 OF 5")).toBeInTheDocument();
+    const dialog = screen.getByRole("dialog", { name: "Register batch" });
+    expect(within(dialog).getByText("250", { exact: true })).toBeInTheDocument();
+    expect(within(dialog).getByText("North Pen", { exact: true })).toBeInTheDocument();
+
+    fireEvent.click(within(dialog).getByRole("button", { name: "Create batch" }));
+    expect(context.createBatch).toHaveBeenCalledTimes(1);
+  });
+
 });

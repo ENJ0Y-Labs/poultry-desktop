@@ -1319,3 +1319,30 @@ body { min-width: 0; }
 @media (max-width: 560px) {
   .optional-fields-content { grid-template-columns: minmax(0, 1fr); }
 }
+
+
+/* Reusable multi-step workflow forms */
+.workflow-progress{display:grid;gap:10px;padding:13px;border:1px solid var(--border);border-radius:8px;background:var(--panel-soft)}
+.workflow-progress-copy{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.workflow-progress-copy>span{font-size:10px;font-weight:850;letter-spacing:.1em;color:var(--muted)}
+.workflow-progress-copy>strong{font-size:13px;color:var(--text)}
+.workflow-progress ol{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:7px;margin:0;padding:0;list-style:none}
+.workflow-progress li{display:flex;align-items:center;gap:6px;min-width:0;color:var(--muted);font-size:10px;font-weight:700}
+.workflow-progress li>span:first-child{display:grid;place-items:center;width:23px;height:23px;flex:0 0 23px;border:1px solid var(--border);border-radius:50%;background:var(--panel);font-size:10px}
+.workflow-progress li.is-current{color:var(--text)}
+.workflow-progress li.is-current>span:first-child{border-color:var(--cyan);background:var(--cyan);color:white}
+.workflow-progress li.is-complete>span:first-child{border-color:var(--green);background:var(--green);color:white}
+.workflow-step-label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.workflow-progress-track{height:4px;overflow:hidden;border-radius:99px;background:var(--border)}
+.workflow-progress-track>span{display:block;height:100%;border-radius:inherit;background:var(--cyan);transition:width .18s ease}
+.workflow-step-panel{display:grid;gap:12px;min-width:0}
+.workflow-step-panel[hidden]{display:none}
+.workflow-step-description{margin:0;font-size:12px;line-height:1.5}
+.workflow-review{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:0}
+.workflow-review>div{min-width:0;padding:11px;border:1px solid var(--border-soft);border-radius:7px;background:var(--panel-soft)}
+.workflow-review dt{margin-bottom:5px;color:var(--muted);font-size:10px;font-weight:800;letter-spacing:.04em;text-transform:uppercase}
+.workflow-review dd{margin:0;color:var(--text);font-size:13px;font-weight:700;overflow-wrap:anywhere}
+.workflow-actions{display:flex;justify-content:space-between;gap:9px;padding-top:12px;border-top:1px solid var(--border-soft)}
+.workflow-actions button{min-width:112px}
+@media(max-width:1150px){.workflow-progress ol{grid-template-columns:repeat(5,minmax(0,1fr))}.workflow-progress li{justify-content:center}.workflow-step-label{display:none}}
+@media(max-width:900px){.workflow-review{grid-template-columns:1fr 1fr}}
