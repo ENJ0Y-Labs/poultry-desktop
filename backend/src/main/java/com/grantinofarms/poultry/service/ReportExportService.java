@@ -82,7 +82,7 @@ public class ReportExportService {
             String section = humanize(field.getKey());
             if (field.getKey().equals("asOf") || field.getKey().equals("from")
                     || field.getKey().equals("to") || field.getKey().equals("reportType")) continue;
-            appendRows(field.getValue(), section, "", field.getKey(), result);
+            appendRows(field.getValue(), section, "", field.getKey(), result, currency, dateFormat);
         }
         return result;
     }
