@@ -941,6 +941,7 @@ export default function App() {
         category: expenseForm.category,
         batchId: expenseForm.batchId || null,
       });
+      await discardDraft("expense");
       setExpenses(current => [created, ...current]);
       setExpenseForm(form => ({ ...emptyExpense, batchId: form.batchId }));
       setSuccessMessage("Expense recorded successfully.");
@@ -963,6 +964,7 @@ export default function App() {
           : null,
         populationCountStatus: batchForm.populationCountStatus || "ESTIMATED",
       });
+      await discardDraft("batch");
       setBatches(current => [created, ...current]);
       rememberLastBatchId(created.id);
       setSelectedBatchId(created.id);
@@ -1046,6 +1048,7 @@ export default function App() {
         unit: type?.unit || feedPurchaseForm.unit,
         totalCostMinor: parseNairaToKobo(feedPurchaseForm.totalCostMinor),
       });
+      await discardDraft("feedPurchase");
       setFeedPurchaseForm(form => ({ ...emptyFeedPurchase, feedTypeId: form.feedTypeId }));
       setFeedInventory(await feedApi.inventory());
     } catch (err) { setError(displayApiError(err)); } finally { setSaving(false); }
@@ -1170,6 +1173,7 @@ export default function App() {
         totalWeightKg: weightForm.totalWeightKg,
         notes: weightForm.notes.trim() || null,
       });
+      await discardDraft("weight");
       await loadBroilerForBatch(batchId);
       setWeightForm(form => ({ ...form, sampleQuantity: "", totalWeightKg: "", notes: "" }));
     } catch (err) { setError(displayApiError(err)); } finally { setSaving(false); }
@@ -1193,6 +1197,7 @@ export default function App() {
         if (!window.confirm("This sale is below the configured target margin. Record it anyway? The target margin will not be lowered.")) throw err;
         await broilerApi.addSale(batchId, { ...sale, confirmedBelowTarget: true });
       }
+      await discardDraft("birdSale");
       await loadBroilerForBatch(batchId);
       setBatches(await batchApi.list());
       setBirdSaleForm(form => ({ ...form, quantity: "", pricePerBirdMinor: "", customer: "", customerId: "" }));
@@ -1229,6 +1234,7 @@ export default function App() {
         cracked: Number(eggCollectionForm.cracked),
         notes: eggCollectionForm.notes.trim() || null,
       });
+      await discardDraft("eggCollection");
       await loadEggsForBatch(batchId);
       setEggCollectionForm(form => ({ ...form, good: "", cracked: "", notes: "" }));
       setSuccessMessage("Egg collection recorded successfully.");
@@ -1247,6 +1253,7 @@ export default function App() {
         crates: eggSaleForm.crates,
         pricePerCrateMinor: parseNairaToKobo(eggSaleForm.pricePerCrateMinor),
       });
+      await discardDraft("eggSale");
       await loadEggsForBatch(batchId);
       setEggSaleForm(form => ({ ...form, customer: "", customerId: "", crates: "", pricePerCrateMinor: "" }));
       await loadSales();
@@ -1264,6 +1271,7 @@ export default function App() {
         description: healthForm.description.trim(),
         action: healthForm.action.trim(),
       });
+      await discardDraft("health");
       setHealthRecords(await healthApi.listHealth(healthForm.batchId));
       setHealthForm(form => ({ ...emptyHealth, batchId: form.batchId }));
     } catch (err) { setError(displayApiError(err)); } finally { setSaving(false); }
@@ -1279,6 +1287,7 @@ export default function App() {
         costMinor: parseNairaToKobo(drugForm.costMinor),
         reason: drugForm.reason.trim(),
       });
+      await discardDraft("drug");
       setDrugRecords(await healthApi.listDrugs(drugForm.batchId));
       setDrugForm(form => ({ ...emptyDrug, batchId: form.batchId }));
     } catch (err) { setError(displayApiError(err)); } finally { setSaving(false); }
@@ -1294,6 +1303,7 @@ export default function App() {
         quantity: Number(vaccinationForm.quantity),
         notes: vaccinationForm.notes.trim() || null,
       });
+      await discardDraft("vaccination");
       setVaccinationRecords(await healthApi.listVaccinations(vaccinationForm.batchId));
       setVaccinationForm(form => ({ ...emptyVaccination, batchId: form.batchId }));
     } catch (err) { setError(displayApiError(err)); } finally { setSaving(false); }
