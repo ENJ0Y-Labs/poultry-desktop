@@ -52,6 +52,7 @@ public class ReportExportService {
         List<ExportRow> rows = rows(report);
         try (PDDocument document = new PDDocument(); ByteArrayOutputStream output = new ByteArrayOutputStream()) {
             PdfTable writer = new PdfTable(document);
+            writer.context(report, title, currencyCode(report), dateFormat(report));
             String from = text(report.get("from"));
             String to = text(report.get("to"));
             String snapshotAsOf = text(report.get("asOf"));
@@ -80,8 +81,7 @@ public class ReportExportService {
         while (fields.hasNext()) {
             Map.Entry<String, JsonNode> field = fields.next();
             String section = humanize(field.getKey());
-            if (field.getKey().equals("asOf") || field.getKey().equals("from")
-                    || field.getKey().equals("to") || field.getKey().equals("reportType")) continue;
+            if (List.of("asOf", "from", "to", "reportType", "farmName", "farmLocation", "timezone", "currency", "dateFormat", "generatedAt", "reportTitle", "batchCode", "batchType", "houseId").contains(field.getKey())) continue;
             appendRows(field.getValue(), section, "", field.getKey(), result, currency, dateFormat);
         }
         return result;
@@ -279,9 +279,26 @@ public class ReportExportService {
             y = page.getMediaBox().getHeight() - MARGIN;
         }
 
+        private void context(Map<String, Object> report, String title, String currencyCode, String configuredDateFormat) {
+            farmName = safeText(report.get("farmName"));
+            reportTitle = safeText(report.getOrDefault("reportTitle", title));
+            batchCode = safeText(report.get("batchCode"));
+            batchType = safeText(report.get("batchType"));
+            houseId = safeText(report.get("houseId"));
+            generatedAt = safeText(report.get("generatedAt"));
+            asOf = safeText(report.get("asOf"));
+            currency = currencyCode;
+            dateFormat = configuredDateFormat;
+        }
+
+        private static String safeText(Object value) {
+            return value == null ? "" : value.toString();
+        }
+
         private void title(String title, String asOf) {
             writeText(title, bold, 15f);
             writeText("Reporting period / snapshot: " + (asOf == null || asOf.isBlank() ? "Not specified" : asOf), regular, 10f);
+            if (!generatedAt.isBlank()) writeText("Generated: " + formatGeneratedAt(generatedAt, dateFormat), regular, 8f);
             y -= 8;
         }
 
