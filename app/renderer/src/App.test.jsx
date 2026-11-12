@@ -609,13 +609,18 @@ describe("App", () => {
       .getByRole("button", { name: "Flocks" }));
     fireEvent.click(await screen.findByRole("button", { name: "Batches & bird costs" }));
 
-    fireEvent.change(await screen.findByLabelText("Purchase information"), {
+    fireEvent.click(await screen.findByRole("button", { name: "Register batch" }));
+    fireEvent.change(screen.getByLabelText("Placement date"), { target: { value: "2026-11-06" } });
+    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+    fireEvent.change(screen.getByLabelText("House / pen"), { target: { value: "house-1" } });
+    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+    fireEvent.change(screen.getByLabelText("Initial birds"), { target: { value: "250" } });
+    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+    fireEvent.change(screen.getByLabelText("Purchase information"), {
       target: { value: "EXISTING_STOCK" },
     });
     expect(screen.queryByLabelText("Purchase cost (₦)")).not.toBeInTheDocument();
-    fireEvent.change(screen.getByLabelText("Placement date"), { target: { value: "2026-11-06" } });
-    fireEvent.change(screen.getByLabelText("House / pen"), { target: { value: "house-1" } });
-    fireEvent.change(screen.getByLabelText("Initial birds"), { target: { value: "250" } });
+    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
     fireEvent.click(screen.getByRole("button", { name: "Create batch" }));
 
     await waitFor(() => expect(batchApi.create).toHaveBeenCalledWith({

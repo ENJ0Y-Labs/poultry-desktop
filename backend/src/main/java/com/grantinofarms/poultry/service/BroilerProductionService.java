@@ -92,7 +92,12 @@ public class BroilerProductionService {
         String farmId = repository.batchFarmId(batchId);
         String now = Instant.now().toString();
         String before = String.format("{\"batchId\":\"%s\",\"recordDate\":\"%s\",\"sampleQuantity\":%s,\"totalWeightGrams\":%s}", batchId, date, original.get("sample_quantity"), original.get("total_weight_grams"));
-        repository.insertWeightReversal(UUID.randomUUID().toString(), farmId, batchId, weightId, reason, actorId, now);
+        try {
+            repository.insertWeightReversal(UUID.randomUUID().toString(), farmId, batchId, weightId, reason, actorId, now);
+        } catch (org.springframework.dao.DataIntegrityViolationException ex) {
+            throw new ApiException(HttpStatus.CONFLICT, "TRANSACTION_ALREADY_REVERSED",
+                    "This weight record has already been undone.");
+        }
         auditRepository.append(farmId, "VOID", "WEIGHT_RECORD", weightId, reason, before, "{\"status\":\"VOIDED\"}", now);
         return java.util.Map.of("originalId", weightId, "status", "VOIDED", "reason", reason, "occurredAt", now);
     }
