@@ -1,5 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
+// Core ESLint does not count JSX tag references as variable usage.
+// eslint-disable-next-line no-unused-vars
 import DraftStatus from "./DraftStatus.jsx";
 
 describe("DraftStatus", () => {

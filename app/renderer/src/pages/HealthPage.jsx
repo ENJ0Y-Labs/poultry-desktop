@@ -1,5 +1,7 @@
 import { useContext } from "react";
 import { FarmManagerContext } from "../components/FarmManagerContext.jsx";
+// Core ESLint does not count JSX tag references as variable usage.
+// eslint-disable-next-line no-unused-vars
 import DraftStatus from "../components/DraftStatus.jsx";
 // eslint-disable-next-line no-unused-vars
 import PageSection from "../components/PageSection.jsx";

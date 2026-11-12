@@ -1,5 +1,6 @@
 import js from "@eslint/js";
 import globals from "globals";
+import reactHooks from "eslint-plugin-react-hooks";
 
 export default [
   { ignores: ["dist/**", "release/**", "out/**", "node_modules/**", "backend/target/**", "runtime/**"] },
@@ -14,8 +15,11 @@ export default [
         ecmaFeatures: { jsx: true }
       }
     },
+    plugins: { "react-hooks": reactHooks },
     rules: {
-      "no-unused-vars": ["error", { varsIgnorePattern: "^(App|React)$" }]
+      "no-unused-vars": ["error", { varsIgnorePattern: "^(App|React)$" }],
+      "react-hooks/rules-of-hooks": "error",
+      "react-hooks/exhaustive-deps": "warn"
     }
   }
 ];
