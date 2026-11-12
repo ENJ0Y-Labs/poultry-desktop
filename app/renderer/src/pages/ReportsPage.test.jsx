@@ -111,7 +111,7 @@ describe("ReportsPage filters", () => {
     const { container } = renderReports("farm-report", true);
     const farmSection = container.querySelector("#reports");
 
-    expect(screen.getByText("Preparing report export. Larger reports may take a little longer.")).toBeInTheDocument();
+    expect(container.querySelector('p[role="status"]')).toHaveTextContent("Preparing report export. Larger reports may take a little longer.");
     const exportButtons = within(farmSection).getAllByRole("button", { name: "Preparing…" });
     expect(exportButtons).toHaveLength(2);
     exportButtons.forEach(button => expect(button).toBeDisabled());
