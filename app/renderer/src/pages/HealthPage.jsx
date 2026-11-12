@@ -59,7 +59,7 @@ export default function HealthPage() {
             <label>Vaccine<input required value={vaccinationForm.vaccine} onChange={event => setVaccinationForm({...vaccinationForm,vaccine:event.target.value})}/></label>
             <label>Dose<input required value={vaccinationForm.dose} onChange={event => setVaccinationForm({...vaccinationForm,dose:event.target.value})}/></label>
             <label>Quantity<input required min="1" step="1" type="number" value={vaccinationForm.quantity} onChange={event => setVaccinationForm({...vaccinationForm,quantity:event.target.value})}/></label>
-            <label>Notes<input value={vaccinationForm.notes} onChange={event => setVaccinationForm({...vaccinationForm,notes:event.target.value})}/></label>
+            <details className="optional-fields"><summary>Optional details</summary><div className="optional-fields-content"><label>Notes<input value={vaccinationForm.notes} onChange={event => setVaccinationForm({...vaccinationForm,notes:event.target.value})}/></label></div></details>
             <button disabled={saving}>Record vaccination</button>
           </form>
           <DataTable caption="Vaccination records" columns={[
