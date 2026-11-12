@@ -21,6 +21,7 @@ export default function ReportsPage() {
 
   return (
     <PageTemplate className="grid">
+      <p className="muted" role="status" aria-live="polite">{reportExporting ? "Preparing report export. Larger reports may take a little longer." : ""}</p>
       <PageSection page="reports" tab="farm-report"><section id="reports" className="card full">
           <div className="section-head"><div><p className="eyebrow">REPORTING</p><h2>Farm reports</h2></div>
             <div className="inline-form"><label>As of <input aria-label="Report as-of date" type="date" value={reportAsOf} onChange={e => setReportAsOf(e.target.value)} /></label><button type="button" onClick={() => loadReport(reportAsOf)}>Refresh</button><button type="button" disabled={reportExporting} onClick={() => exportCsv(() => reportApi.farmCsv(reportAsOf), "farm-report.csv")}>{reportExporting ? "Preparing…" : "Export CSV"}</button><button type="button" disabled={reportExporting} onClick={() => exportPdf(() => reportApi.farmPdf(reportAsOf), "farm-report.pdf")}>{reportExporting ? "Preparing…" : "Export PDF"}</button></div>
