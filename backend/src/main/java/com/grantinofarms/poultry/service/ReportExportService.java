@@ -139,7 +139,6 @@ public class ReportExportService {
     private String formatValue(JsonNode value, String key, String currencyCode, String dateFormat) {
         if (key.toLowerCase(Locale.ROOT).endsWith("minor")) {
             try {
-                java.util.Currency currency = java.util.Currency.getInstance(currencyCode);
                 NumberFormat amount = NumberFormat.getNumberInstance(Locale.forLanguageTag("en-NG"));
                 amount.setMinimumFractionDigits(2);
                 amount.setMaximumFractionDigits(2);
