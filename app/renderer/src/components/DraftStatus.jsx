@@ -13,7 +13,7 @@ export default function DraftStatus({ draft, onDiscard, onReview }) {
       {draft.stale && (
         <div className="notice-banner" role="alert">
           <strong>Review this draft before submitting.</strong>
-          <span>One or more referenced farm records changed or are no longer available. Check the selected batch, house, feed type, supplier, and customer before continuing.</span>
+          <span>These references changed or are no longer available: {(draft.staleReferences || []).map(item => ({ batch: "batch", house: "house / pen", feedType: "feed type", supplier: "supplier", customer: "customer" }[item] || item)).join(", ") || "farm records"}. Check the form values before continuing.</span>
           <button type="button" className="secondary-button" onClick={onReview}>I reviewed these details</button>
         </div>
       )}
