@@ -3,6 +3,7 @@ import { useContext, useEffect, useRef, useState } from "react";
 import ValidatedForm from "../components/ValidatedForm.jsx";
 // eslint-disable-next-line no-unused-vars -- JSX component usage is not detected by the core rule
 import OptionalFields from "../components/OptionalFields.jsx";
+import MultiStepForm from "../components/MultiStepForm.jsx";
 import { feedApi } from "../services/api.js";
 import { FarmManagerContext } from "../components/FarmManagerContext.jsx";
 // eslint-disable-next-line no-unused-vars -- JSX component usage is not detected by the core rule
@@ -349,19 +350,53 @@ export default function FeedStockPage() {
           <div className="subsection">
             <h3>Purchase feed</h3>
             <ModalForm title="Feed purchase" description="Record a feed purchase. The backend updates the FIFO stock ledger and expense record." triggerLabel="Record purchase" openSignal={feedPurchaseModalSignal} loading={saving} error={error} onDiscard={() => setFeedPurchaseForm(emptyFeedPurchase)}>
-<ValidatedForm className="inline-form" onSubmit={purchaseFeed}>
-              <label className="field"><span>Feed type</span><select required value={feedPurchaseForm.feedTypeId} onChange={e=>{
-                const type=feedTypes.find(item=>item.id===e.target.value);
-                setFeedPurchaseForm({...feedPurchaseForm,feedTypeId:e.target.value,unit:type?.unit||"bag"});
-              }}>
-                <option value="">Feed type</option>{feedTypes.filter(t=>t.status==="ACTIVE").map(t=><option key={t.id} value={t.id}>{feedProductLabel(t)}</option>)}
-              </select></label>
-              <label className="field"><span>Purchase date</span><input required type="date" value={feedPurchaseForm.purchaseDate} onChange={e=>setFeedPurchaseForm({...feedPurchaseForm,purchaseDate:e.target.value})}/></label>
-              <label className="field"><span>Quantity</span><input required min="0.001" step="0.001" type="number" value={feedPurchaseForm.quantity} onChange={e=>setFeedPurchaseForm({...feedPurchaseForm,quantity:e.target.value})}/></label>
-              <OptionalFields title="Purchase details" description="Supplier information is optional. Purchase date, feed type, quantity and total cost remain visible."><label className="field"><span>Supplier (optional)</span><select value={feedPurchaseForm.supplierId} onChange={e=>setFeedPurchaseForm({...feedPurchaseForm,supplierId:e.target.value})}><option value="">No supplier recorded</option>{suppliers.filter(supplier=>supplier.status!=="ARCHIVED").map(supplier=><option key={supplier.id} value={supplier.id}>{supplier.name}</option>)}</select></label></OptionalFields>
-              <label className="field"><span>Total cost (₦)</span><input required type="text" inputMode="decimal" value={feedPurchaseForm.totalCostMinor} onChange={e=>setFeedPurchaseForm({...feedPurchaseForm,totalCostMinor:e.target.value})}/></label>
-              <button disabled={saving || feedTypes.filter(t=>t.status==="ACTIVE").length===0}>Record purchase</button>
-            </ValidatedForm>
+<MultiStepForm
+              className="form-grid"
+              loading={saving}
+              submitLabel="Record purchase"
+              onSubmit={purchaseFeed}
+              steps={[
+                {
+                  title: "Feed details",
+                  description: "Select the registered feed product and the date the purchase was made.",
+                  content: <>
+                    <label className="field"><span>Feed type</span><select name="feedTypeId" required value={feedPurchaseForm.feedTypeId} onChange={e=>{
+                      const type=feedTypes.find(item=>item.id===e.target.value);
+                      setFeedPurchaseForm({...feedPurchaseForm,feedTypeId:e.target.value,unit:type?.unit||"bag"});
+                    }}>
+                      <option value="">Feed type</option>{feedTypes.filter(t=>t.status==="ACTIVE").map(t=><option key={t.id} value={t.id}>{feedProductLabel(t)}</option>)}
+                    </select></label>
+                    <label className="field"><span>Purchase date</span><input name="purchaseDate" required type="date" value={feedPurchaseForm.purchaseDate} onChange={e=>setFeedPurchaseForm({...feedPurchaseForm,purchaseDate:e.target.value})}/></label>
+                  </>,
+                },
+                {
+                  title: "Quantity and pricing",
+                  description: "Enter the quantity in the selected feed product's configured unit and the full purchase cost.",
+                  content: <>
+                    <label className="field"><span>Quantity</span><input name="quantity" required min="0.001" step="0.001" type="number" value={feedPurchaseForm.quantity} onChange={e=>setFeedPurchaseForm({...feedPurchaseForm,quantity:e.target.value})}/></label>
+                    <label className="field"><span>Total cost (₦)</span><input name="totalCostMinor" required type="text" inputMode="decimal" value={feedPurchaseForm.totalCostMinor} onChange={e=>setFeedPurchaseForm({...feedPurchaseForm,totalCostMinor:e.target.value})}/></label>
+                  </>,
+                },
+                {
+                  title: "Supplier information",
+                  description: "Supplier details are optional. You can continue when the source is unknown.",
+                  content: <OptionalFields title="Purchase source" description="Choose a registered supplier if one was involved.">
+                    <label className="field"><span>Supplier (optional)</span><select value={feedPurchaseForm.supplierId} onChange={e=>setFeedPurchaseForm({...feedPurchaseForm,supplierId:e.target.value})}><option value="">No supplier recorded</option>{suppliers.filter(supplier=>supplier.status!=="ARCHIVED").map(supplier=><option key={supplier.id} value={supplier.id}>{supplier.name}</option>)}</select></label>
+                  </OptionalFields>,
+                },
+                {
+                  title: "Review and save",
+                  description: "Confirm the purchase details. Saving creates the purchase, FIFO stock lot and its corresponding expense through the existing backend workflow.",
+                  content: <dl className="workflow-review">
+                    <div><dt>Feed type</dt><dd>{feedProductLabel(feedTypes.find(type => type.id === feedPurchaseForm.feedTypeId) || { name: "Not selected", unit: feedPurchaseForm.unit })}</dd></div>
+                    <div><dt>Purchase date</dt><dd>{feedPurchaseForm.purchaseDate || "Not entered"}</dd></div>
+                    <div><dt>Quantity</dt><dd>{feedPurchaseForm.quantity || "Not entered"} {feedTypes.find(type => type.id === feedPurchaseForm.feedTypeId)?.unit || feedPurchaseForm.unit}</dd></div>
+                    <div><dt>Total cost</dt><dd>{feedPurchaseForm.totalCostMinor ? `₦${feedPurchaseForm.totalCostMinor}` : "Not entered"}</dd></div>
+                    <div><dt>Supplier</dt><dd>{suppliers.find(supplier => supplier.id === feedPurchaseForm.supplierId)?.name || "Not recorded"}</dd></div>
+                  </dl>,
+                },
+              ]}
+            />
 </ModalForm>
           </div>
 
