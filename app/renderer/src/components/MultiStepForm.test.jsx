@@ -38,4 +38,16 @@ describe("MultiStepForm", () => {
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
     expect(submit).toHaveBeenCalledTimes(1);
   });
+
+  it("uses the shared money validation before leaving a cost step", () => {
+    const costSteps = [
+      { title: "Cost", content: <label>Purchase cost (₦)<input required defaultValue="not-money" /></label> },
+      { title: "Review", content: <p>Review the purchase.</p> },
+    ];
+    render(<MultiStepForm steps={costSteps} onSubmit={vi.fn()} />);
+    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+    expect(screen.getByRole("alert")).toBeInTheDocument();
+    expect(screen.getByText("STEP 1 OF 2")).toBeInTheDocument();
+  });
+
 });
