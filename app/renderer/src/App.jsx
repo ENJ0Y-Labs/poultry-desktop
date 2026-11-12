@@ -1503,10 +1503,77 @@ export default function App() {
     </main>
   );
 
+  function handleQuickAction(actionId) {
+    const batch = batches.find(item => item.id === selectedBatchId && item.status === "ACTIVE")
+      || batches.find(item => item.status === "ACTIVE");
+    const today = todayLocalDate();
+
+    switch (actionId) {
+      case "mortality":
+        if (!batch) return;
+        setMortalityForm(form => ({ ...form, batchId: batch.id, date: today }));
+        setMortalityModalSignal(signal => signal + 1);
+        break;
+      case "egg-collection": {
+        const layer = batch?.type === "LAYER"
+          ? batch
+          : batches.find(item => item.type === "LAYER" && item.status === "ACTIVE");
+        if (!layer) return;
+        setEggBatchId(layer.id);
+        setEggCollectionForm(form => ({ ...form, batchId: layer.id, date: today }));
+        loadEggsForBatch(layer.id);
+        break;
+      }
+      case "feed-usage": {
+        if (!batch) return;
+        const feedType = feedTypes.find(type => type.status === "ACTIVE"
+          && (type.applicableTypes || []).includes(batch.type)
+          && feedInventory.some(item => item.feedTypeId === type.id && Number(item.remainingQuantityMilli) > 0));
+        setDailyForm(form => ({ ...form, batchId: batch.id, date: today }));
+        setFeedUsageForm(form => ({
+          ...form,
+          batchId: batch.id,
+          feedTypeId: feedType?.id || "",
+          unit: feedType?.unit || form.unit,
+          usageDate: today,
+        }));
+        setFeedUsageModalSignal(signal => signal + 1);
+        break;
+      }
+      case "feed-purchase": {
+        const feedType = feedTypes.find(type => type.status === "ACTIVE");
+        setFeedPurchaseForm(form => ({
+          ...form,
+          feedTypeId: feedType?.id || form.feedTypeId,
+          unit: feedType?.unit || form.unit,
+          purchaseDate: today,
+        }));
+        setFeedPurchaseModalSignal(signal => signal + 1);
+        break;
+      }
+      case "sale":
+        if (batch?.type === "LAYER") {
+          setEggBatchId(batch.id);
+          setEggSaleForm(form => ({ ...form, batchId: batch.id, date: today }));
+          loadEggsForBatch(batch.id);
+        } else if (batch && (batch.type === "BROILER" || batch.type === "TURKEY")) {
+          setBroilerBatchId(batch.id);
+          setBirdSaleForm(form => ({ ...form, batchId: batch.id, date: today }));
+          loadBroilerForBatch(batch.id);
+        }
+        break;
+      case "expense":
+        setExpenseForm(form => ({ ...form, batchId: batch?.id || "", occurredDate: today }));
+        break;
+      default:
+        break;
+    }
+  }
+
   const pageModel = { signOut, themePreference, dataLoadError, retryData, dateRange, setDateRange: updateDateRange, batchDashboardLoading, reportLoading, batchReportLoading, changeThemePreference, dailyRecordLoading, suppliers, supplierForm, setSupplierForm, saveSupplier, archiveSupplier, editingSupplierId, editSupplier, cancelSupplierEdit, editingCustomerId, editCustomer, cancelCustomerEdit, editingInventoryItemId, editInventoryItem, cancelInventoryItemEdit, editingFeedTypeId, editFeedType, cancelFeedTypeEdit, editingBatchId, setEditingBatchId, batchSetupForm, setBatchSetupForm, saveBatchSetup, editBatchSetup, cancelBatchSetup, formatMoney, formatQuantity, formatPercent, formatKg, formatMetric, formatCount, displayApiError, notify, emptyWeight, emptyBirdSale, emptyPricing, emptyFarm, emptyHouse, emptyBatch, emptyCost, emptyFeedType, emptyFeedPurchase, emptyFeedUsage, emptyDaily, emptyPopulationEvent, emptyHealth, emptyDrug, emptyVaccination, emptyExpense, emptyCustomer, emptyInventoryItem, emptyInventoryMovement, farm, setFarm, farmForm, setFarmForm, houses, setHouses, batches, setBatches, batchForm, setBatchForm, costForm, setCostForm, feedTypes, setFeedTypes, feedInventory, setFeedInventory, feedTypeForm, setFeedTypeForm, feedPurchaseForm, setFeedPurchaseForm, feedUsageForm, setFeedUsageForm, dailyForm, setDailyForm, dailyRecord, setDailyRecord, mortalityForm, setMortalityForm, mortalityModalSignal, setMortalityModalSignal, feedUsageModalSignal, setFeedUsageModalSignal, feedPurchaseModalSignal, setFeedPurchaseModalSignal, cullingForm, setCullingForm, healthForm, setHealthForm, drugForm, setDrugForm, vaccinationForm, setVaccinationForm, healthRecords, setHealthRecords, drugRecords, setDrugRecords, vaccinationRecords, setVaccinationRecords, expenseForm, setExpenseForm, expenses, setExpenses, expenseBatchFilter, setExpenseBatchFilter, inventoryItems, setInventoryItems, inventoryItemForm, setInventoryItemForm, inventoryMovementForm, setInventoryMovementForm, inventoryMovements, setInventoryMovements, customers, setCustomers, customerForm, setCustomerForm, sales, setSales, eggBatchId, setEggBatchId, broilerBatchId, setBroilerBatchId, broilerGrowth, setBroilerGrowth, broilerWeights, setBroilerWeights, broilerSales, setBroilerSales, weightForm, setWeightForm, birdSaleForm, setBirdSaleForm, pricingSettings, setPricingSettings, pricing, setPricing, pricingForm, setPricingForm, eggInventory, setEggInventory, eggCollections, setEggCollections, eggSales, setEggSales, eggCollectionForm, setEggCollectionForm, eggSaleForm, setEggSaleForm, houseForm, setHouseForm, crateSize, setCrateSize, defaultWater, setDefaultWater, waterSizes, setWaterSizes, waterUnitLabel, setWaterUnitLabel, loading, setLoading, saving, setSaving, error, setError, dashboard, setDashboard, attention, setAttention, auditRows, setAuditRows, expenseCategories, setExpenseCategories, expenseCategoryForm, setExpenseCategoryForm, account, setAccount, accountForm, setAccountForm, applicationSettings, setApplicationSettings, backupSettings, setBackupSettings, selectedBatchId, setSelectedBatchId, batchDashboard, setBatchDashboard, farmReport, setFarmReport, batchReport, setBatchReport, reportAsOf, setReportAsOf, load, loadReport, loadBatchReport, exportCsv, exportPdf, loadBatchDashboard, loadDashboard, submitFarm, saveFarm, createExpenseCategory, archiveExpenseCategory, saveAccount, saveApplicationSettings, chooseBackupSettingsDirectory, saveBackupSettings, createBackup, restoreBackup, saveSettings, loadExpenses, loadSales, saveCustomer, saveInventoryItem, loadInventoryMovements, saveInventoryMovement, saveExpense, createBatch, addBirdCost, purchaseFeed, useFeed, feedQuantity, parseWaterEntries, saveDailyRecord, recordPopulationEvent, loadPricingForBatch, savePricingSettings, loadBroilerForBatch, saveWeight, saveBirdSale, loadEggsForBatch, saveEggCollection, saveEggSale, saveHealth, saveDrug, saveVaccination, loadHealthForBatch, markBatchSold, reopenBatch, addHouse: saveHouse, editHouse, editingHouseId, cancelHouseEdit, populationAdjustmentForm, setPopulationAdjustmentForm, populationAdjustments, savePopulationAdjustment, markPopulationEstimated };
 
   return (
-    <AppShell farm={farm} error={error} appInfo={appInfo} onRetry={retryData} batches={batches} selectedBatchId={selectedBatchId} feedTypes={feedTypes} feedInventory={feedInventory} inventoryItems={inventoryItems} startPage={applicationSettings.startPage} startPageReady={settingsReady}>
+    <AppShell farm={farm} error={error} appInfo={appInfo} onRetry={retryData} onQuickAction={handleQuickAction} batches={batches} selectedBatchId={selectedBatchId} feedTypes={feedTypes} feedInventory={feedInventory} inventoryItems={inventoryItems} startPage={applicationSettings.startPage} startPageReady={settingsReady}>
       <FarmManagerContext.Provider value={{ ...pageModel, createFeedType }}>
         <PageSection page="dashboard"><DashboardPage /></PageSection>
         <PageSection page="flocks"><FlocksPage /></PageSection>
