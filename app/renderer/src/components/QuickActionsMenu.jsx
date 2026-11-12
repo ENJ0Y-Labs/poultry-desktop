@@ -62,6 +62,17 @@ export default function QuickActionsMenu({
   }, [open]);
 
   useEffect(() => {
+    function handleGlobalShortcut(event) {
+      if (event.ctrlKey && !event.altKey && !event.shiftKey && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        setOpen(true);
+      }
+    }
+    window.addEventListener("keydown", handleGlobalShortcut);
+    return () => window.removeEventListener("keydown", handleGlobalShortcut);
+  }, []);
+
+  useEffect(() => {
     if (!open) return undefined;
     function closeOnOutsidePointer(event) {
       if (!rootRef.current?.contains(event.target)) setOpen(false);
