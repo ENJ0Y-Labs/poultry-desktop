@@ -363,6 +363,8 @@ export default function App() {
       }
     })();
     return () => { active = false; };
+  // The restore runs once after the initial authenticated farm collections are loaded.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authStatus?.authenticated, settingsReady]);
 
   useEffect(() => {
@@ -392,6 +394,7 @@ export default function App() {
       }
     }, 700);
     return () => clearTimeout(timer);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [draftsReady, authStatus?.authenticated, batchForm, feedPurchaseForm, expenseForm, healthForm, drugForm, vaccinationForm, birdSaleForm, eggSaleForm, eggCollectionForm, weightForm, drafts, draftStatuses, batches, houses, feedTypes, suppliers, customers]);
 
   useEffect(() => {
@@ -405,6 +408,7 @@ export default function App() {
       }
       return next;
     });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [draftsReady, drafts, batches, houses, feedTypes, suppliers, customers]);
 
 
