@@ -230,4 +230,37 @@ describe("FeedStockPage", () => {
     expect(within(drawer).getByRole("button", { name: "Edit supplier" })).toBeInTheDocument();
     expect(within(screen.getByRole("table", { name: "Suppliers" })).queryByText("Feed supplier")).not.toBeInTheDocument();
   });
+
+  it("completes a feed purchase through the review step", () => {
+    const context = {
+      ...contextValue,
+      feedTypes: [{ id: "feed-1", name: "Layer Mash", unit: "kg", status: "ACTIVE" }],
+      feedPurchaseForm: {
+        feedTypeId: "feed-1", unit: "kg", purchaseDate: "2026-11-01",
+        quantity: "25.5", supplierId: "", totalCostMinor: "25000",
+      },
+    };
+    render(
+      <NavigationContext.Provider value={{ activePage: "feed-stock", activeTab: "purchases" }}>
+        <FarmManagerContext.Provider value={context}>
+          <FeedStockPage />
+        </FarmManagerContext.Provider>
+      </NavigationContext.Provider>
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Record purchase" }));
+    expect(screen.getByText("STEP 1 OF 4")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+    expect(screen.getByText("STEP 2 OF 4")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+    expect(screen.getByText("STEP 3 OF 4")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+    expect(screen.getByText("STEP 4 OF 4")).toBeInTheDocument();
+    expect(screen.getByText("25.5 kg")).toBeInTheDocument();
+    expect(screen.getByText("₦25000")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Record purchase" }));
+    expect(context.purchaseFeed).toHaveBeenCalledTimes(1);
+  });
+
 });
