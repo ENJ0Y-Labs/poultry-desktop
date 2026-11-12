@@ -40,15 +40,18 @@ public class ReportExportService {
         String reportType = text(report.get("reportType"));
         String farmName = text(report.get("farmName"));
         String reportTitle = text(report.get("reportTitle"));
+        String batchCode = text(report.get("batchCode"));
+        String batchType = text(report.get("batchType"));
+        String houseId = text(report.get("houseId"));
         String generatedAt = formatGeneratedAt(text(report.get("generatedAt")), dateFormat);
         String currency = currencyCode(report);
         String dateFormat = dateFormat(report);
         String asOf = formatDate(text(report.get("asOf")), dateFormat);
         String selectedPeriod = asOf.isBlank() ? "Not specified" : "As of " + asOf;
         StringBuilder csv = new StringBuilder("\uFEFF");
-        appendCsv(csv, List.of("farm_name", "report_title", "generated_at", "selected_period", "currency", "as_of", "report_type", "section", "record", "field", "value", "unit"));
+        appendCsv(csv, List.of("farm_name", "report_title", "batch_code", "batch_type", "house_id", "generated_at", "selected_period", "currency", "as_of", "report_type", "section", "record", "field", "value", "unit"));
         for (ExportRow row : rows) {
-            appendCsv(csv, List.of(farmName, reportTitle, generatedAt, selectedPeriod, currency, asOf, reportType, row.section(), row.record(), row.field(), row.value(), row.unit()));
+            appendCsv(csv, List.of(farmName, reportTitle, batchCode, batchType, houseId, generatedAt, selectedPeriod, currency, asOf, reportType, row.section(), row.record(), row.field(), row.value(), row.unit()));
         }
         return csv.toString();
     }
@@ -57,7 +60,8 @@ public class ReportExportService {
         List<ExportRow> rows = rows(report);
         try (PDDocument document = new PDDocument(); ByteArrayOutputStream output = new ByteArrayOutputStream()) {
             PdfTable writer = new PdfTable(document);
-            writer.title(text(report.get("farmName")), title, formatGeneratedAt(text(report.get("generatedAt")), dateFormat(report)),
+            writer.title(text(report.get("farmName")), title, text(report.get("batchCode")), text(report.get("batchType")),
+                    text(report.get("houseId")), formatGeneratedAt(text(report.get("generatedAt")), dateFormat(report)),
                     text(report.get("asOf")), currencyCode(report), dateFormat(report));
             writer.header();
             for (ExportRow row : rows) {
@@ -231,6 +235,9 @@ public class ReportExportService {
         private float y;
         private String farmName;
         private String reportTitle;
+        private String batchCode;
+        private String batchType;
+        private String houseId;
         private String generatedAt;
         private String asOf;
         private String currency;
@@ -269,15 +276,21 @@ public class ReportExportService {
             y = page.getMediaBox().getHeight() - MARGIN;
         }
 
-        private void title(String farmName, String reportTitle, String generatedAt, String asOf, String currency, String dateFormat) {
+        private void title(String farmName, String reportTitle, String batchCode, String batchType, String houseId,
+                           String generatedAt, String asOf, String currency, String dateFormat) {
             this.farmName = farmName;
             this.reportTitle = reportTitle;
+            this.batchCode = batchCode;
+            this.batchType = batchType;
+            this.houseId = houseId;
             this.generatedAt = generatedAt;
             this.asOf = asOf;
             this.currency = currency;
             this.dateFormat = dateFormat;
             writeText(farmName.isBlank() ? "Farm report" : farmName, bold, 15f);
             writeText(reportTitle, bold, 12f);
+            if (!batchCode.isBlank()) writeText("Batch: " + batchCode + (batchType.isBlank() ? "" : " (" + batchType + ")"), regular, 9f);
+            if (!houseId.isBlank()) writeText("House ID: " + houseId, regular, 9f);
             writeText("Generated: " + (generatedAt.isBlank() ? "Not specified" : generatedAt), regular, 9f);
             writeText("Selected period: As of " + (asOf.isBlank() ? "Not specified" : formatDate(asOf, dateFormat)), regular, 9f);
             writeText("Currency: " + currency, regular, 9f);
@@ -286,6 +299,7 @@ public class ReportExportService {
 
         private void continued() {
             writeText((farmName.isBlank() ? "Farm report" : farmName) + " · " + reportTitle + " (continued)", bold, 10f);
+            if (!batchCode.isBlank()) writeText("Batch: " + batchCode + (batchType.isBlank() ? "" : " (" + batchType + ")"), regular, 8f);
             writeText("As of: " + (asOf.isBlank() ? "Not specified" : formatDate(asOf, dateFormat)) + " · Currency: " + currency, regular, 8f);
             y -= 5;
         }
