@@ -14,7 +14,7 @@ const farmDestinations = [
   ["Settings", "#settings/farm"],
 ];
 
-export default function DesktopTitleBar({ onNavigate, onQuickActions, onToggleSidebar, onToggleAttention, onShortcuts, sidebarCollapsed, attentionCollapsed }) {
+export default function DesktopTitleBar({ onNavigate, onQuickActions, onToggleSidebar, onToggleAttention, onShortcuts, onTutorials, sidebarCollapsed, attentionCollapsed }) {
   const [openMenu, setOpenMenu] = useState("");
   const rootRef = useRef(null);
   const menuRef = useRef(null);
@@ -47,6 +47,7 @@ export default function DesktopTitleBar({ onNavigate, onQuickActions, onToggleSi
       { label: "Keyboard shortcuts", action: onShortcuts },
     ] },
     { label: "Help", items: [
+      { label: "Tutorials & Help", action: onTutorials },
       { label: "Application settings", action: () => onNavigate("#settings/application") },
       { label: "Keyboard shortcuts", action: onShortcuts },
     ] },

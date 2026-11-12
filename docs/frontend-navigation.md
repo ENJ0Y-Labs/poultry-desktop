@@ -94,6 +94,7 @@ The top-level page components live under `app/renderer/src/pages/`. Shared form 
 - On direct application startup with a contextual alert hash, a valid batch ID from the hash takes priority over the remembered/default batch while farm data loads, so the selected batch remains aligned with the alert.
 - Backend feed-stock alerts expose `feedTypeId`; low and insufficient inventory alerts expose `itemId`. Display names are not used as database identifiers. Insights also expose detection date, metric, rule/threshold explanation, suggested action, and current house attribution for batch-scoped alerts.
 - Successful writes emit the shared mutation invalidation event. Relevant mutations refresh farm dashboard metrics, attention alerts, audit activity, reports, and the selected batch dashboard.
+- When the right-hand Attention panel is collapsed, its expand control displays the current actionable alert count in place of the chevron; it remains keyboard accessible and expands the panel on activation.
 - Vitest covers all supported alert mappings, missing/invalid context, encoded context parsing, and a dashboard-to-daily-record navigation with batch/date prefilled. Backend integration tests assert that stock alerts include their navigable IDs.
 
 
@@ -119,6 +120,13 @@ The top-level page components live under `app/renderer/src/pages/`. Shared form 
 - The walkthrough covers all ten top-level destinations and their operational tabs using the existing hash router.
 - Users can navigate backward or forward, skip or close the tour, press Escape to exit, and use the arrow keys.
 - The tour works offline and adds no dependency or demo records.
+
+## Guided workflow library
+
+- The desktop Help menu and contextual page guide expose a searchable, category-filtered library for common workflows: batch creation, feed setup/purchase, mortality, egg collection, and sales.
+- Task walkthroughs navigate to real app screens and explain the steps, then summarize the workflow and offer a deliberate "Try with farm data" action.
+- Current walkthroughs are instructional, non-persisting practice. They do not seed records, populate live forms, call write APIs, or submit data. They do not claim to provide an isolated demo database. See `docs/guided-learning.md`.
+- Any future hands-on demo environment must use a separately configured, disposable backend/database and verify its path cannot resolve to the farm database before writes are enabled.
 
 
 ## Pomas brand and theme system

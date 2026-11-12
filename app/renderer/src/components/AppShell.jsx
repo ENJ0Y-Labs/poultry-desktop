@@ -9,6 +9,8 @@ import PageHelp from "./PageHelp.jsx";
 // eslint-disable-next-line no-unused-vars
 import GuidedTour from "./GuidedTour.jsx";
 // eslint-disable-next-line no-unused-vars
+import TutorialLibrary from "./TutorialLibrary.jsx";
+// eslint-disable-next-line no-unused-vars
 import QuickActionsMenu from "./QuickActionsMenu.jsx";
 // eslint-disable-next-line no-unused-vars
 import { Modal } from "./Modal.jsx";
@@ -176,6 +178,8 @@ export default function AppShell({ farm, error, appInfo, onRetry, onQuickAction,
   const [backendConnected, setBackendConnected] = useState(null);
   const [recoveryNeeded, setRecoveryNeeded] = useState(false);
   const [tourOpen, setTourOpen] = useState(false);
+  const [tutorialLibraryOpen, setTutorialLibraryOpen] = useState(false);
+  const [activeTutorial, setActiveTutorial] = useState("");
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [retrying, setRetrying] = useState(false);
   const [hasUserNavigated, setHasUserNavigated] = useState(Boolean(window.location.hash));
@@ -326,6 +330,7 @@ export default function AppShell({ farm, error, appInfo, onRetry, onQuickAction,
           else setAttentionCollapsed(value => !value);
         }}
         onShortcuts={() => setShortcutsOpen(true)}
+        onTutorials={() => setTutorialLibraryOpen(true)}
         sidebarCollapsed={sidebarCollapsed}
         attentionCollapsed={attentionCollapsed}
       />}
@@ -414,7 +419,7 @@ export default function AppShell({ farm, error, appInfo, onRetry, onQuickAction,
               </button>
             </div>
           )}
-          <PageHelp page={active} tab={activeTab} onStartTour={() => setTourOpen(true)} />
+          <PageHelp page={active} tab={activeTab} onStartTour={() => { setActiveTutorial(""); setTourOpen(true); }} onBrowseTutorials={() => setTutorialLibraryOpen(true)} />
           {(pageTabs[active] || []).length > 0 && (
             <nav className="page-tabs" aria-label={`${active} sections`} data-tour="page-tabs">
               {pageTabs[active].map(tab => (
@@ -444,7 +449,8 @@ export default function AppShell({ farm, error, appInfo, onRetry, onQuickAction,
             <p>Ctrl + N and Ctrl + S are not intercepted. They retain native behavior until a single safe app-wide create/save action exists.</p>
           </div>
         </Modal>
-        <GuidedTour open={tourOpen} onClose={() => setTourOpen(false)} onNavigate={navigateTourTarget} />
+        <GuidedTour open={tourOpen} guideId={activeTutorial} onClose={() => { setTourOpen(false); setActiveTutorial(""); }} onNavigate={navigateTourTarget} />
+        <TutorialLibrary open={tutorialLibraryOpen} onClose={() => setTutorialLibraryOpen(false)} onStart={tutorial => { setActiveTutorial(tutorial.id); setTourOpen(true); navigateTourTarget(tutorial.route); }} />
       </main>
 
       {attentionMobileOpen && <button type="button" className="attention-backdrop" aria-label="Close attention panel" onClick={() => setAttentionMobileOpen(false)} />}
@@ -452,7 +458,9 @@ export default function AppShell({ farm, error, appInfo, onRetry, onQuickAction,
         <header className="attention-sidebar-header">
           <div className="attention-sidebar-heading"><h2>Attention</h2><span className="attention-count">{attentionCount}</span></div>
           <button type="button" className="attention-panel-toggle" onClick={() => { setAttentionCollapsed(value => !value); setAttentionMobileOpen(false); }} aria-label={attentionCollapsed ? "Expand attention panel" : "Collapse attention panel"} aria-expanded={!attentionCollapsed} title={attentionCollapsed ? "Expand attention panel" : "Collapse attention panel"}>
-            <span aria-hidden="true">{attentionCollapsed ? "‹" : "›"}</span>
+            {attentionCollapsed
+              ? <span className="attention-count attention-toggle-count" aria-hidden="true">{attentionCount}</span>
+              : <span aria-hidden="true">›</span>}
           </button>
           <button type="button" className="attention-panel-close" onClick={() => setAttentionMobileOpen(false)} aria-label="Close attention panel">×</button>
         </header>

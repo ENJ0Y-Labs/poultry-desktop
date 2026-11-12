@@ -703,7 +703,8 @@ input[type="checkbox"]:not(.toggle-switch-input) {
 .attention-sidebar.collapsed .attention-sidebar-heading,
 .attention-sidebar.collapsed .attention-sidebar-content,
 .attention-panel-close { display: none; }
-.attention-sidebar.collapsed .attention-panel-toggle { width: 34px; height: 34px; font-size: 23px; }
+.attention-sidebar.collapsed .attention-panel-toggle { width: 34px; height: 34px; font-size: 12px; }
+.attention-toggle-count { min-width: 22px; height: 22px; font-size: 11px; }
 .attention-mobile-toggle,
 .attention-backdrop { display: none; }
 .system-status-bar {

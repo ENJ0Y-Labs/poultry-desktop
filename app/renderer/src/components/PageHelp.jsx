@@ -23,7 +23,7 @@ const tabHelp = {
   settings: { farm: "Keep the farm name, location, timezone, and currency accurate.", "farm-defaults": "Set defaults such as water containers and crate size before relying on new entries.", application: "Manage account details, appearance, and the preferred start page.", backup: "Configure and test backups before relying on them for recovery.", pricing: "Review the target and working margin settings used by broiler pricing." },
 };
 
-export default function PageHelp({ page, tab, onStartTour }) {
+export default function PageHelp({ page, tab, onStartTour, onBrowseTutorials }) {
   const help = helpByPage[page];
   if (!help) return null;
   const description = tabHelp[page]?.[tab] || help.description;
@@ -36,6 +36,7 @@ export default function PageHelp({ page, tab, onStartTour }) {
         <p>{description}</p>
       </div>
       <div className="page-help-actions">
+        <button type="button" className="page-help-tour" onClick={onBrowseTutorials}>Browse tutorials</button>
         <button type="button" className="page-help-tour" onClick={onStartTour}>Start guided tour</button>
         <button type="button" className="page-help-action" onClick={() => { window.location.hash = help.nextRoute; }}>{help.nextLabel}</button>
       </div>

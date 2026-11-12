@@ -1490,3 +1490,10 @@ An opening balance may be dated before a later purchase, but cannot be dated bef
 - Quick actions are navigation and workflow entry points only. Reuse existing forms, validation, API handlers, and backend business rules. Do not add a parallel form or persistence path.
 - Add renderer tests for action visibility, route/context behavior, keyboard operation, and the absence of duplicate dashboard shortcuts when changing the menu.
 
+## Guided workflow library
+
+- The desktop Help menu and contextual page guide expose a searchable, category-filtered tutorial library for common workflows.
+- Task guides navigate to real screens, explain the steps, summarize learning, and offer a deliberate "Try with farm data" action.
+- Current walkthroughs are non-persisting instructional practice. Do not seed records, populate live forms, call write APIs, or submit data from tutorial flows. See `docs/guided-learning.md`.
+- Any future hands-on demo must use a separately configured disposable backend/database and verify the database path cannot resolve to farm data before enabling writes.
+
