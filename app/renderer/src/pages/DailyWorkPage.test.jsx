@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 // eslint-disable-next-line no-unused-vars
 import DailyWorkPage from "./DailyWorkPage.jsx";
@@ -54,5 +54,17 @@ describe("DailyWorkPage feed applicability", () => {
     expect(within(selectors[0]).queryByRole("option", { name: "Broiler Starter (bag)" })).not.toBeInTheDocument();
     expect(within(selectors[0]).queryByRole("option", { name: "Turkey Grower (bag)" })).not.toBeInTheDocument();
     expect(within(selectors[0]).queryByRole("option", { name: "Archived Layer Feed (bag)" })).not.toBeInTheDocument();
+
+    const mortalitySection = screen.getByRole("heading", { name: "Mortality" }).closest("section");
+    const optionalDetails = within(mortalitySection).getByText("Optional details").closest("details");
+    expect(optionalDetails).not.toHaveAttribute("open");
+    const summary = optionalDetails.querySelector("summary");
+    fireEvent.click(summary);
+    const reasonInput = within(mortalitySection).getByLabelText("Reason");
+    fireEvent.change(reasonInput, { target: { value: "Routine check" } });
+    fireEvent.click(summary);
+    expect(optionalDetails).not.toHaveAttribute("open");
+    fireEvent.click(summary);
+    expect(reasonInput).toHaveValue("Routine check");
   });
 });
