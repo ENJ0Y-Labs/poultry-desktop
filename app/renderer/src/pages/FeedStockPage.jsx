@@ -124,11 +124,13 @@ export default function FeedStockPage() {
             <p className="muted">A feed product is identified by its feed name and brand. The same feed name can be registered under different brands. Editing product details keeps its existing purchases, opening stock, usage and FIFO history attached to the same record.</p>
             <form className="inline-form" onSubmit={createFeedType}>
               <label className="field"><span>Name e.g. Starter</span><input required value={feedTypeForm.name} onChange={e=>setFeedTypeForm({...feedTypeForm,name:e.target.value})}/></label>
-              <label className="field"><span>Brand (optional)</span><input value={feedTypeForm.brand} onChange={e=>setFeedTypeForm({...feedTypeForm,brand:e.target.value})}/></label>
-              <label className="field"><span>Package name</span><input value={feedTypeForm.packagingName} onChange={e=>setFeedTypeForm({...feedTypeForm,packagingName:e.target.value})}/></label>
-              <label className="field"><span>Package weight in kg (leave blank if unknown)</span><input min="0.001" step="0.001" type="number" value={feedTypeForm.packageWeightKg} onChange={e=>setFeedTypeForm({...feedTypeForm,packageWeightKg:e.target.value})}/></label>
+              <details className="optional-fields"><summary>Optional product details</summary><div className="optional-fields-content">
+                <label className="field"><span>Brand (optional)</span><input value={feedTypeForm.brand} onChange={e=>setFeedTypeForm({...feedTypeForm,brand:e.target.value})}/></label>
+                <label className="field"><span>Package name</span><input value={feedTypeForm.packagingName} onChange={e=>setFeedTypeForm({...feedTypeForm,packagingName:e.target.value})}/></label>
+                <label className="field"><span>Package weight in kg (leave blank if unknown)</span><input min="0.001" step="0.001" type="number" value={feedTypeForm.packageWeightKg} onChange={e=>setFeedTypeForm({...feedTypeForm,packageWeightKg:e.target.value})}/></label>
+              </div></details>
               <label className="field"><span>Unit e.g. bag or kg</span><input required value={feedTypeForm.unit} onChange={e=>setFeedTypeForm({...feedTypeForm,unit:e.target.value,kgPerUnit:e.target.value.trim().toLowerCase()==="kg"?"1":feedTypeForm.kgPerUnit})}/></label>
-              <label className="field"><span>Kg per unit (leave blank if unknown)</span><input min="0.001" step="0.001" type="number" value={feedTypeForm.unit.trim().toLowerCase()==="kg"?"1":feedTypeForm.kgPerUnit} disabled={feedTypeForm.unit.trim().toLowerCase()==="kg"} onChange={e=>setFeedTypeForm({...feedTypeForm,kgPerUnit:e.target.value})}/></label>
+              <details className="optional-fields"><summary>Conversion details</summary><div className="optional-fields-content"><label className="field"><span>Kg per unit (leave blank if unknown)</span><input min="0.001" step="0.001" type="number" value={feedTypeForm.unit.trim().toLowerCase()==="kg"?"1":feedTypeForm.kgPerUnit} disabled={feedTypeForm.unit.trim().toLowerCase()==="kg"} onChange={e=>setFeedTypeForm({...feedTypeForm,kgPerUnit:e.target.value})}/></label></div></details>
               <fieldset className="field">
                 <legend>Applicable to</legend>
                 {[
@@ -230,7 +232,7 @@ export default function FeedStockPage() {
                 <option value="VACCINE">Vaccine</option>
               </select></label>
               <label className="field"><span>Unit e.g. bottle, piece, dose</span><input required value={inventoryItemForm.unit} onChange={e=>setInventoryItemForm({...inventoryItemForm,unit:e.target.value})}/></label>
-              <label className="field"><span>Reorder level</span><input min="0" step="0.001" type="number" value={inventoryItemForm.reorderLevel} onChange={e=>setInventoryItemForm({...inventoryItemForm,reorderLevel:e.target.value})}/></label>
+              <details className="optional-fields"><summary>Optional stock settings</summary><div className="optional-fields-content"><label className="field"><span>Reorder level</span><input min="0" step="0.001" type="number" value={inventoryItemForm.reorderLevel} onChange={e=>setInventoryItemForm({...inventoryItemForm,reorderLevel:e.target.value})}/></label></div></details>
               <button disabled={saving}>{editingInventoryItemId ? "Save item" : "Add item"}</button>{editingInventoryItemId && <button type="button" className="secondary-button" onClick={cancelInventoryItemEdit}>Cancel</button>}
             </form>
             <DataTable caption="Inventory items" columns={[
@@ -269,10 +271,10 @@ export default function FeedStockPage() {
               <label className="field"><span>Quantity</span><input required min="0.001" step="0.001" type="number" value={inventoryMovementForm.quantity} onChange={e=>setInventoryMovementForm({...inventoryMovementForm,quantity:e.target.value})}/></label>
               <label className="field"><span>Reason</span><input required value={inventoryMovementForm.reason} onChange={e=>setInventoryMovementForm({...inventoryMovementForm,reason:e.target.value})}/></label>
               <label className="field"><span>Source e.g. supplier invoice, treatment</span><input required value={inventoryMovementForm.source} onChange={e=>setInventoryMovementForm({...inventoryMovementForm,source:e.target.value})}/></label>
-              <label className="field"><span>Batch association</span><select value={inventoryMovementForm.batchId} onChange={e=>setInventoryMovementForm({...inventoryMovementForm,batchId:e.target.value})}>
+              <details className="optional-fields"><summary>Optional details</summary><div className="optional-fields-content"><label className="field"><span>Batch association</span><select value={inventoryMovementForm.batchId} onChange={e=>setInventoryMovementForm({...inventoryMovementForm,batchId:e.target.value})}>
                 <option value="">Farm-level</option>
                 {batches.map(b=><option key={b.id} value={b.id}>{b.code}</option>)}
-              </select></label>
+              </select></label></div></details>
               <button disabled={saving || !inventoryMovementForm.itemId}>Record movement</button>
             </form>
             {inventoryMovementForm.itemId && <DataTable caption="Inventory movement history" columns={[
@@ -294,7 +296,7 @@ export default function FeedStockPage() {
               </select></label>
               <label className="field"><span>Purchase date</span><input required type="date" value={feedPurchaseForm.purchaseDate} onChange={e=>setFeedPurchaseForm({...feedPurchaseForm,purchaseDate:e.target.value})}/></label>
               <label className="field"><span>Quantity</span><input required min="0.001" step="0.001" type="number" value={feedPurchaseForm.quantity} onChange={e=>setFeedPurchaseForm({...feedPurchaseForm,quantity:e.target.value})}/></label>
-              <label className="field"><span>Supplier (optional)</span><select value={feedPurchaseForm.supplierId} onChange={e=>setFeedPurchaseForm({...feedPurchaseForm,supplierId:e.target.value})}><option value="">No supplier recorded</option>{suppliers.filter(supplier=>supplier.status!=="ARCHIVED").map(supplier=><option key={supplier.id} value={supplier.id}>{supplier.name}</option>)}</select></label>
+              <details className="optional-fields"><summary>Optional purchase details</summary><div className="optional-fields-content"><label className="field"><span>Supplier (optional)</span><select value={feedPurchaseForm.supplierId} onChange={e=>setFeedPurchaseForm({...feedPurchaseForm,supplierId:e.target.value})}><option value="">No supplier recorded</option>{suppliers.filter(supplier=>supplier.status!=="ARCHIVED").map(supplier=><option key={supplier.id} value={supplier.id}>{supplier.name}</option>)}</select></label></div></details>
               <label className="field"><span>Total cost (₦)</span><input required type="text" inputMode="decimal" value={feedPurchaseForm.totalCostMinor} onChange={e=>setFeedPurchaseForm({...feedPurchaseForm,totalCostMinor:e.target.value})}/></label>
               <button disabled={saving || feedTypes.filter(t=>t.status==="ACTIVE").length===0}>Record purchase</button>
             </form>
@@ -306,10 +308,12 @@ export default function FeedStockPage() {
         <div className="section-head"><h2>Suppliers</h2><p className="muted">Maintain reusable supplier records for feed purchases. Archiving keeps historical purchase references intact.</p></div>
         <form className="form-grid" onSubmit={saveSupplier}>
           <label>Supplier name<input required maxLength="120" value={supplierForm.name} onChange={event=>setSupplierForm({...supplierForm,name:event.target.value})}/></label>
-          <label>Phone<input maxLength="40" value={supplierForm.phone} onChange={event=>setSupplierForm({...supplierForm,phone:event.target.value})}/></label>
-          <label>Email<input type="email" maxLength="160" value={supplierForm.email} onChange={event=>setSupplierForm({...supplierForm,email:event.target.value})}/></label>
-          <label>Address<input maxLength="240" value={supplierForm.address} onChange={event=>setSupplierForm({...supplierForm,address:event.target.value})}/></label>
-          <label className="full">Notes<input value={supplierForm.notes} onChange={event=>setSupplierForm({...supplierForm,notes:event.target.value})}/></label>
+          <details className="optional-fields"><summary>Optional contact details</summary><div className="optional-fields-content">
+            <label>Phone<input maxLength="40" value={supplierForm.phone} onChange={event=>setSupplierForm({...supplierForm,phone:event.target.value})}/></label>
+            <label>Email<input type="email" maxLength="160" value={supplierForm.email} onChange={event=>setSupplierForm({...supplierForm,email:event.target.value})}/></label>
+            <label>Address<input maxLength="240" value={supplierForm.address} onChange={event=>setSupplierForm({...supplierForm,address:event.target.value})}/></label>
+            <label className="full">Notes<input value={supplierForm.notes} onChange={event=>setSupplierForm({...supplierForm,notes:event.target.value})}/></label>
+          </div></details>
           <button disabled={saving}>{editingSupplierId ? "Save supplier" : "Add supplier"}</button>{editingSupplierId && <button type="button" className="secondary-button" onClick={cancelSupplierEdit}>Cancel</button>}
         </form>
         <DataTable caption="Suppliers" columns={[
