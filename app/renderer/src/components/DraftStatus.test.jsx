@@ -11,8 +11,9 @@ describe("DraftStatus", () => {
 
   it("requires an explicit review when referenced records are stale", () => {
     const onReview = vi.fn();
-    render(<DraftStatus draft={{ hasDraft: true, stale: true, savedAt: "2026-11-12T10:00:00.000Z" }} onReview={onReview} onDiscard={vi.fn()} />);
+    render(<DraftStatus draft={{ hasDraft: true, stale: true, staleReferences: ["batch", "feedType"], savedAt: "2026-11-12T10:00:00.000Z" }} onReview={onReview} onDiscard={vi.fn()} />);
     expect(screen.getByRole("alert").textContent).toContain("Review this draft before submitting");
+    expect(screen.getByRole("alert").textContent).toContain("batch, feed type");
     fireEvent.click(screen.getByRole("button", { name: "I reviewed these details" }));
     expect(onReview).toHaveBeenCalledOnce();
   });
@@ -22,6 +23,12 @@ describe("DraftStatus", () => {
     render(<DraftStatus draft={{ hasDraft: true, savedAt: "2026-11-12T10:00:00.000Z" }} onDiscard={onDiscard} />);
     fireEvent.click(screen.getByRole("button", { name: "Discard draft" }));
     expect(onDiscard).toHaveBeenCalledOnce();
+  });
+
+  it("warns against resubmitting a transaction whose draft cleanup failed", () => {
+    render(<DraftStatus draft={{ hasDraft: true, posted: true }} onDiscard={vi.fn()} />);
+    expect(screen.getByRole("alert").textContent).toContain("Transaction already recorded");
+    expect(screen.getByRole("alert").textContent).toContain("Do not submit this form again");
   });
 
   it("does not render when no draft exists", () => {
