@@ -110,7 +110,7 @@ export default function QuickActionsMenu({
   }
 
   return (
-    <div className="quick-actions" ref={rootRef}>
+    <div className="global-quick-actions" ref={rootRef}>
       <button
         ref={triggerRef}
         type="button"
