@@ -335,14 +335,17 @@ export default function App() {
       // Prefer that valid batch over the remembered/default batch so initial
       // loading cannot silently discard the alert's target.
       const contextBatchId = parseAttentionContext(window.location.hash).batchId;
-      const preferredBatchId = currentBatches.some(batch => batch.id === contextBatchId)
+      const preferredBatchId = currentBatches.some(batch => batch.id === contextBatchId && batch.status === "ACTIVE")
         ? contextBatchId
-        : currentBatches.some(batch => batch.id === lastBatchId)
+        : currentBatches.some(batch => batch.id === lastBatchId && batch.status === "ACTIVE")
           ? lastBatchId
-          : currentBatches[0]?.id || "";
+          : currentBatches.find(batch => batch.status === "ACTIVE")?.id || currentBatches[0]?.id || "";
+      const preferredBatch = currentBatches.find(batch => batch.id === preferredBatchId);
       if (preferredBatchId) {
         rememberLastBatchId(preferredBatchId);
         setSelectedBatchId(preferredBatchId);
+      }
+      if (preferredBatch?.status === "ACTIVE") {
         setCostForm(form => ({ ...form, batchId: form.batchId || preferredBatchId }));
         setDailyForm(form => ({ ...form, batchId: form.batchId || preferredBatchId }));
         setMortalityForm(form => ({ ...form, batchId: form.batchId || preferredBatchId }));
