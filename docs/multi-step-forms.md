@@ -6,7 +6,7 @@ Use `app/renderer/src/components/MultiStepForm.jsx` for complex workflows with s
 
 - Pass an ordered `steps` array with a concise title, optional description, and content for each step.
 - Keep every step mounted while hiding inactive panels. This preserves controlled form values and lets the final `ValidatedForm` run its complete field validation.
-- Continue validates the currently visible step using the controls' native constraints before advancing. Back never clears values.
+- Continue runs the shared client-side form validator against only the currently visible step, including required fields, number bounds/steps, dates, patterns and naira parsing, before advancing. Back never clears values.
 - The final step is a review, not another data-entry screen. It should summarize every value that will be submitted and let the user go Back to correct it.
 - Submit only from the review step. `ValidatedForm` owns final client validation, backend field-error mapping, pending state and duplicate-submit protection.
 - Keep the existing API callback and payload contract. The backend remains authoritative for business rules, transactions, calculations and persistence.
