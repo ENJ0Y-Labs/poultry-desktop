@@ -1346,3 +1346,20 @@ body { min-width: 0; }
 .workflow-actions button{min-width:112px}
 @media(max-width:1150px){.workflow-progress ol{grid-template-columns:repeat(5,minmax(0,1fr))}.workflow-progress li{justify-content:center}.workflow-step-label{display:none}}
 @media(max-width:900px){.workflow-review{grid-template-columns:1fr 1fr}}
+
+/* Keyboard shortcut reference */
+.keyboard-shortcuts-trigger { white-space: nowrap; }
+.keyboard-shortcut-reference { display: grid; gap: 0; }
+.keyboard-shortcut-reference > div {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding: 9px 0; border-bottom: 1px solid var(--border);
+}
+.keyboard-shortcut-reference kbd {
+  flex: 0 0 auto; padding: 3px 7px; border: 1px solid var(--border);
+  border-radius: 5px; color: var(--text); background: var(--panel-soft);
+  font: 600 11px/1.4 "Segoe UI", system-ui, sans-serif;
+}
+.keyboard-shortcut-reference p { margin: 12px 0 0; color: var(--muted); font-size: 12px; line-height: 1.5; }
+@media (max-width: 1250px) {
+  .keyboard-shortcuts-trigger { display: none; }
+}
