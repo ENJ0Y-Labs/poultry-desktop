@@ -98,7 +98,7 @@ export default function DataTable({
               })}</td></tr>
               : pageRows.map((row, index) => <tr key={row.id ?? row.uuid ?? row.code ?? row.batchCode ?? index}>
                 {columns.map(column => <td key={column.key}>{column.render ? column.render(row) : row[column.key] ?? "—"}</td>)}
-                {rowActions && <td className="data-table__actions-cell"><RowActionsMenu row={row} actions={rowActions(row)} label={`Actions for ${row.name || row.code || row.id || "record"}`} /></td>}
+                {rowActions && <td className="data-table__actions-cell">{createElement(RowActionsMenu, { row, actions: rowActions(row), label: `Actions for ${row.name || row.code || row.id || "record"}` })}</td>}
               </tr>)}
           </tbody>
         </table>
