@@ -143,8 +143,10 @@ public class ReportExportService {
                 NumberFormat amount = NumberFormat.getNumberInstance(Locale.forLanguageTag("en-NG"));
                 amount.setMinimumFractionDigits(2);
                 amount.setMaximumFractionDigits(2);
-                return currency.getSymbol(Locale.forLanguageTag("en-NG"))
-                        + amount.format(java.math.BigDecimal.valueOf(value.asLong(), 2));
+                java.math.BigDecimal minorAmount = java.math.BigDecimal.valueOf(value.asLong(), 2);
+                return (minorAmount.signum() < 0 ? "-" : "")
+                        + currency.getSymbol(Locale.forLanguageTag("en-NG"))
+                        + amount.format(minorAmount.abs());
             } catch (RuntimeException ignored) {
                 return value.asText();
             }
