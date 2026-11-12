@@ -9,6 +9,8 @@ import pomasLogo from "../assets/pomas-logo.png";
 import PageHelp from "./PageHelp.jsx";
 // eslint-disable-next-line no-unused-vars
 import GuidedTour from "./GuidedTour.jsx";
+// eslint-disable-next-line no-unused-vars
+import QuickActionsMenu from "./QuickActionsMenu.jsx";
 
 const groups = [
   { label: "WORKSPACE", items: [
@@ -138,7 +140,7 @@ function localDateLabel() {
   return new Intl.DateTimeFormat("en-NG", { day: "2-digit", month: "short", year: "numeric" }).format(new Date());
 }
 
-export default function AppShell({ farm, error, appInfo, onRetry, children, startPage = "dashboard", startPageReady = true }) {
+export default function AppShell({ farm, error, appInfo, onRetry, children, startPage = "dashboard", startPageReady = true, quickActionContext = {} }) {
   const [active, setActive] = useState(() => resolvePage(window.location.hash, startPage));
   const [activeTab, setActiveTab] = useState(() => resolveTab(window.location.hash, resolvePage(window.location.hash, startPage)));
   const [theme, setTheme] = useState(getThemePreference);
@@ -181,6 +183,14 @@ export default function AppShell({ farm, error, appInfo, onRetry, children, star
     const tab = defaultTabs[page] || "overview";
     setHasUserNavigated(true);
     if (window.location.hash !== `#${page}/${tab}`) window.location.hash = `${page}/${tab}`;
+    setActive(page);
+    setActiveTab(tab);
+  }
+
+  function navigateQuickAction(target) {
+    const [page, tab] = target.replace(/^#/, "").split("/");
+    setHasUserNavigated(true);
+    window.location.hash = target.replace(/^#/, "");
     setActive(page);
     setActiveTab(tab);
   }
@@ -340,6 +350,13 @@ export default function AppShell({ farm, error, appInfo, onRetry, children, star
               <p className="muted">{farm.location || "Farm profile"} · {farm.currency} · {farm.timezone}</p>
             </div>
             <div className="topbar-actions">
+              <QuickActionsMenu
+                activeBatch={quickActionContext.activeBatch}
+                hasFeedTypes={quickActionContext.hasFeedTypes}
+                hasApplicableFeed={quickActionContext.hasApplicableFeed}
+                hasInventoryItems={quickActionContext.hasInventoryItems}
+                onNavigate={navigateQuickAction}
+              />
               <label className="theme-control">Theme<select value={theme} onChange={changeTheme}><option value="auto">System</option><option value="light">Teal Light</option><option value="dark">Dark (Gold)</option></select></label>
               <div className={backendConnected === true && !recoveryNeeded ? "system-pill connected" : backendConnected === false || recoveryNeeded ? "system-pill disconnected" : "system-pill"} role="status" aria-live="polite">
                 <span className={backendConnected === true && !recoveryNeeded ? "status-dot online" : backendConnected === false || recoveryNeeded ? "status-dot offline" : "status-dot"} />
