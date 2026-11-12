@@ -24,7 +24,7 @@ export default function ReportsPage() {
       <p className="muted" role="status" aria-live="polite">{reportExporting ? "Preparing report export. Larger reports may take a little longer." : ""}</p>
       <PageSection page="reports" tab="farm-report"><section id="reports" className="card full">
           <div className="section-head"><div><p className="eyebrow">REPORTING</p><h2>Farm reports</h2></div>
-            <div className="inline-form"><label>As of <input aria-label="Report as-of date" type="date" value={reportAsOf} onChange={e => setReportAsOf(e.target.value)} /></label><button type="button" onClick={() => loadReport(reportAsOf)}>Refresh</button><button type="button" disabled={reportExporting} onClick={() => exportCsv(() => reportApi.farmCsv(reportAsOf), "farm-report.csv")}>{reportExporting ? "Preparing…" : "Export CSV"}</button><button type="button" disabled={reportExporting} onClick={() => exportPdf(() => reportApi.farmPdf(reportAsOf), "farm-report.pdf")}>{reportExporting ? "Preparing…" : "Export PDF"}</button></div>
+            <div className="inline-form"><label>As of <input aria-label="Report as-of date" type="date" value={reportAsOf} onChange={e => { setReportAsOf(e.target.value); void loadReport(e.target.value); }} /></label><button type="button" onClick={() => loadReport(reportAsOf)}>Refresh</button><button type="button" disabled={reportExporting} onClick={() => exportCsv(() => reportApi.farmCsv(reportAsOf), "farm-report.csv")}>{reportExporting ? "Preparing…" : "Export CSV"}</button><button type="button" disabled={reportExporting} onClick={() => exportPdf(() => reportApi.farmPdf(reportAsOf), "farm-report.pdf")}>{reportExporting ? "Preparing…" : "Export PDF"}</button></div>
           </div>
           {farmReport ? <>
             <div className="metric-grid">
@@ -65,7 +65,7 @@ export default function ReportsPage() {
               <select aria-label="Filter batches by house" value={reportHouseId} onChange={e => setReportHouseId(e.target.value)}>
                 <option value="">All houses</option>{houses.map(house => <option key={house.id} value={house.id}>{house.name}{house.code ? " · " + house.code : ""}</option>)}
               </select>
-              <select aria-label="Batch report" value={selectedBatchIsVisible ? selectedBatchId : ""} onChange={e => { setSelectedBatchId(e.target.value); rememberLastBatchId(e.target.value); }}>
+              <select aria-label="Batch report" value={selectedBatchIsVisible ? selectedBatchId : ""} onChange={e => { setSelectedBatchId(e.target.value); rememberLastBatchId(e.target.value); void loadBatchReport(e.target.value, reportAsOf); }}>
                 <option value="">Select a batch</option>{visibleBatches.map(batch => <option key={batch.id} value={batch.id}>{batch.code} · {batch.type === "LAYER" ? "Layer" : batch.type === "BROILER" ? "Broiler" : batch.type === "TURKEY" ? "Turkey" : "Unknown type"}</option>)}
               </select>
               <button type="button" disabled={!selectedBatchIsVisible || reportExporting} onClick={() => loadBatchReport(selectedBatchId, reportAsOf)}>Refresh</button>
