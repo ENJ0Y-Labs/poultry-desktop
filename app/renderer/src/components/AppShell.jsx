@@ -10,6 +10,7 @@ import PageHelp from "./PageHelp.jsx";
 import GuidedTour from "./GuidedTour.jsx";
 // eslint-disable-next-line no-unused-vars
 import QuickActionsMenu from "./QuickActionsMenu.jsx";
+// eslint-disable-next-line no-unused-vars
 import { Modal } from "./Modal.jsx";
 import { registerGlobalShortcuts } from "../utils/keyboardShortcuts.js";
 
