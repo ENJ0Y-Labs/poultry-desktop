@@ -7,8 +7,6 @@ import { appVersionLabel } from "./utils/appInfo.js";
 import { getThemePreference, setThemePreference } from "./utils/theme.js";
 import { parseAttentionContext } from "./utils/attentionNavigation.js";
 // eslint-disable-next-line no-unused-vars
-import DraftStatus from "./components/DraftStatus.jsx";
-// eslint-disable-next-line no-unused-vars
 import AppShell from "./components/AppShell.jsx";
 // eslint-disable-next-line no-unused-vars
 import PageSection from "./components/PageSection.jsx";
