@@ -7,6 +7,10 @@ import PageSection from "../components/PageSection.jsx";
 // eslint-disable-next-line no-unused-vars
 import PageTemplate from "../components/PageTemplate.jsx";
 import { rememberLastBatchId } from "../utils/farmUx.js";
+import MultiStepForm from "../components/MultiStepForm.jsx";
+import OptionalFields from "../components/OptionalFields.jsx";
+// eslint-disable-next-line no-unused-vars -- JSX component usage is not detected by the core rule
+import { ModalForm } from "../components/Modal.jsx";
 // eslint-disable-next-line no-unused-vars -- JSX component usage is not detected by the core rule
 import ContextDrawer, { DrawerDetails } from "../components/ContextDrawer.jsx";
 // eslint-disable-next-line no-unused-vars
@@ -116,17 +120,71 @@ export default function FlocksPage() {
       </section></PageSection>
 
       <PageSection page="flocks" tab="flocks"><section id="batches" className="card full"><div className="section-head"><h2>Batches</h2><p className="muted">Opening a batch creates a permanent flock record and generates its code automatically.</p></div>
-          <ValidatedForm className="inline-form" onSubmit={createBatch}>
-            <label className="field"><span>Batch type</span><select value={batchForm.type} onChange={e=>setBatchForm({...batchForm,type:e.target.value})}><option value="LAYER">Layer</option><option value="BROILER">Broiler</option><option value="TURKEY">Turkey</option></select></label>
-            <label className="field"><span>Placement date</span><input required type="date" value={batchForm.placementDate} onChange={e=>setBatchForm({...batchForm,placementDate:e.target.value})}/></label>
-            <label className="field"><span>House / pen</span><select required value={batchForm.houseId} onChange={e=>setBatchForm({...batchForm,houseId:e.target.value})}><option value="">House / pen</option>{houses.filter(h=>h.status==="ACTIVE").map(h=><option key={h.id} value={h.id}>{h.name} ({h.code})</option>)}</select></label>
-            <label className="field"><span>Initial birds</span><input required min="1" type="number" value={batchForm.initialBirdCount} onChange={e=>setBatchForm({...batchForm,initialBirdCount:e.target.value})}/></label>
-            <label className="field"><span>Starting count confidence</span><select value={batchForm.populationCountStatus || "ESTIMATED"} onChange={e=>setBatchForm({...batchForm,populationCountStatus:e.target.value})}><option value="VERIFIED">Verified physical count</option><option value="ESTIMATED">Estimated / provisional count</option></select></label>
-            <label className="field"><span>Purchase information</span><select aria-label="Purchase information" value={batchForm.purchaseCostRecorded ? "RECORDED" : "EXISTING_STOCK"} onChange={e=>setBatchForm({...batchForm,purchaseCostRecorded:e.target.value==="RECORDED",purchaseCostMinor:""})}><option value="RECORDED">Record purchase cost</option><option value="EXISTING_STOCK">Not recorded / Existing stock</option></select></label>
-            <label className="field"><span>Supplier / source (optional)</span><select value={batchForm.supplierId} onChange={e=>setBatchForm({...batchForm,supplierId:e.target.value})}><option value="">Unknown / not recorded</option>{suppliers.filter(supplier=>supplier.status!=="ARCHIVED").map(supplier=><option key={supplier.id} value={supplier.id}>{supplier.name}</option>)}</select></label>
-            {batchForm.purchaseCostRecorded && <label className="field"><span>Purchase cost (₦)</span><input required type="text" inputMode="decimal" value={batchForm.purchaseCostMinor} onChange={e=>setBatchForm({...batchForm,purchaseCostMinor:e.target.value})}/></label>}
-            <button disabled={saving || houses.length===0}>Create batch</button>
-          </ValidatedForm>
+          <ModalForm
+            title="Register batch"
+            description="Create a permanent flock record. Work through each step, then review the details before creating it."
+            triggerLabel="Register batch"
+            loading={saving}
+            error={null}
+            onDiscard={() => setBatchForm(form => ({
+              ...form, type: "LAYER", houseId: "", initialBirdCount: "", supplierId: "",
+              purchaseCostRecorded: true, purchaseCostMinor: "", populationCountStatus: "ESTIMATED",
+            }))}
+          >
+            <MultiStepForm
+              className="form-grid"
+              loading={saving}
+              submitLabel="Create batch"
+              onSubmit={createBatch}
+              steps={[
+                {
+                  title: "Batch information",
+                  description: "Choose the flock type and the date the birds arrive at the farm.",
+                  content: <>
+                    <label className="field"><span>Batch type</span><select value={batchForm.type} onChange={e=>setBatchForm({...batchForm,type:e.target.value})}><option value="LAYER">Layer</option><option value="BROILER">Broiler</option><option value="TURKEY">Turkey</option></select></label>
+                    <label className="field"><span>Placement date</span><input name="placementDate" required type="date" value={batchForm.placementDate} onChange={e=>setBatchForm({...batchForm,placementDate:e.target.value})}/></label>
+                  </>,
+                },
+                {
+                  title: "House selection",
+                  description: "Choose an active house or pen for this batch.",
+                  content: <label className="field"><span>House / pen</span><select name="houseId" required value={batchForm.houseId} onChange={e=>setBatchForm({...batchForm,houseId:e.target.value})}><option value="">House / pen</option>{houses.filter(h=>h.status==="ACTIVE").map(h=><option key={h.id} value={h.id}>{h.name} ({h.code})</option>)}</select></label>,
+                },
+                {
+                  title: "Bird population",
+                  description: "Enter the starting bird count and whether it has been physically verified.",
+                  content: <>
+                    <label className="field"><span>Initial birds</span><input name="initialBirdCount" required min="1" step="1" type="number" value={batchForm.initialBirdCount} onChange={e=>setBatchForm({...batchForm,initialBirdCount:e.target.value})}/></label>
+                    <label className="field"><span>Starting count confidence</span><select value={batchForm.populationCountStatus || "ESTIMATED"} onChange={e=>setBatchForm({...batchForm,populationCountStatus:e.target.value})}><option value="VERIFIED">Verified physical count</option><option value="ESTIMATED">Estimated / provisional count</option></select></label>
+                  </>,
+                },
+                {
+                  title: "Acquisition and costs",
+                  description: "Record the purchase cost when known. Existing stock can be registered without inventing a purchase value.",
+                  content: <>
+                    <label className="field"><span>Purchase information</span><select aria-label="Purchase information" value={batchForm.purchaseCostRecorded ? "RECORDED" : "EXISTING_STOCK"} onChange={e=>setBatchForm({...batchForm,purchaseCostRecorded:e.target.value==="RECORDED",purchaseCostMinor:""})}><option value="RECORDED">Record purchase cost</option><option value="EXISTING_STOCK">Not recorded / Existing stock</option></select></label>
+                    {batchForm.purchaseCostRecorded && <label className="field"><span>Purchase cost (₦)</span><input name="purchaseCostMinor" required type="text" inputMode="decimal" value={batchForm.purchaseCostMinor} onChange={e=>setBatchForm({...batchForm,purchaseCostMinor:e.target.value})}/></label>}
+                    <OptionalFields title="Supplier / source" description="Optional. Leave blank when the supplier is unknown or was not recorded.">
+                      <label className="field"><span>Supplier / source (optional)</span><select value={batchForm.supplierId} onChange={e=>setBatchForm({...batchForm,supplierId:e.target.value})}><option value="">Unknown / not recorded</option>{suppliers.filter(supplier=>supplier.status!=="ARCHIVED").map(supplier=><option key={supplier.id} value={supplier.id}>{supplier.name}</option>)}</select></label>
+                    </OptionalFields>
+                  </>,
+                },
+                {
+                  title: "Review and create",
+                  description: "Check the complete batch record. Use Back to correct anything before saving.",
+                  content: <dl className="workflow-review">
+                    <div><dt>Batch type</dt><dd>{batchForm.type === "LAYER" ? "Layer" : batchForm.type === "BROILER" ? "Broiler" : "Turkey"}</dd></div>
+                    <div><dt>Placement date</dt><dd>{batchForm.placementDate || "Not entered"}</dd></div>
+                    <div><dt>House / pen</dt><dd>{houses.find(house => house.id === batchForm.houseId)?.name || "Not selected"}</dd></div>
+                    <div><dt>Initial birds</dt><dd>{batchForm.initialBirdCount || "Not entered"}</dd></div>
+                    <div><dt>Count confidence</dt><dd>{batchForm.populationCountStatus === "VERIFIED" ? "Verified" : "Estimated"}</dd></div>
+                    <div><dt>Purchase information</dt><dd>{batchForm.purchaseCostRecorded ? `Recorded: ₦${batchForm.purchaseCostMinor || "not entered"}` : "Existing stock / not recorded"}</dd></div>
+                    <div><dt>Supplier / source</dt><dd>{suppliers.find(supplier => supplier.id === batchForm.supplierId)?.name || "Unknown / not recorded"}</dd></div>
+                  </dl>,
+                },
+              ]}
+            />
+          </ModalForm>
           <DataTable caption="Batch records" columns={[
               { key: "code", label: "Code" }, { key: "type", label: "Type", render: batch => batchTypeLabel(batch.type) },
               { key: "houseId", label: "House / pen", render: batch => { const house = houses.find(item => item.id === batch.houseId); return house ? `${house.name} (${house.code})` : batch.houseId || "—"; } },
