@@ -1474,3 +1474,12 @@ An opening balance may be dated before a later purchase, but cannot be dated bef
 - Currently supported: Undo for the latest effective BROILER/TURKEY weight record only. It requires an authenticated owner, a reason, no later effective measurement, and an append-only WEIGHT_RECORD reversal plus audit event. Original rows remain stored; effective weight history excludes reversed rows.
 - Do not expose Undo for feed, stock, expenses, drugs, population, transfers, egg records, bird sales, or inventory until each owning domain has atomic audited reversal and dependent-ledger recalculation. Feed usage must rebuild FIFO and bird-cost allocations or reject.
 - See docs/safe-undo.md and docs/decisions/2026-10-26-auditable-transaction-corrections.md.
+
+## Global quick actions
+
+- Keep one global Quick actions entry point in the application top bar. Do not duplicate the same task shortcuts in individual pages or dashboards.
+- The dashboard is for farm status, attention items, and recent activity; common task shortcuts belong in the global menu.
+- Keep the menu's action catalogue aligned with existing page routes and workflows. Preserve active-batch context, and hide actions when their required active batch, compatible feed stock, feed type, or inventory item is unavailable.
+- Quick actions are navigation and workflow entry points only. Reuse existing forms, validation, API handlers, and backend business rules. Do not add a parallel form or persistence path.
+- Add renderer tests for action visibility, route/context behavior, keyboard operation, and the absence of duplicate dashboard shortcuts when changing the menu.
+
