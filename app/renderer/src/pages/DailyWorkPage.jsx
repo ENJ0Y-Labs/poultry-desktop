@@ -52,7 +52,7 @@ export default function DailyWorkPage() {
           <form className="form-grid" onSubmit={event => saveDailyRecord(event, "notes")}>
             <label>Batch<select required value={dailyForm.batchId} onChange={event => updateDailyBatch(event.target.value)}>{batchOptions}</select></label>
             <label>Date<input required type="date" value={dailyForm.date} onChange={event => updateDailyDate(event.target.value)}/></label>
-            <label className="full">Daily notes<input value={dailyForm.notes} onChange={event => setDailyForm({...dailyForm,notes:event.target.value})}/></label>
+            <details className="optional-fields"><summary>Optional details</summary><div className="optional-fields-content"><label className="full">Daily notes<input value={dailyForm.notes} onChange={event => setDailyForm({...dailyForm,notes:event.target.value})}/></label></div></details>
             <button disabled={saving}>Save daily notes</button>
           </form>
 
@@ -67,7 +67,7 @@ export default function DailyWorkPage() {
                 <option value="">Feed type</option>{applicableFeedTypes.map(type => <option key={type.id} value={type.id}>{type.name}{type.brand ? ` · ${type.brand}` : ""} ({type.unit})</option>)}
               </select></label>
               <label>Quantity<input required min="0.001" step="0.001" type="number" value={feedUsageForm.quantity} onChange={event => setFeedUsageForm({...feedUsageForm,quantity:event.target.value})}/></label>
-              <label className="full">Reason (optional)<input value={feedUsageForm.reason} onChange={event => setFeedUsageForm({...feedUsageForm,reason:event.target.value})} placeholder="e.g. Morning feeding"/></label>
+              <details className="optional-fields"><summary>Optional details</summary><div className="optional-fields-content"><label className="full">Reason (optional)<input value={feedUsageForm.reason} onChange={event => setFeedUsageForm({...feedUsageForm,reason:event.target.value})} placeholder="e.g. Morning feeding"/></label></div></details>
               <button disabled={saving || !dailyForm.batchId || applicableFeedTypes.length === 0}>Record feed usage</button>
             </form>
             {applicableFeedTypes.length === 0 && <p className="muted">No active feed types are configured for this batch's bird type. Add an applicable feed type in Feed & Stock first.</p>}
@@ -93,8 +93,10 @@ export default function DailyWorkPage() {
             <label>Batch<select required value={mortalityForm.batchId} onChange={event => setMortalityForm({...mortalityForm,batchId:event.target.value})}>{batchOptions}</select></label>
             <label>Date<input required type="date" value={mortalityForm.date} onChange={event => setMortalityForm({...mortalityForm,date:event.target.value})}/></label>
             <label>Quantity<input required min="1" step="1" type="number" value={mortalityForm.quantity} onChange={event => setMortalityForm({...mortalityForm,quantity:event.target.value})}/></label>
-            <label>Reason<input value={mortalityForm.reason} onChange={event => setMortalityForm({...mortalityForm,reason:event.target.value})}/></label>
-            <label className="full">Notes<input value={mortalityForm.notes} onChange={event => setMortalityForm({...mortalityForm,notes:event.target.value})}/></label>
+            <details className="optional-fields"><summary>Optional details</summary><div className="optional-fields-content">
+              <label>Reason<input value={mortalityForm.reason} onChange={event => setMortalityForm({...mortalityForm,reason:event.target.value})}/></label>
+              <label className="full">Notes<input value={mortalityForm.notes} onChange={event => setMortalityForm({...mortalityForm,notes:event.target.value})}/></label>
+            </div></details>
             <button disabled={saving}>Record mortality</button>
           </form>
         </section>
@@ -106,8 +108,10 @@ export default function DailyWorkPage() {
             <label>Batch<select required value={cullingForm.batchId} onChange={event => setCullingForm({...cullingForm,batchId:event.target.value})}>{batchOptions}</select></label>
             <label>Date<input required type="date" value={cullingForm.date} onChange={event => setCullingForm({...cullingForm,date:event.target.value})}/></label>
             <label>Quantity<input required min="1" step="1" type="number" value={cullingForm.quantity} onChange={event => setCullingForm({...cullingForm,quantity:event.target.value})}/></label>
-            <label>Reason<input value={cullingForm.reason} onChange={event => setCullingForm({...cullingForm,reason:event.target.value})}/></label>
-            <label className="full">Notes<input value={cullingForm.notes} onChange={event => setCullingForm({...cullingForm,notes:event.target.value})}/></label>
+            <details className="optional-fields"><summary>Optional details</summary><div className="optional-fields-content">
+              <label>Reason<input value={cullingForm.reason} onChange={event => setCullingForm({...cullingForm,reason:event.target.value})}/></label>
+              <label className="full">Notes<input value={cullingForm.notes} onChange={event => setCullingForm({...cullingForm,notes:event.target.value})}/></label>
+            </div></details>
             <button disabled={saving}>Record culling</button>
           </form>
         </section>
