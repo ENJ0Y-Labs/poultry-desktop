@@ -33,6 +33,9 @@ export default function ReportsPage() {
     ? calculatePeriodProfitMinor(batchReport.period.revenueMinor, batchReport.period.expensesMinor)
     : null;
 
+  const visibleBatches = batches;
+  const selectedBatchIsVisible = visibleBatches.some(batch => batch.id === selectedBatchId);
+
   return (
     <PageTemplate className="grid pomas-page page-reports">
       <PageSection page="reports" tab="farm-report"><section id="reports" className="card full">
