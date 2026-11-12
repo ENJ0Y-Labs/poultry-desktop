@@ -87,7 +87,7 @@ export default function ReportsPage() {
               </div>
             </div>
           </div>
-          {batchReport ? <>
+          {batchReport && selectedBatchIsVisible ? <>
             <div className="metric-grid">
               {[
                 ["Initial birds", batchReport.population?.initialBirds],
@@ -140,7 +140,7 @@ export default function ReportsPage() {
               dateRange={dateRange}
             />
           )}
-          {selectedBatchId && ["BROILER", "TURKEY"].includes(batches.find(batch => batch.id === selectedBatchId)?.type) && (
+          {selectedBatchIsVisible && ["BROILER", "TURKEY"].includes(batches.find(batch => batch.id === selectedBatchId)?.type) && (
             <ProductionTrendChart
               batchId={selectedBatchId}
               title="Broiler average weight"

@@ -1,5 +1,5 @@
 import { app, BrowserWindow, dialog, ipcMain, nativeTheme } from "electron";
-import { copyFileSync, existsSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { BackendManager } from "./backend-manager.js";
@@ -31,6 +31,70 @@ ipcMain.handle("backend:base-url", async (_event, ...args) => {
   if (args.length !== 0) throw new Error("Invalid IPC message.");
   if (!backendManager?.port) throw new Error("The local backend is not ready.");
   return "http://127.0.0.1:" + backendManager.port;
+});
+
+const DRAFT_IDS = new Set([
+  "batch", "feedPurchase", "expense", "health", "drug", "vaccination",
+  "birdSale", "eggSale", "eggCollection", "weight"
+]);
+const draftsPath = () => join(app.getPath("userData"), "pomas-drafts.json");
+
+function readDrafts() {
+  try {
+    const parsed = JSON.parse(readFileSync(draftsPath(), "utf8"));
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return {};
+    return Object.fromEntries(Object.entries(parsed).filter(([id, draft]) =>
+      DRAFT_IDS.has(id) && draft && typeof draft === "object" &&
+      draft.form && typeof draft.form === "object" && !Array.isArray(draft.form)
+    ));
+  } catch {
+    return {};
+  }
+}
+
+function writeDrafts(drafts) {
+  const target = draftsPath();
+  const temporary = target + ".tmp";
+  mkdirSync(app.getPath("userData"), { recursive: true });
+  writeFileSync(temporary, JSON.stringify(drafts), { encoding: "utf8", mode: 0o600 });
+  renameSync(temporary, target);
+}
+
+ipcMain.handle("drafts:list", async (_event, ...args) => {
+  if (args.length !== 0) throw new Error("Invalid IPC message.");
+  return readDrafts();
+});
+
+ipcMain.handle("drafts:save", async (_event, payload, ...args) => {
+  if (args.length !== 0 || !payload || typeof payload !== "object" || Array.isArray(payload) ||
+      !DRAFT_IDS.has(payload.id) || !payload.form || typeof payload.form !== "object" ||
+      Array.isArray(payload.form) || !payload.references || typeof payload.references !== "object" ||
+      Array.isArray(payload.references)) {
+    throw new Error("Invalid draft data.");
+  }
+  const serialized = JSON.stringify({ form: payload.form, references: payload.references });
+  if (Buffer.byteLength(serialized, "utf8") > 65536) throw new Error("This draft is too large to save.");
+  const drafts = readDrafts();
+  const previous = drafts[payload.id];
+  const draft = {
+    form: payload.form,
+    references: payload.references,
+    createdAt: previous?.createdAt || new Date().toISOString(),
+    savedAt: new Date().toISOString()
+  };
+  drafts[payload.id] = draft;
+  writeDrafts(drafts);
+  return draft;
+});
+
+ipcMain.handle("drafts:discard", async (_event, id, ...args) => {
+  if (args.length !== 0 || typeof id !== "string" || !DRAFT_IDS.has(id)) {
+    throw new Error("Invalid draft identifier.");
+  }
+  const drafts = readDrafts();
+  delete drafts[id];
+  writeDrafts(drafts);
+  return { discarded: true };
 });
 
 const themePreferencePath = () => join(app.getPath("userData"), "theme-preference.json");

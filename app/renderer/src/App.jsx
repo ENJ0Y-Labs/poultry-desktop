@@ -499,6 +499,9 @@ export default function App() {
   }
 
   async function exportCsv(loader, filename) {
+    setReportExporting(true);
+    setError("");
+    setSuccessMessage("");
     try {
       const csv = await loader();
       const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
@@ -506,13 +509,20 @@ export default function App() {
       anchor.href = url;
       anchor.download = filename;
       anchor.click();
-      URL.revokeObjectURL(url);
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+      setSuccessMessage("Export ready. Download started for " + filename + ".");
     } catch (err) {
       setError(displayApiError(err));
+      setSuccessMessage("");
+    } finally {
+      setReportExporting(false);
     }
   }
 
   async function exportPdf(loader, filename) {
+    setReportExporting(true);
+    setError("");
+    setSuccessMessage("");
     try {
       const blob = await loader();
       const url = URL.createObjectURL(blob);
@@ -520,9 +530,13 @@ export default function App() {
       anchor.href = url;
       anchor.download = filename;
       anchor.click();
-      URL.revokeObjectURL(url);
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+      setSuccessMessage("Export ready. Download started for " + filename + ".");
     } catch (err) {
       setError(displayApiError(err));
+      setSuccessMessage("");
+    } finally {
+      setReportExporting(false);
     }
   }
 
@@ -892,6 +906,7 @@ export default function App() {
         category: expenseForm.category,
         batchId: expenseForm.batchId || null,
       });
+      await discardDraft("expense", false);
       setExpenses(current => [created, ...current]);
       setExpenseForm(form => ({ ...emptyExpense, batchId: form.batchId }));
       notify.success("Expense recorded successfully.");
@@ -914,6 +929,7 @@ export default function App() {
           : null,
         populationCountStatus: batchForm.populationCountStatus || "ESTIMATED",
       });
+      await discardDraft("batch", false);
       setBatches(current => [created, ...current]);
       rememberLastBatchId(created.id);
       setSelectedBatchId(created.id);
@@ -997,6 +1013,7 @@ export default function App() {
         unit: type?.unit || feedPurchaseForm.unit,
         totalCostMinor: parseNairaToKobo(feedPurchaseForm.totalCostMinor),
       });
+      await discardDraft("feedPurchase", false);
       setFeedPurchaseForm(form => ({ ...emptyFeedPurchase, feedTypeId: form.feedTypeId }));
       setFeedInventory(await feedApi.inventory());
     } catch (err) { setError(displayApiError(err)); } finally { setSaving(false); }
@@ -1121,6 +1138,7 @@ export default function App() {
         totalWeightKg: weightForm.totalWeightKg,
         notes: weightForm.notes.trim() || null,
       });
+      await discardDraft("weight", false);
       await loadBroilerForBatch(batchId);
       notify.success("Weight record saved.", {
         key: "weight-undo:" + saved.id,
@@ -1160,6 +1178,7 @@ export default function App() {
         if (!window.confirm("This sale is below the configured target margin. Record it anyway? The target margin will not be lowered.")) throw err;
         await broilerApi.addSale(batchId, { ...sale, confirmedBelowTarget: true });
       }
+      await discardDraft("birdSale", false);
       await loadBroilerForBatch(batchId);
       setBatches(await batchApi.list());
       setBirdSaleForm(form => ({ ...form, quantity: "", pricePerBirdMinor: "", customer: "", customerId: "" }));
@@ -1196,6 +1215,7 @@ export default function App() {
         cracked: Number(eggCollectionForm.cracked),
         notes: eggCollectionForm.notes.trim() || null,
       });
+      await discardDraft("eggCollection", false);
       await loadEggsForBatch(batchId);
       setEggCollectionForm(form => ({ ...form, good: "", cracked: "", notes: "" }));
       notify.success("Egg collection recorded successfully.");
@@ -1214,6 +1234,7 @@ export default function App() {
         crates: eggSaleForm.crates,
         pricePerCrateMinor: parseNairaToKobo(eggSaleForm.pricePerCrateMinor),
       });
+      await discardDraft("eggSale", false);
       await loadEggsForBatch(batchId);
       setEggSaleForm(form => ({ ...form, customer: "", customerId: "", crates: "", pricePerCrateMinor: "" }));
       await loadSales();
@@ -1231,6 +1252,7 @@ export default function App() {
         description: healthForm.description.trim(),
         action: healthForm.action.trim(),
       });
+      await discardDraft("health", false);
       setHealthRecords(await healthApi.listHealth(healthForm.batchId));
       setHealthForm(form => ({ ...emptyHealth, batchId: form.batchId }));
     } catch (err) { setError(displayApiError(err)); } finally { setSaving(false); }
@@ -1246,6 +1268,7 @@ export default function App() {
         costMinor: parseNairaToKobo(drugForm.costMinor),
         reason: drugForm.reason.trim(),
       });
+      await discardDraft("drug", false);
       setDrugRecords(await healthApi.listDrugs(drugForm.batchId));
       setDrugForm(form => ({ ...emptyDrug, batchId: form.batchId }));
     } catch (err) { setError(displayApiError(err)); } finally { setSaving(false); }
@@ -1261,6 +1284,7 @@ export default function App() {
         quantity: Number(vaccinationForm.quantity),
         notes: vaccinationForm.notes.trim() || null,
       });
+      await discardDraft("vaccination", false);
       setVaccinationRecords(await healthApi.listVaccinations(vaccinationForm.batchId));
       setVaccinationForm(form => ({ ...emptyVaccination, batchId: form.batchId }));
     } catch (err) { setError(displayApiError(err)); } finally { setSaving(false); }
