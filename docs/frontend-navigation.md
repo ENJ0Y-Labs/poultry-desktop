@@ -148,3 +148,25 @@ The top-level page components live under `app/renderer/src/pages/`. Shared form 
 - Ctrl+K opens the menu. Arrow Up/Down, Home, End, Enter, and Escape are supported, and Escape restores focus to the trigger. Outside pointer interaction closes the panel.
 - Preserve the dashboard's existing Record feed usage action and its behavior. The global menu supplements it; it does not replace it.
 - Vitest covers action visibility, type-aware sale routing, context propagation, keyboard navigation, and focus restoration. Manual verification must exercise every action, a missing/closed batch, layer and meat-bird batches, keyboard-only operation, narrow desktop windows, and offline use.
+
+
+### Quick Actions verification commands and manual steps
+
+Run from the repository root:
+
+```powershell
+npm test -- app/renderer/src/components/QuickActionsMenu.test.jsx app/renderer/src/App.test.jsx
+npm run lint
+npm run backend:verify
+npm run build
+```
+
+Using a disposable local farm (never production records):
+
+1. Create ACTIVE LAYER, BROILER, and TURKEY batches. Add an active feed type applicable to each relevant type and record a purchase so remaining stock is positive. Create an inventory item.
+2. Open Quick Actions and verify each visible action opens the existing page and correct tab. Confirm feed usage appears only when the selected active batch has a compatible feed type with remaining stock; feed purchase appears only when a feed type exists; stock movement appears only when an inventory item exists.
+3. Verify Egg collection appears for LAYER only. Verify Sale opens the egg workflow for LAYER and the meat-bird workflow for BROILER/TURKEY.
+4. Open Mortality, Culling, Daily record, Feed usage, Health event, Vaccination, Egg collection, Sale, Expense, and Stock movement from an active batch context. Confirm only the target form receives the batch and today's farm-local date where supported.
+5. Remove the active batch or mark it SOLD and confirm batch-specific actions disappear. Test with no feed types, no compatible feed stock, and no inventory items.
+6. Use Ctrl+K, Arrow Up/Down, Home, End, Enter, and Escape without a mouse. Confirm Escape restores focus to the trigger and outside clicks dismiss the panel.
+7. Repeat at 1366×768 and 1100×700, then disconnect the internet and repeat navigation. Quick Actions must remain available offline.
