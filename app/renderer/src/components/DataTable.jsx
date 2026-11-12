@@ -41,7 +41,7 @@ export default function DataTable({
               : null;
   return (
     <div className="data-table-wrap">
-      {enableFilters && rows.length > 0 && <TableFilters rows={rows} fields={fields} filters={filters} setFilters={setFilters} filteredCount={visibleRows.length} storageKey={storageKey}/>}
+      {enableFilters && rows.length > 0 && createElement(TableFilters, { rows, fields, filters, setFilters, filteredCount: visibleRows.length, storageKey })}
       <div className="table-scroll" role="region" aria-label={caption} tabIndex={0}>
         {hasRows && retrievalError && createElement(EmptyState, { variant: "error", description: typeof retrievalError === "string" ? retrievalError : undefined, onRetry: retry, compact: true })}
         <table className="data-table">
