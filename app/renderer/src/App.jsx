@@ -378,8 +378,9 @@ export default function App() {
     const timer = setTimeout(async () => {
       for (const [id, form] of entries) {
         if (!draftIsMeaningful(id, form) || !window.poultryDesktop?.saveDraft || draftStatuses[id]?.saving) continue;
+        if (draftStatuses[id]?.saveError && JSON.stringify(draftStatuses[id]?.failedForm) === JSON.stringify(form)) continue;
         const existingDraft = drafts[id];
-        if (existingDraft && JSON.stringify(existingDraft.form) === JSON.stringify(form) && !draftStatuses[id]?.saveError) continue;
+        if (existingDraft && JSON.stringify(existingDraft.form) === JSON.stringify(form)) continue;
         setDraftStatuses(current => ({ ...current, [id]: { ...current[id], hasDraft: true, saving: true } }));
         try {
           const existing = drafts[id];
@@ -389,7 +390,7 @@ export default function App() {
           setDrafts(current => ({ ...current, [id]: saved }));
           setDraftStatuses(current => ({ ...current, [id]: { hasDraft: true, saving: false, stale: current[id]?.stale || false, savedAt: saved.savedAt } }));
         } catch {
-          setDraftStatuses(current => ({ ...current, [id]: { ...current[id], saving: false, saveError: true } }));
+          setDraftStatuses(current => ({ ...current, [id]: { ...current[id], saving: false, saveError: true, failedForm: form } }));
         }
       }
     }, 700);
