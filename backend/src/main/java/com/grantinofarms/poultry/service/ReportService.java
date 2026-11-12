@@ -3,9 +3,12 @@ package com.grantinofarms.poultry.service;
 import com.grantinofarms.poultry.dto.BatchResponse;
 import com.grantinofarms.poultry.dto.BirdPopulationResponse;
 import com.grantinofarms.poultry.dto.ExpenseResponse;
+import com.grantinofarms.poultry.dto.FarmResponse;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -24,6 +27,7 @@ public class ReportService {
     private final InventoryService inventory;
     private final HealthManagementService health;
     private final FarmService farmService;
+    private final ApplicationSettingsService applicationSettings;
 
     public ReportService(
             DashboardService dashboard,
@@ -37,7 +41,8 @@ public class ReportService {
             SalesService sales,
             InventoryService inventory,
             HealthManagementService health,
-            FarmService farmService
+            FarmService farmService,
+            ApplicationSettingsService applicationSettings
     ) {
         this.dashboard = dashboard;
         this.batches = batches;
@@ -51,6 +56,7 @@ public class ReportService {
         this.inventory = inventory;
         this.health = health;
         this.farmService = farmService;
+        this.applicationSettings = applicationSettings;
     }
 
     public Map<String, Object> farm(LocalDate asOf) {
@@ -87,6 +93,7 @@ public class ReportService {
         Map<String, Object> report = new LinkedHashMap<>();
         report.put("reportType", "FARM_SUMMARY");
         report.put("asOf", date);
+        addExportMetadata(report, "Farm Report", null);
         report.put("waterUnitLabel", farmService.getWaterUnitLabel());
         report.put("dashboard", dashboardData);
         report.put("farmSummary", dashboardData);
@@ -129,6 +136,7 @@ public class ReportService {
         Map<String, Object> report = new LinkedHashMap<>();
         report.put("reportType", "BATCH_SUMMARY");
         report.put("asOf", date);
+        addExportMetadata(report, "Batch Report", batch);
         report.put("waterUnitLabel", farmService.getWaterUnitLabel());
         report.put("dashboard", dashboardData);
         report.put("batchSummary", dashboardData);
@@ -176,6 +184,23 @@ public class ReportService {
         production.put("sales", dashboardData.get("broilerSales"));
         production.put("weights", broilers.weights(batch.id(), date));
         return production;
+    }
+
+    private void addExportMetadata(Map<String, Object> report, String title, BatchResponse batch) {
+        FarmResponse farm = farmService.get();
+        Map<String, String> settings = applicationSettings.get();
+        report.put("farmName", farm.name());
+        report.put("farmLocation", farm.location());
+        report.put("timezone", farm.timezone());
+        report.put("currency", farm.currency());
+        report.put("dateFormat", settings.getOrDefault("dateFormat", "YYYY-MM-DD"));
+        report.put("generatedAt", OffsetDateTime.now(ZoneId.of(farm.timezone())).toString());
+        report.put("reportTitle", title);
+        if (batch != null) {
+            report.put("batchCode", batch.code());
+            report.put("batchType", batch.type());
+            report.put("houseId", batch.houseId());
+        }
     }
 
     private LocalDate effectiveDate(LocalDate asOf) {
