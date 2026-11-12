@@ -2,6 +2,7 @@ import { createElement, useContext, useEffect, useMemo, useRef, useState } from 
 import { FarmManagerContext } from "./FarmManagerContext.jsx";
 import EmptyState from "./EmptyState.jsx";
 import TableFilters, { EMPTY } from "./TableFilters.jsx";
+import RowActionsMenu from "./RowActionsMenu.jsx";
 import { filterTableRows } from "../utils/tableFilters.js";
 import { sortTableRows, paginateTableRows } from "../utils/tableSorting.js";
 
@@ -17,7 +18,7 @@ function readFilters(key) {
 export default function DataTable({
   caption, columns, rows = [], emptyMessage = "No records yet.", state, loading = false, error = null,
   filtered = false, notApplicable = false, onRetry, onClearFilters, onClearSearch, emptyAction, emptyDescription,
-  enableFilters = true,
+  enableFilters = true, rowActions,
 }) {
   const context = useContext(FarmManagerContext);
   const retrievalError = error || context?.dataLoadError;
@@ -84,9 +85,9 @@ export default function DataTable({
                 <span>{column.label}</span><span className="data-table__sort-indicator" aria-hidden="true">{active ? direction === "asc" ? "↑" : "↓" : "↕"}</span>
               </button>}
             </th>;
-          })}</tr></thead>
+          })}{rowActions && <th scope="col"><span className="sr-only">Actions</span></th>}</tr></thead>
           <tbody>
-            {resolvedState ? <tr><td colSpan={columns.length} className="data-table__empty-cell">
+            {resolvedState ? <tr><td colSpan={columns.length + (rowActions ? 1 : 0)} className="data-table__empty-cell">
               {createElement(EmptyState, {
                 variant: resolvedState,
                 description: emptyDescription || (resolvedState === "error" ? (typeof retrievalError === "string" ? retrievalError : retrievalError?.message) : resolvedState === "no-records" ? emptyMessage : undefined),
@@ -95,7 +96,10 @@ export default function DataTable({
                 onClearSearch: resolvedState === "no-search-results" ? () => { setFilters(EMPTY); setPage(0); try { window.localStorage.removeItem(storageKey); } catch { /* Storage is optional. */ } onClearSearch?.(); } : undefined,
                 compact: true,
               })}</td></tr>
-              : pageRows.map((row, index) => <tr key={row.id ?? row.uuid ?? row.code ?? row.batchCode ?? index}>{columns.map(column => <td key={column.key}>{column.render ? column.render(row) : row[column.key] ?? "—"}</td>)}</tr>)}
+              : pageRows.map((row, index) => <tr key={row.id ?? row.uuid ?? row.code ?? row.batchCode ?? index}>
+                {columns.map(column => <td key={column.key}>{column.render ? column.render(row) : row[column.key] ?? "—"}</td>)}
+                {rowActions && <td className="data-table__actions-cell"><RowActionsMenu row={row} actions={rowActions(row)} label={`Actions for ${row.name || row.code || row.id || "record"}`} /></td>}
+              </tr>)}
           </tbody>
         </table>
       </div>
