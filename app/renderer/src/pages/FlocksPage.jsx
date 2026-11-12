@@ -1,5 +1,6 @@
 import { useContext } from "react";
 import { FarmManagerContext } from "../components/FarmManagerContext.jsx";
+import DraftStatus from "../components/DraftStatus.jsx";
 // eslint-disable-next-line no-unused-vars
 import PageSection from "../components/PageSection.jsx";
 // eslint-disable-next-line no-unused-vars
@@ -12,7 +13,7 @@ const batchTypeLabel = type => type === "LAYER" ? "Layer" : type === "BROILER" ?
 const batchStatusLabel = status => status === "ACTIVE" ? "Active" : status === "SOLD" ? "Sold" : String(status || "Unknown").toLowerCase().replace(/\b\w/g, letter => letter.toUpperCase());
 
 export default function FlocksPage() {
-  const { formatMoney, formatQuantity, formatPercent, formatKg, formatMetric, farm, houses, batches, suppliers, batchForm, setBatchForm, costForm, setCostForm, houseForm, setHouseForm, saving, selectedBatchId, setSelectedBatchId, batchDashboard, createBatch, addBirdCost, markBatchSold, reopenBatch, addHouse, editHouse, editingHouseId, cancelHouseEdit, populationAdjustmentForm, setPopulationAdjustmentForm, populationAdjustments, savePopulationAdjustment, markPopulationEstimated, editingBatchId, batchSetupForm, setBatchSetupForm, saveBatchSetup, editBatchSetup, cancelBatchSetup } = useContext(FarmManagerContext);
+  const { draftStatuses, discardDraft, markDraftReviewed, formatMoney, formatQuantity, formatPercent, formatKg, formatMetric, farm, houses, batches, suppliers, batchForm, setBatchForm, costForm, setCostForm, houseForm, setHouseForm, saving, selectedBatchId, setSelectedBatchId, batchDashboard, createBatch, addBirdCost, markBatchSold, reopenBatch, addHouse, editHouse, editingHouseId, cancelHouseEdit, populationAdjustmentForm, setPopulationAdjustmentForm, populationAdjustments, savePopulationAdjustment, markPopulationEstimated, editingBatchId, batchSetupForm, setBatchSetupForm, saveBatchSetup, editBatchSetup, cancelBatchSetup } = useContext(FarmManagerContext);
 
   return (
     <PageTemplate className="grid">
@@ -68,6 +69,7 @@ export default function FlocksPage() {
 
       <PageSection page="flocks" tab="flocks"><section id="batches" className="card full"><div className="section-head"><h2>Batches</h2><p className="muted">Opening a batch creates a permanent flock record and generates its code automatically.</p></div>
           <form className="inline-form" onSubmit={createBatch}>
+            <DraftStatus draft={draftStatuses.batch} onDiscard={() => discardDraft("batch")} onReview={() => markDraftReviewed("batch")} />
             <label className="field"><span>Batch type</span><select value={batchForm.type} onChange={e=>setBatchForm({...batchForm,type:e.target.value})}><option value="LAYER">Layer</option><option value="BROILER">Broiler</option><option value="TURKEY">Turkey</option></select></label>
             <label className="field"><span>Placement date</span><input required type="date" value={batchForm.placementDate} onChange={e=>setBatchForm({...batchForm,placementDate:e.target.value})}/></label>
             <label className="field"><span>House / pen</span><select required value={batchForm.houseId} onChange={e=>setBatchForm({...batchForm,houseId:e.target.value})}><option value="">House / pen</option>{houses.filter(h=>h.status==="ACTIVE").map(h=><option key={h.id} value={h.id}>{h.name} ({h.code})</option>)}</select></label>
