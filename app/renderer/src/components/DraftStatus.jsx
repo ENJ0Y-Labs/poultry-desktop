@@ -8,7 +8,7 @@ export default function DraftStatus({ draft, onDiscard, onReview }) {
   return (
     <div className="subsection draft-status" role="group" aria-label="Form draft status">
       <p className="muted" role="status">
-        {draft.saving ? "Saving draft…" : savedAt ? `Draft saved ${savedAt}` : "Draft available"}
+        {draft.saving ? "Saving draft…" : draft.saveError ? "Draft could not be saved. Keep this window open and try again." : savedAt ? `Draft saved ${savedAt}` : "Draft available"}
       </p>
       {draft.stale && (
         <div className="notice-banner" role="alert">
