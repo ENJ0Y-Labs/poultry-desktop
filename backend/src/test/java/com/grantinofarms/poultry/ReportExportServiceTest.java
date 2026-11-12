@@ -49,6 +49,33 @@ class ReportExportServiceTest {
     }
 
     @Test
+    void pdfRepeatsReportContextAndTableHeadersAcrossPages() throws Exception {
+        List<Map<String, Object>> sales = java.util.stream.IntStream.range(0, 160)
+                .mapToObj(index -> Map.<String, Object>of(
+                        "saleDate", "2026-10-03",
+                        "saleReference", "SALE-" + index,
+                        "totalAmountMinor", 125000
+                ))
+                .toList();
+        byte[] pdf = service.pdf(Map.of(
+                "reportType", "FARM_SUMMARY",
+                "farmName", "Grantino Farms",
+                "generatedAt", "2026-10-03T12:00:00+01:00",
+                "dateFormat", "DD/MM/YYYY",
+                "currency", "NGN",
+                "asOf", "2026-10-03",
+                "sales", sales
+        ), "Farm Report");
+
+        try (var document = Loader.loadPDF(pdf)) {
+            assertThat(document.getNumberOfPages()).isGreaterThan(1);
+            String text = new PDFTextStripper().getText(document);
+            assertThat(text.split("Section", -1).length - 1).isGreaterThan(1);
+            assertThat(text).contains("Grantino Farms", "Farm Report (continued)", "Currency: NGN");
+        }
+    }
+
+    @Test
     void pdfHasReportTitleDateStructuredHeadingsAndFormattedMoney() throws Exception {
         byte[] pdf = service.pdf(
                 Map.of("reportType", "BATCH_SUMMARY", "asOf", "2026-10-03", "dateFormat", "DD/MM/YYYY", "currency", "NGN", "generatedAt", "2026-10-03T12:00:00+01:00", "reportTitle", "Batch Report", "waterUnitLabel", "litres", "profitMinor", 500000, "farmName", "Grantino Farms"),
