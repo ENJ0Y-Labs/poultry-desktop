@@ -1468,10 +1468,9 @@ An opening balance may be dated before a later purchase, but cannot be dated bef
 - See `docs/multi-step-forms.md` for current batch/feed purchase coverage and manual mock-data steps.
 
 
-## Central keyboard shortcut system (Issue #242)
+## Safe undo and correction (Issue #241)
 
-- Register global keyboard shortcuts in `app/renderer/src/utils/keyboardShortcuts.js`; do not add competing page/component-level global key handlers.
-- Ignore shortcuts while focus is in input, textarea, select, contenteditable, or while IME composition is active. Do not intercept native Ctrl+N or Ctrl+S. Do not bind Alt+number because of OS menu conflicts.
-- Ctrl+1 through Ctrl+8 navigate Dashboard through Reports, Ctrl+9 opens Import / Export, Ctrl+0 opens Settings, Ctrl+K opens Quick actions, and Ctrl+F focuses the current page's record search when available.
-- Escape remains owned by the active modal/drawer/menu so dirty-form discard confirmation, focus restoration, and overlay stacking are preserved.
-- Keep the top-bar Keyboard shortcuts reference synchronized with the registry and test shortcut matching, typing guards, search focus, quick-action dispatch, navigation, and overlay Escape behavior.
+- A short-lived toast action is permitted only when a matching transaction-specific backend undo endpoint revalidates eligibility. Toast expiry is a UI affordance, not the security check.
+- Currently supported: Undo for the latest effective BROILER/TURKEY weight record only. It requires an authenticated owner, a reason, no later effective measurement, and an append-only WEIGHT_RECORD reversal plus audit event. Original rows remain stored; effective weight history excludes reversed rows.
+- Do not expose Undo for feed, stock, expenses, drugs, population, transfers, egg records, bird sales, or inventory until each owning domain has atomic audited reversal and dependent-ledger recalculation. Feed usage must rebuild FIFO and bird-cost allocations or reject.
+- See docs/safe-undo.md and docs/decisions/2026-10-26-auditable-transaction-corrections.md.
