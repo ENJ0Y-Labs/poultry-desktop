@@ -1461,7 +1461,7 @@ An opening balance may be dated before a later purchase, but cannot be dated bef
 
 - Use `app/renderer/src/components/MultiStepForm.jsx` only for complex multi-group workflows. Do not turn short forms into wizards.
 - Keep all step controls mounted while inactive panels are hidden so controlled values persist and final `ValidatedForm` validation can inspect the full payload.
-- Continue validates only the active step. Back preserves values. The final step must review the complete submission and permit correction before saving.
+- Continue runs the shared `validateForm` rules against only the active step, including required fields, numeric constraints, dates, patterns and integer-kobo naira parsing. Back preserves values. The final step must review the complete submission and permit correction before saving.
 - Submit through the existing page/context callback and API payload. Keep final validation, backend field errors, pending state and duplicate-submit protection in `ValidatedForm`.
 - Place creation wizards inside `ModalForm` where cancellation must warn about unsaved work. Preserve values after API failures; reset only after successful save or confirmed discard.
 - Spring Boot remains authoritative for business validation, transactions, calculations and persistence. Do not add UI-only fields or duplicate financial/stock writes.
