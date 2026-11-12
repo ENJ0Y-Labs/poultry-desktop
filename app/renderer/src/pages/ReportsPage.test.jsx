@@ -1,8 +1,11 @@
 import { useState } from "react";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+// eslint-disable-next-line no-unused-vars -- JSX component usage is not detected by the core rule
 import ReportsPage from "./ReportsPage.jsx";
+// eslint-disable-next-line no-unused-vars -- JSX provider usage is not detected by the core rule
 import { FarmManagerContext } from "../components/FarmManagerContext.jsx";
+// eslint-disable-next-line no-unused-vars -- JSX provider usage is not detected by the core rule
 import { NavigationContext } from "../components/NavigationContext.jsx";
 import { reportApi } from "../services/api.js";
 
@@ -54,6 +57,7 @@ const context = {
 };
 
 function renderReports(activeTab) {
+  // eslint-disable-next-line no-unused-vars -- rendered as a JSX component
   function Harness() {
     const [selectedBatchId, setSelectedBatchId] = useState("batch-1");
     const [reportAsOf, setReportAsOf] = useState("2026-10-03");
