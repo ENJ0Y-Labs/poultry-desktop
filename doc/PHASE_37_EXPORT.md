@@ -20,9 +20,9 @@ Batch:
 
 CSV uses a stable, documented column order:
 
-`farm_name,report_title,generated_at,selected_period,currency,as_of,report_type,section,record,field,value,unit`
+`farm_name,report_title,batch_code,batch_type,house_id,generated_at,selected_period,currency,as_of,report_type,section,record,field,value,unit`
 
-Each row repeats the report metadata so spreadsheet filtering and sorting do not detach values from their report context. Nested report objects are flattened into section/record/field/value/unit rows. Arrays use a human-readable record identifier where available and a stable one-based fallback label otherwise.
+Each row repeats the report metadata so spreadsheet filtering and sorting do not detach values from their report context. Batch reports also identify the selected batch code, bird type, and house ID. Nested report objects are flattened into section/record/field/value/unit rows. Arrays use a human-readable record identifier where available and a stable one-based fallback label otherwise.
 
 UTF-8 output includes a BOM for spreadsheet compatibility. Text cells are quoted and escaped. Formula-like text values are prefixed to prevent spreadsheet formula execution.
 
