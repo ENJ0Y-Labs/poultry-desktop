@@ -220,6 +220,10 @@ public class DashboardService {
             m.put("status",rs.getString("status")); return m;
         }, batchId).stream().findFirst().orElseThrow(() ->
                 new ApiException(org.springframework.http.HttpStatus.NOT_FOUND,"BATCH_NOT_FOUND","Batch not found."));
+        if ("CANCELLED".equals(batch.get("status"))) {
+            throw new ApiException(org.springframework.http.HttpStatus.CONFLICT, "CANCELLED_BATCH_DASHBOARD_UNAVAILABLE",
+                    "Cancelled batches remain in history but are excluded from active batch dashboards.");
+        }
 
         Map<String,Object> out = new LinkedHashMap<>();
         out.put("asOf",date); out.put("batch",batch);
