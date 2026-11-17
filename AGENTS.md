@@ -1497,3 +1497,11 @@ An opening balance may be dated before a later purchase, but cannot be dated bef
 - Current walkthroughs are non-persisting instructional practice. Do not seed records, populate live forms, call write APIs, or submit data from tutorial flows. See `docs/guided-learning.md`.
 - Any future hands-on demo must use a separately configured disposable backend/database and verify the database path cannot resolve to farm data before enabling writes.
 
+
+
+## Post-commit draft cleanup (Issue #280)
+
+- A successful backend transaction is committed independently of renderer draft cleanup. Cleanup failures must not throw into or interrupt the transaction's success path, including list refresh and form reset.
+- Persist `posted: true` on a draft before attempting post-commit cleanup. Restore this state across application restarts, show the non-resubmission warning, and skip autosaving/submitting posted drafts.
+- If draft cleanup fails, preserve the posted guard and allow the user to retry Discard draft. Never submit the committed transaction again and never delete/reverse its ledger record as part of draft cleanup.
+- Cover the failure path with renderer regression tests and keep the manual desktop check marked not run unless tested against a disposable database.
