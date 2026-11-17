@@ -25,6 +25,13 @@ public class BatchRepository {
                 """, (rs, rowNum) -> map(rs), id).stream().findFirst().orElse(null);
     }
 
+    public String farmTimezoneForBatch(String batchId) {
+        return jdbc.query(
+                "SELECT f.timezone FROM farms f JOIN batches b ON b.farm_id=f.id WHERE b.id = ?",
+                (rs, rowNum) -> rs.getString("timezone"), batchId
+        ).stream().findFirst().orElse(null);
+    }
+
     public List<BatchResponse> findByFarm(String farmId) {
         return jdbc.query("""
                 SELECT id, farm_id, house_id, supplier_id, code, batch_type,
