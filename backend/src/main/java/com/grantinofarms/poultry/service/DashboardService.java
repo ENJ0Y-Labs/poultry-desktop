@@ -272,12 +272,12 @@ public class DashboardService {
                     + COALESCE((SELECT SUM(quantity) FROM bird_population_events e WHERE e.batch_id=b.id AND e.event_type='TRANSFER_IN' AND e.event_date<=?),0)
                     - COALESCE((SELECT SUM(quantity) FROM bird_population_events e WHERE e.batch_id=b.id AND e.event_type='TRANSFER_OUT' AND e.event_date<=?),0)
                     + COALESCE((SELECT SUM(difference) FROM bird_population_adjustments a WHERE a.batch_id=b.id AND a.effective_date<=?),0)
-                ),0) FROM batches b WHERE b.farm_id=? AND b.status <> 'CANCELLED'
+                ),0) FROM batches b WHERE b.farm_id=? AND b.status <> 'CANCELLED' AND b.placement_date<=?
                 """;
         if(type!=null) sql=sql.replace("b.farm_id=?","b.farm_id=? AND b.batch_type=?");
         Object[] args=type==null
-                ? new Object[]{date.toString(),date.toString(),date.toString(),date.toString(),date.toString(),date.toString(),farmId}
-                : new Object[]{date.toString(),date.toString(),date.toString(),date.toString(),date.toString(),date.toString(),farmId,type};
+                ? new Object[]{date.toString(),date.toString(),date.toString(),date.toString(),date.toString(),date.toString(),farmId,date.toString()}
+                : new Object[]{date.toString(),date.toString(),date.toString(),date.toString(),date.toString(),date.toString(),farmId,type,date.toString()};
         Number value=jdbc.queryForObject(sql,Long.class,args);
         return value==null?0:value.longValue();
     }
