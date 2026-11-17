@@ -132,6 +132,8 @@ public class BirdPopulationService {
     public BirdPopulationResponse transfer(String sourceBatchId, BirdTransferRequest request) {
         requireWritableBatch(sourceBatchId);
         requireWritableBatch(request.targetBatchId());
+        requireEventDateOnOrAfterPlacement(sourceBatchId, request.eventDate());
+        requireEventDateOnOrAfterPlacement(request.targetBatchId(), request.eventDate());
 
         String sourceFarmId = populationRepository.batchFarmId(sourceBatchId);
         String targetFarmId = populationRepository.batchFarmId(request.targetBatchId());
@@ -235,6 +237,7 @@ public class BirdPopulationService {
             String eventType
     ) {
         requireWritableBatch(batchId);
+        requireEventDateOnOrAfterPlacement(batchId, request.eventDate());
 
         List<BirdPopulationEvent> events = populationRepository.findEvents(batchId);
         int initialBirds = populationRepository.initialBirds(batchId);
@@ -297,7 +300,8 @@ public class BirdPopulationService {
         int sold = sum(events, "SOLD", asOf);
         int transfersIn = sum(events, "TRANSFER_IN", asOf);
         int transfersOut = sum(events, "TRANSFER_OUT", asOf);
-        int current = BirdPopulationCalculator.currentBirds(initialBirds, events, asOf);
+        int current = asOf.isBefore(batchRepository.findById(batchId).placementDate())
+                ? 0 : BirdPopulationCalculator.currentBirds(initialBirds, events, asOf);
 
         return new BirdPopulationResponse(
                 batchId, asOf, initialBirds, mortality, culling, sold,
@@ -311,6 +315,17 @@ public class BirdPopulationService {
                 .filter(event -> !event.eventDate().isAfter(asOf))
                 .mapToInt(BirdPopulationEvent::quantity)
                 .sum();
+    }
+
+    private void requireEventDateOnOrAfterPlacement(String batchId, LocalDate eventDate) {
+        var batch = batchRepository.findById(batchId);
+        if (batch == null) {
+            throw new ApiException(HttpStatus.NOT_FOUND, "BATCH_NOT_FOUND", "Batch not found.");
+        }
+        if (eventDate.isBefore(batch.placementDate())) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_POPULATION_EVENT_DATE",
+                    "Population events cannot be dated before the batch placement date.");
+        }
     }
 
     private void requireBatch(String batchId) {
