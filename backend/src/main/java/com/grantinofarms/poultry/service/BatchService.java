@@ -60,6 +60,7 @@ public class BatchService {
         return batch;
     }
 
+    @Transactional
     public BatchResponse create(BatchCreateRequest request) { return create(request, UUID.randomUUID().toString()); }
 
     @Transactional
