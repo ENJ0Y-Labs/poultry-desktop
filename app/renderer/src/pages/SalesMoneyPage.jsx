@@ -139,7 +139,7 @@ export default function SalesMoneyPage() {
             </select></label>
             <OptionalFields title="Batch allocation" description="Keep this expense at farm level unless it belongs to a specific batch."><label className="field"><span>Batch association (optional)</span><select value={expenseForm.batchId} onChange={e => setExpenseForm({ ...expenseForm, batchId: e.target.value })}>
               <option value="">Farm-level</option>
-              {batches.map(batch => <option key={batch.id} value={batch.id}>{batch.code}</option>)}
+              {batches.filter(batch => batch.status === "ACTIVE").map(batch => <option key={batch.id} value={batch.id}>{batch.code}</option>)}
             </select></label></OptionalFields>
             <button disabled={saving}>Record expense</button>
           </ValidatedForm>
@@ -149,7 +149,7 @@ export default function SalesMoneyPage() {
             <h3>Expense history</h3>
             <label className="field"><span>Filter by batch</span><select value={expenseBatchFilter} onChange={e => { setExpenseBatchFilter(e.target.value); loadExpenses(e.target.value); }}>
               <option value="">All farm expenses</option>
-              {batches.map(batch => <option key={batch.id} value={batch.id}>{batch.code}</option>)}
+              {batches.filter(batch => batch.status === "ACTIVE").map(batch => <option key={batch.id} value={batch.id}>{batch.code}</option>)}
             </select></label>
           </div>
           <DataTable caption="Expenses ledger" columns={[
