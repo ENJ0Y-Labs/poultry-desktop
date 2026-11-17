@@ -15,6 +15,12 @@ Pomas uses a server-managed session token in the `poultry_session` cookie. The c
 
 The application currently uses `SameSite=None; Secure`, not `SameSite=Strict`. Do not change it to `Strict` or `Lax` without validating all supported renderer origins and the credentialed login/API/logout round trip. Conversely, do not assume `None` works in every browser privacy configuration: third-party-cookie restrictions may block cookies in some browser contexts.
 
+## Origin trust boundary
+
+The backend currently permits the literal `Origin: null` for credentialed API requests because the packaged Electron renderer uses `file://`. This is a compatibility allowance, not proof that the caller is the trusted Pomas renderer: unrelated local files and other opaque browser origins can also serialize their origin as `null`. The `X-Requested-With: XMLHttpRequest` check is a CSRF friction, not an authentication secret, because a caller can send that header when the CORS preflight permits it.
+
+Treat null-origin access as an unresolved local-origin trust risk until a per-launch renderer/backend trust mechanism is implemented and verified. Do not simply remove `null` from the allow-list without replacing the packaged renderer transport, because that may break the desktop application. Required verification: test an unrelated local HTML file against an authenticated packaged instance, confirm it cannot read API responses or perform state-changing requests, and then repeat normal login, data access, and logout in the packaged app. Record the exact Electron/Chromium version and test results.
+
 ## Invalidation
 
 Logout calls the backend session service to invalidate the server-side session, then emits a clearing cookie with the same name, `Path=/`, `SameSite=None`, `Secure`, and `HttpOnly` attributes. The clearing cookie adds `Max-Age=0`. Both operations matter: clearing a browser cookie alone must not leave the server session valid.
