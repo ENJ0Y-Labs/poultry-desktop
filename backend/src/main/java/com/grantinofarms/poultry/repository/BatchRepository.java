@@ -86,6 +86,11 @@ public class BatchRepository {
         jdbc.update("UPDATE batches SET population_count_status=?, updated_at=? WHERE id=?", status, now, id);
     }
 
+    public int transitionStatus(String id, String expectedStatus, String nextStatus, String now) {
+        return jdbc.update("UPDATE batches SET status = ?, updated_at = ? WHERE id = ? AND status = ?",
+                nextStatus, now, id, expectedStatus);
+    }
+
     public void updateStatus(String id, String status, String now) {
         jdbc.update("""
                 UPDATE batches
