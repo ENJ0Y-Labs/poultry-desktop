@@ -41,6 +41,7 @@ CREATE INDEX idx_batches_farm_id ON batches(farm_id);
 CREATE INDEX idx_batches_house_id ON batches(house_id);
 CREATE INDEX idx_batches_supplier_id ON batches(supplier_id);
 CREATE INDEX idx_batches_type_status ON batches(batch_type, status);
+CREATE INDEX idx_batches_farm_status ON batches(farm_id, status);
 
 CREATE TABLE batch_create_requests (
     farm_id TEXT NOT NULL,
