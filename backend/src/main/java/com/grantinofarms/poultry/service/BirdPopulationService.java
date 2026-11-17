@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.UUID;
 
@@ -109,7 +110,11 @@ public class BirdPopulationService {
 
     public BirdPopulationResponse get(String batchId, LocalDate asOf) {
         requireBatch(batchId);
-        LocalDate effectiveDate = asOf == null ? LocalDate.now() : asOf;
+        String timezone = batchRepository.farmTimezoneForBatch(batchId);
+        if (timezone == null) {
+            throw new ApiException(HttpStatus.NOT_FOUND, "BATCH_NOT_FOUND", "Batch not found.");
+        }
+        LocalDate effectiveDate = asOf == null ? LocalDate.now(ZoneId.of(timezone)) : asOf;
         return calculate(batchId, effectiveDate);
     }
 
