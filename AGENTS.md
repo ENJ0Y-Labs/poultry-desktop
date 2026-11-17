@@ -1505,3 +1505,13 @@ An opening balance may be dated before a later purchase, but cannot be dated bef
 - Persist `posted: true` on a draft before attempting post-commit cleanup. Restore this state across application restarts, show the non-resubmission warning, and skip autosaving/submitting posted drafts.
 - If draft cleanup fails, preserve the posted guard and allow the user to retry Discard draft. Never submit the committed transaction again and never delete/reverse its ledger record as part of draft cleanup.
 - Cover the failure path with renderer regression tests and keep the manual desktop check marked not run unless tested against a disposable database.
+
+
+## Destructive action dialogs
+
+Use the shared in-app `Modal` / `ConfirmAction` components for destructive
+actions that require confirmation or a reason. Do not rely on browser-native
+`window.prompt()` or `window.confirm()` in the Electron renderer. Keep
+business validation and persistence in the existing API/backend layers, and
+keep the dialog open when a destructive request fails so the operator can
+review the error.
