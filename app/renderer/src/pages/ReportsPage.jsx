@@ -25,7 +25,7 @@ import { FinancialAnalytics, FlockAnalytics } from "../components/AnalyticsChart
 export default function ReportsPage() {
   const { formatMoney, formatQuantity, formatPercent, formatKg, formatMetric, formatCount, feedQuantity, farm, houses, batches, selectedBatchId, setSelectedBatchId, farmReport, batchReport, dateRange, setDateRange, applicationSettings, loadReport, loadBatchReport, exportCsv, exportPdf, reportLoading, batchReportLoading, reportExporting, dataLoadError, retryData } = useContext(FarmManagerContext);
   const [reportHouseId, setReportHouseId] = useState("");
-  const visibleBatches = reportHouseId ? batches.filter(batch => batch.houseId === reportHouseId) : batches;
+  const visibleBatches = batches.filter(batch => batch.status !== "CANCELLED" && (!reportHouseId || batch.houseId === reportHouseId));
   const selectedBatchIsVisible = visibleBatches.some(batch => batch.id === selectedBatchId);
 
   const farmPeriodProfitMinor = farmReport?.period
