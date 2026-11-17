@@ -625,7 +625,7 @@ describe("App", () => {
       type: "LAYER", placementDate: "2026-11-06", houseId: "house-1",
       initialBirdCount: 250, supplierId: null,
       purchaseCostRecorded: false, purchaseCostMinor: null, populationCountStatus: "ESTIMATED",
-    }));
+    }, expect.any(String)));
   });
 
   it("keeps the normal dashboard when zero metrics belong to a farm with setup records", async () => {
