@@ -663,7 +663,7 @@ describe("App", () => {
     fireEvent.click(screen.getByRole("button", { name: "Continue" }));
     fireEvent.click(screen.getByRole("button", { name: "Create batch" }));
 
-    expect(await screen.findByText("L-2026-009")).toBeInTheDocument();
+    expect(await screen.findByRole("cell", { name: "L-2026-009" })).toBeInTheDocument();
     expect(batchApi.create).toHaveBeenCalledOnce();
     expect(saveDraft).toHaveBeenCalledWith(expect.objectContaining({ id: "batch", posted: true }));
     expect(discardDraft).toHaveBeenCalledOnce();
