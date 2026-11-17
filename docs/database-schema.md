@@ -1,6 +1,6 @@
 # Database schema
 
-SQLite schema changes are managed by Flyway. Migrations are forward-only and currently run through V29.
+SQLite schema changes are managed by Flyway. Migrations are forward-only and currently run through V34.
 
 ## Design rules
 
@@ -36,9 +36,9 @@ Suppliers and traceable sources used for purchases.
 
 ### `batches`
 
-Layer, Broiler, or Turkey flock records. Stores initial bird count and, when recorded, original purchase cost. `original_purchase_cost_minor IS NULL` means the historical purchase cost is unknown/unrecorded; a value of `0` means a genuine zero-cost purchase. Current bird population is derived from population events and physical-count adjustments rather than stored as a mutable total. population_count_status is ESTIMATED or VERIFIED; new and migrated batches default to ESTIMATED until physically counted.
+Layer, Broiler, or Turkey flock records. Stores initial bird count and, when recorded, original purchase cost. Status includes ACTIVE, SOLD, CLOSED, and CANCELLED. CANCELLED rows remain in history and audit views but are excluded from active operations. `original_purchase_cost_minor IS NULL` means the historical purchase cost is unknown/unrecorded; a value of `0` means a genuine zero-cost purchase. Current bird population is derived from population events and physical-count adjustments rather than stored as a mutable total. population_count_status is ESTIMATED or VERIFIED; new and migrated batches default to ESTIMATED until physically counted.
 
-### `bird_purchases`
+### `batch_create_requests`\n\nFarm-scoped idempotency ledger for batch creation. It stores the idempotency key, request fingerprint, resulting batch ID, and request timestamp. A retry with the same key and payload returns the original batch; reusing a key with a different payload is rejected.\n\n### `bird_purchases`
 
 Original bird purchase facts, including quantity, purchase date and integer minor-unit costs. Existing-stock batches with unknown purchase details have no bird-purchase row; do not synthesize one.
 
@@ -268,7 +268,7 @@ Broad progression:
 - V28: explicit permanent/temporary house classification and occupancy index
 - V29: estimated/verified population confidence and auditable physical-count adjustments
 - V30: feed brand and packaging metadata
-- V33: brand-aware feed product identity, preserving existing feed type IDs and linked history
+- V33: brand-aware feed product identity, preserving existing feed type IDs and linked history\n- V34: idempotent batch creation and audited cancellation lifecycle
 - V31: append-only feed opening balances
 - V32: normalized multi-type feed applicability
 

@@ -12,6 +12,8 @@ import com.grantinofarms.poultry.repository.BatchRepository;
 import com.grantinofarms.poultry.repository.BirdPurchaseRepository;
 import com.grantinofarms.poultry.repository.FarmRepository;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.jdbc.core.JdbcTemplate;
+import java.security.MessageDigest;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,19 +31,21 @@ public class BatchService {
     private final AuditRepository auditRepository;
     private final ObjectMapper objectMapper;
     private final BirdPopulationService birdPopulationService;
+    private final JdbcTemplate jdbc;
 
     public BatchService(FarmRepository farmRepository,
                         BatchRepository batchRepository,
                         BirdPurchaseRepository birdPurchaseRepository,
                         AuditRepository auditRepository,
                         ObjectMapper objectMapper,
-                        BirdPopulationService birdPopulationService) {
+                        BirdPopulationService birdPopulationService, JdbcTemplate jdbc) {
         this.farmRepository = farmRepository;
         this.batchRepository = batchRepository;
         this.birdPurchaseRepository = birdPurchaseRepository;
         this.auditRepository = auditRepository;
         this.objectMapper = objectMapper;
         this.birdPopulationService = birdPopulationService;
+        this.jdbc = jdbc;
     }
 
     public List<BatchResponse> list() {
@@ -57,7 +61,10 @@ public class BatchService {
     }
 
     @Transactional
-    public BatchResponse create(BatchCreateRequest request) {
+    public BatchResponse create(BatchCreateRequest request) { return create(request, UUID.randomUUID().toString()); }
+
+    @Transactional
+    public BatchResponse create(BatchCreateRequest request, String idempotencyKey) {
         String farmId = requireFarmId();
         String type = request.type().trim().toUpperCase();
 
@@ -89,6 +96,19 @@ public class BatchService {
                     "The selected supplier/source does not belong to this farm or is archived.");
         }
 
+        String key = clean(idempotencyKey);
+        if (key == null || key.length() > 128) throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_IDEMPOTENCY_KEY", "A valid Idempotency-Key header is required to create a batch.");
+        String hash = requestHash(request);
+        String now = Instant.now().toString();
+        int claimed = jdbc.update("INSERT OR IGNORE INTO batch_create_requests (farm_id,idempotency_key,request_hash,batch_id,created_at) VALUES (?,?,?,NULL,?)", farmId, key, hash, now);
+        if (claimed == 0) {
+            var existing = jdbc.query("SELECT request_hash,batch_id FROM batch_create_requests WHERE farm_id=? AND idempotency_key=?", (rs,n) -> new String[]{rs.getString(1),rs.getString(2)}, farmId, key).stream().findFirst().orElse(null);
+            if (existing == null || !hash.equals(existing[0])) throw new ApiException(HttpStatus.CONFLICT, "IDEMPOTENCY_KEY_REUSED", "This retry key belongs to another request. Check batch history before starting a new registration.");
+            if (existing[1] == null) throw new ApiException(HttpStatus.CONFLICT, "BATCH_CREATE_IN_PROGRESS", "This batch request is still processing. Refresh the batch list before retrying.");
+            BatchResponse original = batchRepository.findById(existing[1]);
+            if (original == null || !original.farmId().equals(farmId)) throw new ApiException(HttpStatus.CONFLICT, "BATCH_CREATE_RESULT_UNAVAILABLE", "The original batch result is unavailable. Check batch history before retrying.");
+            return original;
+        }
         int year = request.placementDate().getYear();
         batchRepository.ensureSequence(type, year);
         int sequence = batchRepository.allocateSequenceNumber(type, year);
@@ -96,8 +116,6 @@ public class BatchService {
         String code = String.format("%s-%d-%03d", prefix, year, sequence);
 
         String id = UUID.randomUUID().toString();
-        String now = Instant.now().toString();
-
         try {
             batchRepository.insert(
                     id,
@@ -132,9 +150,45 @@ public class BatchService {
 
         BatchResponse created = batchRepository.findById(id);
         auditRepository.append(farmId, "CREATE", "BATCH", id, null, null, json(created), now);
+        jdbc.update("UPDATE batch_create_requests SET batch_id=? WHERE farm_id=? AND idempotency_key=?", id, farmId, key);
         return created;
     }
 
+    @Transactional
+    public BatchResponse cancel(String id, String suppliedReason) {
+        BatchResponse current = get(id);
+        if (!"ACTIVE".equals(current.status())) throw new ApiException(HttpStatus.CONFLICT, "BATCH_NOT_CANCELLABLE", "Only an active batch can be cancelled.");
+        String reason = clean(suppliedReason);
+        if (reason == null) throw new ApiException(HttpStatus.BAD_REQUEST, "CANCELLATION_REASON_REQUIRED", "A reason is required to cancel an accidental batch.");
+        String now = Instant.now().toString();
+        if (batchRepository.transitionStatus(id, "ACTIVE", "CANCELLED", now) != 1) {
+            throw new ApiException(HttpStatus.CONFLICT, "BATCH_NOT_CANCELLABLE",
+                    "The batch changed while cancellation was being processed. Refresh its status and try again.");
+        }
+
+        // Claim the lifecycle transition before checking references. This obtains
+        // SQLite's write lock so a concurrent operational write cannot slip
+        // between the dependency check and cancellation. Any rejection rolls
+        // this status update back with the transaction.
+        List<String> references = new java.util.ArrayList<>();
+        List<String> tables = jdbc.queryForList("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'", String.class);
+        for (String table : tables) {
+            if (List.of("batches", "audit_logs", "batch_create_requests").contains(table) || !table.matches("[A-Za-z0-9_]+")) continue;
+            List<String> columns = jdbc.query("PRAGMA table_info(\"" + table + "\")", (rs,n) -> rs.getString("name"));
+            if (!columns.contains("batch_id")) continue;
+            Integer count = jdbc.queryForObject("SELECT COUNT(*) FROM \"" + table + "\" WHERE batch_id=?", Integer.class, id);
+            if (count != null && count > 0) references.add(table + " (" + count + ")");
+        }
+        if (!references.isEmpty()) throw new ApiException(HttpStatus.CONFLICT, "BATCH_HAS_DEPENDENT_RECORDS", "This batch has dependent records and cannot be cancelled: " + String.join(", ", references) + ". Use the audited correction or reversal workflow where applicable.");
+        BatchResponse cancelled = batchRepository.findById(id);
+        auditRepository.append(current.farmId(), "CANCEL", "BATCH", id, reason, json(current), json(cancelled), now);
+        return cancelled;
+    }
+
+    private String requestHash(BatchCreateRequest request) {
+        try { return java.util.HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(objectMapper.writeValueAsBytes(request))); }
+        catch (Exception e) { throw new IllegalStateException("Unable to fingerprint batch request.", e); }
+    }
     @Transactional
     public BatchResponse updateSetup(String id, BatchSetupUpdateRequest request) {
         BatchResponse current = get(id);

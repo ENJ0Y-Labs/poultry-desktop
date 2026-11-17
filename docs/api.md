@@ -49,8 +49,9 @@ Used by Electron during startup.
 ## Batches and population
 
 - GET `/batches`
-- POST `/batches` (new clients send `purchaseCostRecorded`; when true, provide `purchaseCostMinor`, including `0` only for a genuine zero-cost purchase; when false, send `purchaseCostMinor: null` and no purchase record is created. Legacy requests with a cost remain treated as recorded purchases; omitting both mode and cost is rejected.)
+- POST `/batches` (requires an `Idempotency-Key` header scoped to the farm; retries with the same key and identical payload return the original batch, while key reuse with a different payload returns HTTP 409. New clients send `purchaseCostRecorded`; when true, provide `purchaseCostMinor`, including `0` only for a genuine zero-cost purchase; when false, send `purchaseCostMinor: null` and no purchase record is created. Legacy requests with a cost remain treated as recorded purchases; omitting both mode and cost is rejected.)
 - GET `/batches/{id}`
+- POST `/batches/{id}/cancel` (requires `{ "reason": "..." }`; cancellation is allowed only when no dependent records exist, preserves the batch and audit history, and returns HTTP 409 when references block it)
 - POST `/batches/{id}/sold`
 - POST `/batches/{id}/reopen`
 - GET `/batches/{id}/population`

@@ -26,11 +26,11 @@ import DataTable from "../components/DataTable.jsx";
 import { FlockAnalytics } from "../components/AnalyticsCharts.jsx";
 
 const batchTypeLabel = type => type === "LAYER" ? "Layer" : type === "BROILER" ? "Broiler" : type === "TURKEY" ? "Turkey" : "Unknown type";
-const batchStatusLabel = status => status === "ACTIVE" ? "Active" : status === "SOLD" ? "Sold" : String(status || "Unknown").toLowerCase().replace(/\b\w/g, letter => letter.toUpperCase());
+const batchStatusLabel = status => status === "ACTIVE" ? "Active" : status === "SOLD" ? "Sold" : status === "CANCELLED" ? "Cancelled" : String(status || "Unknown").toLowerCase().replace(/\b\w/g, letter => letter.toUpperCase());
 
 export default function FlocksPage() {
   const [drawerRecord, setDrawerRecord] = useState(null);
-  const { dataLoadError, retryData, batchDashboardLoading, formatMoney, formatQuantity, formatPercent, formatKg, formatMetric, formatCount, farmReport, farm, houses, batches, suppliers, error, batchForm, setBatchForm, costForm, setCostForm, houseForm, setHouseForm, saving, selectedBatchId, setSelectedBatchId, batchDashboard, createBatch, addBirdCost, markBatchSold, reopenBatch, addHouse, editHouse, editingHouseId, cancelHouseEdit, populationAdjustmentForm, setPopulationAdjustmentForm, populationAdjustments, savePopulationAdjustment, markPopulationEstimated, editingBatchId, batchSetupForm, setBatchSetupForm, saveBatchSetup, editBatchSetup, cancelBatchSetup } = useContext(FarmManagerContext);
+  const { dataLoadError, retryData, batchDashboardLoading, formatMoney, formatQuantity, formatPercent, formatKg, formatMetric, formatCount, farmReport, farm, houses, batches, suppliers, batchCreateError, batchForm, setBatchForm, costForm, setCostForm, houseForm, setHouseForm, saving, selectedBatchId, setSelectedBatchId, batchDashboard, createBatch, resetBatchCreateKey, cancelBatch, addBirdCost, markBatchSold, reopenBatch, addHouse, editHouse, editingHouseId, cancelHouseEdit, populationAdjustmentForm, setPopulationAdjustmentForm, populationAdjustments, savePopulationAdjustment, markPopulationEstimated, editingBatchId, batchSetupForm, setBatchSetupForm, saveBatchSetup, editBatchSetup, cancelBatchSetup } = useContext(FarmManagerContext);
 
   function openBatchDetails(batch) {
     const house = houses.find(item => item.id === batch.houseId);
@@ -79,7 +79,7 @@ export default function FlocksPage() {
       <PageSection page="flocks" tab="batch-dashboard"><section id="batch-dashboard" className="card full dashboard-page">
         <div className="section-head"><div><p className="eyebrow">BATCH</p><h2>Batch dashboard</h2></div>
           <select aria-label="Batch dashboard" value={selectedBatchId} onChange={e => { setSelectedBatchId(e.target.value); rememberLastBatchId(e.target.value); }}>
-            <option value="">Select a batch</option>{batches.map(batch => <option key={batch.id} value={batch.id}>{batch.code} · {batchTypeLabel(batch.type)}</option>)}
+            <option value="">Select a batch</option>{batches.filter(batch => batch.status === "ACTIVE").map(batch => <option key={batch.id} value={batch.id}>{batch.code} · {batchTypeLabel(batch.type)}</option>)}
           </select>
         </div>
         {batchDashboard ? <div className="batch-dashboard">
@@ -132,11 +132,14 @@ export default function FlocksPage() {
             description="Create a permanent flock record. Work through each step, then review the details before creating it."
             triggerLabel="Register batch"
             loading={saving}
-            error={error}
-            onDiscard={() => setBatchForm(form => ({
-              ...form, type: "LAYER", houseId: "", initialBirdCount: "", supplierId: "",
-              purchaseCostRecorded: true, purchaseCostMinor: "", populationCountStatus: "ESTIMATED",
-            }))}
+            error={batchCreateError}
+            onDiscard={() => {
+              resetBatchCreateKey();
+              setBatchForm(form => ({
+                ...form, type: "LAYER", houseId: "", initialBirdCount: "", supplierId: "",
+                purchaseCostRecorded: true, purchaseCostMinor: "", populationCountStatus: "ESTIMATED",
+              }));
+            }}
           >
             <MultiStepForm
               className="form-grid"
@@ -201,7 +204,10 @@ export default function FlocksPage() {
               { key: "status", label: "Status", render: batch => batchStatusLabel(batch.status) },
               { key: "action", label: "Action", render: batch => batch.status === "SOLD"
                 ? <button type="button" onClick={() => reopenBatch(batch.id)} disabled={saving}>Reopen</button>
-                : ["BROILER", "TURKEY"].includes(batch.type) ? <button type="button" onClick={() => markBatchSold(batch.id)} disabled={saving}>Mark sold</button> : "—" },
+                : batch.status === "ACTIVE" ? <div className="table-actions">
+                    <button type="button" className="danger-button" onClick={() => cancelBatch(batch.id)} disabled={saving}>Cancel batch</button>
+                    {["BROILER", "TURKEY"].includes(batch.type) && <button type="button" onClick={() => markBatchSold(batch.id)} disabled={saving}>Mark sold</button>}
+                  </div> : "—" },
             ]} rows={batches} emptyMessage="No batches yet." />
           {editingBatchId && <ValidatedForm className="inline-form subsection" onSubmit={saveBatchSetup}>
             <h3>Edit batch setup</h3>

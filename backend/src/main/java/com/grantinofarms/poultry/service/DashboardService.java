@@ -220,6 +220,10 @@ public class DashboardService {
             m.put("status",rs.getString("status")); return m;
         }, batchId).stream().findFirst().orElseThrow(() ->
                 new ApiException(org.springframework.http.HttpStatus.NOT_FOUND,"BATCH_NOT_FOUND","Batch not found."));
+        if ("CANCELLED".equals(batch.get("status"))) {
+            throw new ApiException(org.springframework.http.HttpStatus.CONFLICT, "CANCELLED_BATCH_DASHBOARD_UNAVAILABLE",
+                    "Cancelled batches remain in history but are excluded from active batch dashboards.");
+        }
 
         Map<String,Object> out = new LinkedHashMap<>();
         out.put("asOf",date); out.put("batch",batch);
@@ -268,7 +272,7 @@ public class DashboardService {
                     + COALESCE((SELECT SUM(quantity) FROM bird_population_events e WHERE e.batch_id=b.id AND e.event_type='TRANSFER_IN' AND e.event_date<=?),0)
                     - COALESCE((SELECT SUM(quantity) FROM bird_population_events e WHERE e.batch_id=b.id AND e.event_type='TRANSFER_OUT' AND e.event_date<=?),0)
                     + COALESCE((SELECT SUM(difference) FROM bird_population_adjustments a WHERE a.batch_id=b.id AND a.effective_date<=?),0)
-                ),0) FROM batches b WHERE b.farm_id=?
+                ),0) FROM batches b WHERE b.farm_id=? AND b.status <> 'CANCELLED'
                 """;
         if(type!=null) sql=sql.replace("b.farm_id=?","b.farm_id=? AND b.batch_type=?");
         Object[] args=type==null
@@ -287,7 +291,7 @@ public class DashboardService {
                     + COALESCE((SELECT SUM(quantity) FROM bird_population_events e WHERE e.batch_id=b.id AND e.event_type='TRANSFER_IN' AND e.event_date<=?),0)
                     + COALESCE((SELECT SUM(difference) FROM bird_population_adjustments a WHERE a.batch_id=b.id AND a.effective_date<=?),0)
                 ),0) FROM batches b
-                WHERE b.farm_id=? AND b.population_count_status=? AND b.placement_date<=?
+                WHERE b.farm_id=? AND b.status <> 'CANCELLED' AND b.population_count_status=? AND b.placement_date<=?
                 """, Long.class, date.toString(), date.toString(), date.toString(), farmId, confidence, date.toString());
         return value == null ? 0 : value.longValue();
     }

@@ -595,11 +595,13 @@ describe("App", () => {
     vi.mocked(farmApi.listHouses).mockResolvedValue([
       { id: "house-1", name: "House A", code: "H001", status: "ACTIVE" },
     ]);
-    vi.spyOn(batchApi, "create").mockResolvedValue({
-      id: "batch-existing", code: "L-2026-001", type: "LAYER",
-      placementDate: "2026-11-06", initialBirdCount: 250, status: "ACTIVE",
-      purchaseCostMinor: null,
-    });
+    const createBatchRequest = vi.spyOn(batchApi, "create")
+      .mockRejectedValueOnce(Object.assign(new Error("connection lost"), { status: 503 }))
+      .mockResolvedValue({
+        id: "batch-existing", code: "L-2026-001", type: "LAYER",
+        placementDate: "2026-11-06", initialBirdCount: 250, status: "ACTIVE",
+        purchaseCostMinor: null,
+      });
 
     render(<App />);
     await screen.findByRole("heading", { name: "Farm dashboard" });
@@ -620,12 +622,17 @@ describe("App", () => {
     expect(screen.queryByLabelText("Purchase cost (₦)")).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Continue" }));
     fireEvent.click(screen.getByRole("button", { name: "Create batch" }));
+    expect(await screen.findByText(/The batch creation result is unknown/)).toBeInTheDocument();
+    expect(screen.getByLabelText("Initial birds")).toHaveValue(250);
+    fireEvent.click(screen.getByRole("button", { name: "Create batch" }));
 
+    await waitFor(() => expect(batchApi.create).toHaveBeenCalledTimes(2));
+    expect(createBatchRequest.mock.calls[0][1]).toBe(createBatchRequest.mock.calls[1][1]);
     await waitFor(() => expect(batchApi.create).toHaveBeenCalledWith({
       type: "LAYER", placementDate: "2026-11-06", houseId: "house-1",
       initialBirdCount: 250, supplierId: null,
       purchaseCostRecorded: false, purchaseCostMinor: null, populationCountStatus: "ESTIMATED",
-    }));
+    }, expect.any(String)));
   });
 
   it("completes batch creation when post-commit draft cleanup fails", async () => {

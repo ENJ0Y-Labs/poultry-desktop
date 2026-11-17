@@ -339,7 +339,7 @@ export default function FeedStockPage() {
               <label className="field"><span>Source e.g. supplier invoice, treatment</span><input required value={inventoryMovementForm.source} onChange={e=>setInventoryMovementForm({...inventoryMovementForm,source:e.target.value})}/></label>
               <OptionalFields title="Batch allocation" description="Leave this closed for farm-level stock movements."><label className="field"><span>Batch association (optional)</span><select value={inventoryMovementForm.batchId} onChange={e=>setInventoryMovementForm({...inventoryMovementForm,batchId:e.target.value})}>
                 <option value="">Farm-level</option>
-                {batches.map(b=><option key={b.id} value={b.id}>{b.code}</option>)}
+                {batches.filter(b=>b.status==="ACTIVE").map(b=><option key={b.id} value={b.id}>{b.code}</option>)}
               </select></label></OptionalFields>
               <button disabled={saving || !inventoryMovementForm.itemId}>Record movement</button>
             </ValidatedForm>
