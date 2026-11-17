@@ -1,5 +1,7 @@
 -- Add a durable idempotency ledger and a non-destructive cancelled lifecycle state.
-PRAGMA defer_foreign_keys = ON;
+-- This migration is configured as non-transactional so SQLite can disable FK enforcement
+-- for the parent-table rebuild. Existing child rows and their references are preserved.
+PRAGMA foreign_keys = OFF;
 
 CREATE TABLE batches_new (
     id TEXT PRIMARY KEY,
@@ -55,3 +57,5 @@ CREATE TABLE batch_create_requests (
 );
 
 CREATE INDEX idx_batch_create_requests_batch_id ON batch_create_requests(batch_id);
+
+PRAGMA foreign_keys = ON;
