@@ -1111,7 +1111,7 @@ export default function App() {
       setBatchForm({ ...emptyBatch, houseId: batchForm.houseId });
     } catch (err) {
       const message = displayApiError(err);
-      setError(err?.status === 503
+      setError(Number(err?.status) >= 500
         ? "The batch creation result is unknown because the backend connection was interrupted. Your entries are preserved. Check the batch list before retrying; the retry will use the same request key."
         : message);
     } finally { setSaving(false); }
