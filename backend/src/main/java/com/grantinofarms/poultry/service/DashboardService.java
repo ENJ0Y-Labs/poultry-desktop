@@ -287,7 +287,7 @@ public class DashboardService {
                     + COALESCE((SELECT SUM(quantity) FROM bird_population_events e WHERE e.batch_id=b.id AND e.event_type='TRANSFER_IN' AND e.event_date<=?),0)
                     + COALESCE((SELECT SUM(difference) FROM bird_population_adjustments a WHERE a.batch_id=b.id AND a.effective_date<=?),0)
                 ),0) FROM batches b
-                WHERE b.farm_id=? AND b.population_count_status=? AND b.placement_date<=?
+                WHERE b.farm_id=? AND b.status <> 'CANCELLED' AND b.population_count_status=? AND b.placement_date<=?
                 """, Long.class, date.toString(), date.toString(), date.toString(), farmId, confidence, date.toString());
         return value == null ? 0 : value.longValue();
     }
