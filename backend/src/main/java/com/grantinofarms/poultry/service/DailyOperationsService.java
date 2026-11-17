@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -91,7 +92,11 @@ public class DailyOperationsService {
 
     public List<DailyRecordResponse> list(String batchId, LocalDate from, LocalDate to) {
         requireBatch(batchId);
-        LocalDate effectiveTo = to == null ? LocalDate.now() : to;
+        String timezone = repository.farmTimezoneForBatch(batchId);
+        if (timezone == null) {
+            throw new ApiException(HttpStatus.NOT_FOUND, "BATCH_NOT_FOUND", "Batch not found.");
+        }
+        LocalDate effectiveTo = to == null ? LocalDate.now(ZoneId.of(timezone)) : to;
         LocalDate effectiveFrom = from == null ? effectiveTo.minusDays(30) : from;
         if (effectiveFrom.isAfter(effectiveTo)) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_DATE_RANGE",
