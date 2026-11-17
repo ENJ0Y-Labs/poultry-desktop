@@ -1103,8 +1103,8 @@ export default function App() {
           : null,
         populationCountStatus: batchForm.populationCountStatus || "ESTIMATED",
       }, idempotencyKey);
-      batchCreateKeyRef.current = null;
       await discardDraft("batch", false);
+      batchCreateKeyRef.current = null;
       setBatches(current => [created, ...current]);
       rememberLastBatchId(created.id);
       setSelectedBatchId(created.id);
