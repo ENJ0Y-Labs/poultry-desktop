@@ -31,6 +31,8 @@ class BatchManagementIntegrationTest {
     @Autowired FarmService farmService;
     @Autowired HouseService houseService;
     @Autowired JdbcTemplate jdbc;
+    @Autowired DashboardService dashboardService;
+    @Autowired ReportService reportService;
 
     @Test
     void createsTransactionalCodesByTypeAndYear() {
@@ -184,6 +186,10 @@ class BatchManagementIntegrationTest {
         assertThat(retry.code()).isEqualTo(first.code());
         assertThat(intentional.id()).isNotEqualTo(first.id());
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM batches", Integer.class)).isEqualTo(2);
+        assertThatThrownBy(() -> batchService.create(
+                new BatchCreateRequest("LAYER", LocalDate.of(2026, 7, 2), house.id(), 250, null, false, null),
+                "batch-create-retry-1"))
+                .hasMessageContaining("This retry key belongs to another request");
     }
 
     @Test
@@ -197,6 +203,8 @@ class BatchManagementIntegrationTest {
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM audit_logs WHERE entity_id=? AND action='CANCEL' AND reason=?", Integer.class, batch.id(), "Duplicate created after an unclear save result.")).isEqualTo(1);
         assertThat(jdbc.queryForObject("SELECT before_json FROM audit_logs WHERE entity_id=? AND action='CANCEL'", String.class, batch.id())).contains("ACTIVE");
         assertThat(jdbc.queryForObject("SELECT after_json FROM audit_logs WHERE entity_id=? AND action='CANCEL'", String.class, batch.id())).contains("CANCELLED");
+        assertThat(((Number) dashboardService.farm(LocalDate.of(2026, 7, 2)).get("totalBirds")).longValue()).isZero();
+        assertThat(((List<?>) reportService.farm(LocalDate.of(2026, 7, 2)).get("birdPopulation"))).isEmpty();
     }
 
     @Test
