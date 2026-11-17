@@ -6,6 +6,8 @@ import com.grantinofarms.poultry.dto.BirdPopulationEventRequest;
 import com.grantinofarms.poultry.dto.FarmCreateRequest;
 import com.grantinofarms.poultry.dto.HouseCreateRequest;
 import com.grantinofarms.poultry.service.BatchService;
+import com.grantinofarms.poultry.service.DashboardService;
+import com.grantinofarms.poultry.service.ReportService;
 import com.grantinofarms.poultry.service.BirdPopulationService;
 import com.grantinofarms.poultry.service.FarmService;
 import com.grantinofarms.poultry.service.HouseService;
