@@ -204,7 +204,8 @@ export function BatchComparison({ batches, houses, dateRange, setDateRange, farm
   const [error, setError] = useState("");
 
   const filteredBatches = useMemo(() => batches.filter(batch =>
-    (typeFilter === "ALL" || batch.type === typeFilter)
+    batch.status !== "CANCELLED"
+    && (typeFilter === "ALL" || batch.type === typeFilter)
     && (houseFilter === "ALL" || batch.houseId === houseFilter)
     && (!dateRange?.to || batch.placementDate <= dateRange.to)
   ), [batches, typeFilter, houseFilter, dateRange?.to]);
