@@ -63,6 +63,7 @@ class WaterUnitLabelMigrationTest {
         }
 
         Flyway.configure().dataSource(url, "", "").locations("classpath:db/migration").load().migrate();
+        assertForeignKeysValid(url);
 
         try (Connection connection = DriverManager.getConnection(url);
              Statement statement = connection.createStatement();
@@ -92,6 +93,13 @@ class WaterUnitLabelMigrationTest {
             assertThat(result.next()).isTrue();
             assertThat(result.getInt("capacity_units")).isEqualTo(25);
             assertThat(result.getInt("container_count")).isEqualTo(4);
+        }
+    }
+    private static void assertForeignKeysValid(String url) throws Exception {
+        try (Connection connection = DriverManager.getConnection(url);
+             Statement statement = connection.createStatement();
+             ResultSet violations = statement.executeQuery("PRAGMA foreign_key_check")) {
+            assertThat(violations.next()).isFalse();
         }
     }
 }
