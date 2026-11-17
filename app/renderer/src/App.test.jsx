@@ -667,7 +667,7 @@ describe("App", () => {
     expect(batchApi.create).toHaveBeenCalledOnce();
     expect(saveDraft).toHaveBeenCalledWith(expect.objectContaining({ id: "batch", posted: true }));
     expect(discardDraft).toHaveBeenCalledOnce();
-    expect(await screen.findByText(/transaction was recorded successfully, but its draft could not be cleared/i)).toBeInTheDocument();
+    expect(await screen.findByRole("status", { name: /transaction was recorded successfully, but its draft could not be cleared/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Register batch" })).toBeInTheDocument();
   });
 
