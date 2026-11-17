@@ -1087,7 +1087,7 @@ export default function App() {
   async function createBatch(event) {
     event.preventDefault();
     if (saving) return;
-    if (!batchCreateKeyRef.current) batchCreateKeyRef.current = window.crypto.randomUUID();
+    if (!batchCreateKeyRef.current) batchCreateKeyRef.current = window.crypto?.randomUUID?.() || `batch-${Date.now()}-${Math.random().toString(36).slice(2)}`;
     const idempotencyKey = batchCreateKeyRef.current;
     setSaving(true); setError("");
     try {
