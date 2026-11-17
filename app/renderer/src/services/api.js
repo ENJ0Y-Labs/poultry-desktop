@@ -118,10 +118,10 @@ async function request(path, options = {}) {
   let response;
   try {
     response = await fetch(apiBase + path, {
+      ...options,
       credentials: "include",
       headers: { "Content-Type": "application/json", "X-Requested-With": "XMLHttpRequest", ...(options.headers || {}) },
-      signal: AbortSignal.timeout(120000),
-      ...options,
+      signal: options.signal || AbortSignal.timeout(120000),
     });
   } catch {
     // Network connection failure (backend truly unreachable)
