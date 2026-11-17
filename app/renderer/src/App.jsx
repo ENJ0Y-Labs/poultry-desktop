@@ -319,6 +319,23 @@ export default function App() {
 
   async function discardDraft(id, resetForm = true) {
     try {
+      // Persist the committed state before attempting cleanup. If cleanup fails,
+      // a restart must not turn this transaction back into a submittable draft.
+      if (!resetForm) {
+        const form = getDraftForm(id);
+        if (form && window.poultryDesktop?.saveDraft) {
+          try {
+            await window.poultryDesktop.saveDraft({
+              id,
+              form,
+              references: drafts[id]?.references || draftReferences(form),
+              posted: true
+            });
+          } catch {
+            // Keep the in-memory posted guard even if draft metadata cannot be persisted.
+          }
+        }
+      }
       await window.poultryDesktop?.discardDraft?.(id);
       setDrafts(current => { const next = { ...current }; delete next[id]; return next; });
       setDraftStatuses(current => { const next = { ...current }; delete next[id]; return next; });
@@ -335,13 +352,16 @@ export default function App() {
         weight: () => setWeightForm(emptyWeight)
       };
       if (resetForm) resetters[id]?.();
+      return true;
     } catch (err) {
       if (resetForm) {
         setError(displayApiError(err));
       } else {
         setDraftStatuses(current => ({ ...current, [id]: { ...current[id], hasDraft: true, saving: false, posted: true } }));
-        throw new Error("The transaction was recorded, but its draft could not be cleared. Do not submit this form again. Use Discard draft to remove it.");
+        setError("The transaction was recorded successfully, but its draft could not be cleared. Do not submit it again. Use Discard draft to retry cleanup.");
       }
+      // A cleanup failure must never abort the caller's already-committed workflow.
+      return false;
     }
   }
 
@@ -379,7 +399,7 @@ export default function App() {
           const staleReferences = Object.keys(currentReferences).filter(key =>
             JSON.stringify(currentReferences[key]) !== JSON.stringify(draft.references?.[key] ?? null)
           );
-          statuses[id] = { hasDraft: true, saving: false, stale: staleReferences.length > 0, staleReferences, savedAt: draft.savedAt || null };
+          statuses[id] = { hasDraft: true, saving: false, posted: draft.posted === true, stale: staleReferences.length > 0, staleReferences, savedAt: draft.savedAt || null };
         }
         setDrafts(saved);
         setDraftStatuses(statuses);
