@@ -67,3 +67,12 @@ Focused test:
 ```powershell
 npm test -- app/renderer/src/components/OptionalFields.test.jsx app/renderer/src/pages/DailyWorkPage.test.jsx app/renderer/src/pages/FeedStockPage.test.jsx app/renderer/src/pages/SalesMoneyPage.test.jsx
 ```
+
+
+## Post-commit draft cleanup failure (Issue #280)
+
+- A successful backend write is the commit point. Draft cleanup is follow-up housekeeping and must never throw back into the transaction handler or interrupt its success path.
+- Before attempting to clear a draft after a successful transaction, persist the draft with `posted: true`. Restoring drafts must preserve this flag and show the posted warning; autosave must skip posted drafts so they cannot be resubmitted.
+- If cleanup fails, retain the posted guard, show a clear cleanup warning with a safe Discard draft retry, and continue refreshing records/resetting the form. Never retry the committed transaction.
+- Manual discard of an ordinary unsaved draft may report cleanup failure without resetting entered values.
+- Test a successful transaction with a rejected discard call: the committed record appears, the form workflow completes, the stale draft is marked posted, and the original write API is called exactly once. Also test restoration of a persisted posted draft.
