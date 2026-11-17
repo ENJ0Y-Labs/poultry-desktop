@@ -62,6 +62,8 @@ The current population formula is:
 
 `initial - mortality - culling - sold + transfers in - transfers out + physical-count adjustments`.
 
+Population events must not predate the placement date of the affected batch. A transfer must be on or after both the source and target batch placement dates. When queried before placement, a batch has zero live birds; its immutable initial count remains the starting baseline for dates on or after placement. Farm-level as-of population totals include only batches placed on or before the selected date.
+
 ### `bird_population_adjustments`
 
 Append-only physical-count reconciliations. Each row stores the effective date, previous calculated count, new physical count, signed difference, required reason, authenticated user ID, and server timestamp. The difference is included in chronological population calculations but remains separate from mortality, culling, sales, and transfer events. A successful adjustment changes batch confidence to VERIFIED; a later explicit provisional flag changes it back to ESTIMATED with an audit record. Count adjustments do not create a purchase cost or mortality/culling expense; existing carried bird cost remains with the batch.
