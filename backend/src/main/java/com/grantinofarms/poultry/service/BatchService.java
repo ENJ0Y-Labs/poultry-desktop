@@ -171,7 +171,10 @@ public class BatchService {
         }
         if (!references.isEmpty()) throw new ApiException(HttpStatus.CONFLICT, "BATCH_HAS_DEPENDENT_RECORDS", "This batch has dependent records and cannot be cancelled: " + String.join(", ", references) + ". Use the audited correction or reversal workflow where applicable.");
         String now = Instant.now().toString();
-        batchRepository.updateStatus(id, "CANCELLED", now);
+        if (batchRepository.transitionStatus(id, "ACTIVE", "CANCELLED", now) != 1) {
+            throw new ApiException(HttpStatus.CONFLICT, "BATCH_NOT_CANCELLABLE",
+                    "The batch changed while cancellation was being processed. Refresh its status and try again.");
+        }
         BatchResponse cancelled = batchRepository.findById(id);
         auditRepository.append(current.farmId(), "CANCEL", "BATCH", id, reason, json(current), json(cancelled), now);
         return cancelled;
