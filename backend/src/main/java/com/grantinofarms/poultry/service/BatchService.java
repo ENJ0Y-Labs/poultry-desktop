@@ -160,6 +160,16 @@ public class BatchService {
         if (!"ACTIVE".equals(current.status())) throw new ApiException(HttpStatus.CONFLICT, "BATCH_NOT_CANCELLABLE", "Only an active batch can be cancelled.");
         String reason = clean(suppliedReason);
         if (reason == null) throw new ApiException(HttpStatus.BAD_REQUEST, "CANCELLATION_REASON_REQUIRED", "A reason is required to cancel an accidental batch.");
+        String now = Instant.now().toString();
+        if (batchRepository.transitionStatus(id, "ACTIVE", "CANCELLED", now) != 1) {
+            throw new ApiException(HttpStatus.CONFLICT, "BATCH_NOT_CANCELLABLE",
+                    "The batch changed while cancellation was being processed. Refresh its status and try again.");
+        }
+
+        // Claim the lifecycle transition before checking references. This obtains
+        // SQLite's write lock so a concurrent operational write cannot slip
+        // between the dependency check and cancellation. Any rejection rolls
+        // this status update back with the transaction.
         List<String> references = new java.util.ArrayList<>();
         List<String> tables = jdbc.queryForList("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'", String.class);
         for (String table : tables) {
@@ -170,11 +180,6 @@ public class BatchService {
             if (count != null && count > 0) references.add(table + " (" + count + ")");
         }
         if (!references.isEmpty()) throw new ApiException(HttpStatus.CONFLICT, "BATCH_HAS_DEPENDENT_RECORDS", "This batch has dependent records and cannot be cancelled: " + String.join(", ", references) + ". Use the audited correction or reversal workflow where applicable.");
-        String now = Instant.now().toString();
-        if (batchRepository.transitionStatus(id, "ACTIVE", "CANCELLED", now) != 1) {
-            throw new ApiException(HttpStatus.CONFLICT, "BATCH_NOT_CANCELLABLE",
-                    "The batch changed while cancellation was being processed. Refresh its status and try again.");
-        }
         BatchResponse cancelled = batchRepository.findById(id);
         auditRepository.append(current.farmId(), "CANCEL", "BATCH", id, reason, json(current), json(cancelled), now);
         return cancelled;
