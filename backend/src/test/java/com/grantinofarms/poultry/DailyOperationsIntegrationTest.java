@@ -131,6 +131,7 @@ class DailyOperationsIntegrationTest {
             assertThat(dailyOperationsService.list(batch.id(), null, null))
                     .extracting(DailyRecordResponse::date)
                     .contains(farmToday);
+            assertThat(birdPopulationService.get(batch.id(), null).asOf()).isEqualTo(farmToday);
         } finally {
             TimeZone.setDefault(previous);
         }
