@@ -30,7 +30,7 @@ const batchStatusLabel = status => status === "ACTIVE" ? "Active" : status === "
 
 export default function FlocksPage() {
   const [drawerRecord, setDrawerRecord] = useState(null);
-  const { dataLoadError, retryData, batchDashboardLoading, formatMoney, formatQuantity, formatPercent, formatKg, formatMetric, formatCount, farmReport, farm, houses, batches, suppliers, error, batchForm, setBatchForm, costForm, setCostForm, houseForm, setHouseForm, saving, selectedBatchId, setSelectedBatchId, batchDashboard, createBatch, cancelBatch, addBirdCost, markBatchSold, reopenBatch, addHouse, editHouse, editingHouseId, cancelHouseEdit, populationAdjustmentForm, setPopulationAdjustmentForm, populationAdjustments, savePopulationAdjustment, markPopulationEstimated, editingBatchId, batchSetupForm, setBatchSetupForm, saveBatchSetup, editBatchSetup, cancelBatchSetup } = useContext(FarmManagerContext);
+  const { dataLoadError, retryData, batchDashboardLoading, formatMoney, formatQuantity, formatPercent, formatKg, formatMetric, formatCount, farmReport, farm, houses, batches, suppliers, error, batchForm, setBatchForm, costForm, setCostForm, houseForm, setHouseForm, saving, selectedBatchId, setSelectedBatchId, batchDashboard, createBatch, resetBatchCreateKey, cancelBatch, addBirdCost, markBatchSold, reopenBatch, addHouse, editHouse, editingHouseId, cancelHouseEdit, populationAdjustmentForm, setPopulationAdjustmentForm, populationAdjustments, savePopulationAdjustment, markPopulationEstimated, editingBatchId, batchSetupForm, setBatchSetupForm, saveBatchSetup, editBatchSetup, cancelBatchSetup } = useContext(FarmManagerContext);
 
   function openBatchDetails(batch) {
     const house = houses.find(item => item.id === batch.houseId);
@@ -133,10 +133,13 @@ export default function FlocksPage() {
             triggerLabel="Register batch"
             loading={saving}
             error={error}
-            onDiscard={() => setBatchForm(form => ({
-              ...form, type: "LAYER", houseId: "", initialBirdCount: "", supplierId: "",
-              purchaseCostRecorded: true, purchaseCostMinor: "", populationCountStatus: "ESTIMATED",
-            }))}
+            onDiscard={() => {
+              resetBatchCreateKey();
+              setBatchForm(form => ({
+                ...form, type: "LAYER", houseId: "", initialBirdCount: "", supplierId: "",
+                purchaseCostRecorded: true, purchaseCostMinor: "", populationCountStatus: "ESTIMATED",
+              }));
+            }}
           >
             <MultiStepForm
               className="form-grid"
