@@ -5,6 +5,8 @@ import com.grantinofarms.poultry.service.BatchService;
 import com.grantinofarms.poultry.service.DailyOperationsService;
 import com.grantinofarms.poultry.service.FarmService;
 import com.grantinofarms.poultry.service.FeedService;
+import java.time.ZoneId;
+import java.util.TimeZone;
 import com.grantinofarms.poultry.service.HouseService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -110,6 +112,28 @@ class DailyOperationsIntegrationTest {
         assertThat(notesEdit.notes()).isEqualTo("Updated notes");
         assertThat(notesEdit.totalWaterUnits()).isEqualTo(75);
         assertThat(notesEdit.water()).hasSize(1);
+    }
+
+    @Test
+    void defaultDailyRecordListDateUsesFarmTimezoneInsteadOfComputerTimezone() {
+        setupFarm();
+        var house = houseService.create(new HouseCreateRequest("Timezone House", "TZ1", null));
+        var batch = batchService.create(new BatchCreateRequest(
+                "LAYER", LocalDate.of(2026, 1, 1), house.id(), 100, null, 1_000_000L));
+        jdbc.update("UPDATE farms SET timezone=? WHERE status='ACTIVE'", "Pacific/Kiritimati");
+
+        TimeZone previous = TimeZone.getDefault();
+        try {
+            TimeZone.setDefault(TimeZone.getTimeZone("Pacific/Pago_Pago"));
+            LocalDate farmToday = LocalDate.now(ZoneId.of("Pacific/Kiritimati"));
+            dailyOperationsService.create(batch.id(), new DailyRecordRequest(farmToday, "Farm-local day", null));
+
+            assertThat(dailyOperationsService.list(batch.id(), null, null))
+                    .extracting(DailyRecordResponse::recordDate)
+                    .contains(farmToday);
+        } finally {
+            TimeZone.setDefault(previous);
+        }
     }
 
     private void setupFarm() {
