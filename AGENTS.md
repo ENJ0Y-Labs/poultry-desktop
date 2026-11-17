@@ -53,8 +53,8 @@ The installer ID (`appId`), repository name, Java packages, and database file na
 16. Never commit `*.db`, `*.db-wal`, `*.db-shm`, backups, or real farm data.
 17. Keep one local farm data model. Do not unnecessarily split the farm into separate databases/accounts.
 18. Stage 1 has one primary owner/operator account. Multi-user roles can be added later.
-19. Opening a new batch creates a new permanent batch record. It does not overwrite an old batch.
-20. The broiler terminal status is **SOLD**, not COMPLETED.
+19. Opening a new batch creates a new permanent batch record. It does not overwrite an old batch. Every batch-create request from the renderer must carry a stable Idempotency-Key; the backend persists the request result per farm and returns the original batch on a same-key/same-payload retry. Never use a broad content-based duplicate rule.
+20. The broiler terminal status is **SOLD**, not COMPLETED. **CANCELLED** is reserved for an accidental batch with no dependent operational/financial references; cancellation requires a reason, explicit confirmation, and an atomic audit event. Cancelled rows are retained and excluded from active operations, totals, occupancy, and active selectors.
 21. Reopening a SOLD batch is an exceptional, audited action and requires a reason.
 22. Posted farm transactions are corrected by an audited reversal plus a separate replacement, never by editing or deleting the original. Corrections must be atomic, reasoned, actor-attributed, and validated against later dependent records. Preserve FIFO feed costing, bird-cost allocation, bird populations, egg balances, common sales rows, and generated expenses. See `docs/decisions/2026-10-26-auditable-transaction-corrections.md`.
 
@@ -186,7 +186,7 @@ Do not expose raw SQL/database exceptions to the UI.
 
 ## House classification and occupancy
 
-Every house has an explicit `houseType` of `PERMANENT` or `TEMPORARY`. Never derive house type from a code prefix. V28 uses `PERMANENT` as a deliberate legacy-row default so existing installations migrate safely; administrators must reclassify any legacy temporary houses after upgrade. New house creation requires an explicit type. House occupancy is derived from the existence of at least one `ACTIVE` batch assigned to that house; SOLD/CLOSED/ARCHIVED batches do not occupy it. Houses can be reused after their prior batch is no longer active. Farm dashboard fields are `totalHouses`, `permanentHouses`, `temporaryHouses`, `occupiedHouses`, and `emptyHouses`, counting ACTIVE houses only. See `docs/database-schema.md`.
+Every house has an explicit `houseType` of `PERMANENT` or `TEMPORARY`. Never derive house type from a code prefix. V28 uses `PERMANENT` as a deliberate legacy-row default so existing installations migrate safely; administrators must reclassify any legacy temporary houses after upgrade. New house creation requires an explicit type. House occupancy is derived from the existence of at least one `ACTIVE` batch assigned to that house; SOLD/CLOSED/ARCHIVED/CANCELLED batches do not occupy it. Houses can be reused after their prior batch is no longer active. Farm dashboard fields are `totalHouses`, `permanentHouses`, `temporaryHouses`, `occupiedHouses`, and `emptyHouses`, counting ACTIVE houses only. See `docs/database-schema.md`.
 
 ## Estimated and verified bird population
 
