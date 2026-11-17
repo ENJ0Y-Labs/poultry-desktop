@@ -1140,19 +1140,21 @@ export default function App() {
 
   function resetBatchCreateKey() { batchCreateKeyRef.current = null; }
 
-  async function cancelBatch(batchId) {
-    const reason = window.prompt("Why is this batch being cancelled? This is only for an accidental batch with no dependent records.");
-    if (!reason || !reason.trim()) return;
-    if (!window.confirm("Cancel this batch? It will remain in history and audit records, but will no longer be available for active farm operations.")) return;
+  async function cancelBatch(batchId, suppliedReason) {
+    const reason = String(suppliedReason || "").trim();
+    if (!reason) return false;
     setSaving(true); setError("");
     try {
-      const cancelled = await batchApi.cancel(batchId, reason.trim());
+      const cancelled = await batchApi.cancel(batchId, reason);
       setBatches(current => current.map(batch => batch.id === cancelled.id ? cancelled : batch));
       if (selectedBatchId === batchId) setSelectedBatchId("");
       notify.success("Batch cancelled. Its history and audit record have been preserved.");
       await loadDashboard();
-    } catch (err) { setError(displayApiError(err)); }
-    finally { setSaving(false); }
+      return true;
+    } catch (err) {
+      setError(displayApiError(err));
+      return false;
+    } finally { setSaving(false); }
   }
 
   async function markPopulationEstimated(batchId) {
