@@ -310,7 +310,7 @@ See [docs/backup-restore.md](docs/backup-restore.md).
 
 A release should pass all of these gates:
 
-1. Update the application version consistently in `package.json` and `backend/pom.xml`.
+1. Update the desktop application release version in `package.json` (and keep `package-lock.json` in sync). The backend Maven artifact version in `backend/pom.xml` is independent and should change only when the backend artifact itself is being released.
 2. Run frontend tests and lint.
 3. Run backend verification.
 4. Build the Electron application.
