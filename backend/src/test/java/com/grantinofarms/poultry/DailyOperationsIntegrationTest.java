@@ -129,7 +129,7 @@ class DailyOperationsIntegrationTest {
             dailyOperationsService.create(batch.id(), new DailyRecordRequest(farmToday, "Farm-local day", null));
 
             assertThat(dailyOperationsService.list(batch.id(), null, null))
-                    .extracting(DailyRecordResponse::recordDate)
+                    .extracting(DailyRecordResponse::date)
                     .contains(farmToday);
         } finally {
             TimeZone.setDefault(previous);
