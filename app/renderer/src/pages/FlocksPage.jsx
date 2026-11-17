@@ -15,7 +15,7 @@ import MultiStepForm from "../components/MultiStepForm.jsx";
 // eslint-disable-next-line no-unused-vars -- JSX component usage is not detected by the core rule
 import OptionalFields from "../components/OptionalFields.jsx";
 // eslint-disable-next-line no-unused-vars -- JSX component usage is not detected by the core rule
-import { ModalForm } from "../components/Modal.jsx";
+import { Modal, ModalForm } from "../components/Modal.jsx";
 // eslint-disable-next-line no-unused-vars -- JSX component usage is not detected by the core rule
 import ContextDrawer, { DrawerDetails } from "../components/ContextDrawer.jsx";
 // eslint-disable-next-line no-unused-vars
@@ -30,6 +30,8 @@ const batchStatusLabel = status => status === "ACTIVE" ? "Active" : status === "
 
 export default function FlocksPage() {
   const [drawerRecord, setDrawerRecord] = useState(null);
+  const [batchToCancel, setBatchToCancel] = useState(null);
+  const [cancellationReason, setCancellationReason] = useState("");
   const { dataLoadError, retryData, batchDashboardLoading, formatMoney, formatQuantity, formatPercent, formatKg, formatMetric, formatCount, farmReport, farm, houses, batches, suppliers, batchCreateError, batchForm, setBatchForm, costForm, setCostForm, houseForm, setHouseForm, saving, selectedBatchId, setSelectedBatchId, batchDashboard, createBatch, resetBatchCreateKey, cancelBatch, addBirdCost, markBatchSold, reopenBatch, addHouse, editHouse, editingHouseId, cancelHouseEdit, populationAdjustmentForm, setPopulationAdjustmentForm, populationAdjustments, savePopulationAdjustment, markPopulationEstimated, editingBatchId, batchSetupForm, setBatchSetupForm, saveBatchSetup, editBatchSetup, cancelBatchSetup } = useContext(FarmManagerContext);
 
   function openBatchDetails(batch) {
@@ -205,10 +207,31 @@ export default function FlocksPage() {
               { key: "action", label: "Action", render: batch => batch.status === "SOLD"
                 ? <button type="button" onClick={() => reopenBatch(batch.id)} disabled={saving}>Reopen</button>
                 : batch.status === "ACTIVE" ? <div className="table-actions">
-                    <button type="button" className="danger-button" onClick={() => cancelBatch(batch.id)} disabled={saving}>Cancel batch</button>
+                    <button type="button" className="danger-button" onClick={() => { setBatchToCancel(batch); setCancellationReason(""); }} disabled={saving}>Cancel batch</button>
                     {["BROILER", "TURKEY"].includes(batch.type) && <button type="button" onClick={() => markBatchSold(batch.id)} disabled={saving}>Mark sold</button>}
                   </div> : "—" },
             ]} rows={batches} emptyMessage="No batches yet." />
+          <Modal
+            open={Boolean(batchToCancel)}
+            onClose={() => { if (!saving) { setBatchToCancel(null); setCancellationReason(""); } }}
+            title="Cancel batch"
+            description={batchToCancel ? `Cancel ${batchToCancel.code}? This is only for an accidental batch with no dependent records.` : ""}
+            size="small"
+            loading={saving}
+            footer={<div className="pomas-modal-actions">
+              <button type="button" className="secondary-button" disabled={saving} onClick={() => { setBatchToCancel(null); setCancellationReason(""); }}>Keep batch</button>
+              <button type="button" className="danger-button" disabled={saving || !cancellationReason.trim()} onClick={async () => {
+                const succeeded = await cancelBatch(batchToCancel.id, cancellationReason);
+                if (succeeded) { setBatchToCancel(null); setCancellationReason(""); }
+              }}>{saving ? "Cancelling…" : "Confirm cancellation"}</button>
+            </div>}
+          >
+            <label className="field">
+              <span>Reason for cancellation</span>
+              <textarea required rows={3} value={cancellationReason} onChange={event => setCancellationReason(event.target.value)} placeholder="Explain why this batch was created accidentally." />
+            </label>
+            <p className="muted">The batch will remain in history with an audit record. Batches with dependent operational or financial records cannot be cancelled.</p>
+          </Modal>
           {editingBatchId && <ValidatedForm className="inline-form subsection" onSubmit={saveBatchSetup}>
             <h3>Edit batch setup</h3>
             <p className="muted">Batch code, type, placement date and initial population are permanent. A supplier/source with recorded purchase cost is locked.</p>
