@@ -358,7 +358,7 @@ export default function App() {
         setError(displayApiError(err));
       } else {
         setDraftStatuses(current => ({ ...current, [id]: { ...current[id], hasDraft: true, saving: false, posted: true } }));
-        setError("The transaction was recorded successfully, but its draft could not be cleared. Do not submit it again. Use Discard draft to retry cleanup.");
+        notify.warning("The transaction was recorded successfully, but its draft could not be cleared. Do not submit it again. Use Discard draft to retry cleanup.", { duration: 0, key: `posted-draft-cleanup:${id}` });
       }
       // A cleanup failure must never abort the caller's already-committed workflow.
       return false;
