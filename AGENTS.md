@@ -53,8 +53,8 @@ The installer ID (`appId`), repository name, Java packages, and database file na
 16. Never commit `*.db`, `*.db-wal`, `*.db-shm`, backups, or real farm data.
 17. Keep one local farm data model. Do not unnecessarily split the farm into separate databases/accounts.
 18. Stage 1 has one primary owner/operator account. Multi-user roles can be added later.
-19. Opening a new batch creates a new permanent batch record. It does not overwrite an old batch.
-20. The broiler terminal status is **SOLD**, not COMPLETED.
+19. Opening a new batch creates a new permanent batch record. It does not overwrite an old batch. Every batch-create request from the renderer must carry a stable Idempotency-Key; the backend persists the request result per farm and returns the original batch on a same-key/same-payload retry. Never use a broad content-based duplicate rule.
+20. The broiler terminal status is **SOLD**, not COMPLETED. **CANCELLED** is reserved for an accidental batch with no dependent operational/financial references; cancellation requires a reason, explicit confirmation, and an atomic audit event. Cancelled rows are retained and excluded from active operations, totals, occupancy, and active selectors.
 21. Reopening a SOLD batch is an exceptional, audited action and requires a reason.
 22. Posted farm transactions are corrected by an audited reversal plus a separate replacement, never by editing or deleting the original. Corrections must be atomic, reasoned, actor-attributed, and validated against later dependent records. Preserve FIFO feed costing, bird-cost allocation, bird populations, egg balances, common sales rows, and generated expenses. See `docs/decisions/2026-10-26-auditable-transaction-corrections.md`.
 
@@ -186,13 +186,13 @@ Do not expose raw SQL/database exceptions to the UI.
 
 ## House classification and occupancy
 
-Every house has an explicit `houseType` of `PERMANENT` or `TEMPORARY`. Never derive house type from a code prefix. V28 uses `PERMANENT` as a deliberate legacy-row default so existing installations migrate safely; administrators must reclassify any legacy temporary houses after upgrade. New house creation requires an explicit type. House occupancy is derived from the existence of at least one `ACTIVE` batch assigned to that house; SOLD/CLOSED/ARCHIVED batches do not occupy it. Houses can be reused after their prior batch is no longer active. Farm dashboard fields are `totalHouses`, `permanentHouses`, `temporaryHouses`, `occupiedHouses`, and `emptyHouses`, counting ACTIVE houses only. See `docs/database-schema.md`.
+Every house has an explicit `houseType` of `PERMANENT` or `TEMPORARY`. Never derive house type from a code prefix. V28 uses `PERMANENT` as a deliberate legacy-row default so existing installations migrate safely; administrators must reclassify any legacy temporary houses after upgrade. New house creation requires an explicit type. House occupancy is derived from the existence of at least one `ACTIVE` batch assigned to that house; SOLD/CLOSED/ARCHIVED/CANCELLED batches do not occupy it. Houses can be reused after their prior batch is no longer active. Farm dashboard fields are `totalHouses`, `permanentHouses`, `temporaryHouses`, `occupiedHouses`, and `emptyHouses`, counting ACTIVE houses only. See `docs/database-schema.md`.
 
 ## Estimated and verified bird population
 
 Every batch has a population_count_status of ESTIMATED or VERIFIED. Default new and migrated batch counts to ESTIMATED; never imply a physical count was performed when it was not. Initial population is immutable and remains the starting baseline. Calculated population is initial birds plus/minus dated mortality, culling, sales, transfers, and signed physical-count adjustment events. An adjustment is not mortality, culling, or a sale and must never fabricate those records.
 
-Physical count adjustments are append-only records containing the previous calculated count, physically counted quantity, signed difference, effective date, required reason, authenticated owner user ID, and server-generated UTC timestamp. Validate the entire later population history before accepting a backdated adjustment; reject it if any later event would make population negative. A successful physical count adjustment marks the batch VERIFIED. Administrators can explicitly mark a batch ESTIMATED again with a required reason and audit event. Population adjustments change live quantity without creating a new purchase cost or a mortality/culling cost allocation. Existing carried bird cost remains with the batch and its per-bird average is recalculated against the reconciled population. Farm dashboards and reports must expose estimated batch/bird totals so provisional populations are not presented as verified facts. Transfers remain paired source/target events and must not change the farm-wide total. See docs/decisions/2026-11-06-estimated-population-adjustments.md and docs/database-schema.md.
+Physical count adjustments are append-only records containing the previous calculated count, physically counted quantity, signed difference, effective date, required reason, authenticated owner user ID, and server-generated UTC timestamp. Validate the entire later population history before accepting a backdated adjustment; reject it if any later event would make population negative. A successful physical count adjustment marks the batch VERIFIED. Administrators can explicitly mark a batch ESTIMATED again with a required reason and audit event. Population adjustments change live quantity without creating a new purchase cost or a mortality/culling cost allocation. Existing carried bird cost remains with the batch and its per-bird average is recalculated against the reconciled population. Farm dashboards and reports must expose estimated batch/bird totals so provisional populations are not presented as verified facts. Transfers remain paired source/target events and must not change the farm-wide total. Mortality, culling, sales, and both sides of a transfer must be dated on or after the relevant batch placement date. As-of population before placement is zero, while the immutable initial count remains the batch baseline. Farm dashboard population totals must exclude batches whose placement date is after the selected date. See docs/decisions/2026-11-06-estimated-population-adjustments.md and docs/database-schema.md.
 
 ## Turkey reporting contract
 
@@ -1497,3 +1497,21 @@ An opening balance may be dated before a later purchase, but cannot be dated bef
 - Current walkthroughs are non-persisting instructional practice. Do not seed records, populate live forms, call write APIs, or submit data from tutorial flows. See `docs/guided-learning.md`.
 - Any future hands-on demo must use a separately configured disposable backend/database and verify the database path cannot resolve to farm data before enabling writes.
 
+
+
+## Post-commit draft cleanup (Issue #280)
+
+- A successful backend transaction is committed independently of renderer draft cleanup. Cleanup failures must not throw into or interrupt the transaction's success path, including list refresh and form reset.
+- Persist `posted: true` on a draft before attempting post-commit cleanup. Restore this state across application restarts, show the non-resubmission warning, and skip autosaving/submitting posted drafts.
+- If draft cleanup fails, preserve the posted guard and allow the user to retry Discard draft. Never submit the committed transaction again and never delete/reverse its ledger record as part of draft cleanup.
+- Cover the failure path with renderer regression tests and keep the manual desktop check marked not run unless tested against a disposable database.
+
+
+## Destructive action dialogs
+
+Use the shared in-app `Modal` / `ConfirmAction` components for destructive
+actions that require confirmation or a reason. Do not rely on browser-native
+`window.prompt()` or `window.confirm()` in the Electron renderer. Keep
+business validation and persistence in the existing API/backend layers, and
+keep the dialog open when a destructive request fails so the operator can
+review the error.

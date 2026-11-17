@@ -86,3 +86,13 @@ this test.
 
 Browser mode validates React dialog behavior. Recheck the same supported sizes
 in the Electron window when the desktop development launcher is available.
+
+
+## Batch cancellation confirmation
+
+Batch cancellation uses the shared in-app `Modal`, not browser-native
+`window.prompt()` or `window.confirm()`. The operator must enter a reason
+and explicitly confirm before the page calls the existing cancellation handler.
+The backend remains authoritative and rejects cancellation when dependent
+operational or financial records exist. On failure, keep the dialog open so the
+operator can read the app-level error and decide what to do next.

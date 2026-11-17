@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 // eslint-disable-next-line no-unused-vars -- JSX component usage is not detected by the core rule
 import FlocksPage from "./FlocksPage.jsx";
@@ -56,6 +56,7 @@ const contextValue = {
     profitMinor: -145000,
   },
   createBatch: vi.fn(),
+  cancelBatch: vi.fn().mockResolvedValue(true),
   addBirdCost: vi.fn(),
   markBatchSold: vi.fn(),
   reopenBatch: vi.fn(),
@@ -149,4 +150,26 @@ describe("FlocksPage contextual details", () => {
     expect(context.createBatch).toHaveBeenCalledTimes(1);
   });
 
+});
+
+describe("FlocksPage batch cancellation", () => {
+  it("opens an in-app cancellation dialog and submits the required reason", async () => {
+    renderFlocks("flocks");
+    const table = screen.getByRole("table", { name: "Batch records" });
+
+    fireEvent.click(within(table).getByRole("button", { name: "Cancel batch" }));
+    const dialog = screen.getByRole("dialog", { name: "Cancel batch" });
+    expect(within(dialog).getByText(/B-2026-001/)).toBeInTheDocument();
+
+    const confirm = within(dialog).getByRole("button", { name: "Confirm cancellation" });
+    expect(confirm).toBeDisabled();
+    fireEvent.change(within(dialog).getByLabelText("Reason for cancellation"), {
+      target: { value: "Accidental duplicate batch." },
+    });
+    expect(confirm).toBeEnabled();
+
+    fireEvent.click(confirm);
+    await waitFor(() => expect(contextValue.cancelBatch).toHaveBeenCalledWith("batch-1", "Accidental duplicate batch."));
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: "Cancel batch" })).not.toBeInTheDocument());
+  });
 });

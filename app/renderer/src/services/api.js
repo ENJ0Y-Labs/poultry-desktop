@@ -118,10 +118,10 @@ async function request(path, options = {}) {
   let response;
   try {
     response = await fetch(apiBase + path, {
+      ...options,
       credentials: "include",
       headers: { "Content-Type": "application/json", "X-Requested-With": "XMLHttpRequest", ...(options.headers || {}) },
-      signal: AbortSignal.timeout(120000),
-      ...options,
+      signal: options.signal || AbortSignal.timeout(120000),
     });
   } catch {
     // Network connection failure (backend truly unreachable)
@@ -172,7 +172,8 @@ export const costApi = {
 export const batchApi = {
   list: () => request("/batches"),
   get: (id) => request("/batches/" + id),
-  create: (data) => request("/batches", { method: "POST", body: JSON.stringify(data) }),
+  create: (data, idempotencyKey) => request("/batches", { method: "POST", headers: { "Idempotency-Key": idempotencyKey }, body: JSON.stringify(data) }),
+  cancel: (id, reason) => request("/batches/" + id + "/cancel", { method: "POST", body: JSON.stringify({ reason }) }),
   updateSetup: (id, data) => request("/batches/" + id + "/setup", { method: "PUT", body: JSON.stringify(data) }),
   markSold: (id) => request("/batches/" + id + "/sold", { method: "POST" }),
   reopen: (id, reason) => request("/batches/" + id + "/reopen", { method: "POST", body: JSON.stringify({ reason }) }),

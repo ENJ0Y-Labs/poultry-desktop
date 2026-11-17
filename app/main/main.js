@@ -69,16 +69,17 @@ ipcMain.handle("drafts:save", async (_event, payload, ...args) => {
   if (args.length !== 0 || !payload || typeof payload !== "object" || Array.isArray(payload) ||
       !DRAFT_IDS.has(payload.id) || !payload.form || typeof payload.form !== "object" ||
       Array.isArray(payload.form) || !payload.references || typeof payload.references !== "object" ||
-      Array.isArray(payload.references)) {
+      Array.isArray(payload.references) || (payload.posted !== undefined && typeof payload.posted !== "boolean")) {
     throw new Error("Invalid draft data.");
   }
-  const serialized = JSON.stringify({ form: payload.form, references: payload.references });
+  const serialized = JSON.stringify({ form: payload.form, references: payload.references, posted: payload.posted === true });
   if (Buffer.byteLength(serialized, "utf8") > 65536) throw new Error("This draft is too large to save.");
   const drafts = readDrafts();
   const previous = drafts[payload.id];
   const draft = {
     form: payload.form,
     references: payload.references,
+    posted: payload.posted === true,
     createdAt: previous?.createdAt || new Date().toISOString(),
     savedAt: new Date().toISOString()
   };

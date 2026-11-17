@@ -96,6 +96,23 @@ class DashboardDateRangeIntegrationTest {
     }
 
     @Test
+    void farmDashboardExcludesBatchesNotYetPlacedAtTheSelectedDate() {
+        var first = batchService.create(new BatchCreateRequest(
+                "LAYER", LocalDate.of(2026, 2, 1), firstHouseId(), 100, null, 100_000L));
+        batchService.create(new BatchCreateRequest(
+                "LAYER", LocalDate.of(2026, 3, 2), firstHouseId(), 500, null, 500_000L));
+
+        Map<String, Object> beforePlacement = dashboard.farm(LocalDate.of(2026, 3, 1));
+        assertThat(beforePlacement.get("totalBirds")).isEqualTo(100L);
+        assertThat(beforePlacement.get("layerBirds")).isEqualTo(100L);
+        assertThat(beforePlacement.get("estimatedBirds")).isEqualTo(100L);
+
+        Map<String, Object> onPlacement = dashboard.farm(LocalDate.of(2026, 3, 2));
+        assertThat(onPlacement.get("totalBirds")).isEqualTo(600L);
+        assertThat(onPlacement.get("layerBirds")).isEqualTo(600L);
+    }
+
+    @Test
     void auditRangeUsesInclusiveFarmLocalCalendarDays() {
         var farm = farmService.get();
         insertAudit("audit-before", farm.id(), "2026-02-27T22:59:00Z");

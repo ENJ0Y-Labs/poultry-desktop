@@ -74,7 +74,9 @@ public class ReportService {
     public Map<String, Object> farm(LocalDate asOf) {
         LocalDate date = effectiveDate(asOf);
         Map<String, Object> dashboardData = dashboard.farm(date);
-        List<BatchResponse> farmBatches = batches.list();
+        List<BatchResponse> farmBatches = batches.list().stream()
+                .filter(batch -> !"CANCELLED".equals(batch.status()))
+                .toList();
 
         List<Map<String, Object>> populationRows = farmBatches.stream()
                 .map(batch -> batchPopulation(batch, date))
@@ -216,6 +218,10 @@ public class ReportService {
         List<Map<String, Object>> reports = new java.util.ArrayList<>();
         for (String batchId : batchIds) {
             BatchResponse selectedBatch = batches.get(batchId);
+            if ("CANCELLED".equals(selectedBatch.status())) {
+                throw new ApiException(HttpStatus.CONFLICT, "CANCELLED_BATCH_REPORT_UNAVAILABLE",
+                        "Cancelled batches remain in history but are excluded from ordinary reports.");
+            }
             if (range.to().isBefore(selectedBatch.placementDate())) {
                 throw new ApiException(HttpStatus.BAD_REQUEST, "COMPARISON_END_BEFORE_PLACEMENT",
                         "The comparison end date cannot be before batch " + selectedBatch.code() + " was placed.");
@@ -250,8 +256,12 @@ public class ReportService {
 
     public Map<String, Object> batch(String id, LocalDate asOf) {
         LocalDate date = effectiveDate(asOf);
-        Map<String, Object> dashboardData = dashboard.batch(id, date);
         BatchResponse batch = batches.get(id);
+        if ("CANCELLED".equals(batch.status())) {
+            throw new ApiException(HttpStatus.CONFLICT, "CANCELLED_BATCH_REPORT_UNAVAILABLE",
+                    "Cancelled batches remain in history but are excluded from ordinary reports.");
+        }
+        Map<String, Object> dashboardData = dashboard.batch(id, date);
         BirdPopulationResponse populationData = population.get(id, date);
 
         Map<String, Object> report = new LinkedHashMap<>();

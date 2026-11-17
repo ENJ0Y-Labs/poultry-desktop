@@ -31,14 +31,20 @@ public class BatchController {
     }
 
     @PostMapping
-    ResponseEntity<?> create(@Valid @RequestBody BatchCreateRequest request) {
+    ResponseEntity<?> create(@RequestHeader("Idempotency-Key") String idempotencyKey,
+                             @Valid @RequestBody BatchCreateRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(Map.of("ok", true, "data", service.create(request)));
+                .body(Map.of("ok", true, "data", service.create(request, idempotencyKey)));
     }
 
     @PutMapping("/{id}/setup")
     ResponseEntity<?> updateSetup(@PathVariable String id, @Valid @RequestBody BatchSetupUpdateRequest request) {
         return ResponseEntity.ok(Map.of("ok", true, "data", service.updateSetup(id, request)));
+    }
+
+    @PostMapping("/{id}/cancel")
+    ResponseEntity<?> cancel(@PathVariable String id, @Valid @RequestBody BatchReopenRequest request) {
+        return ResponseEntity.ok(Map.of("ok", true, "data", service.cancel(id, request.reason())));
     }
 
     @PostMapping("/{id}/sold")

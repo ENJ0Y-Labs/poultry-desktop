@@ -6,6 +6,8 @@ import com.grantinofarms.poultry.dto.BirdPopulationEventRequest;
 import com.grantinofarms.poultry.dto.FarmCreateRequest;
 import com.grantinofarms.poultry.dto.HouseCreateRequest;
 import com.grantinofarms.poultry.service.BatchService;
+import com.grantinofarms.poultry.service.DashboardService;
+import com.grantinofarms.poultry.service.ReportService;
 import com.grantinofarms.poultry.service.BirdPopulationService;
 import com.grantinofarms.poultry.service.FarmService;
 import com.grantinofarms.poultry.service.HouseService;
@@ -16,6 +18,7 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.time.LocalDate;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -31,6 +34,8 @@ class BatchManagementIntegrationTest {
     @Autowired FarmService farmService;
     @Autowired HouseService houseService;
     @Autowired JdbcTemplate jdbc;
+    @Autowired DashboardService dashboardService;
+    @Autowired ReportService reportService;
 
     @Test
     void createsTransactionalCodesByTypeAndYear() {
@@ -172,6 +177,49 @@ class BatchManagementIntegrationTest {
                 .hasMessage("Only meat-production batches (BROILER or TURKEY) use the SOLD terminal lifecycle.");
     }
 
+    @Test
+    void retriesWithSameIdempotencyKeyReturnOriginalBatchButNewKeysCreateNewBatches() {
+        farmService.create(new FarmCreateRequest("Grantino Farms", "Port Harcourt", "Africa/Lagos", "NGN"));
+        var house = houseService.create(new HouseCreateRequest("Layer House", "LH1", null));
+        var request = new BatchCreateRequest("LAYER", LocalDate.of(2026, 7, 1), house.id(), 250, null, false, null);
+        var first = batchService.create(request, "batch-create-retry-1");
+        var retry = batchService.create(request, "batch-create-retry-1");
+        var intentional = batchService.create(request, "batch-create-retry-2");
+        assertThat(retry.id()).isEqualTo(first.id());
+        assertThat(retry.code()).isEqualTo(first.code());
+        assertThat(intentional.id()).isNotEqualTo(first.id());
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM batches", Integer.class)).isEqualTo(2);
+        assertThatThrownBy(() -> batchService.create(
+                new BatchCreateRequest("LAYER", LocalDate.of(2026, 7, 2), house.id(), 250, null, false, null),
+                "batch-create-retry-1"))
+                .hasMessageContaining("This retry key belongs to another request");
+    }
+
+    @Test
+    void cancelsEmptyBatchWithReasonAndKeepsAuditedHistory() {
+        farmService.create(new FarmCreateRequest("Grantino Farms", "Port Harcourt", "Africa/Lagos", "NGN"));
+        var house = houseService.create(new HouseCreateRequest("Layer House", "LH1", null));
+        var batch = batchService.create(new BatchCreateRequest("LAYER", LocalDate.of(2026, 7, 1), house.id(), 250, null, false, null));
+        var cancelled = batchService.cancel(batch.id(), "Duplicate created after an unclear save result.");
+        assertThat(cancelled.status()).isEqualTo("CANCELLED");
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM batches WHERE id=?", Integer.class, batch.id())).isEqualTo(1);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM audit_logs WHERE entity_id=? AND action='CANCEL' AND reason=?", Integer.class, batch.id(), "Duplicate created after an unclear save result.")).isEqualTo(1);
+        assertThat(jdbc.queryForObject("SELECT before_json FROM audit_logs WHERE entity_id=? AND action='CANCEL'", String.class, batch.id())).contains("ACTIVE");
+        assertThat(jdbc.queryForObject("SELECT after_json FROM audit_logs WHERE entity_id=? AND action='CANCEL'", String.class, batch.id())).contains("CANCELLED");
+        assertThat(((Number) dashboardService.farm(LocalDate.of(2026, 7, 2)).get("totalBirds")).longValue()).isZero();
+        assertThat(((List<?>) reportService.farm(LocalDate.of(2026, 7, 2)).get("birdPopulation"))).isEmpty();
+    }
+
+    @Test
+    void refusesToCancelBatchWithFinancialOrOperationalReferences() {
+        farmService.create(new FarmCreateRequest("Grantino Farms", "Port Harcourt", "Africa/Lagos", "NGN"));
+        var house = houseService.create(new HouseCreateRequest("Layer House", "LH1", null));
+        var batch = batchService.create(new BatchCreateRequest("LAYER", LocalDate.of(2026, 7, 1), house.id(), 250, null, 2_500_000L));
+        assertThatThrownBy(() -> batchService.cancel(batch.id(), "Accidental duplicate."))
+                .hasMessageContaining("bird_purchases");
+        assertThat(batchService.get(batch.id()).status()).isEqualTo("ACTIVE");
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM audit_logs WHERE entity_id=? AND action='CANCEL'", Integer.class, batch.id())).isZero();
+    }
     @Test
     void createsIndependentTurkeyBatchWithTurkeyCodeAndPopulation() {
         farmService.create(new FarmCreateRequest(

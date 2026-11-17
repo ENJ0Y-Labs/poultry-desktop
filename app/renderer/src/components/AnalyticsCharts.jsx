@@ -35,7 +35,7 @@ function ChartTooltip({ active, payload, label, formatValue = value => value }) 
 export function FinancialAnalytics({ sales = [], expenses = [], dateRange, setDateRange, timezone, dateFormat, showDateFilter = false, batches = [], houses = [], formatMoney, currency = "NGN" }) {
   const [selectedHouseId, setSelectedHouseId] = useState("");
   const [selectedBatchId, setSelectedBatchId] = useState("");
-  const visibleBatches = batches.filter(batch => !selectedHouseId || batch.houseId === selectedHouseId);
+  const visibleBatches = batches.filter(batch => batch.status !== "CANCELLED" && (!selectedHouseId || batch.houseId === selectedHouseId));
   const visibleSales = sales.filter(row => (!selectedBatchId || row.batchId === selectedBatchId)
     && (!selectedHouseId || batches.some(batch => batch.id === row.batchId && batch.houseId === selectedHouseId)));
   const visibleExpenses = expenses.filter(row => (!selectedBatchId || row.batchId === selectedBatchId)
@@ -223,7 +223,7 @@ export function FarmDistributionChart({ dashboard, populationRows = [], batches 
   ].filter(row => row.value > 0);
   const data = mode === "type" ? typeData : mode === "house"
     ? houses.map(house => ({ name: house.name, value: populationRows.filter(row => row.batch?.houseId === house.id).reduce((total, row) => total + Number(row.population?.currentBirds || 0), 0) })).filter(row => row.value > 0)
-    : batches.map(batch => ({ name: batch.code, value: Number(populationRows.find(row => row.batch?.id === batch.id)?.population?.currentBirds || 0) })).filter(row => row.value > 0);
+    : batches.filter(batch => batch.status !== "CANCELLED").map(batch => ({ name: batch.code, value: Number(populationRows.find(row => row.batch?.id === batch.id)?.population?.currentBirds || 0) })).filter(row => row.value > 0);
   return <ChartPanel title="Flock distribution" description={`Current live birds grouped by ${mode === "type" ? "poultry type" : mode === "house" ? "house or pen" : "batch"}.`} empty={!data.length && "No live bird population is available to distribute."}>
     <label className="analytics-chart-filter">Group by<select aria-label="Flock distribution grouping" value={mode} onChange={event => setMode(event.target.value)}><option value="type">Poultry type</option><option value="house">House / pen</option><option value="batch">Batch</option></select></label>
     <ResponsiveContainer width="100%" height={250}><PieChart><Pie data={data} dataKey="value" nameKey="name" innerRadius={58} outerRadius={88} paddingAngle={2}>{data.map((row, index) => <Cell key={row.name} fill={CHART_COLORS[index % CHART_COLORS.length]} />)}</Pie><Tooltip content={<ChartTooltip />} /><Legend /></PieChart></ResponsiveContainer>

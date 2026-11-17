@@ -106,6 +106,7 @@ class FeedApplicabilityMigrationTest {
                 .locations("classpath:db/migration")
                 .load()
                 .migrate();
+        assertForeignKeysValid(databaseUrl);
 
         assertThat(applicableTypes(databaseUrl, bothId)).containsExactly("BROILER", "LAYER", "TURKEY");
         assertThat(applicableTypes(databaseUrl, layerId)).containsExactly("LAYER");
@@ -125,6 +126,14 @@ class FeedApplicabilityMigrationTest {
                 assertThat(result.getLong("usage_quantity_milli")).isEqualTo(1000);
                 assertThat(result.next()).isFalse();
             }
+        }
+    }
+
+    private static void assertForeignKeysValid(String url) throws Exception {
+        try (Connection connection = DriverManager.getConnection(url);
+             var statement = connection.createStatement();
+             ResultSet violations = statement.executeQuery("PRAGMA foreign_key_check")) {
+            assertThat(violations.next()).isFalse();
         }
     }
 

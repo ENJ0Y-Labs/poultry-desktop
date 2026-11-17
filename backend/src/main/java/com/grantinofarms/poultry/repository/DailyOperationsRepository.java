@@ -32,6 +32,13 @@ public class DailyOperationsRepository {
         ).stream().findFirst().orElse(null);
     }
 
+    public String farmTimezoneForBatch(String batchId) {
+        return jdbc.query(
+                "SELECT f.timezone FROM farms f JOIN batches b ON b.farm_id=f.id WHERE b.id = ?",
+                (rs, n) -> rs.getString("timezone"), batchId
+        ).stream().findFirst().orElse(null);
+    }
+
     public LocalDate placementDate(String batchId) {
         return jdbc.query(
                 "SELECT placement_date FROM batches WHERE id = ?",

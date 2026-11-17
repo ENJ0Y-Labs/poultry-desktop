@@ -15,7 +15,7 @@ import MultiStepForm from "../components/MultiStepForm.jsx";
 // eslint-disable-next-line no-unused-vars -- JSX component usage is not detected by the core rule
 import OptionalFields from "../components/OptionalFields.jsx";
 // eslint-disable-next-line no-unused-vars -- JSX component usage is not detected by the core rule
-import { ModalForm } from "../components/Modal.jsx";
+import { Modal, ModalForm } from "../components/Modal.jsx";
 // eslint-disable-next-line no-unused-vars -- JSX component usage is not detected by the core rule
 import ContextDrawer, { DrawerDetails } from "../components/ContextDrawer.jsx";
 // eslint-disable-next-line no-unused-vars
@@ -26,11 +26,13 @@ import DataTable from "../components/DataTable.jsx";
 import { FlockAnalytics } from "../components/AnalyticsCharts.jsx";
 
 const batchTypeLabel = type => type === "LAYER" ? "Layer" : type === "BROILER" ? "Broiler" : type === "TURKEY" ? "Turkey" : "Unknown type";
-const batchStatusLabel = status => status === "ACTIVE" ? "Active" : status === "SOLD" ? "Sold" : String(status || "Unknown").toLowerCase().replace(/\b\w/g, letter => letter.toUpperCase());
+const batchStatusLabel = status => status === "ACTIVE" ? "Active" : status === "SOLD" ? "Sold" : status === "CANCELLED" ? "Cancelled" : String(status || "Unknown").toLowerCase().replace(/\b\w/g, letter => letter.toUpperCase());
 
 export default function FlocksPage() {
   const [drawerRecord, setDrawerRecord] = useState(null);
-  const { dataLoadError, retryData, batchDashboardLoading, formatMoney, formatQuantity, formatPercent, formatKg, formatMetric, formatCount, farmReport, farm, houses, batches, suppliers, error, batchForm, setBatchForm, costForm, setCostForm, houseForm, setHouseForm, saving, selectedBatchId, setSelectedBatchId, batchDashboard, createBatch, addBirdCost, markBatchSold, reopenBatch, addHouse, editHouse, editingHouseId, cancelHouseEdit, populationAdjustmentForm, setPopulationAdjustmentForm, populationAdjustments, savePopulationAdjustment, markPopulationEstimated, editingBatchId, batchSetupForm, setBatchSetupForm, saveBatchSetup, editBatchSetup, cancelBatchSetup } = useContext(FarmManagerContext);
+  const [batchToCancel, setBatchToCancel] = useState(null);
+  const [cancellationReason, setCancellationReason] = useState("");
+  const { dataLoadError, retryData, batchDashboardLoading, formatMoney, formatQuantity, formatPercent, formatKg, formatMetric, formatCount, farmReport, farm, houses, batches, suppliers, batchCreateError, batchForm, setBatchForm, costForm, setCostForm, houseForm, setHouseForm, saving, selectedBatchId, setSelectedBatchId, batchDashboard, createBatch, resetBatchCreateKey, cancelBatch, addBirdCost, markBatchSold, reopenBatch, addHouse, editHouse, editingHouseId, cancelHouseEdit, populationAdjustmentForm, setPopulationAdjustmentForm, populationAdjustments, savePopulationAdjustment, markPopulationEstimated, editingBatchId, batchSetupForm, setBatchSetupForm, saveBatchSetup, editBatchSetup, cancelBatchSetup } = useContext(FarmManagerContext);
 
   function openBatchDetails(batch) {
     const house = houses.find(item => item.id === batch.houseId);
@@ -79,7 +81,7 @@ export default function FlocksPage() {
       <PageSection page="flocks" tab="batch-dashboard"><section id="batch-dashboard" className="card full dashboard-page">
         <div className="section-head"><div><p className="eyebrow">BATCH</p><h2>Batch dashboard</h2></div>
           <select aria-label="Batch dashboard" value={selectedBatchId} onChange={e => { setSelectedBatchId(e.target.value); rememberLastBatchId(e.target.value); }}>
-            <option value="">Select a batch</option>{batches.map(batch => <option key={batch.id} value={batch.id}>{batch.code} · {batchTypeLabel(batch.type)}</option>)}
+            <option value="">Select a batch</option>{batches.filter(batch => batch.status === "ACTIVE").map(batch => <option key={batch.id} value={batch.id}>{batch.code} · {batchTypeLabel(batch.type)}</option>)}
           </select>
         </div>
         {batchDashboard ? <div className="batch-dashboard">
@@ -132,11 +134,14 @@ export default function FlocksPage() {
             description="Create a permanent flock record. Work through each step, then review the details before creating it."
             triggerLabel="Register batch"
             loading={saving}
-            error={error}
-            onDiscard={() => setBatchForm(form => ({
-              ...form, type: "LAYER", houseId: "", initialBirdCount: "", supplierId: "",
-              purchaseCostRecorded: true, purchaseCostMinor: "", populationCountStatus: "ESTIMATED",
-            }))}
+            error={batchCreateError}
+            onDiscard={() => {
+              resetBatchCreateKey();
+              setBatchForm(form => ({
+                ...form, type: "LAYER", houseId: "", initialBirdCount: "", supplierId: "",
+                purchaseCostRecorded: true, purchaseCostMinor: "", populationCountStatus: "ESTIMATED",
+              }));
+            }}
           >
             <MultiStepForm
               className="form-grid"
@@ -201,8 +206,32 @@ export default function FlocksPage() {
               { key: "status", label: "Status", render: batch => batchStatusLabel(batch.status) },
               { key: "action", label: "Action", render: batch => batch.status === "SOLD"
                 ? <button type="button" onClick={() => reopenBatch(batch.id)} disabled={saving}>Reopen</button>
-                : ["BROILER", "TURKEY"].includes(batch.type) ? <button type="button" onClick={() => markBatchSold(batch.id)} disabled={saving}>Mark sold</button> : "—" },
+                : batch.status === "ACTIVE" ? <div className="table-actions">
+                    <button type="button" className="danger-button" onClick={() => { setBatchToCancel(batch); setCancellationReason(""); }} disabled={saving}>Cancel batch</button>
+                    {["BROILER", "TURKEY"].includes(batch.type) && <button type="button" onClick={() => markBatchSold(batch.id)} disabled={saving}>Mark sold</button>}
+                  </div> : "—" },
             ]} rows={batches} emptyMessage="No batches yet." />
+          <Modal
+            open={Boolean(batchToCancel)}
+            onClose={() => { if (!saving) { setBatchToCancel(null); setCancellationReason(""); } }}
+            title="Cancel batch"
+            description={batchToCancel ? `Cancel ${batchToCancel.code}? This is only for an accidental batch with no dependent records.` : ""}
+            size="small"
+            loading={saving}
+            footer={<div className="pomas-modal-actions">
+              <button type="button" className="secondary-button" disabled={saving} onClick={() => { setBatchToCancel(null); setCancellationReason(""); }}>Keep batch</button>
+              <button type="button" className="danger-button" disabled={saving || !cancellationReason.trim()} onClick={async () => {
+                const succeeded = await cancelBatch(batchToCancel.id, cancellationReason);
+                if (succeeded) { setBatchToCancel(null); setCancellationReason(""); }
+              }}>{saving ? "Cancelling…" : "Confirm cancellation"}</button>
+            </div>}
+          >
+            <label className="field">
+              <span>Reason for cancellation</span>
+              <textarea required rows={3} value={cancellationReason} onChange={event => setCancellationReason(event.target.value)} placeholder="Explain why this batch was created accidentally." />
+            </label>
+            <p className="muted">The batch will remain in history with an audit record. Batches with dependent operational or financial records cannot be cancelled.</p>
+          </Modal>
           {editingBatchId && <ValidatedForm className="inline-form subsection" onSubmit={saveBatchSetup}>
             <h3>Edit batch setup</h3>
             <p className="muted">Batch code, type, placement date and initial population are permanent. A supplier/source with recorded purchase cost is locked.</p>

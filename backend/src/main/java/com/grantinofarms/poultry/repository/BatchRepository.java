@@ -25,6 +25,13 @@ public class BatchRepository {
                 """, (rs, rowNum) -> map(rs), id).stream().findFirst().orElse(null);
     }
 
+    public String farmTimezoneForBatch(String batchId) {
+        return jdbc.query(
+                "SELECT f.timezone FROM farms f JOIN batches b ON b.farm_id=f.id WHERE b.id = ?",
+                (rs, rowNum) -> rs.getString("timezone"), batchId
+        ).stream().findFirst().orElse(null);
+    }
+
     public List<BatchResponse> findByFarm(String farmId) {
         return jdbc.query("""
                 SELECT id, farm_id, house_id, supplier_id, code, batch_type,
@@ -84,6 +91,11 @@ public class BatchRepository {
 
     public void updatePopulationCountStatus(String id, String status, String now) {
         jdbc.update("UPDATE batches SET population_count_status=?, updated_at=? WHERE id=?", status, now, id);
+    }
+
+    public int transitionStatus(String id, String expectedStatus, String nextStatus, String now) {
+        return jdbc.update("UPDATE batches SET status = ?, updated_at = ? WHERE id = ? AND status = ?",
+                nextStatus, now, id, expectedStatus);
     }
 
     public void updateStatus(String id, String status, String now) {

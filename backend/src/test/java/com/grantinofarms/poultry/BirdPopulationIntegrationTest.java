@@ -133,6 +133,48 @@ class BirdPopulationIntegrationTest {
     }
 
     @Test
+    void rejectsPopulationEventsBeforePlacementAndKeepsPrePlacementPopulationAtZero() {
+        farmService.create(new FarmCreateRequest(
+                "Grantino Farms", "Port Harcourt", "Africa/Lagos", "NGN"));
+        var house = houseService.create(new HouseCreateRequest("Future House", "FH1", null));
+        var batch = batchService.create(new com.grantinofarms.poultry.dto.BatchCreateRequest(
+                "BROILER", LocalDate.of(2026, 5, 10), house.id(), 100, null, 1_000_000L));
+
+        assertThat(populationService.get(batch.id(), LocalDate.of(2026, 5, 9)).currentBirds()).isZero();
+
+        assertThatThrownBy(() -> populationService.addMortality(batch.id(),
+                new BirdPopulationEventRequest(LocalDate.of(2026, 5, 9), 1, "Before placement")))
+                .hasMessage("Population events cannot be dated before the batch placement date.");
+        assertThatThrownBy(() -> populationService.addCulling(batch.id(),
+                new BirdPopulationEventRequest(LocalDate.of(2026, 5, 9), 1, "Before placement")))
+                .hasMessage("Population events cannot be dated before the batch placement date.");
+        assertThatThrownBy(() -> populationService.addSale(batch.id(),
+                new BirdPopulationEventRequest(LocalDate.of(2026, 5, 9), 1, "Before placement")))
+                .hasMessage("Population events cannot be dated before the batch placement date.");
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM bird_population_events WHERE batch_id=?", Integer.class, batch.id()))
+                .isZero();
+    }
+
+    @Test
+    void transferDateMustNotPrecedeEitherBatchPlacementDate() {
+        farmService.create(new FarmCreateRequest(
+                "Grantino Farms", "Port Harcourt", "Africa/Lagos", "NGN"));
+        var house = houseService.create(new HouseCreateRequest("Transfer House", "TH2", null));
+        var source = batchService.create(new com.grantinofarms.poultry.dto.BatchCreateRequest(
+                "LAYER", LocalDate.of(2026, 5, 1), house.id(), 200, null, 2_000_000L));
+        var target = batchService.create(new com.grantinofarms.poultry.dto.BatchCreateRequest(
+                "LAYER", LocalDate.of(2026, 5, 10), house.id(), 100, null, 1_000_000L));
+
+        assertThatThrownBy(() -> populationService.transfer(source.id(),
+                new BirdTransferRequest(target.id(), LocalDate.of(2026, 5, 9), 10, "Too early")))
+                .hasMessage("Population events cannot be dated before the batch placement date.");
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM bird_population_events WHERE batch_id IN (?, ?)",
+                Integer.class, source.id(), target.id())).isZero();
+    }
+
+    @Test
     void supportsAtomicTransfersAndValidatesSourcePopulation() {
         farmService.create(new FarmCreateRequest(
                 "Grantino Farms", "Port Harcourt", "Africa/Lagos", "NGN"));
