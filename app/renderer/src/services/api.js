@@ -415,24 +415,7 @@ export const reportSubmissionApi = {
   }),
 };
 
-export const reportReviewApi = {
-  queue: (filters = {}) => {
-    const params = new URLSearchParams();
-    Object.entries(filters).forEach(([key, value]) => { if (value) params.set(key, value); });
-    const query = params.toString();
-    return request("/review/queue" + (query ? "?" + query : ""));
-  },
-  get: (id) => request("/review/submissions/" + encodeURIComponent(id)),
-  assign: (id, managerId) => request("/review/submissions/" + encodeURIComponent(id) + "/assign", {
-    method: "POST", body: JSON.stringify({ managerId }),
-  }),
-  comment: (id, body) => request("/review/submissions/" + encodeURIComponent(id) + "/comments", {
-    method: "POST", body: JSON.stringify({ body }),
-  }),
-  decide: (id, decision, reason) => request("/review/submissions/" + encodeURIComponent(id) + "/decision", {
-    method: "POST", body: JSON.stringify({ decision, reason }),
-  }),
-};
+
 
 export const reportReviewApi = {
   queue: (filters = {}) => {
