@@ -145,6 +145,9 @@ public class ReportSubmissionService {
             }
             return serialized;
         }
+        catch (ApiException e) {
+            throw e;
+        }
         catch (Exception e) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_REPORT_PAYLOAD",
                     "Report data could not be serialized.");
