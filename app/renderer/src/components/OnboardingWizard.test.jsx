@@ -17,7 +17,6 @@ describe("OnboardingWizard", () => {
     const onSaveProfile = vi.fn().mockResolvedValue(true);
     const onCreateFarm = vi.fn().mockResolvedValue(true);
     const onComplete = vi.fn();
-    const setFarmForm = vi.fn();
     render(<Harness account={{ fullName: "Ada Farmer", email: "ada@example.com" }} onSaveProfile={onSaveProfile} onCreateFarm={onCreateFarm} onComplete={onComplete} saving={false} error="" />);
 
     expect(screen.getByRole("heading", { name: "Welcome to Pomas!" })).toBeInTheDocument();
