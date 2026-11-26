@@ -60,7 +60,7 @@ export default function OnboardingWizard({ account, farmForm, setFarmForm, onSav
     if (step === 1 && !progress.firstName.trim()) return setLocalError("Enter your first name to continue.");
     if (step === 2 && !progress.role) return setLocalError("Select the role that best describes you.");
     if (step === 3 && !progress.discovery) return setLocalError("Select how you heard about Pomas.");
-    if (step === 4 && !farmCreated) return setLocalError("Create your farm before continuing.");
+    if (step === 4 && !progress.farmCreated) return setLocalError("Create your farm before continuing.");
     if (step === 5 && !progress.poultryTypes.length) return setLocalError("Select at least one poultry type.");
     setLocalError("");
     update("step", Math.min(7, step + 1));
