@@ -83,7 +83,7 @@ public class AuthService {
 
         log.info("auth_setup_timing outcome=success ownerCountMs={} passwordHashMs={} sqliteWriteMs={} totalMs={}",
                 ownerCountMs, passwordHashMs, sqliteWriteMs, elapsedMs(totalStarted));
-        return publicUser(id, username, email, request.fullName().trim(), "OWNER");
+        return publicUser(id, username, email, request.fullName().trim(), "ADMINISTRATOR");
     }
 
     @Transactional
