@@ -75,15 +75,18 @@ class ReportSubmissionIntegrationTest {
 
     @Test
     void savesAppendOnlyVersionsAndSubmitsTheExactCurrentVersion() throws Exception {
+        java.time.ZoneId zone = java.time.ZoneId.of("Africa/Lagos");
+        String eventDate = java.time.LocalDate.now(zone).toString();
+        String eventTime = java.time.LocalTime.now(zone).format(java.time.format.DateTimeFormatter.ofPattern("HH:mm"));
         var first = new ReportSubmissionRequest("EXPENSE", "Morning report",
-                mapper.readTree("{\"occurredDate\":\"2026-11-26\",\"eventDate\":\"2026-11-26\",\"eventTime\":\"08:00\",\"description\":\"Initial farm expense\",\"amountMinor\":1200,\"category\":\"OTHER\"}"));
+                mapper.readTree("{\"occurredDate\":\"" + eventDate + "\",\"eventDate\":\"" + eventDate + "\",\"eventTime\":\"" + eventTime + "\",\"description\":\"Initial farm expense\",\"amountMinor\":1200,\"category\":\"OTHER\"}"));
         Map<String, Object> created = submissions.createDraft(first);
         String id = String.valueOf(created.get("id"));
         assertThat(created.get("status")).isEqualTo("DRAFT");
         assertThat(created.get("currentVersion")).isEqualTo(1);
 
         var second = new ReportSubmissionRequest("EXPENSE", "Morning report revised",
-                mapper.readTree("{\"occurredDate\":\"2026-11-26\",\"eventDate\":\"2026-11-26\",\"eventTime\":\"08:00\",\"description\":\"Revised farm expense\",\"amountMinor\":2400,\"category\":\"OTHER\"}"));
+                mapper.readTree("{\"occurredDate\":\"" + eventDate + "\",\"eventDate\":\"" + eventDate + "\",\"eventTime\":\"" + eventTime + "\",\"description\":\"Revised farm expense\",\"amountMinor\":2400,\"category\":\"OTHER\"}"));
         Map<String, Object> saved = submissions.saveDraft(id, second);
         assertThat(saved.get("currentVersion")).isEqualTo(2);
         assertThat((java.util.List<?>) saved.get("versions")).hasSize(2);
