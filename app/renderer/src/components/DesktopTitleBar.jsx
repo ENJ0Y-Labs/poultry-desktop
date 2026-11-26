@@ -74,7 +74,7 @@ export default function DesktopTitleBar({ onNavigate, onQuickActions, onToggleSi
       { label: "Keyboard shortcuts", action: onShortcuts },
     ] },
   ];
-  const menus = userRole === "MANAGER" ? managerMenus : restrictedMenus;
+  const menus = userRole === "WORKER" ? restrictedMenus : managerMenus;
 
   useEffect(() => {
     if (!openMenu) return undefined;
