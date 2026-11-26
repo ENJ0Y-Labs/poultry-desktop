@@ -89,11 +89,11 @@ class ReportSubmissionIntegrationTest {
 
         Map<String, Object> submitted = submissions.submit(id);
         assertThat(submitted.get("status")).isEqualTo("PENDING_REVIEW");
-        assertThat(submitted.get("lifecycleStatus")).isEqualTo("SUBMITTED");
+        assertThat(submitted.get("lifecycleStatus")).isEqualTo("BLOCKED");
         assertThat(submitted.get("submittedVersion")).isEqualTo(2);
         assertThat(jdbc.queryForObject(
                 "SELECT COUNT(*) FROM report_submission_events WHERE submission_id = ?",
-                Integer.class, id)).isEqualTo(3);
+                Integer.class, id)).isEqualTo(4);
 
         assertThatThrownBy(() -> jdbc.update("""
                 UPDATE report_submission_versions SET payload_json = '{}' 
@@ -150,7 +150,7 @@ class ReportSubmissionIntegrationTest {
                 "MORTALITY", "Mortality report", mapper.readTree("{\"quantity\":1,\"batchId\":\"batch-1\",\"eventDate\":\"2026-11-26\"}")));
         assertThat(revised.get("currentVersion")).isEqualTo(2);
         Map<String, Object> resubmitted = submissions.submit(id);
-        assertThat(resubmitted.get("lifecycleStatus")).isEqualTo("SUBMITTED");
+        assertThat(resubmitted.get("lifecycleStatus")).isEqualTo("BLOCKED");
         assertThat((java.util.List<?>) resubmitted.get("versions")).hasSize(2);
     }
 
