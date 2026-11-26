@@ -16,6 +16,7 @@ export default function ReviewCentrePage({ currentUser }) {
   const [assignment, setAssignment] = useState("");
   const [comment, setComment] = useState("");
   const [reason, setReason] = useState("");
+  const [overrideReasons, setOverrideReasons] = useState({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -79,6 +80,24 @@ export default function ReviewCentrePage({ currentUser }) {
       setNotice("Comment added to the report history.");
       await refreshQueue();
     } catch (err) { setError(err.message || "Comment could not be saved."); }
+    finally { setSaving(false); }
+  }
+
+  async function authorizeWarning(check) {
+    const overrideReason = (overrideReasons[check.id] || "").trim();
+    if (!selected || !overrideReason) {
+      setError("Enter a reason for this warning authorization.");
+      return;
+    }
+    setSaving(true);
+    setError("");
+    try {
+      const updated = await reportReviewApi.overrideWarning(selected.id, check.id, overrideReason);
+      setSelected(updated);
+      setOverrideReasons(current => ({ ...current, [check.id]: "" }));
+      setNotice("Warning authorization recorded in the immutable review history.");
+      await refreshQueue();
+    } catch (err) { setError(err.message || "Warning could not be authorized."); }
     finally { setSaving(false); }
   }
 
@@ -154,7 +173,10 @@ export default function ReviewCentrePage({ currentUser }) {
                 <div><small>Assigned manager</small><strong>{selected.assignedManagerId || "Unassigned"}</strong></div>
               </div>
               <section className="review-payload"><h4>Submitted report snapshot</h4><pre>{JSON.stringify(selected.versions?.find(item => item.version === (selected.submittedVersion || selected.currentVersion))?.payload || {}, null, 2)}</pre></section>
-              <section className="review-checks"><h4>Automated checks</h4>{(selected.checks || []).length === 0 ? <p className="muted">No automated checks have been recorded for this version yet.</p> : selected.checks.map(check => <article key={check.id}><span className={"check-outcome check-" + check.outcome.toLowerCase()}>{label(check.outcome)}</span><strong>{label(check.code)}</strong><p>{check.explanation}</p></article>)}</section>
+              <section className="review-checks"><h4>Automated checks</h4>{(selected.checks || []).length === 0 ? <p className="muted">No automated checks have been recorded for this version yet.</p> : selected.checks.map(check => <article key={check.id}><span className={"check-outcome check-" + check.outcome.toLowerCase()}>{label(check.outcome)}</span><strong>{label(check.code)}</strong><p>{check.explanation}</p>
+                {check.outcome === "WARNING" && check.overrideable && !(selected.history || []).some(event => event.event === "WARNING_OVERRIDDEN" && event.details?.checkId === check.id) && <div className="warning-override-form"><label htmlFor={"override-" + check.id}>Manager authorization reason</label><textarea id={"override-" + check.id} rows={2} maxLength={1000} value={overrideReasons[check.id] || ""} onChange={event => setOverrideReasons(current => ({ ...current, [check.id]: event.target.value }))} /><button type="button" className="secondary-button" disabled={saving || !(overrideReasons[check.id] || "").trim()} onClick={() => authorizeWarning(check)}>Authorize this warning</button></div>}
+                {check.outcome === "WARNING" && (selected.history || []).some(event => event.event === "WARNING_OVERRIDDEN" && event.details?.checkId === check.id) && <small>Manager authorization recorded.</small>}
+              </article>)}</section>
               <section className="review-assignment"><h4>Reviewer assignment</h4><form className="inline-form" onSubmit={assignReviewer}>
                 <select aria-label="Assign manager" value={assignment} onChange={event => setAssignment(event.target.value)}>
                   <option value="">Choose a Manager</option>
