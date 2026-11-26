@@ -48,7 +48,7 @@ const legacyRoutes = {
 };
 function allowedPagesForRole(role) {
   if (role === "MANAGER") return validPages;
-  if (role === "ADMINISTRATOR") return ["my-reports", "user-management"];
+  if (role === "ADMINISTRATOR") return validPages.filter(page => page !== "review-centre");
   return ["my-reports"];
 }
 function resolvePage(hash, startPage = "dashboard") {
@@ -413,7 +413,7 @@ export default function AppShell({ farm, error, appInfo, onRetry, onQuickAction,
             className="nav-item"
             aria-label="Account"
             title="Account"
-            onClick={() => navigate(userRole === "ADMINISTRATOR" ? "user-management" : "my-reports")}
+            onClick={() => navigate(userRole === "ADMINISTRATOR" ? "user-management" : userRole === "WORKER" ? "my-reports" : "settings")}
           >
             <span className="nav-icon-wrap"><span className="activity-avatar" aria-hidden="true">{farmInitials(farm.name)}</span></span>
             <span className="nav-label">Account</span>
@@ -435,7 +435,7 @@ export default function AppShell({ farm, error, appInfo, onRetry, onQuickAction,
             </div>
             <div className="topbar-actions">
               <button type="button" className="secondary-button attention-mobile-toggle" onClick={() => setAttentionMobileOpen(true)} aria-label={`Open attention panel, ${attentionCount} actionable alerts`} aria-expanded={attentionMobileOpen}>Attention <span>{attentionCount}</span></button>
-              {userRole === "MANAGER" && <QuickActionsMenu activeBatch={activeBatch} hasFeedTypes={hasActiveFeedTypes} hasApplicableFeed={hasApplicableFeed} hasInventoryItems={hasActiveInventoryItems} onAction={onQuickAction} onNavigate={navigateQuickAction} />}
+              {userRole !== "WORKER" && <QuickActionsMenu activeBatch={activeBatch} hasFeedTypes={hasActiveFeedTypes} hasApplicableFeed={hasApplicableFeed} hasInventoryItems={hasActiveInventoryItems} onAction={onQuickAction} onNavigate={navigateQuickAction} />}
               <button type="button" className="secondary-button keyboard-shortcuts-trigger" onClick={() => setShortcutsOpen(true)} aria-haspopup="dialog">Keyboard shortcuts</button>
               <div className="date-chip">{today}</div>
             </div>
