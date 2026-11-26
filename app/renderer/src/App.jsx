@@ -935,11 +935,12 @@ export default function App() {
     try {
       const created = await farmApi.create(farmForm);
       setFarm(created);
-      const settings = await farmApi.getSettings();
-      setCrateSize(settings.defaultCrateSize);
-      setDefaultWater(settings.defaultWaterContainerSize ?? "");
-      setWaterSizes(settings.waterContainerSizes.join(", "));
-      setWaterUnitLabel(settings.waterUnitLabel || "litres");
+      setOnboardingActive(true);
+      // Persist the successful create before any secondary setup request can fail.
+      try {
+        const saved = JSON.parse(localStorage.getItem("pomas:onboarding:v1") || "{}");
+        localStorage.setItem("pomas:onboarding:v1", JSON.stringify({ ...saved, step: 5, farmCreated: true, farmDraft: farmForm }));
+      } catch { /* The component also persists its in-memory progress after this callback returns. */ }
       setHouses([]);
       setBatches([]);
       setExpenses([]);
@@ -952,7 +953,15 @@ export default function App() {
       setFeedTypes([]);
       setFeedInventory([]);
       setBatchForm(emptyBatch);
-      setOnboardingActive(true);
+      try {
+        const settings = await farmApi.getSettings();
+        setCrateSize(settings.defaultCrateSize);
+        setDefaultWater(settings.defaultWaterContainerSize ?? "");
+        setWaterSizes(settings.waterContainerSizes.join(", "));
+        setWaterUnitLabel(settings.waterUnitLabel || "litres");
+      } catch (settingsError) {
+        setDataLoadError(displayApiError(settingsError));
+      }
       return true;
     } catch (err) { setError(displayApiError(err)); return false; } finally { setSaving(false); }
   }
