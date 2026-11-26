@@ -160,15 +160,16 @@ public class ReportCheckService {
             }
         }
 
+        String outcome = results.stream().anyMatch(result -> "BLOCKED".equals(result.outcome())) ? "BLOCKED"
+                : results.stream().anyMatch(result -> "WARNING".equals(result.outcome())) ? "FLAGGED" : "PENDING_REVIEW";
+        String runId = UUID.randomUUID().toString();
+        submissions.insertCheckRun(runId, submissionId, version, outcome, now);
         for (CheckResult result : results) {
-            submissions.insertCheck(UUID.randomUUID().toString(), submissionId, version,
+            submissions.insertCheck(UUID.randomUUID().toString(), runId, submissionId, version,
                     result.code(), result.outcome(), result.overrideable(), result.explanation(),
                     json(result.details()), now);
         }
-
-        if (results.stream().anyMatch(result -> "BLOCKED".equals(result.outcome()))) return "BLOCKED";
-        if (results.stream().anyMatch(result -> "WARNING".equals(result.outcome()))) return "FLAGGED";
-        return "PENDING_REVIEW";
+        return outcome;
     }
 
     private Class<?> dtoType(String type) {
