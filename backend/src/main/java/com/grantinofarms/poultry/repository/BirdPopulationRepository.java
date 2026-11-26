@@ -103,6 +103,15 @@ public class BirdPopulationRepository {
         );
     }
 
+    public String latestEventId(String batchId, LocalDate eventDate, String eventType) {
+        return jdbc.query("""
+                SELECT id FROM bird_population_events
+                WHERE batch_id = ? AND event_date = ? AND event_type = ?
+                ORDER BY created_at DESC, id DESC LIMIT 1
+                """, rs -> rs.next() ? rs.getString("id") : null,
+                batchId, eventDate.toString(), eventType);
+    }
+
     public void insertAdjustment(String id, String batchId, LocalDate effectiveDate,
                                  int previousCount, int newCount, int difference,
                                  String reason, String userId, String createdAt) {
