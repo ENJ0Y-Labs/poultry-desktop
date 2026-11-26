@@ -29,6 +29,12 @@ public class ReportReviewService {
     }
 
     @Transactional(readOnly = true)
+    public List<Map<String, Object>> managers() {
+        RoleAuthorization.requireManager();
+        return submissions.findActiveManagers();
+    }
+
+    @Transactional(readOnly = true)
     public Map<String, Object> get(String id) {
         RoleAuthorization.requireManager();
         return detail(requireHeader(id));
