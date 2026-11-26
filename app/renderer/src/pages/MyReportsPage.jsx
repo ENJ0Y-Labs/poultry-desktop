@@ -7,6 +7,8 @@ const reportDefinitions = {
     label: "Daily operations",
     fields: [
       ["eventDate", "Observation date", "date", true],
+      ["eventTime", "Event time", "time", true],
+      ["lateReason", "Reason for late submission (if over 24 hours)", "textarea", false],
       ["batchId", "Batch / flock", "batch", true],
       ["notes", "What happened today?", "textarea", true],
       ["waterNotes", "Water observations", "textarea", false],
@@ -16,6 +18,8 @@ const reportDefinitions = {
     label: "Mortality",
     fields: [
       ["eventDate", "Date observed", "date", true],
+      ["eventTime", "Event time", "time", true],
+      ["lateReason", "Reason for late submission (if over 24 hours)", "textarea", false],
       ["batchCode", "Batch code", "text", true],
       ["quantity", "Number of birds", "number", true],
       ["reason", "Suspected cause / reason", "text", false],
@@ -26,6 +30,8 @@ const reportDefinitions = {
     label: "Culling",
     fields: [
       ["eventDate", "Event date", "date", true],
+      ["eventTime", "Event time", "time", true],
+      ["lateReason", "Reason for late submission (if over 24 hours)", "textarea", false],
       ["batchCode", "Batch code", "text", true],
       ["quantity", "Number of birds", "number", true],
       ["reason", "Reason for culling", "text", true],
@@ -36,6 +42,8 @@ const reportDefinitions = {
     label: "Health observation",
     fields: [
       ["eventDate", "Observation date", "date", true],
+      ["eventTime", "Event time", "time", true],
+      ["lateReason", "Reason for late submission (if over 24 hours)", "textarea", false],
       ["batchCode", "Batch code", "text", true],
       ["conditionProblem", "Condition / problem", "text", true],
       ["description", "What did you observe?", "textarea", true],
@@ -46,6 +54,8 @@ const reportDefinitions = {
     label: "Drug / treatment",
     fields: [
       ["eventDate", "Treatment date", "date", true],
+      ["eventTime", "Event time", "time", true],
+      ["lateReason", "Reason for late submission (if over 24 hours)", "textarea", false],
       ["batchCode", "Batch code", "text", true],
       ["drug", "Drug / product", "text", true],
       ["quantity", "Quantity used", "number", true],
@@ -57,6 +67,8 @@ const reportDefinitions = {
     label: "Vaccination",
     fields: [
       ["eventDate", "Vaccination date", "date", true],
+      ["eventTime", "Event time", "time", true],
+      ["lateReason", "Reason for late submission (if over 24 hours)", "textarea", false],
       ["batchCode", "Batch code", "text", true],
       ["vaccine", "Vaccine", "text", true],
       ["dose", "Dose", "text", true],
@@ -68,6 +80,8 @@ const reportDefinitions = {
     label: "Egg collection",
     fields: [
       ["eventDate", "Collection date", "date", true],
+      ["eventTime", "Event time", "time", true],
+      ["lateReason", "Reason for late submission (if over 24 hours)", "textarea", false],
       ["batchCode", "Batch code", "text", true],
       ["good", "Good eggs", "number", true],
       ["cracked", "Cracked eggs", "number", true],
@@ -78,6 +92,8 @@ const reportDefinitions = {
     label: "Weight record",
     fields: [
       ["eventDate", "Measurement date", "date", true],
+      ["eventTime", "Event time", "time", true],
+      ["lateReason", "Reason for late submission (if over 24 hours)", "textarea", false],
       ["batchCode", "Batch code", "text", true],
       ["sampleQuantity", "Birds sampled", "number", true],
       ["totalWeightKg", "Total sample weight (kg)", "decimal", true],
@@ -88,6 +104,8 @@ const reportDefinitions = {
     label: "Feed usage",
     fields: [
       ["eventDate", "Usage date", "date", true],
+      ["eventTime", "Event time", "time", true],
+      ["lateReason", "Reason for late submission (if over 24 hours)", "textarea", false],
       ["batchCode", "Batch code", "text", true],
       ["feedTypeId", "Feed type", "feed", true],
       ["quantity", "Quantity used", "decimal", true],
@@ -98,6 +116,8 @@ const reportDefinitions = {
     label: "Farm expense",
     fields: [
       ["eventDate", "Expense date", "date", true],
+      ["eventTime", "Event time", "time", true],
+      ["lateReason", "Reason for late submission (if over 24 hours)", "textarea", false],
       ["batchCode", "Batch code (optional)", "text", false],
       ["description", "Description", "text", true],
       ["amountNaira", "Amount (₦)", "money", true],
@@ -108,6 +128,8 @@ const reportDefinitions = {
     label: "Bird sale",
     fields: [
       ["eventDate", "Sale date", "date", true],
+      ["eventTime", "Event time", "time", true],
+      ["lateReason", "Reason for late submission (if over 24 hours)", "textarea", false],
       ["batchCode", "Batch code", "text", true],
       ["quantity", "Birds sold", "number", true],
       ["pricePerBirdNaira", "Price per bird (₦)", "money", true],
@@ -119,6 +141,8 @@ const reportDefinitions = {
     label: "Egg sale",
     fields: [
       ["eventDate", "Sale date", "date", true],
+      ["eventTime", "Event time", "time", true],
+      ["lateReason", "Reason for late submission (if over 24 hours)", "textarea", false],
       ["batchCode", "Batch code", "text", true],
       ["crates", "Crates sold", "decimal", true],
       ["pricePerCrateNaira", "Price per crate (₦)", "money", true],
@@ -138,10 +162,15 @@ function today() {
   return local.toISOString().slice(0, 10);
 }
 
+function currentTime() {
+  const date = new Date();
+  return String(date.getHours()).padStart(2, "0") + ":" + String(date.getMinutes()).padStart(2, "0");
+}
+
 function emptyFields(type) {
   const values = {};
   for (const [key, , kind] of reportDefinitions[type].fields) {
-    values[key] = kind === "date" ? today() : "";
+    values[key] = kind === "date" ? today() : kind === "time" ? currentTime() : "";
   }
   return values;
 }
