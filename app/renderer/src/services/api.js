@@ -521,3 +521,18 @@ export const reportAttachmentApi = {
     "/submissions/" + encodeURIComponent(submissionId) + "/attachments/" + encodeURIComponent(attachmentId),
   ),
 };
+
+
+export const reportingConfigApi = {
+  schedules: () => request("/review/reporting/schedules"),
+  createSchedule: payload => request("/review/reporting/schedules", { method: "POST", body: JSON.stringify(payload) }),
+  setScheduleEnabled: (id, enabled) => request("/review/reporting/schedules/" + encodeURIComponent(id) + "/enabled", {
+    method: "PATCH", body: JSON.stringify({ enabled }),
+  }),
+  thresholds: () => request("/review/reporting/thresholds"),
+  createThreshold: payload => request("/review/reporting/thresholds", { method: "POST", body: JSON.stringify(payload) }),
+  setThresholdEnabled: (id, enabled) => request("/review/reporting/thresholds/" + encodeURIComponent(id) + "/enabled", {
+    method: "PATCH", body: JSON.stringify({ enabled }),
+  }),
+  missing: () => request("/review/reporting/missing"),
+};
