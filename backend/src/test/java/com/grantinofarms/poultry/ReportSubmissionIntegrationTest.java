@@ -6,14 +6,19 @@ import com.grantinofarms.poultry.exception.ApiException;
 import com.grantinofarms.poultry.repository.FarmRepository;
 import com.grantinofarms.poultry.repository.UserRepository;
 import com.grantinofarms.poultry.service.AdminUserService;
+import com.grantinofarms.poultry.service.AuthService;
 import com.grantinofarms.poultry.service.CurrentUserContext;
+import com.grantinofarms.poultry.service.PasswordHasher;
 import com.grantinofarms.poultry.service.ReportSubmissionService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.web.servlet.MockMvc;
+import jakarta.servlet.http.Cookie;
 
 import java.time.Instant;
 import java.util.Map;
@@ -21,7 +26,10 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+@AutoConfigureMockMvc
 @SpringBootTest(properties = {
         "spring.datasource.url=jdbc:sqlite:file:report-submission-phase1-test?mode=memory&cache=shared"
 })
@@ -31,6 +39,9 @@ class ReportSubmissionIntegrationTest {
     @Autowired UserRepository users;
     @Autowired ReportSubmissionService submissions;
     @Autowired AdminUserService adminUsers;
+    @Autowired AuthService auth;
+    @Autowired PasswordHasher passwordHasher;
+    @Autowired MockMvc mockMvc;
     @Autowired ObjectMapper mapper;
 
     private String farmId;
@@ -96,6 +107,21 @@ class ReportSubmissionIntegrationTest {
                 .isInstanceOf(ApiException.class)
                 .hasMessageContaining("not found");
         assertThat(submissions.mine()).isEmpty();
+    }
+
+    @Test
+    void workerCannotBypassRoleRestrictionsByCallingAnAdminApiDirectly() throws Exception {
+        String password = "worker-login-password";
+        String userId = UUID.randomUUID().toString();
+        String now = Instant.now().toString();
+        users.insertWithRole(userId, "api-worker-" + userId.substring(0, 6), null,
+                passwordHasher.hash(password), "API Worker", "WORKER", now, null);
+        var session = auth.login(new com.grantinofarms.poultry.dto.LoginRequest(
+                "api-worker-" + userId.substring(0, 6), password, false));
+
+        mockMvc.perform(get("/api/v1/admin/users")
+                        .cookie(new Cookie(AuthService.COOKIE, session.token())))
+                .andExpect(status().isForbidden());
     }
 
     @Test
