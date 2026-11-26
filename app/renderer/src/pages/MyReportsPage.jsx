@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { reportSubmissionApi } from "../services/api.js";
 import { parseNairaToKobo } from "../utils/moneyInput.js";
 
@@ -150,6 +150,11 @@ function today() {
   return local.toISOString().slice(0, 10);
 }
 
+function currentTime() {
+  const date = new Date();
+  return String(date.getHours()).padStart(2, "0") + ":" + String(date.getMinutes()).padStart(2, "0");
+}
+
 function readLocalArray(key) {
   try {
     const parsed = JSON.parse(localStorage.getItem(key) || "[]");
@@ -164,6 +169,8 @@ function emptyFields(type) {
   for (const [key, , kind] of reportDefinitions[type].fields) {
     values[key] = kind === "date" ? today() : kind === "category" ? "OTHER" : "";
   }
+  values.eventTime = currentTime();
+  values.lateReason = "";
   return values;
 }
 
@@ -209,7 +216,7 @@ function fromPayload(type, payload = {}) {
     }
     if (value != null) values[key] = String(value);
   }
-  values.eventTime = payload.eventTime || "";
+  values.eventTime = payload.eventTime || currentTime();
   values.lateReason = payload.lateReason || "";
   return values;
 }
@@ -279,7 +286,7 @@ export default function MyReportsPage({ userId = "" }) {
     try { localStorage.setItem(referencesStorageKey, JSON.stringify(next)); } catch { /* cached references are optional */ }
   }
 
-  async function refresh() {
+  const refresh = useCallback(async () => {
     setLoading(true);
     setError("");
     const [reportsResult, referencesResult] = await Promise.allSettled([
@@ -293,13 +300,13 @@ export default function MyReportsPage({ userId = "" }) {
       setError(reportsResult.reason?.message || "Could not load your server submissions.");
     }
     if (referencesResult.status === "fulfilled") persistReferences(referencesResult.value);
-    else if (!references.batches.length && !references.feedTypes.length) {
-      setNotice("Farm lists are unavailable offline. You can still save a local draft and sync it when connected.");
+    else {
+      setNotice("Farm lists could not be refreshed. Cached batch and feed references remain available.");
     }
     setLoading(false);
-  }
+  }, [userId]);
 
-  useEffect(() => { refresh(); }, [userId]);
+  useEffect(() => { refresh(); }, [refresh]);
 
   function resetForm() {
     setEditing(null);
