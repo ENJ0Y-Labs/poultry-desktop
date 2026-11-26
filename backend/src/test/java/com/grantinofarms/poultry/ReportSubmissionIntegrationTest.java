@@ -14,6 +14,7 @@ import com.grantinofarms.poultry.service.ReportSubmissionService;
 import com.grantinofarms.poultry.service.ReportReviewService;
 import com.grantinofarms.poultry.service.ReportMergeService;
 import com.grantinofarms.poultry.service.FarmIncidentService;
+import com.grantinofarms.poultry.service.ReportAttachmentService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -47,6 +48,7 @@ class ReportSubmissionIntegrationTest {
     @Autowired ReportReviewService reviews;
     @Autowired ReportMergeService merges;
     @Autowired FarmIncidentService farmIncidents;
+    @Autowired ReportAttachmentService attachments;
     @Autowired AdminUserService adminUsers;
     @Autowired AuthService auth;
     @Autowired PasswordHasher passwordHasher;
@@ -283,6 +285,31 @@ class ReportSubmissionIntegrationTest {
         assertThat(jdbc.queryForObject(
                 "SELECT COUNT(*) FROM expenses WHERE description = ?",
                 Integer.class, "The drinker line has stopped supplying water to the active flock.")).isZero();
+    }
+
+
+    @Test
+    void evidenceIsVersionBoundImmutableAndIncludedInTheDatabaseBackup() throws Exception {
+        Map<String, Object> created = submissions.createDraft(new ReportSubmissionRequest(
+                "DAILY_OPERATIONS", "Report with evidence", mapper.readTree("{\"eventDate\":\"2026-11-26\"}")));
+        String id = String.valueOf(created.get("id"));
+        byte[] content = "Supplier delivery note 4821".getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        var file = new org.springframework.mock.web.MockMultipartFile(
+                "file", "../../delivery-note.txt", "text/plain", content);
+        Map<String, Object> metadata = attachments.upload(id, file);
+        assertThat(metadata.get("fileName")).isEqualTo("delivery-note.txt");
+        assertThat(metadata.get("mimeType")).isEqualTo("text/plain");
+        assertThat(metadata.get("fileSize")).isEqualTo((long) content.length);
+        assertThat(jdbc.queryForObject(
+                "SELECT length(file_content) FROM report_submission_attachments WHERE id = ?",
+                Integer.class, metadata.get("id"))).isEqualTo(content.length);
+
+        Map<String, Object> downloaded = attachments.download(id, String.valueOf(metadata.get("id")));
+        assertThat((byte[]) downloaded.get("content")).containsExactly(content);
+        assertThatThrownBy(() -> attachments.upload(id, new org.springframework.mock.web.MockMultipartFile(
+                "file", "fake.png", "image/png", content)))
+                .isInstanceOf(ApiException.class)
+                .hasMessageContaining("valid JPEG, PNG, PDF, or UTF-8 text");
     }
 
     @Test
