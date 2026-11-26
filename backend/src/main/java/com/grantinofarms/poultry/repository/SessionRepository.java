@@ -22,9 +22,10 @@ public class SessionRepository {
 
     public Map<String, Object> findUserByTokenHash(String tokenHash, String now) {
         return jdbc.query("""
-                SELECT u.id, u.username, u.email, u.full_name, u.role, u.status
+                SELECT u.id, u.username, u.email, u.full_name, r.role, u.status
                 FROM user_sessions s
                 JOIN users u ON u.id = s.user_id
+                JOIN user_roles r ON r.user_id = u.id
                 WHERE s.token_hash = ? AND s.expires_at > ? AND u.status = 'ACTIVE'
                 """, (rs, n) -> {
                     Map<String, Object> user = new LinkedHashMap<>();
