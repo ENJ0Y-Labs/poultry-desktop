@@ -200,7 +200,7 @@ public class ReportReviewService {
         result.put("decisions", submissions.findDecisions(id));
         result.put("assignments", submissions.findAssignments(id));
         result.put("links", submissions.findLinks(id));
-        result.put("attachments", submissions.findAttachments(id, version));
+        result.put("attachments", submissions.findAttachments(id, submittedVersion(header)));
         return result;
     }
 
