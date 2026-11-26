@@ -274,9 +274,13 @@ export default function AppShell({ farm, error, appInfo, onRetry, onQuickAction,
 
   useEffect(() => {
     const syncRoute = () => {
-      const page = safePage(resolvePage(window.location.hash, startPage));
+      const requestedPage = resolvePage(window.location.hash, startPage);
+      const page = safePage(requestedPage);
+      const tab = resolveTab(window.location.hash, page);
+      const safeHash = `#${page}/${tab}`;
+      if (window.location.hash !== safeHash) window.location.hash = safeHash;
       setActive(page);
-      setActiveTab(resolveTab(window.location.hash, page));
+      setActiveTab(tab);
     };
     window.addEventListener("hashchange", syncRoute);
     if (window.location.hash) syncRoute();
