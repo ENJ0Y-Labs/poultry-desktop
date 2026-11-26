@@ -62,10 +62,12 @@ public class ReportSubmissionService {
         validateRequest(request);
         int nextVersion = ((Number) header.get("currentVersion")).intValue() + 1;
         String now = Instant.now().toString();
-        submissions.insertVersion(id, nextVersion, json(request.payload()), actorId, now);
-        int updated = submissions.updateDraft(id, actorId, request.title().trim(), nextVersion, now);
+        int previousVersion = nextVersion - 1;
+        int updated = submissions.updateDraft(id, actorId, request.reportType().trim().toUpperCase(),
+                request.title().trim(), previousVersion, nextVersion, now);
         if (updated != 1) throw new ApiException(HttpStatus.CONFLICT, "SUBMISSION_CHANGED",
                 "The report changed while it was being saved. Reload it and try again.");
+        submissions.insertVersion(id, nextVersion, json(request.payload()), actorId, now);
         submissions.appendEvent(id, nextVersion, actorId, "DRAFT_VERSION_SAVED",
                 "{\"previousVersion\":" + (nextVersion - 1) + "}", now);
         audit.append((String) header.get("farmId"), "UPDATE", "REPORT_SUBMISSION", id,
@@ -127,14 +129,22 @@ public class ReportSubmissionService {
                     "Report payload must be a JSON object.");
         }
         if (request.reportType() == null || request.reportType().isBlank()
-                || request.title() == null || request.title().isBlank()) {
+                || request.reportType().length() > 80
+                || request.title() == null || request.title().isBlank() || request.title().length() > 160) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_REPORT",
                     "Report type and title are required.");
         }
     }
 
     private String json(JsonNode payload) {
-        try { return mapper.writeValueAsString(payload); }
+        try {
+            String serialized = mapper.writeValueAsString(payload);
+            if (serialized.length() > 1_000_000) {
+                throw new ApiException(HttpStatus.BAD_REQUEST, "REPORT_PAYLOAD_TOO_LARGE",
+                        "Report data must be smaller than 1 MB.");
+            }
+            return serialized;
+        }
         catch (Exception e) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_REPORT_PAYLOAD",
                     "Report data could not be serialized.");
