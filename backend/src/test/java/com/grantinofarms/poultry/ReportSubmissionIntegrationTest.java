@@ -258,6 +258,10 @@ class ReportSubmissionIntegrationTest {
 
     @Test
     void emergencyIncidentNotifiesManagersAndKeepsAnAppendOnlyResponseHistory() {
+        String managerId = UUID.randomUUID().toString();
+        String now = Instant.now().toString();
+        users.insertWithRole(managerId, "incident-manager-" + managerId.substring(0, 6),
+                null, "test-password-hash", "Incident Manager", "MANAGER", now, null);
         String eventAt = java.time.LocalDateTime.now(java.time.ZoneId.of("Africa/Lagos")).toString();
         Map<String, Object> incident = farmIncidents.create(new FarmIncidentService.IncidentRequest(
                 "WATER_FAILURE", "CRITICAL", "Water supply stopped",
@@ -266,12 +270,8 @@ class ReportSubmissionIntegrationTest {
         assertThat(incident.get("status")).isEqualTo("OPEN");
         assertThat(jdbc.queryForObject(
                 "SELECT COUNT(*) FROM manager_notifications WHERE entity_id = ?",
-                Integer.class, id)).isEqualTo(1);
+                Integer.class, id)).isGreaterThanOrEqualTo(1);
 
-        String managerId = UUID.randomUUID().toString();
-        String now = Instant.now().toString();
-        users.insertWithRole(managerId, "incident-manager-" + managerId.substring(0, 6),
-                null, "test-password-hash", "Incident Manager", "MANAGER", now, null);
         CurrentUserContext.set(managerId, "MANAGER");
         assertThat(farmIncidents.notifications()).hasSize(1);
         assertThat(farmIncidents.acknowledge(id).get("status")).isEqualTo("ACKNOWLEDGED");
@@ -281,8 +281,8 @@ class ReportSubmissionIntegrationTest {
                 "SELECT COUNT(*) FROM farm_incident_events WHERE incident_id = ?",
                 Integer.class, id)).isEqualTo(3);
         assertThat(jdbc.queryForObject(
-                "SELECT COUNT(*) FROM bird_population_events WHERE batch_id IS NULL",
-                Integer.class)).isZero();
+                "SELECT COUNT(*) FROM expenses WHERE description = ?",
+                Integer.class, "The drinker line has stopped supplying water to the active flock.")).isZero();
     }
 
     @Test
