@@ -88,11 +88,12 @@ public class ReportSubmissionRepository {
 
     public Map<String, Object> findHeader(String id) {
         return jdbc.query("""
-                SELECT id, farm_id, author_user_id, report_type, title, status, lifecycle_status,
-                       current_version, submitted_version, created_at, updated_at, submitted_at,
-                       assigned_manager_user_id, scope_type, scope_id, event_date, late_reason,
-                       decision_version, merged_at
-                FROM report_submissions WHERE id = ?
+                SELECT s.id, s.farm_id, s.author_user_id, s.report_type, s.title, s.status, s.lifecycle_status,
+                       s.current_version, s.submitted_version, s.created_at, s.updated_at, s.submitted_at,
+                       s.assigned_manager_user_id, s.scope_type, s.scope_id, s.event_date, s.late_reason,
+                       s.decision_version, s.merged_at, u.username AS author_username,
+                       u.full_name AS author_full_name
+                FROM report_submissions s JOIN users u ON u.id = s.author_user_id WHERE s.id = ?
                 """, rs -> rs.next() ? header(rs) : null, id);
     }
 
