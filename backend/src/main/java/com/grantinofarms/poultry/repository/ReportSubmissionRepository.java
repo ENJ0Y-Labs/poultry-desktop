@@ -316,7 +316,7 @@ public class ReportSubmissionRepository {
         row.put("authorId", rs.getString("author_user_id"));
         row.put("reportType", rs.getString("report_type"));
         row.put("title", rs.getString("title"));
-        row.put("status", rs.getString("lifecycle_status"));
+        row.put("status", rs.getString("status"));
         row.put("legacyStatus", rs.getString("status"));
         row.put("lifecycleStatus", rs.getString("lifecycle_status"));
         row.put("currentVersion", rs.getInt("current_version"));
