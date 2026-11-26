@@ -499,7 +499,7 @@ export default function App() {
   }
 
   async function load({ showLoading = true, preserveForms = false, user = currentUser } = {}) {
-    if (user && user.role !== "MANAGER") {
+    if (user && user.role === "WORKER") {
       setFarm(null);
       setSettingsReady(true);
       setLoading(false);
@@ -591,7 +591,7 @@ export default function App() {
       const status = await authApi.status();
       setAuthStatus(status);
       if (status.authenticated) {
-        const user = await authApi.me();
+        const user = status.user || { role: "MANAGER" };
         setCurrentUser(user);
         return await load({ showLoading: !preserveScreen, preserveForms: preserveScreen, user });
       }
@@ -661,13 +661,14 @@ export default function App() {
         });
       }
 
-      const user = await authApi.login({
+      const loginUser = await authApi.login({
         loginIdentifier: isSetup ? submittedUsername : submittedIdentifier,
         password: submittedPassword,
         rememberMe: isSetup ? false : authForm.rememberMe,
       });
+      const user = loginUser?.role ? loginUser : { role: "MANAGER" };
       setCurrentUser(user);
-      setAuthStatus({ authenticated: true, setupRequired: false });
+      setAuthStatus({ authenticated: true, setupRequired: false, user });
       await load({ user });
     } catch (err) {
       setError(displayApiError(err));
