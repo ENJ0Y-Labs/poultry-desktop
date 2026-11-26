@@ -55,10 +55,12 @@ describe("OnboardingWizard", () => {
   it("restores the saved step and selections after remounting", () => {
     localStorage.setItem("pomas:onboarding:v1", JSON.stringify({
       step: 5, firstName: "Ada", familyName: "Farmer", role: "FARM MANAGER",
-      discovery: "WhatsApp", poultryTypes: ["TURKEYS"], priorities: [], farmCreated: true,\n      farmDraft: { name: "Saved Farm", location: "Port Harcourt", timezone: "Africa/Lagos", currency: "NGN" },
+      discovery: "WhatsApp", poultryTypes: ["TURKEYS"], priorities: [], farmCreated: true,
+      farmDraft: { name: "Saved Farm", location: "Port Harcourt", timezone: "Africa/Lagos", currency: "NGN" },
     }));
     render(<Harness account={{ fullName: "Ada Farmer" }} onSaveProfile={vi.fn().mockResolvedValue(true)} onCreateFarm={vi.fn()} onComplete={vi.fn()} saving={false} error="" />);
     expect(screen.getByRole("heading", { name: "What type of poultry do you manage?" })).toBeInTheDocument();
-    expect(screen.getByLabelText("TURKEYS")).toBeChecked();\n    expect(screen.getByRole("heading", { name: "Saved Farm" })).toBeInTheDocument();
+    expect(screen.getByLabelText("TURKEYS")).toBeChecked();
+    expect(screen.getByRole("heading", { name: "Saved Farm" })).toBeInTheDocument();
   });
 });
