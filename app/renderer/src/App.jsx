@@ -567,6 +567,14 @@ export default function App() {
         setAuthStatus({ authenticated: false, setupRequired: false });
       } else if (err.message === "No farm has been created yet.") {
         setOnboardingActive(true);
+        try {
+          const currentAccount = await accountApi.get();
+          setAccount(currentAccount);
+          if (!preserveForms) setAccountForm({ username: currentAccount.username || "", email: currentAccount.email || "", fullName: currentAccount.fullName || "", currentPassword: "", newPassword: "" });
+        } catch (accountError) {
+          setDataLoadError(displayApiError(accountError));
+          setError(displayApiError(accountError));
+        }
       } else {
         setDataLoadError(displayApiError(err));
         setError(displayApiError(err));
