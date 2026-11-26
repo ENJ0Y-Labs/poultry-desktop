@@ -13,6 +13,7 @@ import com.grantinofarms.poultry.service.PasswordHasher;
 import com.grantinofarms.poultry.service.ReportSubmissionService;
 import com.grantinofarms.poultry.service.ReportReviewService;
 import com.grantinofarms.poultry.service.ReportMergeService;
+import com.grantinofarms.poultry.service.FarmIncidentService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -45,6 +46,7 @@ class ReportSubmissionIntegrationTest {
     @Autowired ReportSubmissionService submissions;
     @Autowired ReportReviewService reviews;
     @Autowired ReportMergeService merges;
+    @Autowired FarmIncidentService farmIncidents;
     @Autowired AdminUserService adminUsers;
     @Autowired AuthService auth;
     @Autowired PasswordHasher passwordHasher;
@@ -251,6 +253,36 @@ class ReportSubmissionIntegrationTest {
         assertThat(jdbc.queryForObject(
                 "SELECT COUNT(*) FROM expenses WHERE description = ?",
                 Integer.class, "Feed transport")).isEqualTo(1);
+    }
+
+
+    @Test
+    void emergencyIncidentNotifiesManagersAndKeepsAnAppendOnlyResponseHistory() {
+        String eventAt = java.time.LocalDateTime.now(java.time.ZoneId.of("Africa/Lagos")).toString();
+        Map<String, Object> incident = farmIncidents.create(new FarmIncidentService.IncidentRequest(
+                "WATER_FAILURE", "CRITICAL", "Water supply stopped",
+                "The drinker line has stopped supplying water to the active flock.", null, null, eventAt));
+        String id = String.valueOf(incident.get("id"));
+        assertThat(incident.get("status")).isEqualTo("OPEN");
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM manager_notifications WHERE entity_id = ?",
+                Integer.class, id)).isEqualTo(1);
+
+        String managerId = UUID.randomUUID().toString();
+        String now = Instant.now().toString();
+        users.insertWithRole(managerId, "incident-manager-" + managerId.substring(0, 6),
+                null, "test-password-hash", "Incident Manager", "MANAGER", now, null);
+        CurrentUserContext.set(managerId, "MANAGER");
+        assertThat(farmIncidents.notifications()).hasSize(1);
+        assertThat(farmIncidents.acknowledge(id).get("status")).isEqualTo("ACKNOWLEDGED");
+        assertThat(farmIncidents.resolve(id, "Water pump restored and the line pressure verified.").get("status"))
+                .isEqualTo("RESOLVED");
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM farm_incident_events WHERE incident_id = ?",
+                Integer.class, id)).isEqualTo(3);
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM bird_population_events WHERE batch_id IS NULL",
+                Integer.class)).isZero();
     }
 
     @Test
