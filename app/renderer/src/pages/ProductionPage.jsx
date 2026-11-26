@@ -26,7 +26,7 @@ import { ProductionDistributionCharts } from "../components/AnalyticsCharts.jsx"
 
 export default function ProductionPage() {
   const { error } = useContext(FarmManagerContext);
-  const { formatMoney, farm, batches, customers, dateRange, setDateRange, applicationSettings, eggBatchId, setEggBatchId, broilerBatchId, setBroilerBatchId, broilerGrowth, broilerWeights, broilerSales, weightForm, setWeightForm, birdSaleForm, setBirdSaleForm, emptyWeight, emptyBirdSale, pricing, pricingForm, setPricingForm, eggInventory, eggCollections, eggSales, eggCollectionForm, setEggCollectionForm, eggSaleForm, setEggSaleForm, crateSize, saving, loadPricingForBatch, loadBroilerForBatch, saveWeight, saveBirdSale, loadEggsForBatch, saveEggCollection, saveEggSale } = useContext(FarmManagerContext);
+  const { formatMoney, farm, batches, customers, dateRange, setDateRange, applicationSettings, eggBatchId, setEggBatchId, broilerBatchId, setBroilerBatchId, broilerGrowth, broilerWeights, broilerSales, birdSalePopulation, loadBirdSalePopulation, weightForm, setWeightForm, birdSaleForm, setBirdSaleForm, emptyWeight, emptyBirdSale, pricing, pricingForm, setPricingForm, eggInventory, eggCollections, eggSales, eggCollectionForm, setEggCollectionForm, eggSaleForm, setEggSaleForm, crateSize, saving, loadPricingForBatch, loadBroilerForBatch, saveWeight, saveBirdSale, loadEggsForBatch, saveEggCollection, saveEggSale } = useContext(FarmManagerContext);
 
   const periodEggCollections = filterRowsByDateRange(eggCollections, dateRange, "recordDate");
   const periodEggSales = filterRowsByDateRange(eggSales, dateRange, "recordDate");
@@ -142,6 +142,7 @@ export default function ProductionPage() {
               setBirdSaleForm(form => ({ ...form, batchId: id }));
               setPricingForm(form => ({ ...form, quantity: "" }));
               loadBroilerForBatch(id);
+              loadBirdSalePopulation(id, birdSaleForm.date);
             }}>
               <option value="">Select a batch</option>
               {batches.filter(b => b.type === "BROILER" || b.type === "TURKEY").map(b =>
@@ -211,15 +212,16 @@ export default function ProductionPage() {
                 <h3>Bird sales</h3>
                 <ModalForm title="Bird sale" description="Record a partial or full sale of birds from this batch." triggerLabel="Record bird sale" loading={saving} error={error} onDiscard={() => setBirdSaleForm(form => ({ ...emptyBirdSale, batchId: form.batchId }))}>
 <ValidatedForm className="inline-form" onSubmit={saveBirdSale}>
-                  <label className="field"><span>Sale date</span><input required type="date" value={birdSaleForm.date} onChange={e=>setBirdSaleForm({...birdSaleForm,date:e.target.value})}/></label>
-                  <label className="field"><span>Quantity</span><input required min="1" type="number" value={birdSaleForm.quantity} onChange={e=>setBirdSaleForm({...birdSaleForm,quantity:e.target.value})}/></label>
+                  <label className="field"><span>Sale date</span><input required type="date" value={birdSaleForm.date} onChange={e=>{const date=e.target.value;setBirdSaleForm(form=>({...form,date}));loadBirdSalePopulation(broilerBatchId,date);}}/></label>
+                  <div className="field"><span>Available birds on sale date</span><strong aria-live="polite">{birdSalePopulation ? `${Number(birdSalePopulation.currentBirds).toLocaleString()} birds` : "Loading population…"}</strong><small className="muted">The available count is calculated for the selected sale date.</small></div>
+                  <label className="field"><span>Quantity</span><input required min="1" max={birdSalePopulation?.currentBirds ?? undefined} type="number" value={birdSaleForm.quantity} onChange={e=>setBirdSaleForm({...birdSaleForm,quantity:e.target.value})}/>{birdSalePopulation && <small className="muted">{birdSaleForm.quantity && Number(birdSaleForm.quantity)>0 && Number(birdSaleForm.quantity)<=birdSalePopulation.currentBirds ? `${(birdSalePopulation.currentBirds-Number(birdSaleForm.quantity)).toLocaleString()} birds will remain after this sale.` : `Enter 1 to ${Number(birdSalePopulation.currentBirds).toLocaleString()} birds.`}</small>}</label>
                   <label className="field"><span>Price per bird (₦)</span><input required type="text" inputMode="decimal" value={birdSaleForm.pricePerBirdMinor} onChange={e=>setBirdSaleForm({...birdSaleForm,pricePerBirdMinor:e.target.value})}/></label>
                   <label className="field"><span>Saved customer</span><select value={birdSaleForm.customerId} onChange={e=>{const id=e.target.value;const customer=customers.find(c=>c.id===id);setBirdSaleForm({...birdSaleForm,customerId:id,customer:customer?.name||""});}}>
                     <option value="">Walk-in sale / no saved customer</option>
                     {customers.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}
                   </select></label>
                   {!birdSaleForm.customerId && <label className="field"><span>Walk-in customer name</span><input required maxLength="120" value={birdSaleForm.customer} onChange={e=>setBirdSaleForm({...birdSaleForm,customer:e.target.value})} placeholder="Enter buyer name"/></label>}
-                  <button disabled={saving}>Record bird sale</button>
+                  <button disabled={saving || !birdSalePopulation || birdSalePopulation.currentBirds < 1 || Number(birdSaleForm.quantity) > birdSalePopulation.currentBirds}>Record bird sale</button>
                 </ValidatedForm>
 </ModalForm>
                 <DataTable caption="Meat-bird sales" columns={[
