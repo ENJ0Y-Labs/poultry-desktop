@@ -4,13 +4,13 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import ReviewCentrePage from "./ReviewCentrePage.jsx";
 import { reportReviewApi } from "../services/api.js";
 
-const detail = {
+const detail = vi.hoisted(() => ({
   id: "submission-1", title: "Mortality report", reportType: "MORTALITY",
   authorId: "worker-1", authorFullName: "Worker One", lifecycleStatus: "SUBMITTED",
   status: "PENDING_REVIEW", currentVersion: 1, submittedVersion: 1,
-  versions: [{ version: 1, payload: { batchCode: "LAYER-01", quantity: 1 } }],
+  versions: [{ version: 1, payload: { batchId: "batch-1", quantity: 1 } }],
   checks: [], comments: [], decisions: [], assignments: [], history: [],
-};
+}));
 
 vi.mock("../services/api.js", () => ({
   reportReviewApi: {
