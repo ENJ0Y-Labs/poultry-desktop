@@ -54,7 +54,7 @@ const reportDefinitions = {
       ["batchId", "Batch / flock", "batch", true],
       ["drug", "Drug / product", "text", true],
       ["quantity", "Quantity used", "number", true],
-      ["costNaira", "Cost (₦)", "money", false],
+      ["costNaira", "Cost (₦)", "money", true],
       ["reason", "Reason / dosage notes", "textarea", true],
     ],
   },
