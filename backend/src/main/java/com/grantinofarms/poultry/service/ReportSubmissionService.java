@@ -48,16 +48,26 @@ public class ReportSubmissionService {
         if (farm == null) throw new ApiException(HttpStatus.CONFLICT, "FARM_NOT_CONFIGURED",
                 "Create or activate a farm before saving reports.");
         validateRequest(request);
+        String reportType = request.reportType().trim().toUpperCase();
+        String reportTitle = request.title().trim();
+        String payloadJson = json(request.payload());
+        String requestHash = requestHash(reportType, reportTitle, payloadJson);
         Map<String, Object> existing = submissions.findByIdempotencyKey(farm.id(), actorId, idempotencyKey);
-        if (existing != null) return getOwned(String.valueOf(existing.get("id")), actorId);
+        if (existing != null) {
+            requireSameIdempotentRequest(existing, requestHash);
+            return getOwned(String.valueOf(existing.get("id")), actorId);
+        }
         String id = UUID.randomUUID().toString();
         String now = Instant.now().toString();
         try {
-            submissions.insert(id, farm.id(), actorId, request.reportType().trim().toUpperCase(),
-                    request.title().trim(), json(request.payload()), idempotencyKey, now);
+            submissions.insert(id, farm.id(), actorId, reportType, reportTitle,
+                    payloadJson, idempotencyKey, requestHash, now);
         } catch (org.springframework.dao.DuplicateKeyException ex) {
             Map<String, Object> raced = submissions.findByIdempotencyKey(farm.id(), actorId, idempotencyKey);
-            if (raced != null) return getOwned(String.valueOf(raced.get("id")), actorId);
+            if (raced != null) {
+                requireSameIdempotentRequest(raced, requestHash);
+                return getOwned(String.valueOf(raced.get("id")), actorId);
+            }
             throw ex;
         }
         audit.append(farm.id(), "CREATE", "REPORT_SUBMISSION", id, "Report draft created",
@@ -154,6 +164,24 @@ public class ReportSubmissionService {
                 || request.title() == null || request.title().isBlank() || request.title().length() > 160) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_REPORT",
                     "Report type and title are required.");
+        }
+    }
+
+    private void requireSameIdempotentRequest(Map<String, Object> existing, String requestHash) {
+        if (!requestHash.equals(existing.get("idempotencyPayloadHash"))) {
+            throw new ApiException(HttpStatus.CONFLICT, "IDEMPOTENCY_KEY_REUSED",
+                    "This Idempotency-Key was already used with different report content.");
+        }
+    }
+
+    private String requestHash(String reportType, String title, String payloadJson) {
+        try {
+            byte[] digest = java.security.MessageDigest.getInstance("SHA-256")
+                    .digest((reportType + "\\n" + title + "\\n" + payloadJson)
+                            .getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            return java.util.HexFormat.of().formatHex(digest);
+        } catch (java.security.NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 is unavailable.", e);
         }
     }
 
