@@ -27,16 +27,17 @@ public class ReportSubmissionRepository {
                      created_at, updated_at)
                 VALUES (?, ?, ?, ?, ?, 'DRAFT', 1, ?, ?)
                 """, id, farmId, authorId, reportType, title, now, now);
-        insertVersion(id, 1, payloadJson, authorId, now);
+        insertVersion(id, 1, reportType, title, payloadJson, authorId, now);
         appendEvent(id, 1, authorId, "DRAFT_CREATED", null, now);
     }
 
-    public void insertVersion(String id, int version, String payloadJson, String actorId, String now) {
+    public void insertVersion(String id, int version, String reportType, String title,
+                              String payloadJson, String actorId, String now) {
         jdbc.update("""
                 INSERT INTO report_submission_versions
-                    (submission_id, version_number, payload_json, created_by, created_at)
-                VALUES (?, ?, ?, ?, ?)
-                """, id, version, payloadJson, actorId, now);
+                    (submission_id, version_number, report_type, title, payload_json, created_by, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                """, id, version, reportType, title, payloadJson, actorId, now);
     }
 
     public int updateDraft(String id, String actorId, String reportType, String title,
@@ -85,12 +86,14 @@ public class ReportSubmissionRepository {
 
     public List<Map<String, Object>> findVersions(String id) {
         return jdbc.query("""
-                SELECT version_number, payload_json, created_by, created_at
+                SELECT version_number, report_type, title, payload_json, created_by, created_at
                 FROM report_submission_versions WHERE submission_id = ?
                 ORDER BY version_number
                 """, (rs, n) -> {
             Map<String, Object> row = new LinkedHashMap<>();
             row.put("version", rs.getInt("version_number"));
+            row.put("reportType", rs.getString("report_type"));
+            row.put("title", rs.getString("title"));
             try { row.put("payload", mapper.readTree(rs.getString("payload_json"))); }
             catch (Exception e) { throw new IllegalStateException("Stored report payload is invalid.", e); }
             row.put("createdBy", rs.getString("created_by"));
