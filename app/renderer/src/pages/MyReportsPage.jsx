@@ -185,8 +185,8 @@ function toPayload(type, values, references) {
     if (kind === "number") payload[target] = Number.parseInt(value, 10);
     else if (kind === "decimal") payload[target] = Number(value);
     else if (kind === "money") payload[moneyPayloadKey(key)] = parseNairaToKobo(value);
-    else if (kind !== "batch" && kind !== "batchOptional" && kind !== "category") payload[target] = value;
     else if (kind === "batch" || kind === "batchOptional") payload.batchId = value;
+    else payload[target] = value;
   }
   if (type === "FEED_USAGE") {
     const feed = references.feedTypes.find(item => item.id === values.feedTypeId);
