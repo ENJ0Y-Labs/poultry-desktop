@@ -9,6 +9,7 @@ UPDATE report_submissions SET lifecycle_status =
     CASE status WHEN 'PENDING_REVIEW' THEN 'PENDING_REVIEW' ELSE status END;
 
 ALTER TABLE report_submissions ADD COLUMN idempotency_key TEXT;
+ALTER TABLE report_submissions ADD COLUMN idempotency_payload_hash TEXT;
 ALTER TABLE report_submissions ADD COLUMN scope_type TEXT NOT NULL DEFAULT 'FARM'
     CHECK (scope_type IN ('FARM','HOUSE','BATCH'));
 ALTER TABLE report_submissions ADD COLUMN scope_id TEXT;
@@ -41,6 +42,10 @@ CREATE TABLE report_submission_checks (
     FOREIGN KEY (submission_id, version_number)
         REFERENCES report_submission_versions(submission_id, version_number) ON DELETE RESTRICT
 );
+CREATE UNIQUE INDEX uq_submission_merge_operation
+    ON report_submissions(merge_operation_key)
+    WHERE merge_operation_key IS NOT NULL;
+
 CREATE INDEX idx_submission_checks_version
     ON report_submission_checks(submission_id, version_number, checked_at);
 
@@ -165,4 +170,15 @@ CREATE TRIGGER trg_report_submission_links_no_delete
 BEFORE DELETE ON report_submission_links
 BEGIN
     SELECT RAISE(ABORT, 'Report submission links are immutable');
+END;
+
+CREATE TRIGGER trg_report_submission_warning_overrides_no_update
+BEFORE UPDATE ON report_submission_warning_overrides
+BEGIN
+    SELECT RAISE(ABORT, 'Report warning overrides are immutable');
+END;
+CREATE TRIGGER trg_report_submission_warning_overrides_no_delete
+BEFORE DELETE ON report_submission_warning_overrides
+BEGIN
+    SELECT RAISE(ABORT, 'Report warning overrides are immutable');
 END;
