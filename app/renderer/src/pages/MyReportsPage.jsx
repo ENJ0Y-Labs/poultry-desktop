@@ -575,6 +575,7 @@ export default function MyReportsPage({ userId = "" }) {
         {selected && <section className="report-detail">
           <div className="section-head"><div><p className="eyebrow">REPORT DETAIL</p><h3>{selected.title}</h3><p className="muted">Reference {selected.id} · {statusLabel(selected)} · submitted version {selected.submittedVersion || "Not submitted"} · current version {selected.currentVersion}</p></div><button type="button" className="text-button" onClick={() => setSelected(null)}>Close</button></div>
           <div className="report-history">
+            {(selected.links || []).length > 0 && <><h4>Official farm records</h4>{selected.links.map(link => <div key={link.id}><strong>{link.recordType.replaceAll("_", " ")}</strong><span>{link.recordId}</span></div>)}</>}
             <h4>Version history</h4>
             {(selected.versions || []).map(version => (
               <details key={version.version}>
