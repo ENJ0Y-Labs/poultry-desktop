@@ -277,7 +277,10 @@ export default function AppShell({ farm, error, appInfo, onRetry, onQuickAction,
       const requestedPage = resolvePage(window.location.hash, startPage);
       const page = safePage(requestedPage);
       const tab = resolveTab(window.location.hash, page);
-      const safeHash = `#${page}/${tab}`;
+      const suffix = requestedPage === page
+        ? String(window.location.hash || "").replace(/^#\/?/, "").split("/").slice(2).join("/")
+        : "";
+      const safeHash = `#${page}/${tab}${suffix ? "/" + suffix : ""}`;
       if (window.location.hash !== safeHash) window.location.hash = safeHash;
       setActive(page);
       setActiveTab(tab);
