@@ -6,7 +6,12 @@ import { reportSubmissionApi } from "../services/api.js";
 
 vi.mock("../services/api.js", () => ({
   reportSubmissionApi: {
-    mine: vi.fn().mockResolvedValue([]), create: vi.fn(), save: vi.fn(),
+    mine: vi.fn().mockResolvedValue([]),
+    references: vi.fn().mockResolvedValue({
+      batches: [{ id: "batch-1", code: "LAYER-01", type: "LAYER" }],
+      feedTypes: [],
+    }),
+    create: vi.fn(), save: vi.fn(),
     submit: vi.fn(), get: vi.fn(), comment: vi.fn(),
   },
 }));
@@ -19,13 +24,17 @@ describe("MyReportsPage", () => {
     localStorage.clear();
     vi.clearAllMocks();
     reportSubmissionApi.mine.mockResolvedValue([]);
+    reportSubmissionApi.references.mockResolvedValue({
+      batches: [{ id: "batch-1", code: "LAYER-01", type: "LAYER" }],
+      feedTypes: [],
+    });
   });
 
   it("saves drafts locally without submitting them automatically", async () => {
     render(<MyReportsPage userId="worker-1" />);
     await screen.findByText(/No reports yet/);
     fireEvent.change(screen.getByLabelText("Report title"), { target: { value: "Morning mortality" } });
-    fireEvent.change(screen.getByLabelText("Batch code"), { target: { value: "LAYER-01" } });
+    fireEvent.change(screen.getByLabelText("Batch / flock"), { target: { value: "batch-1" } });
     fireEvent.change(screen.getByLabelText("Number of birds"), { target: { value: "2" } });
     fireEvent.click(screen.getByRole("button", { name: "Save draft" }));
     expect(await screen.findByText("Local draft")).toBeInTheDocument();
@@ -54,7 +63,7 @@ describe("MyReportsPage", () => {
     await waitFor(() => expect(reportSubmissionApi.create).toHaveBeenCalledTimes(1));
     expect(reportSubmissionApi.create.mock.calls[0][0]).toMatchObject({
       reportType: "MORTALITY", title: "Morning mortality",
-      payload: { batchCode: "LAYER-01", quantity: 2 },
+      payload: { batchId: "batch-1", quantity: 2 },
     });
     expect(reportSubmissionApi.create.mock.calls[0][1]).toMatch(/[a-z0-9-]{8,}/i);
     await waitFor(() => expect(reportSubmissionApi.submit).toHaveBeenCalledWith("submission-1"));
