@@ -29,8 +29,21 @@ CREATE INDEX idx_report_submissions_lifecycle
 CREATE INDEX idx_report_submissions_assignee
     ON report_submissions(assigned_manager_user_id, lifecycle_status, updated_at DESC);
 
+CREATE TABLE report_submission_check_runs (
+    id TEXT PRIMARY KEY,
+    submission_id TEXT NOT NULL,
+    version_number INTEGER NOT NULL,
+    outcome TEXT NOT NULL CHECK (outcome IN ('PENDING_REVIEW','FLAGGED','BLOCKED')),
+    checked_at TEXT NOT NULL,
+    FOREIGN KEY (submission_id, version_number)
+        REFERENCES report_submission_versions(submission_id, version_number) ON DELETE RESTRICT
+);
+CREATE INDEX idx_submission_check_runs_history
+    ON report_submission_check_runs(submission_id, version_number, checked_at DESC);
+
 CREATE TABLE report_submission_checks (
     id TEXT PRIMARY KEY,
+    check_run_id TEXT NOT NULL REFERENCES report_submission_check_runs(id) ON DELETE RESTRICT,
     submission_id TEXT NOT NULL,
     version_number INTEGER NOT NULL,
     check_code TEXT NOT NULL CHECK (length(trim(check_code)) BETWEEN 1 AND 80),
@@ -48,6 +61,8 @@ CREATE UNIQUE INDEX uq_submission_merge_operation
 
 CREATE INDEX idx_submission_checks_version
     ON report_submission_checks(submission_id, version_number, checked_at);
+CREATE UNIQUE INDEX uq_submission_check_code_per_run
+    ON report_submission_checks(check_run_id, check_code);
 
 CREATE TABLE report_submission_comments (
     id TEXT PRIMARY KEY,
@@ -79,8 +94,8 @@ CREATE TABLE report_submission_decisions (
         OR (decision IN ('CHANGES_REQUESTED','REJECTED') AND length(trim(reason)) BETWEEN 1 AND 2000)
     )
 );
-CREATE UNIQUE INDEX uq_submission_decision_per_version
-    ON report_submission_decisions(submission_id, version_number);
+-- Multiple immutable decisions may exist for the same version if a later
+-- revalidation flags the previously-approved version for a second review.
 
 CREATE TABLE report_submission_assignments (
     id TEXT PRIMARY KEY,
@@ -150,6 +165,16 @@ CREATE TRIGGER trg_report_submission_assignments_no_delete
 BEFORE DELETE ON report_submission_assignments
 BEGIN
     SELECT RAISE(ABORT, 'Report submission assignments are immutable');
+END;
+CREATE TRIGGER trg_report_submission_check_runs_no_update
+BEFORE UPDATE ON report_submission_check_runs
+BEGIN
+    SELECT RAISE(ABORT, 'Report submission check runs are immutable');
+END;
+CREATE TRIGGER trg_report_submission_check_runs_no_delete
+BEFORE DELETE ON report_submission_check_runs
+BEGIN
+    SELECT RAISE(ABORT, 'Report submission check runs are immutable');
 END;
 CREATE TRIGGER trg_report_submission_checks_no_update
 BEFORE UPDATE ON report_submission_checks
