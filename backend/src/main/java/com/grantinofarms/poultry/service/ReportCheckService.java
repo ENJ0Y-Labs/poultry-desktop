@@ -9,6 +9,7 @@ import com.grantinofarms.poultry.repository.BatchRepository;
 import com.grantinofarms.poultry.repository.FarmRepository;
 import com.grantinofarms.poultry.repository.FeedRepository;
 import com.grantinofarms.poultry.repository.ReportSubmissionRepository;
+import com.grantinofarms.poultry.repository.ReportingConfigurationRepository;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
 import org.springframework.stereotype.Service;
@@ -34,10 +35,12 @@ public class ReportCheckService {
     private final BirdPopulationService population;
     private final ObjectMapper mapper;
     private final Validator validator;
+    private final ReportingConfigurationRepository reporting;
 
     public ReportCheckService(ReportSubmissionRepository submissions, BatchRepository batches,
                               FeedRepository feeds, FarmRepository farms, BirdPopulationService population,
-                              ObjectMapper mapper, Validator validator) {
+                              ObjectMapper mapper, Validator validator,
+                              ReportingConfigurationRepository reporting) {
         this.submissions = submissions;
         this.batches = batches;
         this.feeds = feeds;
@@ -45,6 +48,7 @@ public class ReportCheckService {
         this.population = population;
         this.mapper = mapper;
         this.validator = validator;
+        this.reporting = reporting;
     }
 
     @Transactional
@@ -115,6 +119,9 @@ public class ReportCheckService {
                         Map.of("reportedQuantity", quantity, "knownLivePopulation", available)));
             } else {
                 results.add(passed("POPULATION_WITHIN_LIMIT", "The reported quantity does not exceed the known live population."));
+                if ("MORTALITY".equals(reportType)) {
+                    checkMortalityThresholds(results, farmId, submissionId, batch, quantity, available, now);
+                }
             }
         }
 
@@ -170,6 +177,34 @@ public class ReportCheckService {
                     json(result.details()), now);
         }
         return outcome;
+    }
+
+    private void checkMortalityThresholds(List<CheckResult> results, String farmId, String submissionId,
+                                          BatchResponse batch, int quantity, int livePopulation, String now) {
+        Map<String, Object> count = reporting.thresholdFor(farmId, "UNUSUAL_MORTALITY_COUNT",
+                batch.id(), batch.houseId(), batch.type());
+        if (count != null && quantity >= ((Number) count.get("value")).doubleValue()) {
+            double threshold = ((Number) count.get("value")).doubleValue();
+            results.add(warning("UNUSUAL_MORTALITY_COUNT_THRESHOLD",
+                    "Reported mortality meets or exceeds the farm-configured count threshold.",
+                    true, Map.of("thresholdId", count.get("id"), "threshold", threshold,
+                            "unit", count.get("unit"), "quantity", quantity)));
+            reporting.notifyManagers(farmId, submissionId, "Unusual mortality threshold exceeded",
+                    "Batch " + batch.code() + " reported " + quantity + " deaths; configured threshold is " + threshold + " birds.", now);
+        }
+        Map<String, Object> percent = reporting.thresholdFor(farmId, "UNUSUAL_MORTALITY_PERCENT",
+                batch.id(), batch.houseId(), batch.type());
+        double rate = livePopulation <= 0 ? 0 : quantity * 100.0 / livePopulation;
+        if (percent != null && rate >= ((Number) percent.get("value")).doubleValue()) {
+            double threshold = ((Number) percent.get("value")).doubleValue();
+            results.add(warning("UNUSUAL_MORTALITY_PERCENT_THRESHOLD",
+                    "Reported mortality meets or exceeds the farm-configured population percentage threshold.",
+                    true, Map.of("thresholdId", percent.get("id"), "threshold", threshold,
+                            "unit", percent.get("unit"), "percentage", rate)));
+            reporting.notifyManagers(farmId, submissionId, "Unusual mortality percentage threshold exceeded",
+                    "Batch " + batch.code() + " reported " + String.format(java.util.Locale.ROOT, "%.2f", rate)
+                            + "% mortality; configured threshold is " + threshold + "%.", now);
+        }
     }
 
     private Class<?> dtoType(String type) {
