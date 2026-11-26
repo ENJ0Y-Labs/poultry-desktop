@@ -5,10 +5,9 @@ import { parseNairaToKobo } from "../utils/moneyInput.js";
 const reportDefinitions = {
   DAILY_OPERATIONS: {
     label: "Daily operations",
+    dateKey: "recordDate",
     fields: [
       ["eventDate", "Observation date", "date", true],
-      ["eventTime", "Event time", "time", true],
-      ["lateReason", "Reason for late submission (if over 24 hours)", "textarea", false],
       ["batchId", "Batch / flock", "batch", true],
       ["notes", "What happened today?", "textarea", true],
       ["waterNotes", "Water observations", "textarea", false],
@@ -16,10 +15,9 @@ const reportDefinitions = {
   },
   MORTALITY: {
     label: "Mortality",
+    dateKey: "eventDate",
     fields: [
       ["eventDate", "Date observed", "date", true],
-      ["eventTime", "Event time", "time", true],
-      ["lateReason", "Reason for late submission (if over 24 hours)", "textarea", false],
       ["batchId", "Batch / flock", "batch", true],
       ["quantity", "Number of birds", "number", true],
       ["reason", "Suspected cause / reason", "text", false],
@@ -28,10 +26,9 @@ const reportDefinitions = {
   },
   CULLING: {
     label: "Culling",
+    dateKey: "eventDate",
     fields: [
       ["eventDate", "Event date", "date", true],
-      ["eventTime", "Event time", "time", true],
-      ["lateReason", "Reason for late submission (if over 24 hours)", "textarea", false],
       ["batchId", "Batch / flock", "batch", true],
       ["quantity", "Number of birds", "number", true],
       ["reason", "Reason for culling", "text", true],
@@ -40,35 +37,32 @@ const reportDefinitions = {
   },
   HEALTH_RECORD: {
     label: "Health observation",
+    dateKey: "recordDate",
     fields: [
       ["eventDate", "Observation date", "date", true],
-      ["eventTime", "Event time", "time", true],
-      ["lateReason", "Reason for late submission (if over 24 hours)", "textarea", false],
       ["batchId", "Batch / flock", "batch", true],
       ["conditionProblem", "Condition / problem", "text", true],
       ["description", "What did you observe?", "textarea", true],
-      ["action", "Action taken", "textarea", false],
+      ["action", "Action taken", "textarea", true],
     ],
   },
   DRUG_TREATMENT: {
     label: "Drug / treatment",
+    dateKey: "recordDate",
     fields: [
       ["eventDate", "Treatment date", "date", true],
-      ["eventTime", "Event time", "time", true],
-      ["lateReason", "Reason for late submission (if over 24 hours)", "textarea", false],
       ["batchId", "Batch / flock", "batch", true],
       ["drug", "Drug / product", "text", true],
       ["quantity", "Quantity used", "number", true],
       ["costNaira", "Cost (₦)", "money", false],
-      ["reason", "Reason / dosage notes", "textarea", false],
+      ["reason", "Reason / dosage notes", "textarea", true],
     ],
   },
   VACCINATION: {
     label: "Vaccination",
+    dateKey: "recordDate",
     fields: [
       ["eventDate", "Vaccination date", "date", true],
-      ["eventTime", "Event time", "time", true],
-      ["lateReason", "Reason for late submission (if over 24 hours)", "textarea", false],
       ["batchId", "Batch / flock", "batch", true],
       ["vaccine", "Vaccine", "text", true],
       ["dose", "Dose", "text", true],
@@ -78,11 +72,10 @@ const reportDefinitions = {
   },
   EGG_COLLECTION: {
     label: "Egg collection",
+    dateKey: "recordDate",
     fields: [
       ["eventDate", "Collection date", "date", true],
-      ["eventTime", "Event time", "time", true],
-      ["lateReason", "Reason for late submission (if over 24 hours)", "textarea", false],
-      ["batchId", "Batch / flock", "batch", true],
+      ["batchId", "Layer batch", "batch", true],
       ["good", "Good eggs", "number", true],
       ["cracked", "Cracked eggs", "number", true],
       ["notes", "Additional notes", "textarea", false],
@@ -90,11 +83,10 @@ const reportDefinitions = {
   },
   WEIGHT_RECORD: {
     label: "Weight record",
+    dateKey: "recordDate",
     fields: [
       ["eventDate", "Measurement date", "date", true],
-      ["eventTime", "Event time", "time", true],
-      ["lateReason", "Reason for late submission (if over 24 hours)", "textarea", false],
-      ["batchId", "Batch / flock", "batch", true],
+      ["batchId", "Broiler / turkey batch", "batch", true],
       ["sampleQuantity", "Birds sampled", "number", true],
       ["totalWeightKg", "Total sample weight (kg)", "decimal", true],
       ["notes", "Additional notes", "textarea", false],
@@ -102,10 +94,9 @@ const reportDefinitions = {
   },
   FEED_USAGE: {
     label: "Feed usage",
+    dateKey: "usageDate",
     fields: [
       ["eventDate", "Usage date", "date", true],
-      ["eventTime", "Event time", "time", true],
-      ["lateReason", "Reason for late submission (if over 24 hours)", "textarea", false],
       ["batchId", "Batch / flock", "batch", true],
       ["feedTypeId", "Feed type", "feed", true],
       ["quantity", "Quantity used", "decimal", true],
@@ -114,43 +105,41 @@ const reportDefinitions = {
   },
   EXPENSE: {
     label: "Farm expense",
+    dateKey: "occurredDate",
     fields: [
       ["eventDate", "Expense date", "date", true],
-      ["eventTime", "Event time", "time", true],
-      ["lateReason", "Reason for late submission (if over 24 hours)", "textarea", false],
-      ["batchId", "Batch / flock (optional)", "batch", false],
+      ["batchId", "Batch (optional)", "batchOptional", false],
       ["description", "Description", "text", true],
       ["amountNaira", "Amount (₦)", "money", true],
-      ["category", "Category", "text", true],
+      ["category", "Category", "category", true],
     ],
   },
   BIRD_SALE: {
     label: "Bird sale",
+    dateKey: "recordDate",
     fields: [
       ["eventDate", "Sale date", "date", true],
-      ["eventTime", "Event time", "time", true],
-      ["lateReason", "Reason for late submission (if over 24 hours)", "textarea", false],
-      ["batchId", "Batch / flock", "batch", true],
+      ["batchId", "Broiler / turkey batch", "batch", true],
       ["quantity", "Birds sold", "number", true],
       ["pricePerBirdNaira", "Price per bird (₦)", "money", true],
       ["customer", "Customer", "text", true],
-      ["notes", "Additional notes", "textarea", false],
     ],
   },
   EGG_SALE: {
     label: "Egg sale",
+    dateKey: "recordDate",
     fields: [
       ["eventDate", "Sale date", "date", true],
-      ["eventTime", "Event time", "time", true],
-      ["lateReason", "Reason for late submission (if over 24 hours)", "textarea", false],
-      ["batchId", "Batch / flock", "batch", true],
+      ["batchId", "Layer batch", "batch", true],
       ["crates", "Crates sold", "decimal", true],
       ["pricePerCrateNaira", "Price per crate (₦)", "money", true],
       ["customer", "Customer", "text", true],
-      ["notes", "Additional notes", "textarea", false],
     ],
   },
 };
+
+const editableStatuses = ["DRAFT", "CHANGES_REQUESTED"];
+const terminalOrSubmittedStatuses = ["SUBMITTED", "PENDING_REVIEW", "FLAGGED", "BLOCKED", "APPROVED", "MERGED", "REJECTED"];
 
 function makeId() {
   return globalThis.crypto?.randomUUID?.() || "report-" + Date.now() + "-" + Math.random().toString(36).slice(2);
@@ -162,44 +151,60 @@ function today() {
   return local.toISOString().slice(0, 10);
 }
 
-function currentTime() {
-  const date = new Date();
-  return String(date.getHours()).padStart(2, "0") + ":" + String(date.getMinutes()).padStart(2, "0");
+function readLocalArray(key) {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(key) || "[]");
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
 }
 
 function emptyFields(type) {
   const values = {};
   for (const [key, , kind] of reportDefinitions[type].fields) {
-    values[key] = kind === "date" ? today() : kind === "time" ? currentTime() : "";
+    values[key] = kind === "date" ? today() : "";
   }
   return values;
 }
 
-function toPayload(type, values) {
+function moneyPayloadKey(key) {
+  if (key === "costNaira") return "costMinor";
+  if (key === "pricePerBirdNaira") return "pricePerBirdMinor";
+  if (key === "pricePerCrateNaira") return "pricePerCrateMinor";
+  return "amountMinor";
+}
+
+function toPayload(type, values, references) {
+  const definition = reportDefinitions[type];
   const payload = {};
-  for (const [key, , kind] of reportDefinitions[type].fields) {
+  for (const [key, , kind] of definition.fields) {
     const value = values[key] ?? "";
     if (value === "") continue;
-    if (kind === "number") payload[key] = Number.parseInt(value, 10);
-    else if (kind === "decimal") payload[key] = Number(value);
-    else if (kind === "money") {
-      const target = key === "costNaira" ? "costMinor"
-        : key === "pricePerBirdNaira" ? "pricePerBirdMinor"
-          : key === "pricePerCrateNaira" ? "pricePerCrateMinor" : "amountMinor";
-      payload[target] = parseNairaToKobo(value);
-    } else payload[key] = value;
+    const target = key === "eventDate" ? definition.dateKey : key;
+    if (kind === "number") payload[target] = Number.parseInt(value, 10);
+    else if (kind === "decimal") payload[target] = Number(value);
+    else if (kind === "money") payload[moneyPayloadKey(key)] = parseNairaToKobo(value);
+    else if (kind !== "batch" && kind !== "batchOptional" && kind !== "category") payload[target] = value;
+    else if (kind === "batch" || kind === "batchOptional") payload.batchId = value;
+  }
+  if (type === "FEED_USAGE") {
+    const feed = references.feedTypes.find(item => item.id === values.feedTypeId);
+    if (feed) payload.unit = feed.unit;
   }
   return payload;
 }
 
 function fromPayload(type, payload = {}) {
+  const definition = reportDefinitions[type];
+  if (!definition) return {};
   const values = emptyFields(type);
-  for (const [key] of reportDefinitions[type].fields) {
-    let value = payload[key];
-    if (key === "costNaira") value = payload.costMinor == null ? "" : (Number(payload.costMinor) / 100).toFixed(2);
-    if (key === "pricePerBirdNaira") value = payload.pricePerBirdMinor == null ? "" : (Number(payload.pricePerBirdMinor) / 100).toFixed(2);
-    if (key === "pricePerCrateNaira") value = payload.pricePerCrateMinor == null ? "" : (Number(payload.pricePerCrateMinor) / 100).toFixed(2);
-    if (key === "amountNaira") value = payload.amountMinor == null ? "" : (Number(payload.amountMinor) / 100).toFixed(2);
+  for (const [key] of definition.fields) {
+    let value = key === "eventDate" ? payload[definition.dateKey] : payload[key];
+    if (key === "costNaira" || key === "pricePerBirdNaira" || key === "pricePerCrateNaira" || key === "amountNaira") {
+      const minor = payload[moneyPayloadKey(key)];
+      value = minor == null ? "" : (Number(minor) / 100).toFixed(2);
+    }
     if (value != null) values[key] = String(value);
   }
   return values;
@@ -210,16 +215,26 @@ function statusLabel(report) {
     .replace(/\b\w/g, letter => letter.toUpperCase());
 }
 
+function reportPayload(report) {
+  return report?.versions?.at(-1)?.payload || {};
+}
+
+function samePayload(left, right) {
+  return JSON.stringify(left || {}) === JSON.stringify(right || {});
+}
+
 export default function MyReportsPage({ userId = "" }) {
   const storageKey = "pomas:report-submission-drafts:" + (userId || "local-user");
+  const referencesStorageKey = "pomas:report-submission-references:" + (userId || "local-user");
   const [serverReports, setServerReports] = useState([]);
-  const [references, setReferences] = useState({ batches: [], feedTypes: [] });
-  const [localDrafts, setLocalDrafts] = useState(() => {
+  const [references, setReferences] = useState(() => {
     try {
-      const parsed = JSON.parse(localStorage.getItem(storageKey) || "[]");
-      return Array.isArray(parsed) ? parsed : [];
-    } catch { return []; }
+      return JSON.parse(localStorage.getItem(referencesStorageKey) || '{"batches":[],"feedTypes":[]}');
+    } catch {
+      return { batches: [], feedTypes: [] };
+    }
   });
+  const [localDrafts, setLocalDrafts] = useState(() => readLocalArray(storageKey));
   const [reportType, setReportType] = useState("MORTALITY");
   const [title, setTitle] = useState("");
   const [fields, setFields] = useState(() => emptyFields("MORTALITY"));
@@ -231,16 +246,31 @@ export default function MyReportsPage({ userId = "" }) {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
 
-  const selectedDefinition = reportDefinitions[reportType];
-  const allReports = useMemo(() => [
-    ...localDrafts.map(item => ({ ...item, localOnly: true, status: "LOCAL_DRAFT" })),
-    ...serverReports,
-  ].sort((a, b) => String(b.updatedAt || b.createdAt || "").localeCompare(String(a.updatedAt || a.createdAt || ""))), [localDrafts, serverReports]);
+  const allReports = useMemo(() => {
+    const localOnly = localDrafts.filter(item => !item.serverId)
+      .map(item => ({ ...item, localOnly: true, status: "LOCAL_DRAFT" }));
+    const serverItems = serverReports.map(report => ({
+      ...report,
+      localCopy: localDrafts.find(item => item.serverId === report.id) || null,
+    }));
+    return [...localOnly, ...serverItems]
+      .sort((a, b) => String(b.updatedAt || b.createdAt || "").localeCompare(String(a.updatedAt || a.createdAt || "")));
+  }, [localDrafts, serverReports]);
 
   function persistLocal(next) {
-    setLocalDrafts(next);
-    try { localStorage.setItem(storageKey, JSON.stringify(next)); }
-    catch { setError("This device could not save the local draft. Check available storage before continuing."); }
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(next));
+      setLocalDrafts(next);
+      return true;
+    } catch {
+      setError("Pomas could not store this draft on the device. Free up local storage before continuing.");
+      return false;
+    }
+  }
+
+  function persistReferences(next) {
+    setReferences(next);
+    try { localStorage.setItem(referencesStorageKey, JSON.stringify(next)); } catch { /* cached references are optional */ }
   }
 
   async function refresh() {
@@ -250,16 +280,15 @@ export default function MyReportsPage({ userId = "" }) {
       reportSubmissionApi.mine(), reportSubmissionApi.references(),
     ]);
     if (reportsResult.status === "fulfilled") setServerReports(reportsResult.value);
-    else setError(reportsResult.reason?.message || "Could not load submitted reports.");
-    if (referencesResult.status === "fulfilled") setReferences(referencesResult.value);
-    else if (reportsResult.status === "fulfilled") setError(referencesResult.reason?.message || "Farm references could not be loaded. Saved local drafts remain available.");
+    else setError(reportsResult.reason?.message || "Could not load your server submissions.");
+    if (referencesResult.status === "fulfilled") persistReferences(referencesResult.value);
+    else if (!references.batches.length && !references.feedTypes.length) {
+      setNotice("Farm lists are unavailable offline. You can still save a local draft and sync it when connected.");
+    }
     setLoading(false);
   }
 
   useEffect(() => { refresh(); }, [userId]);
-  useEffect(() => {
-    try { localStorage.setItem(storageKey, JSON.stringify(localDrafts)); } catch { /* surfaced when saving */ }
-  }, [localDrafts, storageKey]);
 
   function resetForm() {
     setEditing(null);
@@ -269,21 +298,25 @@ export default function MyReportsPage({ userId = "" }) {
     setNotice("");
   }
 
-  function saveLocalDraft() {
-    const draft = {
+  function buildDraft() {
+    return {
       id: editing?.id || makeId(),
       serverId: editing?.serverId || null,
       idempotencyKey: editing?.idempotencyKey || makeId(),
       reportType,
       title: title.trim(),
-      fields,
+      fields: { ...fields },
       updatedAt: new Date().toISOString(),
       basePayload: editing?.basePayload || null,
+      baseVersion: editing?.baseVersion || null,
     };
+  }
+
+  function saveLocalCopy() {
+    const draft = buildDraft();
     const next = [...localDrafts.filter(item => item.id !== draft.id), draft];
-    persistLocal(next);
+    if (!persistLocal(next)) return null;
     setEditing(draft);
-    setNotice("Draft saved on this device. It will not be submitted automatically.");
     return draft;
   }
 
@@ -294,7 +327,60 @@ export default function MyReportsPage({ userId = "" }) {
     setFields({ ...emptyFields(draft.reportType), ...draft.fields });
     setSelected(null);
     setError("");
-    setNotice("Local draft reopened.");
+    setNotice("Local draft reopened. It remains on this device until you explicitly sync or submit it.");
+  }
+
+  async function syncDraft(draft) {
+    const payload = toPayload(draft.reportType, draft.fields, references);
+    const request = { reportType: draft.reportType, title: draft.title, payload };
+    if (!request.title) throw new Error("Enter a report title before saving to the farm computer.");
+    let detail;
+    if (draft.serverId) {
+      detail = await reportSubmissionApi.get(draft.serverId);
+      const status = detail.lifecycleStatus || detail.status;
+      if (!editableStatuses.includes(status)) {
+        throw new Error("This report is no longer an editable draft. Your local copy has been kept.");
+      }
+      if (!samePayload(reportPayload(detail), payload)
+          || detail.title !== request.title || detail.reportType !== request.reportType) {
+        detail = await reportSubmissionApi.save(draft.serverId, request);
+      }
+    } else {
+      detail = await reportSubmissionApi.create(request, draft.idempotencyKey);
+    }
+    const synced = {
+      ...draft,
+      serverId: detail.id,
+      basePayload: payload,
+      baseVersion: detail.currentVersion,
+      updatedAt: new Date().toISOString(),
+    };
+    const next = [...localDrafts.filter(item => item.id !== synced.id), synced];
+    if (!persistLocal(next)) throw new Error("The server draft was saved, but its local recovery copy could not be updated. Do not submit until local storage is available.");
+    setEditing(synced);
+    return detail;
+  }
+
+  async function saveDraft() {
+    setSaving(true);
+    setError("");
+    setNotice("");
+    const local = saveLocalCopy();
+    if (!local) {
+      setSaving(false);
+      return;
+    }
+    try {
+      const detail = await syncDraft(local);
+      setSelected(detail);
+      await refresh();
+      setNotice("Draft saved on this device and to the farm computer. It has not been submitted.");
+    } catch (err) {
+      setNotice("Draft saved on this device. Server sync is pending; reconnect and use Save draft or Submit for review.");
+      setError(err.message || "The local draft could not be synced.");
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function openServerReport(report) {
@@ -302,22 +388,31 @@ export default function MyReportsPage({ userId = "" }) {
     try {
       const detail = await reportSubmissionApi.get(report.id);
       setSelected(detail);
-      if (["DRAFT", "CHANGES_REQUESTED"].includes(detail.lifecycleStatus || detail.status)) {
-        setEditing({
+      const status = detail.lifecycleStatus || detail.status;
+      if (editableStatuses.includes(status)) {
+        const shadow = localDrafts.find(item => item.serverId === detail.id);
+        const latestPayload = reportPayload(detail);
+        const draft = shadow || {
           id: "server-" + detail.id,
           serverId: detail.id,
           idempotencyKey: makeId(),
           reportType: detail.reportType,
           title: detail.title,
-          fields: fromPayload(detail.reportType, detail.versions?.at(-1)?.payload || {}),
-          basePayload: detail.versions?.at(-1)?.payload || null,
-        });
-        setReportType(detail.reportType);
-        setTitle(detail.title);
-        setFields(fromPayload(detail.reportType, detail.versions?.at(-1)?.payload || {}));
-        setNotice("Editable report opened. Save creates a new version; submitted versions remain unchanged.");
+          fields: fromPayload(detail.reportType, latestPayload),
+          basePayload: latestPayload,
+          baseVersion: detail.currentVersion,
+        };
+        setEditing(draft);
+        setReportType(draft.reportType);
+        setTitle(draft.title);
+        setFields({ ...emptyFields(draft.reportType), ...draft.fields });
+        setNotice("Draft opened. Save draft records a new version on the farm computer; submitted versions stay unchanged.");
+      } else {
+        setEditing(null);
       }
-    } catch (err) { setError(err.message || "Could not open this report."); }
+    } catch (err) {
+      setError(err.message || "Could not open this report.");
+    }
   }
 
   async function submitReport(event) {
@@ -325,48 +420,30 @@ export default function MyReportsPage({ userId = "" }) {
     setSaving(true);
     setError("");
     setNotice("");
+    const local = saveLocalCopy();
+    if (!local) {
+      setSaving(false);
+      return;
+    }
     try {
-      const local = saveLocalDraft();
-      const payload = toPayload(reportType, fields);
-      if (reportType === "FEED_USAGE") {
-        const feedType = references.feedTypes.find(item => item.id === fields.feedTypeId);
-        if (feedType) payload.unit = feedType.unit;
-      }
-      const request = { reportType, title: title.trim(), payload };
-      if (!request.title) throw new Error("Enter a report title before submitting.");
-      let detail;
-      if (local.serverId) {
-        detail = await reportSubmissionApi.get(local.serverId);
-        const currentStatus = detail.lifecycleStatus || detail.status;
-        if (["SUBMITTED", "PENDING_REVIEW", "FLAGGED", "BLOCKED", "APPROVED", "MERGED", "REJECTED"].includes(currentStatus)) {
-          setNotice("This report has already left the draft stage. Its submitted version was not changed.");
-          await refresh();
-          setSelected(detail);
-          return;
-        }
-        const latestPayload = detail.versions?.at(-1)?.payload || {};
-        if (JSON.stringify(latestPayload) !== JSON.stringify(payload)
-            || detail.title !== request.title || detail.reportType !== request.reportType) {
-          detail = await reportSubmissionApi.save(local.serverId, request);
-        }
-      } else {
-        detail = await reportSubmissionApi.create(request, local.idempotencyKey);
-        const savedLocal = { ...local, serverId: detail.id, basePayload: payload, updatedAt: new Date().toISOString() };
-        persistLocal([...localDrafts.filter(item => item.id !== savedLocal.id), savedLocal]);
-      }
-      const currentStatus = detail.lifecycleStatus || detail.status;
-      if (currentStatus === "CHANGES_REQUESTED") {
-        detail = await reportSubmissionApi.save(detail.id, request);
+      const detail = await syncDraft(local);
+      const status = detail.lifecycleStatus || detail.status;
+      if (!editableStatuses.includes(status)) {
+        setSelected(detail);
+        throw new Error("This report has already been submitted or moved out of draft. Its saved version was not changed.");
       }
       const submitted = await reportSubmissionApi.submit(detail.id);
       persistLocal(localDrafts.filter(item => item.id !== local.id));
       setSelected(submitted);
       resetForm();
       await refresh();
-      setNotice("Report submitted. The submitted version is now locked for review.");
+      setNotice("Report submitted. The submitted version is locked for review. Retrying will not create another report.");
     } catch (err) {
-      setError(err.message || "The report could not be submitted. Your local draft has been kept.");
-    } finally { setSaving(false); }
+      setError(err.message || "The report could not be submitted. Your local recovery copy has been kept.");
+      setNotice("Your latest draft is saved on this device. It has not been silently submitted.");
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function postComment(event) {
@@ -379,22 +456,62 @@ export default function MyReportsPage({ userId = "" }) {
       setSelected(updated);
       setComment("");
       await refresh();
-    } catch (err) { setError(err.message || "Comment could not be sent."); }
-    finally { setSaving(false); }
+    } catch (err) {
+      setError(err.message || "Comment could not be sent.");
+    } finally {
+      setSaving(false);
+    }
   }
 
   function removeLocalDraft(id) {
-    if (!window.confirm("Delete this local draft from this device? This does not delete any submitted report.")) return;
+    if (!window.confirm("Discard this local recovery copy from this device? A server-side draft or submitted report is not deleted.")) return;
     persistLocal(localDrafts.filter(item => item.id !== id));
     if (editing?.id === id) resetForm();
+  }
+
+  function renderField([key, label, kind, required]) {
+    if (kind === "batch" || kind === "batchOptional") {
+      const allowedTypes = reportType === "EGG_COLLECTION" || reportType === "EGG_SALE"
+        ? ["LAYER"] : reportType === "WEIGHT_RECORD" || reportType === "BIRD_SALE"
+          ? ["BROILER", "TURKEY"] : null;
+      const options = references.batches.filter(batch => !allowedTypes || allowedTypes.includes(batch.type));
+      return <label key={key}>{label}
+        <select value={fields[key] || ""} onChange={event => setFields(current => ({ ...current, [key]: event.target.value }))} required={required}>
+          <option value="">{kind === "batchOptional" ? "Farm-wide / no batch" : "Select an active batch"}</option>
+          {options.map(batch => <option key={batch.id} value={batch.id}>{batch.code} · {batch.type}</option>)}
+        </select>
+      </label>;
+    }
+    if (kind === "feed") {
+      const selectedBatch = references.batches.find(item => item.id === fields.batchId);
+      const options = references.feedTypes.filter(feed => !selectedBatch || feed.applicableTypes?.includes(selectedBatch.type));
+      return <label key={key}>{label}
+        <select value={fields[key] || ""} onChange={event => setFields(current => ({ ...current, [key]: event.target.value }))} required={required}>
+          <option value="">Select an active feed type</option>
+          {options.map(feed => <option key={feed.id} value={feed.id}>{feed.name} · {feed.unit}</option>)}
+        </select>
+      </label>;
+    }
+    if (kind === "category") {
+      return <label key={key}>{label}
+        <select value={fields[key] || "OTHER"} onChange={event => setFields(current => ({ ...current, [key]: event.target.value }))} required={required}>
+          <option value="FEED">Feed</option><option value="DRUGS">Drugs</option><option value="OTHER">Other</option>
+        </select>
+      </label>;
+    }
+    return <label className={kind === "textarea" ? "field-span-2" : ""} key={key}>{label}
+      {kind === "textarea"
+        ? <textarea value={fields[key] || ""} onChange={event => setFields(current => ({ ...current, [key]: event.target.value }))} rows={3} required={required} />
+        : <input type={kind === "money" ? "number" : kind} step={kind === "decimal" || kind === "money" ? "0.01" : "1"} min={kind === "number" || kind === "decimal" || kind === "money" ? "0" : undefined} value={fields[key] || ""} onChange={event => setFields(current => ({ ...current, [key]: event.target.value }))} required={required} />}
+    </label>;
   }
 
   return (
     <div className="my-reports-page">
       <section className="card full">
         <div className="section-head">
-          <div><p className="eyebrow">CONTRIBUTIONS</p><h2>My reports</h2><p className="muted">Prepare a report, save it locally, then submit it explicitly while connected to the farm computer.</p></div>
-          <button type="button" className="secondary-button" onClick={refresh} disabled={loading}>Refresh</button>
+          <div><p className="eyebrow">WORKER WORKSPACE</p><h2>My submissions</h2><p className="muted">Create a report, keep a recoverable local draft, then submit it explicitly when the farm computer is available.</p></div>
+          <button type="button" className="secondary-button" onClick={refresh} disabled={loading || saving}>Refresh</button>
         </div>
         {error && <p className="form-error" role="alert">{error}</p>}
         {notice && <p className="form-success" role="status">{notice}</p>}
@@ -404,47 +521,19 @@ export default function MyReportsPage({ userId = "" }) {
             <form onSubmit={submitReport}>
               <div className="form-grid">
                 <label>Report type
-                  <select value={reportType} onChange={event => { setReportType(event.target.value); setFields(emptyFields(event.target.value)); setEditing(null); }}>
+                  <select value={reportType} onChange={event => { setReportType(event.target.value); setFields(emptyFields(event.target.value)); setEditing(null); setSelected(null); }}>
                     {Object.entries(reportDefinitions).map(([value, definition]) => <option key={value} value={value}>{definition.label}</option>)}
                   </select>
                 </label>
                 <label>Report title
                   <input value={title} onChange={event => setTitle(event.target.value)} maxLength={160} required placeholder="e.g. Morning mortality report" />
                 </label>
-                {selectedDefinition.fields.map(([key, label, kind, required]) => {
-                  if (kind === "batch") {
-                    const allowedTypes = reportType === "EGG_COLLECTION" || reportType === "EGG_SALE"
-                      ? ["LAYER"] : reportType === "WEIGHT_RECORD" || reportType === "BIRD_SALE"
-                        ? ["BROILER", "TURKEY"] : null;
-                    const options = references.batches.filter(batch => !allowedTypes || allowedTypes.includes(batch.type));
-                    return <label key={key}>{label}
-                      <select value={fields[key] || ""} onChange={event => setFields(current => ({ ...current, [key]: event.target.value }))} required={required}>
-                        <option value="">Select an active batch</option>
-                        {options.map(batch => <option key={batch.id} value={batch.id}>{batch.code} · {batch.type}</option>)}
-                      </select>
-                    </label>;
-                  }
-                  if (kind === "feed") {
-                    const selectedBatch = references.batches.find(batch => batch.id === fields.batchId);
-                    const options = references.feedTypes.filter(feed => !selectedBatch || feed.applicableTypes.includes(selectedBatch.type));
-                    return <label key={key}>{label}
-                      <select value={fields[key] || ""} onChange={event => setFields(current => ({ ...current, [key]: event.target.value }))} required={required}>
-                        <option value="">Select an active feed type</option>
-                        {options.map(feed => <option key={feed.id} value={feed.id}>{feed.name} · {feed.unit}</option>)}
-                      </select>
-                    </label>;
-                  }
-                  return <label className={kind === "textarea" ? "field-span-2" : ""} key={key}>{label}
-                    {kind === "textarea"
-                      ? <textarea value={fields[key] || ""} onChange={event => setFields(current => ({ ...current, [key]: event.target.value }))} rows={3} required={required} />
-                      : <input type={kind === "money" ? "number" : kind} step={kind === "decimal" || kind === "money" ? "0.01" : "1"} min={kind === "number" || kind === "decimal" || kind === "money" ? "0" : undefined} value={fields[key] || ""} onChange={event => setFields(current => ({ ...current, [key]: event.target.value }))} required={required} /> }
-                  </label>;
-                })}
+                {selectedDefinition.fields.map(renderField)}
               </div>
-              <p className="muted report-draft-hint">Saving here stores a local draft only. It does not update official farm records or send anything to a Manager.</p>
+              <p className="muted report-draft-hint">Save draft stores a recovery copy on this device and syncs a server draft when connected. It never updates official farm ledgers or submits the report.</p>
               <div className="inline-form">
-                <button type="button" className="secondary-button" onClick={saveLocalDraft}>Save draft</button>
-                <button type="submit" disabled={saving}>{saving ? "Submitting…" : "Submit for review"}</button>
+                <button type="button" className="secondary-button" onClick={saveDraft} disabled={saving}>{saving ? "Saving…" : "Save draft"}</button>
+                <button type="submit" disabled={saving}>{saving ? "Working…" : "Submit for review"}</button>
               </div>
             </form>
           </section>
@@ -459,7 +548,8 @@ export default function MyReportsPage({ userId = "" }) {
                       <strong>{report.title || "Untitled draft"}</strong>
                       <span className={report.localOnly ? "status-pill status-local" : "status-pill"}>{report.localOnly ? "Local draft" : statusLabel(report)}</span>
                     </div>
-                    <p className="muted">{reportDefinitions[report.reportType]?.label || report.reportType} · {report.updatedAt || report.createdAt || "Not submitted"}</p>
+                    <p className="muted">{reportDefinitions[report.reportType]?.label || report.reportType} · {report.updatedAt || report.createdAt || "Not saved"}</p>
+                    {report.localCopy && <p className="muted">A local recovery copy is available on this device.</p>}
                     <div className="inline-form">
                       {report.localOnly
                         ? <button type="button" className="secondary-button" onClick={() => openLocalDraft(report)}>Open</button>
@@ -472,12 +562,17 @@ export default function MyReportsPage({ userId = "" }) {
           </section>
         </div>
         {selected && <section className="report-detail">
-          <div className="section-head"><div><p className="eyebrow">REPORT DETAIL</p><h3>{selected.title}</h3><p className="muted">Reference {selected.id} · {statusLabel(selected)} · version {selected.submittedVersion || selected.currentVersion}</p></div><button type="button" className="text-button" onClick={() => setSelected(null)}>Close</button></div>
+          <div className="section-head"><div><p className="eyebrow">REPORT DETAIL</p><h3>{selected.title}</h3><p className="muted">Reference {selected.id} · {statusLabel(selected)} · submitted version {selected.submittedVersion || "Not submitted"} · current version {selected.currentVersion}</p></div><button type="button" className="text-button" onClick={() => setSelected(null)}>Close</button></div>
           <div className="report-history">
             <h4>Version history</h4>
-            {(selected.versions || []).map(version => <div key={version.version}><strong>Version {version.version}</strong><span>{version.title}</span><small>{version.createdAt}</small></div>)}
-            <h4>Activity</h4>
-            {(selected.history || []).map(event => <div key={event.id}><strong>{event.event.replaceAll("_", " ")}</strong><span>{event.occurredAt}</span></div>)}
+            {(selected.versions || []).map(version => (
+              <details key={version.version}>
+                <summary><strong>Version {version.version}</strong> · {version.title} <small>{version.createdAt}</small></summary>
+                <pre>{JSON.stringify(version.payload || {}, null, 2)}</pre>
+              </details>
+            ))}
+            <h4>Activity history</h4>
+            {(selected.history || []).map(item => <div key={item.id}><strong>{String(item.event || "").replaceAll("_", " ")}</strong><span>{item.occurredAt}</span></div>)}
           </div>
           {(selected.comments || []).length > 0 && <div className="report-comments"><h4>Discussion</h4>{selected.comments.map(item => <article key={item.id}><strong>{item.authorName || "Farm user"}</strong><p>{item.body}</p><small>{item.createdAt}</small></article>)}</div>}
           {["SUBMITTED", "PENDING_REVIEW", "CHANGES_REQUESTED"].includes(selected.lifecycleStatus || selected.status) && <form className="report-comment-form" onSubmit={postComment}>
