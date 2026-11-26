@@ -52,6 +52,8 @@ CREATE TABLE manager_notifications (
     created_at TEXT NOT NULL,
     read_at TEXT
 );
+CREATE UNIQUE INDEX uq_manager_notification_entity
+    ON manager_notifications(recipient_user_id, notification_type, entity_id);
 CREATE INDEX idx_manager_notifications_unread
     ON manager_notifications(recipient_user_id, read_at, created_at DESC);
 
