@@ -98,10 +98,9 @@ All operations execute in one database transaction. A domain service failure rol
 The following are not yet implemented and must not be represented as complete:
 
 - Comparison of proposed values against existing official records and broader conflict detection.
-- Emergency incident aggregate, immediate Manager notification, acknowledgement, response assignment, and resolution.
-- Configurable reporting schedules and thresholds, overdue/missing report calculation, and notifications.
-- Optional evidence file storage, version association, file validation, and backup/restore integration.
 - Post-merge correction/reversal workflow linking original and corrected official records.
 - Full concurrency, transaction-failure, network interruption, packaged Electron, backup/restore, and end-to-end acceptance coverage.
 
-Schedules and mortality thresholds remain unset. Missing reports must not be interpreted as zero activity. Emergency alerts must not automatically update official farm records.
+Emergency incidents are stored separately from farm ledgers. Reporting schedules and mortality thresholds are configurable but start unset; the application does not invent defaults. Missing reports are explicitly labelled missing, never interpreted as zero activity. Configured mortality thresholds can create Manager notifications and review warnings, but do not automatically change official records.
+
+Evidence files are stored as validated SQLite BLOBs, associated with an immutable submission version. Supported formats are JPEG, PNG, PDF, and UTF-8 text, with a 5 MB per-file limit and 10 files per version. Because the bytes are stored in the same database, ordinary database backups include the evidence without a separate filesystem path.
