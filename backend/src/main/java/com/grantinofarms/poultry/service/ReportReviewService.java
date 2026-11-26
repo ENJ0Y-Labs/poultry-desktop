@@ -90,6 +90,41 @@ public class ReportReviewService {
     }
 
     @Transactional
+    public Map<String, Object> overrideWarning(String id, String checkId, String reason) {
+        RoleAuthorization.requireManager();
+        String actor = CurrentUserContext.get();
+        Map<String, Object> header = requireHeader(id);
+        if (actor.equals(header.get("authorId"))) {
+            throw new ApiException(HttpStatus.FORBIDDEN, "SELF_REVIEW_FORBIDDEN",
+                    "A Manager cannot authorize warnings on their own submission.");
+        }
+        String cleanReason = reason == null ? "" : reason.trim();
+        if (cleanReason.isBlank() || cleanReason.length() > 1000) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "OVERRIDE_REASON_REQUIRED",
+                    "A reason of 1 to 1,000 characters is required.");
+        }
+        int version = submittedVersion(header);
+        Map<String, Object> check = submissions.findCheck(id, version, checkId);
+        if (check == null || !"WARNING".equals(check.get("outcome"))
+                || !Boolean.TRUE.equals(check.get("overrideable"))) {
+            throw new ApiException(HttpStatus.CONFLICT, "WARNING_NOT_OVERRIDEABLE",
+                    "Only a warning explicitly marked as overrideable can be authorized.");
+        }
+        if (submissions.hasWarningOverride(id, version, checkId)) {
+            throw new ApiException(HttpStatus.CONFLICT, "WARNING_ALREADY_OVERRIDDEN",
+                    "This warning already has an authorization record.");
+        }
+        String now = Instant.now().toString();
+        submissions.addWarningOverride(id, version, checkId, actor, cleanReason, now);
+        submissions.appendEvent(id, version, actor, "WARNING_OVERRIDDEN",
+                "{\\"checkId\\":\\"" + checkId + "\\",\\"reason\\":\\"" + escape(cleanReason) + "\\"}", now);
+        audit.append(String.valueOf(header.get("farmId")), "OVERRIDE_WARNING", "REPORT_SUBMISSION", id,
+                "Manager authorized an overrideable report warning", null,
+                "{\\"checkId\\":\\"" + checkId + "\\",\\"version\\":" + version + "}", now);
+        return detail(requireHeader(id));
+    }
+
+    @Transactional
     public Map<String, Object> decide(String id, String decision, String reason) {
         RoleAuthorization.requireManager();
         String actor = CurrentUserContext.get();
@@ -120,6 +155,14 @@ public class ReportReviewService {
             if (blocked) {
                 throw new ApiException(HttpStatus.CONFLICT, "SUBMISSION_BLOCKED",
                         "A blocked report cannot be approved. The author must correct the report first.");
+            }
+            boolean unresolvedWarning = checks.stream()
+                    .filter(check -> "WARNING".equals(check.get("outcome")))
+                    .anyMatch(check -> !Boolean.TRUE.equals(check.get("overrideable"))
+                            || !submissions.hasWarningOverride(id, version, String.valueOf(check.get("id"))));
+            if (unresolvedWarning) {
+                throw new ApiException(HttpStatus.CONFLICT, "WARNING_OVERRIDE_REQUIRED",
+                        "Every overrideable warning requires a separate Manager authorization with a reason.");
             }
         }
         String now = Instant.now().toString();
