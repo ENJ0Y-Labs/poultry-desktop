@@ -101,17 +101,42 @@ public class ReportingConfigurationRepository {
     }
 
     public boolean hasSubmissionInWindow(String farmId, String reportType, String scopeType,
-                                         String scopeId, String start, String end) {
+                                         String scopeId, String batchType, String start, String end) {
         String scopePredicate = switch (scopeType) {
             case "BATCH" -> "scope_type = 'BATCH' AND scope_id = ?";
-            case "HOUSE" -> "scope_type = 'HOUSE' AND scope_id = ?";
-            default -> "scope_type = 'FARM' AND scope_id IS NULL";
+            case "HOUSE" -> """
+                    EXISTS (
+                        SELECT 1 FROM report_submission_versions sv
+                        JOIN batches b ON b.id = json_extract(sv.payload_json, '$.batchId')
+                        WHERE sv.submission_id = report_submissions.id
+                          AND sv.version_number = report_submissions.current_version
+                          AND b.house_id = ?
+                    )
+                    """;
+            default -> "1 = 1";
         };
-        String sql = "SELECT COUNT(*) FROM report_submissions WHERE farm_id = ? AND report_type = ? "
-                + "AND " + scopePredicate + " AND submitted_at >= ? AND submitted_at < ?";
-        Integer count = scopeId == null
-                ? jdbc.queryForObject(sql, Integer.class, farmId, reportType, start, end)
-                : jdbc.queryForObject(sql, Integer.class, farmId, reportType, scopeId, start, end);
+        String sql = """
+                SELECT COUNT(*) FROM report_submissions
+                WHERE farm_id = ? AND report_type = ?
+                  AND %s
+                  AND (? IS NULL OR EXISTS (
+                    SELECT 1 FROM report_submission_versions sv
+                    JOIN batches b ON b.id = json_extract(sv.payload_json, '$.batchId')
+                    WHERE sv.submission_id = report_submissions.id
+                      AND sv.version_number = report_submissions.current_version
+                      AND b.batch_type = ?
+                  ))
+                  AND submitted_at >= ? AND submitted_at < ?
+                """.formatted(scopePredicate);
+        java.util.List<Object> args = new java.util.ArrayList<>();
+        args.add(farmId);
+        args.add(reportType);
+        if ("BATCH".equals(scopeType) || "HOUSE".equals(scopeType)) args.add(scopeId);
+        args.add(batchType);
+        args.add(batchType);
+        args.add(start);
+        args.add(end);
+        Integer count = jdbc.queryForObject(sql, Integer.class, args.toArray());
         return count != null && count > 0;
     }
 
