@@ -22,14 +22,19 @@ public class UserRepository {
                 INSERT INTO users (id, username, email, password_hash, full_name, role, status, created_at, updated_at)
                 VALUES (?, ?, ?, ?, ?, 'OWNER', 'ACTIVE', ?, ?)
                 """, id, username, email, passwordHash, fullName, now, now);
+        jdbc.update("""
+                INSERT INTO user_roles (user_id, role, created_at, updated_at, updated_by)
+                VALUES (?, 'ADMINISTRATOR', ?, ?, NULL)
+                """, id, now, now);
     }
 
     public Map<String, Object> findByIdentifier(String identifier) {
         try {
             return jdbc.queryForMap("""
-                    SELECT id, username, email, password_hash, full_name, role, status
-                    FROM users
-                    WHERE username = ? COLLATE NOCASE OR email = ? COLLATE NOCASE
+                    SELECT u.id, u.username, u.email, u.password_hash, u.full_name,
+                           r.role, u.status
+                    FROM users u JOIN user_roles r ON r.user_id = u.id
+                    WHERE u.username = ? COLLATE NOCASE OR u.email = ? COLLATE NOCASE
                     """, identifier, identifier);
         } catch (EmptyResultDataAccessException e) {
             return null;
@@ -39,8 +44,10 @@ public class UserRepository {
     public Map<String, Object> findByUsername(String username) {
         try {
             return jdbc.queryForMap("""
-                    SELECT id, username, email, password_hash, full_name, role, status
-                    FROM users WHERE username = ? COLLATE NOCASE
+                    SELECT u.id, u.username, u.email, u.password_hash, u.full_name,
+                           r.role, u.status
+                    FROM users u JOIN user_roles r ON r.user_id = u.id
+                    WHERE u.username = ? COLLATE NOCASE
                     """, username);
         } catch (EmptyResultDataAccessException e) {
             return null;
@@ -50,8 +57,10 @@ public class UserRepository {
     public Map<String, Object> findById(String id) {
         try {
             return jdbc.queryForMap("""
-                    SELECT id, username, email, password_hash, full_name, role, status
-                    FROM users WHERE id = ?
+                    SELECT u.id, u.username, u.email, u.password_hash, u.full_name,
+                           r.role, u.status
+                    FROM users u JOIN user_roles r ON r.user_id = u.id
+                    WHERE u.id = ?
                     """, id);
         } catch (EmptyResultDataAccessException e) {
             return null;
