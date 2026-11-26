@@ -18,7 +18,7 @@ vi.mock("../services/api.js", () => ({
     managers: vi.fn().mockResolvedValue([{ id: "manager-1", username: "manager", fullName: "Manager One" }]),
     get: vi.fn().mockResolvedValue(fixtures.detail),
     assign: vi.fn().mockResolvedValue({ ...fixtures.detail, assignedManagerId: "manager-1" }),
-    comment: vi.fn().mockResolvedValue(detail),
+    comment: vi.fn().mockResolvedValue(fixtures.detail),
     decide: vi.fn().mockResolvedValue({ ...fixtures.detail, lifecycleStatus: "APPROVED", status: "APPROVED" }),
   },
 }));
