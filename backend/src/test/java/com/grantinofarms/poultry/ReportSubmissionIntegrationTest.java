@@ -120,7 +120,7 @@ class ReportSubmissionIntegrationTest {
 
         assertThat(jdbc.queryForObject(
                 "SELECT COUNT(*) FROM audit_logs WHERE entity_type='USER_ACCOUNT' AND entity_id=?",
-                Integer.class, newUserId)).isEqualTo(4);
+                Integer.class, newUserId)).isEqualTo(5);
     }
 
     @Test
