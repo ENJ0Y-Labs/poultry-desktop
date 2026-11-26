@@ -57,6 +57,11 @@ public class ReportMergeService {
             throw new ApiException(HttpStatus.CONFLICT, "MERGE_RECHECK_FAILED",
                     "The latest farm data changed the validation result. The report has been returned to review.");
         }
-        return mergeTransaction.merge(id, operationKey);
+        try {
+            return mergeTransaction.merge(id, operationKey);
+        } catch (org.springframework.dao.DuplicateKeyException exception) {
+            throw new ApiException(HttpStatus.CONFLICT, "MERGE_KEY_ALREADY_USED",
+                    "This Idempotency-Key has already been used for another report merge.");
+        }
     }
 }
