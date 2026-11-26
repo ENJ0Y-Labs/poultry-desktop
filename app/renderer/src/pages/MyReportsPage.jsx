@@ -187,6 +187,9 @@ function toPayload(type, values, references) {
     else if (kind === "batch" || kind === "batchOptional") payload.batchId = value;
     else payload[target] = value;
   }
+  if (values.eventDate) payload.eventDate = values.eventDate;
+  if (values.eventTime) payload.eventTime = values.eventTime;
+  if (values.lateReason?.trim()) payload.lateReason = values.lateReason.trim();
   if (type === "FEED_USAGE") {
     const feed = references.feedTypes.find(item => item.id === values.feedTypeId);
     if (feed) payload.unit = feed.unit;
@@ -206,6 +209,8 @@ function fromPayload(type, payload = {}) {
     }
     if (value != null) values[key] = String(value);
   }
+  values.eventTime = payload.eventTime || "";
+  values.lateReason = payload.lateReason || "";
   return values;
 }
 
@@ -540,6 +545,12 @@ export default function MyReportsPage({ userId = "" }) {
                   <input value={title} onChange={event => setTitle(event.target.value)} maxLength={160} required placeholder="e.g. Morning mortality report" />
                 </label>
                 {selectedDefinition.fields.map(renderField)}
+                <label>Time of event
+                  <input type="time" value={fields.eventTime || ""} onChange={event => setFields(current => ({ ...current, eventTime: event.target.value }))} required />
+                </label>
+                <label className="field-span-2">Reason for late report (if more than 24 hours)
+                  <textarea rows={2} value={fields.lateReason || ""} onChange={event => setFields(current => ({ ...current, lateReason: event.target.value }))} maxLength={1000} />
+                </label>
               </div>
               <p className="muted report-draft-hint">Save draft stores a recovery copy on this device and syncs a server draft when connected. It never updates official farm ledgers or submits the report.</p>
               <div className="inline-form">
