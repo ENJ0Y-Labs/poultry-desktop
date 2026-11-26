@@ -66,6 +66,7 @@ describe("MyReportsPage", () => {
   });
 
   it("persists an offline draft locally without creating or submitting a server report", async () => {
+    reportSubmissionApi.mine.mockRejectedValue(new Error("The local backend is not responding."));
     render(<MyReportsPage userId="worker-1" />);
     await screen.findByText(/No reports yet/);
     fillMortalityForm();
@@ -132,9 +133,8 @@ describe("MyReportsPage", () => {
     expect(localStorage.getItem("pomas:report-submission-drafts:worker-1")).toBe("[]");
   });
 
-  it("keeps a local recovery copy when the backend is unavailable", async () => {
+  it("keeps a local recovery copy and does not attempt server sync while offline", async () => {
     reportSubmissionApi.mine.mockRejectedValue(new Error("The local backend is not responding."));
-    reportSubmissionApi.create.mockRejectedValue(new Error("The local backend is not responding."));
 
     render(<MyReportsPage userId="worker-1" />);
     fillMortalityForm();
@@ -142,8 +142,9 @@ describe("MyReportsPage", () => {
 
     expect(await screen.findByText("Local draft")).toBeInTheDocument();
     expect(JSON.parse(localStorage.getItem("pomas:report-submission-drafts:worker-1"))).toHaveLength(1);
+    expect(reportSubmissionApi.create).not.toHaveBeenCalled();
     expect(reportSubmissionApi.submit).not.toHaveBeenCalled();
-    expect(await screen.findByText(/Server sync is pending/)).toBeInTheDocument();
+    expect(await screen.findByText(/Server sync will be available when the farm computer reconnects/)).toBeInTheDocument();
   });
 
   it("shows immutable version snapshots and activity history for a server report", async () => {
