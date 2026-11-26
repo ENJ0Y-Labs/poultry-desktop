@@ -433,3 +433,37 @@ export const reportReviewApi = {
     method: "POST", body: JSON.stringify({ decision, reason }),
   }),
 };
+
+export const reportReviewApi = {
+  queue: (filters = {}) => {
+    const params = new URLSearchParams();
+    Object.entries(filters).forEach(([key, value]) => { if (value) params.set(key, value); });
+    const query = params.toString();
+    return request("/review/queue" + (query ? "?" + query : ""));
+  },
+  managers: () => request("/review/managers"),
+  get: (id) => request("/review/submissions/" + encodeURIComponent(id)),
+  assign: (id, managerId) => request("/review/submissions/" + encodeURIComponent(id) + "/assign", {
+    method: "POST", body: JSON.stringify({ managerId }),
+  }),
+  comment: (id, body) => request("/review/submissions/" + encodeURIComponent(id) + "/comments", {
+    method: "POST", body: JSON.stringify({ body }),
+  }),
+  decide: (id, decision, reason) => request("/review/submissions/" + encodeURIComponent(id) + "/decision", {
+    method: "POST", body: JSON.stringify({ decision, reason }),
+  }),
+};
+
+export const adminUserApi = {
+  list: () => request("/admin/users"),
+  create: (data) => request("/admin/users", { method: "POST", body: JSON.stringify(data) }),
+  changeRole: (id, role) => request("/admin/users/" + encodeURIComponent(id) + "/role", {
+    method: "PATCH", body: JSON.stringify({ role }),
+  }),
+  changeStatus: (id, status) => request("/admin/users/" + encodeURIComponent(id) + "/status", {
+    method: "PATCH", body: JSON.stringify({ status }),
+  }),
+  resetPassword: (id, password) => request("/admin/users/" + encodeURIComponent(id) + "/password-reset", {
+    method: "POST", body: JSON.stringify({ password }),
+  }),
+};
