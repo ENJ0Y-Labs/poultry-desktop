@@ -76,7 +76,7 @@ public class ReportSubmissionRepository {
                 SET status = 'PENDING_REVIEW', lifecycle_status = 'SUBMITTED',
                     submitted_version = ?, submitted_at = ?, updated_at = ?
                 WHERE id = ? AND author_user_id = ?
-                  AND lifecycle_status IN ('DRAFT','CHANGES_REQUESTED')
+                  AND lifecycle_status IN ('DRAFT','CHANGES_REQUESTED','BLOCKED')
                   AND current_version = ?
                 """, version, now, now, id, actorId, version);
     }
