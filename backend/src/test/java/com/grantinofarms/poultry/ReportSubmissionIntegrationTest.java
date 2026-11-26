@@ -61,8 +61,8 @@ class ReportSubmissionIntegrationTest {
         workerId = UUID.randomUUID().toString();
         farms.insert(farmId, "Submission Test Farm", "Port Harcourt", "Africa/Lagos", "NGN", now);
         expenseCategoryRepository.insert(UUID.randomUUID().toString(), farmId, "FEED", now);
-        expenseCategories.insert(UUID.randomUUID().toString(), farmId, "DRUGS", now);
-        expenseCategories.insert(UUID.randomUUID().toString(), farmId, "OTHER", now);
+        expenseCategoryRepository.insert(UUID.randomUUID().toString(), farmId, "DRUGS", now);
+        expenseCategoryRepository.insert(UUID.randomUUID().toString(), farmId, "OTHER", now);
         users.insertWithRole(workerId, "worker-" + workerId.substring(0, 8),
                 null, "test-password-hash", "Test Worker", "WORKER", now, null);
         CurrentUserContext.set(workerId, "WORKER");
