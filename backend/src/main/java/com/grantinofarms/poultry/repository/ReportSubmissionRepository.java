@@ -39,12 +39,14 @@ public class ReportSubmissionRepository {
                 """, id, version, payloadJson, actorId, now);
     }
 
-    public int updateDraft(String id, String actorId, String title, int nextVersion, String now) {
+    public int updateDraft(String id, String actorId, String reportType, String title,
+                           int expectedVersion, int nextVersion, String now) {
         return jdbc.update("""
                 UPDATE report_submissions
-                SET title = ?, current_version = ?, status = 'DRAFT', updated_at = ?
+                SET report_type = ?, title = ?, current_version = ?, status = 'DRAFT', updated_at = ?
                 WHERE id = ? AND author_user_id = ? AND status IN ('DRAFT','CHANGES_REQUESTED')
-                """, title, nextVersion, now, id, actorId);
+                  AND current_version = ?
+                """, reportType, title, nextVersion, now, id, actorId, expectedVersion);
     }
 
     public void appendEvent(String id, Integer version, String actorId, String event,
