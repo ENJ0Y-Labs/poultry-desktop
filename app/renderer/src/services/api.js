@@ -409,6 +409,7 @@ export const reportSubmissionApi = {
   }),
   submit: (id) => request("/submissions/" + encodeURIComponent(id) + "/submit", { method: "POST" }),
   mine: () => request("/submissions"),
+  references: () => request("/submissions/references"),
   get: (id) => request("/submissions/" + encodeURIComponent(id)),
   comment: (id, body) => request("/review/submissions/" + encodeURIComponent(id) + "/comments", {
     method: "POST", body: JSON.stringify({ body }),
