@@ -47,6 +47,10 @@ public class SessionRepository {
         jdbc.update("DELETE FROM user_sessions WHERE token_hash = ?", tokenHash);
     }
 
+    public void deleteForUser(String userId) {
+        jdbc.update("DELETE FROM user_sessions WHERE user_id = ?", userId);
+    }
+
     public void purgeExpired(String now) {
         jdbc.update("DELETE FROM user_sessions WHERE expires_at <= ?", now);
     }
