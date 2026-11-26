@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 // eslint-disable-next-line no-unused-vars
 import { NavigationContext } from "./NavigationContext.jsx";
 import { connectionApi } from "../services/api.js";
@@ -198,10 +198,10 @@ export default function AppShell({ farm, error, appInfo, onRetry, onQuickAction,
   const [retrying, setRetrying] = useState(false);
   const [hasUserNavigated, setHasUserNavigated] = useState(Boolean(window.location.hash));
   const mainContentRef = useRef(null);
-  const allowedPages = allowedPagesForRole(userRole);
+  const allowedPages = useMemo(() => allowedPagesForRole(userRole), [userRole]);
   const visibleGroups = groups.map(group => ({ ...group, items: group.items.filter(item => allowedPages.includes(item.target)) }))
     .filter(group => group.items.length > 0);
-  const safePage = page => allowedPages.includes(page) ? page : "my-reports";
+  const safePage = useCallback(page => allowedPages.includes(page) ? page : "my-reports", [allowedPages]);
 
   async function retryBackend() {
     if (!onRetry || retrying) return;
@@ -285,7 +285,7 @@ export default function AppShell({ farm, error, appInfo, onRetry, onQuickAction,
       window.location.hash = `${initialPage}/${defaultTabs[initialPage] || "overview"}`;
     }
     return () => window.removeEventListener("hashchange", syncRoute);
-  }, [startPage, startPageReady, hasUserNavigated]);
+  }, [startPage, startPageReady, hasUserNavigated, safePage]);
 
   useEffect(() => {
     let mounted = true;
