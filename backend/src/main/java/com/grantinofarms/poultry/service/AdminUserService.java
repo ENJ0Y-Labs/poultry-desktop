@@ -49,6 +49,11 @@ public class AdminUserService {
     public Map<String, Object> create(AdminUserCreateRequest request) {
         RoleAuthorization.requireAdministrator();
         String actor = CurrentUserContext.get();
+        if (request == null || request.password() == null || request.password().length() < 10
+                || request.password().length() > 200 || request.fullName() == null || request.fullName().isBlank()
+                || request.role() == null || !java.util.Set.of("WORKER", "ADMINISTRATOR", "MANAGER").contains(request.role())) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_ACCOUNT", "Account details or role are invalid.");
+        }
         String username = request.username().trim().toLowerCase(java.util.Locale.ROOT);
         String email = request.email() == null || request.email().isBlank()
                 ? null : request.email().trim().toLowerCase(java.util.Locale.ROOT);
@@ -74,6 +79,7 @@ public class AdminUserService {
     public Map<String, Object> changeRole(String userId, String role) {
         RoleAuthorization.requireAdministrator();
         String actor = CurrentUserContext.get();
+        requireRole(role);
         if (actor.equals(userId))
             throw new ApiException(HttpStatus.CONFLICT, "CANNOT_CHANGE_OWN_ROLE",
                     "You cannot change your own administrator role.");
@@ -95,6 +101,8 @@ public class AdminUserService {
     public Map<String, Object> changeStatus(String userId, String status) {
         RoleAuthorization.requireAdministrator();
         String actor = CurrentUserContext.get();
+        if (!java.util.Set.of("ACTIVE", "SUSPENDED").contains(status))
+            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_ACCOUNT_STATUS", "Account status is invalid.");
         if (actor.equals(userId) && "SUSPENDED".equals(status))
             throw new ApiException(HttpStatus.CONFLICT, "CANNOT_SUSPEND_SELF", "You cannot suspend your own account.");
         Map<String, Object> target = requireUser(userId);
@@ -115,12 +123,19 @@ public class AdminUserService {
     @Transactional
     public Map<String, Object> resetPassword(String userId, String password) {
         RoleAuthorization.requireAdministrator();
-        Map<String, Object> target = requireUser(userId);
+        if (password == null || password.length() < 10 || password.length() > 200)
+            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_PASSWORD", "Password must contain 10–200 characters.");
+        requireUser(userId);
         String now = Instant.now().toString();
         users.updatePassword(userId, passwords.hash(password), now);
         sessions.deleteForUser(userId);
         auditEvent("PASSWORD_RESET", userId, null, Map.of("sessionsRevoked", true), now);
         return publicAccount(users.findById(userId));
+    }
+
+    private void requireRole(String role) {
+        if (role == null || !java.util.Set.of("WORKER", "ADMINISTRATOR", "MANAGER").contains(role))
+            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_ROLE", "Account role is invalid.");
     }
 
     private Map<String, Object> requireUser(String id) {
@@ -130,9 +145,14 @@ public class AdminUserService {
     }
 
     private Map<String, Object> publicAccount(Map<String, Object> user) {
-        return Map.of("id", user.get("id"), "username", user.get("username"),
-                "email", user.get("email") == null ? "" : user.get("email"),
-                "fullName", user.get("full_name"), "role", user.get("role"), "status", user.get("status"));
+        Map<String, Object> result = new java.util.LinkedHashMap<>();
+        result.put("id", user.get("id"));
+        result.put("username", user.get("username"));
+        result.put("email", user.get("email"));
+        result.put("fullName", user.get("full_name"));
+        result.put("role", user.get("role"));
+        result.put("status", user.get("status"));
+        return result;
     }
 
     private void auditEvent(String action, String userId, Object before, Object after, String now) {
