@@ -46,10 +46,12 @@ public class AuthFilter extends OncePerRequestFilter {
         String path = request.getRequestURI();
         boolean publicEndpoint = path.startsWith("/api/v1/auth/") || path.equals("/api/v1/health");
         boolean needsFilterSession = !publicEndpoint || path.equals("/api/v1/auth/me");
-        Map<String, Object> user = needsFilterSession ? auth.current(token(request)) : null;
+        String rawSessionToken = token(request);
+        Map<String, Object> user = needsFilterSession ? auth.current(rawSessionToken) : null;
         if (user != null) {
             request.setAttribute("poultry.user", user);
-            CurrentUserContext.set(String.valueOf(user.get("id")), String.valueOf(user.get("role")));
+            CurrentUserContext.set(String.valueOf(user.get("id")), String.valueOf(user.get("role")),
+                    auth.hashToken(rawSessionToken));
         }
 
         boolean required = environment.getProperty("poultry.auth-required", Boolean.class, false);
