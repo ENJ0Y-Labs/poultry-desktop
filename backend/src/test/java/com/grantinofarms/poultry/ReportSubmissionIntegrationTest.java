@@ -130,6 +130,23 @@ class ReportSubmissionIntegrationTest {
                 .hasMessageContaining("different report content");
     }
 
+
+    @Test
+    void workerCanCorrectABlockedSubmissionAsANewVersion() throws Exception {
+        Map<String, Object> created = submissions.createDraft(new ReportSubmissionRequest(
+                "MORTALITY", "Incomplete mortality report", mapper.readTree("{\"quantity\":1}")));
+        String id = String.valueOf(created.get("id"));
+        Map<String, Object> blocked = submissions.submit(id);
+        assertThat(blocked.get("lifecycleStatus")).isEqualTo("BLOCKED");
+
+        Map<String, Object> revised = submissions.saveDraft(id, new ReportSubmissionRequest(
+                "MORTALITY", "Corrected mortality report",
+                mapper.readTree("{\"eventDate\":\"2026-11-26\",\"eventTime\":\"08:00\",\"batchId\":\"batch-1\",\"quantity\":1}")));
+        assertThat(revised.get("lifecycleStatus")).isEqualTo("DRAFT");
+        assertThat(revised.get("currentVersion")).isEqualTo(2);
+        assertThat((java.util.List<?>) revised.get("versions")).hasSize(2);
+    }
+
     @Test
     void managerCanAssignCommentAndRequestChangesThenAuthorResubmitsNewVersion() throws Exception {
         Map<String, Object> created = submissions.createDraft(new ReportSubmissionRequest(
