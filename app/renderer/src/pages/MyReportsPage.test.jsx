@@ -97,7 +97,7 @@ describe("MyReportsPage", () => {
     }]);
 
     render(<MyReportsPage userId="worker-1" />);
-    await screen.findByText(/No reports yet/);
+    await screen.findByRole("button", { name: "View" });
     fillMortalityForm();
     fireEvent.click(screen.getByRole("button", { name: "Save draft" }));
 
@@ -182,7 +182,7 @@ describe("MyReportsPage", () => {
     expect(screen.getByText(/Version history/)).toBeInTheDocument();
     expect(screen.getByText(/Activity history/)).toBeInTheDocument();
     expect(screen.getByText("SUBMITTED")).toBeInTheDocument();
-    expect(screen.getByText(/Morning mortality/)).toBeInTheDocument();
+    expect(screen.getAllByText(/Morning mortality/).length).toBeGreaterThan(1);
   });
 
   it("saves edits to an existing server draft as a new version without submitting", async () => {
