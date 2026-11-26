@@ -140,6 +140,22 @@ public class ReportingConfigurationRepository {
         return count != null && count > 0;
     }
 
+    public void notifyMissingReportManagers(String farmId, String notificationId, String title,
+                                            String message, String now) {
+        List<String> managers = jdbc.queryForList("""
+                SELECT r.user_id FROM user_roles r JOIN users u ON u.id = r.user_id
+                WHERE r.role = 'MANAGER' AND u.status = 'ACTIVE'
+                """, String.class);
+        for (String manager : managers) {
+            jdbc.update("""
+                    INSERT OR IGNORE INTO manager_notifications
+                        (id, farm_id, recipient_user_id, notification_type, entity_type, entity_id,
+                         title, message, created_at)
+                    VALUES (?, ?, ?, 'MISSING_REPORT', 'REPORTING_SCHEDULE', ?, ?, ?, ?)
+                    """, UUID.randomUUID().toString(), farmId, manager, notificationId, title, message, now);
+        }
+    }
+
     public void notifyManagers(String farmId, String entityId, String title, String message, String now) {
         List<String> managers = jdbc.queryForList("""
                 SELECT r.user_id FROM user_roles r JOIN users u ON u.id = r.user_id
