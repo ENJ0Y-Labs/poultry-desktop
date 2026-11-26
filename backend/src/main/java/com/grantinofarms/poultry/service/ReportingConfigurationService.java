@@ -137,33 +137,39 @@ public class ReportingConfigurationService {
         List<Map<String, Object>> missing = new java.util.ArrayList<>();
         for (Map<String, Object> schedule : reporting.schedules(farm.id())) {
             if (!Boolean.TRUE.equals(schedule.get("enabled"))) continue;
+            boolean weekly = "WEEKLY".equals(schedule.get("frequency"));
             LocalTime dueTime = LocalTime.parse(String.valueOf(schedule.get("dueTime")));
-            LocalDate dueDate = now.toLocalDate();
-            if ("WEEKLY".equals(schedule.get("frequency"))) {
+            LocalDate latestDate = now.toLocalDate();
+            if (weekly) {
                 int day = ((Number) schedule.get("dayOfWeek")).intValue();
                 int diff = Math.floorMod(now.getDayOfWeek().getValue() - day, 7);
-                dueDate = dueDate.minusDays(diff);
+                latestDate = latestDate.minusDays(diff);
             }
-            LocalDateTime dueAt = LocalDateTime.of(dueDate, dueTime);
-            LocalDateTime graceUntil = dueAt.plusMinutes(((Number) schedule.get("graceMinutes")).longValue());
-            if (now.isBefore(graceUntil)) {
-                dueDate = dueDate.minusDays("WEEKLY".equals(schedule.get("frequency")) ? 7 : 1);
-                dueAt = LocalDateTime.of(dueDate, dueTime);
-                graceUntil = dueAt.plusMinutes(((Number) schedule.get("graceMinutes")).longValue());
+            LocalDateTime latestDue = LocalDateTime.of(latestDate, dueTime);
+            long grace = ((Number) schedule.get("graceMinutes")).longValue();
+            if (now.isBefore(latestDue.plusMinutes(grace))) {
+                latestDate = latestDate.minusDays(weekly ? 7 : 1);
             }
-            if (now.isBefore(graceUntil)) continue;
-            LocalDateTime windowEnd = dueAt.plusDays("WEEKLY".equals(schedule.get("frequency")) ? 7 : 1);
             String scopeType = String.valueOf(schedule.get("scopeType"));
             String scopeId = (String) schedule.get("scopeId");
-            if (reporting.hasSubmissionInWindow(farm.id(), String.valueOf(schedule.get("reportType")),
-                    scopeType, scopeId, String.valueOf(schedule.get("batchType")),
-                    dueAt.atZone(zone).toInstant().toString(), windowEnd.atZone(zone).toInstant().toString())) continue;
-            Map<String, Object> row = new LinkedHashMap<>(schedule);
-            row.put("dueAt", dueAt.atZone(zone).toInstant().toString());
-            row.put("graceUntil", graceUntil.atZone(zone).toInstant().toString());
-            row.put("status", "MISSING");
-            row.put("note", "No report was submitted for this schedule. Missing is not zero activity.");
-            missing.add(row);
+            String batchType = (String) schedule.get("batchType");
+            int periods = weekly ? 8 : 30;
+            for (int period = 0; period < periods; period++) {
+                LocalDate dueDate = latestDate.minusDays((long) period * (weekly ? 7 : 1));
+                LocalDateTime dueAt = LocalDateTime.of(dueDate, dueTime);
+                LocalDateTime graceUntil = dueAt.plusMinutes(grace);
+                LocalDateTime windowEnd = dueAt.plusDays(weekly ? 7 : 1);
+                if (!now.isAfter(graceUntil)) continue;
+                if (reporting.hasSubmissionInWindow(farm.id(), String.valueOf(schedule.get("reportType")),
+                        scopeType, scopeId, batchType,
+                        dueAt.atZone(zone).toInstant().toString(), windowEnd.atZone(zone).toInstant().toString())) continue;
+                Map<String, Object> row = new LinkedHashMap<>(schedule);
+                row.put("dueAt", dueAt.atZone(zone).toInstant().toString());
+                row.put("graceUntil", graceUntil.atZone(zone).toInstant().toString());
+                row.put("status", "MISSING");
+                row.put("note", "No report was submitted for this schedule. Missing is not zero activity.");
+                missing.add(row);
+            }
         }
         return missing;
     }
