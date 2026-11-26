@@ -108,7 +108,7 @@ export default function ReviewCentrePage({ currentUser }) {
   const ownSubmission = selected?.authorId && selected.authorId === currentUser?.id;
   const decisionAllowed = selected
     && !ownSubmission
-    && ["SUBMITTED", "PENDING_REVIEW", "FLAGGED"].includes(selected.lifecycleStatus || selected.status);
+    && ["SUBMITTED", "PENDING_REVIEW", "FLAGGED", "BLOCKED"].includes(selected.lifecycleStatus || selected.status);
 
   return (
     <div className="review-centre-page">
