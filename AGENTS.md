@@ -52,7 +52,7 @@ The installer ID (`appId`), repository name, Java packages, and database file na
 15. Do not introduce TypeScript into the frontend. The frontend is React + JavaScript.
 16. Never commit `*.db`, `*.db-wal`, `*.db-shm`, backups, or real farm data.
 17. Keep one local farm data model. Do not unnecessarily split the farm into separate databases/accounts.
-18. Stage 1 has one primary owner/operator account. Multi-user roles can be added later.
+18. First-run setup creates the initial ADMINISTRATOR account. Operational access is assigned through the `user_roles` table with WORKER, ADMINISTRATOR, and MANAGER roles; backend services enforce permissions. Existing OWNER accounts migrate to ADMINISTRATOR.
 19. Opening a new batch creates a new permanent batch record. It does not overwrite an old batch. Every batch-create request from the renderer must carry a stable Idempotency-Key; the backend persists the request result per farm and returns the original batch on a same-key/same-payload retry. Never use a broad content-based duplicate rule.
 20. The broiler terminal status is **SOLD**, not COMPLETED. **CANCELLED** is reserved for an accidental batch with no dependent operational/financial references; cancellation requires a reason, explicit confirmation, and an atomic audit event. Cancelled rows are retained and excluded from active operations, totals, occupancy, and active selectors.
 21. Reopening a SOLD batch is an exceptional, audited action and requires a reason.
@@ -781,7 +781,7 @@ API error responses must be stable, user-safe, and actionable.
 
 ## 23. Authentication and user model
 
-Stage 1 has one primary owner/operator account.
+First-run setup creates the initial ADMINISTRATOR account. The operational roles are WORKER, ADMINISTRATOR, and MANAGER. Existing OWNER accounts are migrated to ADMINISTRATOR through `user_roles`; do not edit the legacy `users.role` migration/schema as a shortcut.
 
 The backend owns authentication and authorization.
 
@@ -801,7 +801,7 @@ For local-only operation:
 - read submitted named form controls on auth submit so browser autofill works even when React change events are skipped; reject blank credentials in the renderer and retain backend request validation
 - keep the request contract and state-driven UX documented in `docs/authentication-flow.md`
 
-Multi-user roles and permissions are future work.
+Account creation, role changes, suspension/reactivation, and password resets are Administrator-only backend operations. Report submission access is enforced by the backend; workers can read only their own submissions. Managers receive farm-wide review permissions in the review phase. Never rely on renderer navigation or hidden controls for authorization.
 
 Authentication performance rules:
 - Never reduce password-hashing work or cache password-verification results to improve timings.

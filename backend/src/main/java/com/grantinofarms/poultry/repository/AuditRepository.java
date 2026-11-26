@@ -38,21 +38,37 @@ public class AuditRepository {
     }
 
     public List<Map<String, Object>> find(String farmId, int limit, String fromInclusive, String toInclusive) {
+        return findInternal(farmId, limit, fromInclusive, toInclusive, null);
+    }
+
+    public List<Map<String, Object>> findAccountEvents(String farmId, int limit, String fromInclusive, String toInclusive) {
+        return findInternal(farmId, limit, fromInclusive, toInclusive, "USER_ACCOUNT");
+    }
+
+    private List<Map<String, Object>> findInternal(String farmId, int limit, String fromInclusive,
+                                                   String toInclusive, String entityType) {
         int safeLimit = Math.max(1, Math.min(limit, 500));
         String dateClause = fromInclusive == null || toInclusive == null
                 ? "" : " AND julianday(occurred_at) >= julianday(?) AND julianday(occurred_at) < julianday(?)";
+        String entityClause = entityType == null ? "" : " AND entity_type = ?";
         String sql = """
                 SELECT id, user_id, farm_id, batch_id, occurred_at, action, entity_type,
                        entity_id, reason, changed_fields_json, before_json, after_json
                 FROM audit_logs
                 WHERE farm_id = ?
-                """ + dateClause + """
+                """ + dateClause + entityClause + """
                 ORDER BY occurred_at DESC
                 LIMIT ?
                 """;
-        Object[] args = fromInclusive == null || toInclusive == null
-                ? new Object[]{farmId, safeLimit}
-                : new Object[]{farmId, fromInclusive, toInclusive, safeLimit};
+        java.util.List<Object> parameters = new java.util.ArrayList<>();
+        parameters.add(farmId);
+        if (fromInclusive != null && toInclusive != null) {
+            parameters.add(fromInclusive);
+            parameters.add(toInclusive);
+        }
+        if (entityType != null) parameters.add(entityType);
+        parameters.add(safeLimit);
+        Object[] args = parameters.toArray();
         return jdbc.query(sql, (rs, n) -> {
             Map<String,Object> row = new LinkedHashMap<>();
             row.put("id", rs.getString("id"));

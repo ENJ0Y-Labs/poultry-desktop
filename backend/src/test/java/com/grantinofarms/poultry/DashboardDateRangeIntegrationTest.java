@@ -3,6 +3,7 @@ package com.grantinofarms.poultry;
 import com.grantinofarms.poultry.controller.AuditController;
 import com.grantinofarms.poultry.repository.AuditRepository;
 import com.grantinofarms.poultry.repository.FarmRepository;
+import com.grantinofarms.poultry.repository.UserRepository;
 import com.grantinofarms.poultry.dto.BatchCreateRequest;
 import com.grantinofarms.poultry.dto.FarmCreateRequest;
 import com.grantinofarms.poultry.dto.HouseCreateRequest;
@@ -10,6 +11,7 @@ import com.grantinofarms.poultry.service.BatchService;
 import com.grantinofarms.poultry.service.DashboardService;
 import com.grantinofarms.poultry.service.FarmService;
 import com.grantinofarms.poultry.service.HouseService;
+import com.grantinofarms.poultry.service.CurrentUserContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,6 +38,7 @@ class DashboardDateRangeIntegrationTest {
     @Autowired DashboardService dashboard;
     @Autowired AuditRepository auditRepository;
     @Autowired FarmRepository farmRepository;
+    @Autowired UserRepository userRepository;
 
     @BeforeEach
     void setUpFarm() {
@@ -121,13 +124,22 @@ class DashboardDateRangeIntegrationTest {
         insertAudit("audit-end", farm.id(), "2026-03-01T22:59:59.000000Z");
         insertAudit("audit-after", farm.id(), "2026-03-01T23:00:00.000000Z");
 
-        @SuppressWarnings("unchecked")
-        java.util.List<Map<String, Object>> rows = (java.util.List<Map<String, Object>>) new AuditController(
-                auditRepository, farmRepository).list(20,
-                LocalDate.of(2026, 2, 28), LocalDate.of(2026, 3, 1)).get("data");
+        String managerId = java.util.UUID.randomUUID().toString();
+        String now = java.time.Instant.now().toString();
+        userRepository.insertWithRole(managerId, "manager-" + managerId.substring(0, 8),
+                null, "test-hash", "Test Manager", "MANAGER", now, null);
+        CurrentUserContext.set(managerId, "MANAGER");
+        try {
+            @SuppressWarnings("unchecked")
+            java.util.List<Map<String, Object>> rows = (java.util.List<Map<String, Object>>) new AuditController(
+                    auditRepository, farmRepository).list(20,
+                    LocalDate.of(2026, 2, 28), LocalDate.of(2026, 3, 1)).get("data");
 
-        assertThat(rows).extracting(row -> row.get("id"))
-                .containsExactlyInAnyOrder("audit-start", "audit-middle", "audit-end");
+            assertThat(rows).extracting(row -> row.get("id"))
+                    .containsExactlyInAnyOrder("audit-start", "audit-middle", "audit-end");
+        } finally {
+            CurrentUserContext.clear();
+        }
     }
 
     private void insertAudit(String id, String farmId, String occurredAt) {

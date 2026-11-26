@@ -46,16 +46,24 @@ public class AuthFilter extends OncePerRequestFilter {
         String path = request.getRequestURI();
         boolean publicEndpoint = path.startsWith("/api/v1/auth/") || path.equals("/api/v1/health");
         boolean needsFilterSession = !publicEndpoint || path.equals("/api/v1/auth/me");
-        Map<String, Object> user = needsFilterSession ? auth.current(token(request)) : null;
+        String rawSessionToken = token(request);
+        Map<String, Object> user = needsFilterSession ? auth.current(rawSessionToken) : null;
         if (user != null) {
             request.setAttribute("poultry.user", user);
-            CurrentUserContext.set(String.valueOf(user.get("id")));
+            CurrentUserContext.set(String.valueOf(user.get("id")), String.valueOf(user.get("role")),
+                    auth.hashToken(rawSessionToken));
         }
 
         boolean required = environment.getProperty("poultry.auth-required", Boolean.class, false);
         try {
-            // Public setup/login/status routes do not need the filter's session lookup.
-            // Only count users when auth enforcement needs to decide whether bootstrap is active.
+            if (user != null && "WORKER".equals(user.get("role")) && !workerEndpoint(path)) {
+                response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                response.setContentType("application/json");
+                response.getWriter().write("""
+                        {"ok":false,"error":{"code":"ROLE_FORBIDDEN","message":"Your account does not have permission to access this resource."}}
+                        """);
+                return;
+            }
             if (required && !publicEndpoint) {
                 boolean bootstrap = users.count() == 0;
                 if (!bootstrap && user == null) {
@@ -71,6 +79,13 @@ public class AuthFilter extends OncePerRequestFilter {
         } finally {
             CurrentUserContext.clear();
         }
+    }
+
+    private boolean workerEndpoint(String path) {
+        return (path.equals("/api/v1/submissions") || path.startsWith("/api/v1/submissions/"))
+                || (path.equals("/api/v1/account") || path.startsWith("/api/v1/account/"))
+                || path.equals("/api/v1/auth/me")
+                || path.equals("/api/v1/health");
     }
 
     private String token(HttpServletRequest request) {
