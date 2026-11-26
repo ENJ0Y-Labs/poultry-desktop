@@ -42,12 +42,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class ReportSubmissionIntegrationTest {
     @Autowired JdbcTemplate jdbc;
     @Autowired FarmRepository farms;
-    @Autowired ExpenseCategoryRepository expenseCategories;
+    @Autowired ExpenseCategoryRepository expenseCategoryRepository;
     @Autowired UserRepository users;
     @Autowired ReportSubmissionService submissions;
     @Autowired ReportReviewService reviews;
     @Autowired ReportMergeService merges;
-    @Autowired ExpenseCategoryService expenseCategories;
     @Autowired AdminUserService adminUsers;
     @Autowired AuthService auth;
     @Autowired PasswordHasher passwordHasher;
@@ -63,7 +62,7 @@ class ReportSubmissionIntegrationTest {
         farmId = UUID.randomUUID().toString();
         workerId = UUID.randomUUID().toString();
         farms.insert(farmId, "Submission Test Farm", "Port Harcourt", "Africa/Lagos", "NGN", now);
-        expenseCategories.insert(UUID.randomUUID().toString(), farmId, "FEED", now);
+        expenseCategoryRepository.insert(UUID.randomUUID().toString(), farmId, "FEED", now);
         expenseCategories.insert(UUID.randomUUID().toString(), farmId, "DRUGS", now);
         expenseCategories.insert(UUID.randomUUID().toString(), farmId, "OTHER", now);
         users.insertWithRole(workerId, "worker-" + workerId.substring(0, 8),
@@ -223,7 +222,6 @@ class ReportSubmissionIntegrationTest {
         java.time.ZoneId zone = java.time.ZoneId.of("Africa/Lagos");
         String eventDate = java.time.LocalDate.now(zone).toString();
         String eventTime = java.time.LocalTime.now(zone).format(java.time.format.DateTimeFormatter.ofPattern("HH:mm"));
-        expenseCategories.create(new ExpenseCategoryRequest("OTHER"));
         var request = new ReportSubmissionRequest("EXPENSE", "Feed transport expense",
                 mapper.readTree("{\"eventDate\":\"" + eventDate + "\",\"eventTime\":\"" + eventTime + "\","
                         + "\"description\":\"Feed transport\",\"amountMinor\":120000,\"category\":\"OTHER\"}"));
