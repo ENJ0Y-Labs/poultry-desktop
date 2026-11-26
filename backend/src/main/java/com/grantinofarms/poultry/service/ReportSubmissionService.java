@@ -23,13 +23,15 @@ public class ReportSubmissionService {
     private final FarmRepository farms;
     private final AuditRepository audit;
     private final ObjectMapper mapper;
+    private final ReportCheckService checks;
 
     public ReportSubmissionService(ReportSubmissionRepository submissions, FarmRepository farms,
-                                   AuditRepository audit, ObjectMapper mapper) {
+                                   AuditRepository audit, ObjectMapper mapper, ReportCheckService checks) {
         this.submissions = submissions;
         this.farms = farms;
         this.audit = audit;
         this.mapper = mapper;
+        this.checks = checks;
     }
 
     @Transactional
@@ -115,9 +117,19 @@ public class ReportSubmissionService {
                     "Only the current draft version can be submitted.");
         }
         submissions.appendEvent(id, version, actorId, "SUBMITTED", null, now);
+        List<Map<String, Object>> versions = submissions.findVersions(id);
+        JsonNode payload = (JsonNode) versions.get(versions.size() - 1).get("payload");
+        String nextStatus = checks.run(id, version, String.valueOf(header.get("farmId")),
+                String.valueOf(header.get("reportType")), payload);
+        if (submissions.updateLifecycleStatus(id, version, "SUBMITTED", nextStatus, now) != 1) {
+            throw new ApiException(HttpStatus.CONFLICT, "SUBMISSION_CHANGED",
+                    "The report changed while its checks were running. Reload and submit again.");
+        }
+        submissions.appendEvent(id, version, actorId, "CHECKS_COMPLETED",
+                "{\"lifecycleStatus\":\"" + nextStatus + "\"}", now);
         audit.append((String) header.get("farmId"), "SUBMIT", "REPORT_SUBMISSION", id,
-                "Report submitted for review", null,
-                "{\"status\":\"PENDING_REVIEW\",\"version\":" + version + "}", now);
+                "Report submitted and automated checks completed", null,
+                "{\"lifecycleStatus\":\"" + nextStatus + "\",\"version\":" + version + "}", now);
         return getOwned(id, actorId);
     }
 
