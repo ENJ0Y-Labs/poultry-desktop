@@ -22,7 +22,7 @@ function readProgress(account) {
   }
 }
 
-export default function OnboardingWizard({ account, farmForm, setFarmForm, onCreateFarm, onComplete, saving, error }) {
+export default function OnboardingWizard({ account, farmForm, setFarmForm, onSaveProfile, onCreateFarm, onComplete, saving, error }) {
   const [progress, setProgress] = useState(() => readProgress(account));
   const [localError, setLocalError] = useState("");
   const step = progress.step;
@@ -43,6 +43,13 @@ export default function OnboardingWizard({ account, farmForm, setFarmForm, onCre
       return { ...current, [key]: values.includes(value) ? values.filter(item => item !== value) : [...values, value] };
     });
   }
+  async function saveProfileAndContinue() {
+    setLocalError("");
+    if (!progress.firstName.trim()) return setLocalError("Enter your first name to continue.");
+    const saved = await onSaveProfile(fullName);
+    if (saved) next();
+  }
+
   function next() {
     if (step === 1 && !progress.firstName.trim()) return setLocalError("Enter your first name to continue.");
     if (step === 2 && !progress.role) return setLocalError("Select the role that best describes you.");
@@ -69,6 +76,7 @@ export default function OnboardingWizard({ account, farmForm, setFarmForm, onCre
     setProgress(current => ({ ...current, farmCreated: true, step: 5 }));
   }
   function finish() {
+    localStorage.setItem("pomas:onboarding:preferences", JSON.stringify({ role: progress.role, discovery: progress.discovery, poultryTypes: progress.poultryTypes, priorities: progress.priorities }));
     localStorage.removeItem(STORAGE_KEY);
     onComplete();
   }
@@ -113,7 +121,7 @@ export default function OnboardingWizard({ account, farmForm, setFarmForm, onCre
                 <label>Family name<input value={progress.familyName} onChange={e => update("familyName", e.target.value)} placeholder="Family name" /></label>
                 <label>Email address<input value={account?.email || ""} readOnly placeholder="Not provided" /><small>Managed through your Pomas account.</small></label>
               </div>
-              <button className="onboarding-primary" onClick={next}>NEXT <span>→</span></button>
+              <button className="onboarding-primary" onClick={saveProfileAndContinue} disabled={saving}>{saving ? "SAVING PROFILE…" : "NEXT"} <span>→</span></button>
             </>}
             {step === 2 && <>
               <p className="onboarding-eyebrow">STEP 2 · YOUR ROLE</p>
