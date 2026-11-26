@@ -24,6 +24,11 @@ public class ReportReviewController {
         return Map.of("ok", true, "data", service.queue(status, reportType, authorId));
     }
 
+    @GetMapping("/managers")
+    public Map<String, Object> managers() {
+        return Map.of("ok", true, "data", service.managers());
+    }
+
     @GetMapping("/submissions/{id}")
     public Map<String, Object> get(@PathVariable String id) {
         return Map.of("ok", true, "data", service.get(id));
