@@ -2,7 +2,6 @@ package com.grantinofarms.poultry;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.grantinofarms.poultry.dto.ReportSubmissionRequest;
-import com.grantinofarms.poultry.dto.ExpenseCategoryRequest;
 import com.grantinofarms.poultry.exception.ApiException;
 import com.grantinofarms.poultry.repository.FarmRepository;
 import com.grantinofarms.poultry.repository.ExpenseCategoryRepository;
@@ -14,7 +13,6 @@ import com.grantinofarms.poultry.service.PasswordHasher;
 import com.grantinofarms.poultry.service.ReportSubmissionService;
 import com.grantinofarms.poultry.service.ReportReviewService;
 import com.grantinofarms.poultry.service.ReportMergeService;
-import com.grantinofarms.poultry.service.ExpenseCategoryService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
