@@ -219,7 +219,6 @@ public class ReportReviewService {
     }
 
     private String escape(String value) {
-        return value.replace("\", "\\\").replace("\"", "\\"")
+        return value.replace("\\", "\\\\").replace("\"", "\\\"")
                 .replace("\n", " ").replace("\r", " ");
-    }
-}
+    }}
