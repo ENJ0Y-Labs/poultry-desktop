@@ -4,6 +4,32 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import MyReportsPage from "./MyReportsPage.jsx";
 import { reportSubmissionApi } from "../services/api.js";
 
+const fixtures = vi.hoisted(() => ({
+  draft: {
+    id: "submission-1",
+    title: "Morning mortality",
+    reportType: "MORTALITY",
+    lifecycleStatus: "DRAFT",
+    status: "DRAFT",
+    currentVersion: 1,
+    submittedVersion: null,
+    versions: [{
+      version: 1,
+      title: "Morning mortality",
+      payload: {
+        eventDate: "2026-11-26",
+        batchId: "batch-1",
+        quantity: 2,
+        reason: "",
+        notes: "",
+      },
+      createdAt: "2026-11-26T08:00:00Z",
+    }],
+    history: [],
+    comments: [],
+  },
+}));
+
 vi.mock("../services/api.js", () => ({
   reportSubmissionApi: {
     mine: vi.fn().mockResolvedValue([]),
@@ -11,13 +37,22 @@ vi.mock("../services/api.js", () => ({
       batches: [{ id: "batch-1", code: "LAYER-01", type: "LAYER" }],
       feedTypes: [],
     }),
-    create: vi.fn(), save: vi.fn(),
-    submit: vi.fn(), get: vi.fn(), comment: vi.fn(),
+    create: vi.fn(),
+    save: vi.fn(),
+    submit: vi.fn(),
+    get: vi.fn(),
+    comment: vi.fn(),
   },
 }));
 vi.mock("../utils/moneyInput.js", () => ({
   parseNairaToKobo: value => Math.round(Number(value) * 100),
 }));
+
+function fillMortalityForm() {
+  fireEvent.change(screen.getByLabelText("Report title"), { target: { value: "Morning mortality" } });
+  fireEvent.change(screen.getByLabelText("Batch / flock"), { target: { value: "batch-1" } });
+  fireEvent.change(screen.getByLabelText("Number of birds"), { target: { value: "2" } });
+}
 
 describe("MyReportsPage", () => {
   beforeEach(() => {
@@ -30,43 +65,156 @@ describe("MyReportsPage", () => {
     });
   });
 
-  it("saves drafts locally without submitting them automatically", async () => {
+  it("persists an offline draft locally without creating or submitting a server report", async () => {
     render(<MyReportsPage userId="worker-1" />);
     await screen.findByText(/No reports yet/);
-    fireEvent.change(screen.getByLabelText("Report title"), { target: { value: "Morning mortality" } });
-    fireEvent.change(screen.getByLabelText("Batch / flock"), { target: { value: "batch-1" } });
-    fireEvent.change(screen.getByLabelText("Number of birds"), { target: { value: "2" } });
+    fillMortalityForm();
     fireEvent.click(screen.getByRole("button", { name: "Save draft" }));
+
     expect(await screen.findByText("Local draft")).toBeInTheDocument();
-    expect(JSON.parse(localStorage.getItem("pomas:report-submission-drafts:worker-1"))).toHaveLength(1);
+    const saved = JSON.parse(localStorage.getItem("pomas:report-submission-drafts:worker-1"));
+    expect(saved).toHaveLength(1);
+    expect(saved[0]).toMatchObject({
+      reportType: "MORTALITY",
+      title: "Morning mortality",
+      fields: { batchId: "batch-1", quantity: "2" },
+    });
     expect(reportSubmissionApi.create).not.toHaveBeenCalled();
     expect(reportSubmissionApi.submit).not.toHaveBeenCalled();
   });
 
-  it("creates an idempotent server submission only after explicit submit", async () => {
-    reportSubmissionApi.create.mockResolvedValue({
-      id: "submission-1", lifecycleStatus: "DRAFT", status: "DRAFT",
-      currentVersion: 1, title: "Morning mortality", reportType: "MORTALITY",
-      versions: [{ version: 1, payload: { eventDate: "2026-11-26", batchCode: "LAYER-01", quantity: 2 } }],
-    });
-    reportSubmissionApi.submit.mockResolvedValue({
-      id: "submission-1", title: "Morning mortality", reportType: "MORTALITY",
-      status: "PENDING_REVIEW", lifecycleStatus: "SUBMITTED", submittedVersion: 1,
-      versions: [], history: [], comments: [],
-    });
+  it("syncs Save draft to the backend but does not submit it", async () => {
+    reportSubmissionApi.create.mockResolvedValue(fixtures.draft);
+    reportSubmissionApi.mine.mockResolvedValue([{
+      id: "submission-1",
+      title: "Morning mortality",
+      reportType: "MORTALITY",
+      lifecycleStatus: "DRAFT",
+      status: "DRAFT",
+      currentVersion: 1,
+      updatedAt: "2026-11-26T08:00:00Z",
+    }]);
+
     render(<MyReportsPage userId="worker-1" />);
     await screen.findByText(/No reports yet/);
-    fireEvent.change(screen.getByLabelText("Report title"), { target: { value: "Morning mortality" } });
-    fireEvent.change(screen.getByLabelText("Batch code"), { target: { value: "LAYER-01" } });
-    fireEvent.change(screen.getByLabelText("Number of birds"), { target: { value: "2" } });
-    fireEvent.click(screen.getByRole("button", { name: "Submit for review" }));
+    fillMortalityForm();
+    fireEvent.click(screen.getByRole("button", { name: "Save draft" }));
+
     await waitFor(() => expect(reportSubmissionApi.create).toHaveBeenCalledTimes(1));
     expect(reportSubmissionApi.create.mock.calls[0][0]).toMatchObject({
-      reportType: "MORTALITY", title: "Morning mortality",
-      payload: { batchId: "batch-1", quantity: 2 },
+      reportType: "MORTALITY",
+      title: "Morning mortality",
+      payload: { eventDate: expect.any(String), batchId: "batch-1", quantity: 2 },
     });
     expect(reportSubmissionApi.create.mock.calls[0][1]).toMatch(/[a-z0-9-]{8,}/i);
+    expect(reportSubmissionApi.submit).not.toHaveBeenCalled();
+    expect(await screen.findByText(/Draft saved on this device and to the farm computer/)).toBeInTheDocument();
+    expect(JSON.parse(localStorage.getItem("pomas:report-submission-drafts:worker-1"))[0].serverId).toBe("submission-1");
+  });
+
+  it("submits only after the worker explicitly chooses Submit for review", async () => {
+    reportSubmissionApi.create.mockResolvedValue(fixtures.draft);
+    reportSubmissionApi.submit.mockResolvedValue({
+      ...fixtures.draft,
+      status: "PENDING_REVIEW",
+      lifecycleStatus: "SUBMITTED",
+      submittedVersion: 1,
+    });
+
+    render(<MyReportsPage userId="worker-1" />);
+    await screen.findByText(/No reports yet/);
+    fillMortalityForm();
+    fireEvent.click(screen.getByRole("button", { name: "Submit for review" }));
+
+    await waitFor(() => expect(reportSubmissionApi.create).toHaveBeenCalledTimes(1));
     await waitFor(() => expect(reportSubmissionApi.submit).toHaveBeenCalledWith("submission-1"));
     expect(await screen.findByText(/Report submitted/)).toBeInTheDocument();
+    expect(localStorage.getItem("pomas:report-submission-drafts:worker-1")).toBe("[]");
+  });
+
+  it("keeps a local recovery copy when the backend is unavailable", async () => {
+    reportSubmissionApi.mine.mockRejectedValue(new Error("The local backend is not responding."));
+    reportSubmissionApi.create.mockRejectedValue(new Error("The local backend is not responding."));
+
+    render(<MyReportsPage userId="worker-1" />);
+    fillMortalityForm();
+    fireEvent.click(screen.getByRole("button", { name: "Save draft" }));
+
+    expect(await screen.findByText("Local draft")).toBeInTheDocument();
+    expect(JSON.parse(localStorage.getItem("pomas:report-submission-drafts:worker-1"))).toHaveLength(1);
+    expect(reportSubmissionApi.submit).not.toHaveBeenCalled();
+    expect(await screen.findByText(/Server sync is pending/)).toBeInTheDocument();
+  });
+
+  it("shows immutable version snapshots and activity history for a server report", async () => {
+    reportSubmissionApi.mine.mockResolvedValue([{
+      id: "submission-1",
+      title: "Morning mortality",
+      reportType: "MORTALITY",
+      lifecycleStatus: "SUBMITTED",
+      status: "PENDING_REVIEW",
+      currentVersion: 2,
+      submittedVersion: 2,
+    }]);
+    reportSubmissionApi.get.mockResolvedValue({
+      ...fixtures.draft,
+      lifecycleStatus: "SUBMITTED",
+      status: "PENDING_REVIEW",
+      currentVersion: 2,
+      submittedVersion: 2,
+      versions: [
+        ...fixtures.draft.versions,
+        {
+          version: 2,
+          title: "Morning mortality",
+          payload: { eventDate: "2026-11-26", batchId: "batch-1", quantity: 3, reason: "Injury", notes: "" },
+          createdAt: "2026-11-26T09:00:00Z",
+        },
+      ],
+      history: [{ id: "event-1", event: "SUBMITTED", occurredAt: "2026-11-26T09:01:00Z" }],
+    });
+
+    render(<MyReportsPage userId="worker-1" />);
+    fireEvent.click(await screen.findByRole("button", { name: "View" }));
+
+    expect(await screen.findByText(/submitted version 2/i)).toBeInTheDocument();
+    expect(screen.getByText(/Version history/)).toBeInTheDocument();
+    expect(screen.getByText(/Activity history/)).toBeInTheDocument();
+    expect(screen.getByText("SUBMITTED")).toBeInTheDocument();
+    expect(screen.getByText(/Morning mortality/)).toBeInTheDocument();
+  });
+
+  it("saves edits to an existing server draft as a new version without submitting", async () => {
+    const original = {
+      ...fixtures.draft,
+      versions: [{
+        ...fixtures.draft.versions[0],
+        payload: { eventDate: "2026-11-26", batchId: "batch-1", quantity: 2, reason: "", notes: "" },
+      }],
+    };
+    reportSubmissionApi.mine.mockResolvedValue([{
+      id: "submission-1", title: "Morning mortality", reportType: "MORTALITY",
+      lifecycleStatus: "DRAFT", status: "DRAFT", currentVersion: 1,
+    }]);
+    reportSubmissionApi.get.mockResolvedValue(original);
+    reportSubmissionApi.save.mockResolvedValue({
+      ...original,
+      currentVersion: 2,
+      versions: [...original.versions, {
+        version: 2, title: "Morning mortality",
+        payload: { eventDate: "2026-11-26", batchId: "batch-1", quantity: 2, reason: "Injury", notes: "" },
+      }],
+    });
+
+    render(<MyReportsPage userId="worker-1" />);
+    fireEvent.click(await screen.findByRole("button", { name: "View" }));
+    fireEvent.change(await screen.findByLabelText("Suspected cause / reason"), { target: { value: "Injury" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save draft" }));
+
+    await waitFor(() => expect(reportSubmissionApi.save).toHaveBeenCalledWith("submission-1", expect.objectContaining({
+      reportType: "MORTALITY",
+      payload: expect.objectContaining({ batchId: "batch-1", quantity: 2, reason: "Injury" }),
+    })));
+    expect(reportSubmissionApi.submit).not.toHaveBeenCalled();
   });
 });
