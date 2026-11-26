@@ -128,7 +128,8 @@ public class ReportSubmissionRepository {
         row.put("title", rs.getString("title"));
         row.put("status", rs.getString("status"));
         row.put("currentVersion", rs.getInt("current_version"));
-        row.put("submittedVersion", (Integer) rs.getObject("submitted_version"));
+        Number submittedVersion = (Number) rs.getObject("submitted_version");
+        row.put("submittedVersion", submittedVersion == null ? null : submittedVersion.intValue());
         row.put("createdAt", rs.getString("created_at"));
         row.put("updatedAt", rs.getString("updated_at"));
         row.put("submittedAt", rs.getString("submitted_at"));
