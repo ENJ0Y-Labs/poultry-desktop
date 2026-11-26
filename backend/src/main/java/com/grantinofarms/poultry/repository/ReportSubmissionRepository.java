@@ -455,6 +455,59 @@ public class ReportSubmissionRepository {
                 """, java.util.UUID.randomUUID().toString(), submissionId, version, recordType, recordId, now);
     }
 
+    public void insertAttachment(String id, String submissionId, int version, String fileName,
+                                 String mimeType, long fileSize, String sha256, byte[] content,
+                                 String actorId, String now) {
+        jdbc.update("""
+                INSERT INTO report_submission_attachments
+                    (id, submission_id, version_number, file_name, mime_type, file_size,
+                     sha256, file_content, uploaded_by, uploaded_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, id, submissionId, version, fileName, mimeType, fileSize, sha256, content, actorId, now);
+    }
+
+    public List<Map<String, Object>> findAttachments(String submissionId, int version) {
+        return jdbc.query("""
+                SELECT id, file_name, mime_type, file_size, sha256, uploaded_by, uploaded_at
+                FROM report_submission_attachments
+                WHERE submission_id = ? AND version_number = ?
+                ORDER BY uploaded_at, id
+                """, (rs, n) -> {
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("id", rs.getString("id"));
+            row.put("fileName", rs.getString("file_name"));
+            row.put("mimeType", rs.getString("mime_type"));
+            row.put("fileSize", rs.getLong("file_size"));
+            row.put("sha256", rs.getString("sha256"));
+            row.put("uploadedBy", rs.getString("uploaded_by"));
+            row.put("uploadedAt", rs.getString("uploaded_at"));
+            return row;
+        }, submissionId, version);
+    }
+
+    public Map<String, Object> findAttachment(String submissionId, String attachmentId) {
+        return jdbc.query("""
+                SELECT id, submission_id, version_number, file_name, mime_type, file_size,
+                       sha256, file_content, uploaded_by, uploaded_at
+                FROM report_submission_attachments
+                WHERE submission_id = ? AND id = ?
+                """, rs -> {
+            if (!rs.next()) return null;
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("id", rs.getString("id"));
+            row.put("submissionId", rs.getString("submission_id"));
+            row.put("version", rs.getInt("version_number"));
+            row.put("fileName", rs.getString("file_name"));
+            row.put("mimeType", rs.getString("mime_type"));
+            row.put("fileSize", rs.getLong("file_size"));
+            row.put("sha256", rs.getString("sha256"));
+            row.put("content", rs.getBytes("file_content"));
+            row.put("uploadedBy", rs.getString("uploaded_by"));
+            row.put("uploadedAt", rs.getString("uploaded_at"));
+            return row;
+        }, submissionId, attachmentId);
+    }
+
     public List<Map<String, Object>> findLinks(String submissionId) {
         return jdbc.query("""
                 SELECT id, version_number, official_record_type, official_record_id, created_at
