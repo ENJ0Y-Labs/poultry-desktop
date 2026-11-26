@@ -103,6 +103,10 @@ public class ReportReviewService {
             throw new ApiException(HttpStatus.BAD_REQUEST, "OVERRIDE_REASON_REQUIRED",
                     "A reason of 1 to 1,000 characters is required.");
         }
+        if (!java.util.Set.of("FLAGGED", "PENDING_REVIEW").contains(header.get("lifecycleStatus"))) {
+            throw new ApiException(HttpStatus.CONFLICT, "SUBMISSION_NOT_AWAITING_REVIEW",
+                    "Warnings can only be authorized while the report is awaiting review.");
+        }
         int version = submittedVersion(header);
         Map<String, Object> check = submissions.findCheck(id, version, checkId);
         if (check == null || !"WARNING".equals(check.get("outcome"))
