@@ -138,7 +138,9 @@ class ReportSubmissionIntegrationTest {
                 null, "test-password-hash", "Review Manager", "MANAGER", now, null);
         CurrentUserContext.set(managerId, "MANAGER");
 
-        assertThat(reviews.queue(null, null, null)).hasSize(1);
+        assertThat(reviews.queue(null, null, null))
+                .extracting(row -> row.get("id"))
+                .contains(id);
         Map<String, Object> assigned = reviews.assign(id, managerId);
         assertThat(assigned.get("assignedManagerId")).isEqualTo(managerId);
         reviews.comment(id, "Please confirm the affected batch and observation time.");
