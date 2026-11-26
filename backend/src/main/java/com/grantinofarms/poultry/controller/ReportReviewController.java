@@ -44,6 +44,13 @@ public class ReportReviewController {
         return Map.of("ok", true, "data", service.comment(id, request == null ? null : request.body()));
     }
 
+    @PostMapping("/submissions/{id}/checks/{checkId}/override")
+    public Map<String, Object> overrideWarning(@PathVariable String id, @PathVariable String checkId,
+                                               @RequestBody OverrideRequest request) {
+        return Map.of("ok", true, "data", service.overrideWarning(id, checkId,
+                request == null ? null : request.reason()));
+    }
+
     @PostMapping("/submissions/{id}/decision")
     public Map<String, Object> decide(@PathVariable String id, @RequestBody DecisionRequest request) {
         return Map.of("ok", true, "data", service.decide(id,
@@ -53,4 +60,5 @@ public class ReportReviewController {
 
     public record CommentRequest(@NotBlank @Size(max = 4000) String body) {}
     public record DecisionRequest(@NotBlank String decision, @Size(max = 2000) String reason) {}
+    public record OverrideRequest(@NotBlank @Size(max = 1000) String reason) {}
 }
