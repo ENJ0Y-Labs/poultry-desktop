@@ -62,7 +62,7 @@ describe("AppShell", () => {
     expect(within(navigation).getByRole("button", { name: "User Management" })).toBeInTheDocument();
     expect(within(navigation).getByRole("button", { name: "My Reports" })).toBeInTheDocument();
     expect(within(navigation).queryByRole("button", { name: "Review Centre" })).not.toBeInTheDocument();
-    expect(within(navigation).queryByRole("button", { name: "Dashboard" })).not.toBeInTheDocument();
+    expect(within(navigation).getByRole("button", { name: "Dashboard" })).toBeInTheDocument();
   });
   it("uses the saved farm profile name in the shell", () => {
     render(
