@@ -80,8 +80,8 @@ public class AdminUserService {
         Map<String, Object> target = requireUser(userId);
         String oldRole = String.valueOf(target.get("role"));
         if (oldRole.equals(role)) return publicAccount(target);
-        if ("ADMINISTRATOR".equals(oldRole) && !"ADMINISTRATOR".equals(role)
-                && users.countActiveAdministratorsExcept(userId) == 0)
+        if ("ACTIVE".equals(target.get("status")) && "ADMINISTRATOR".equals(oldRole)
+                && !"ADMINISTRATOR".equals(role) && users.countActiveAdministratorsExcept(userId) == 0)
             throw new ApiException(HttpStatus.CONFLICT, "LAST_ACTIVE_ADMINISTRATOR",
                     "At least one active Administrator must remain.");
         String now = Instant.now().toString();
