@@ -351,6 +351,7 @@ export default function AppShell({ farm, error, appInfo, onRetry, onQuickAction,
         }}
         onShortcuts={() => setShortcutsOpen(true)}
         onTutorials={() => setTutorialLibraryOpen(true)}
+        userRole={userRole}
         sidebarCollapsed={sidebarCollapsed}
         attentionCollapsed={attentionCollapsed}
       />}
