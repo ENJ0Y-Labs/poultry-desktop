@@ -104,6 +104,25 @@ class ReportSubmissionIntegrationTest {
     }
 
 
+
+    @Test
+    void reportCreationIsIdempotentOnlyForTheSameRequestContent() throws Exception {
+        var original = new ReportSubmissionRequest("MORTALITY", "Morning mortality",
+                mapper.readTree("{\"batchId\":\"batch-1\",\"quantity\":1}"));
+        Map<String, Object> first = submissions.createDraft(original, "retry-key-0001");
+        Map<String, Object> retry = submissions.createDraft(original, "retry-key-0001");
+        assertThat(retry.get("id")).isEqualTo(first.get("id"));
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM report_submissions WHERE idempotency_key = ?",
+                Integer.class, "retry-key-0001")).isEqualTo(1);
+
+        var changed = new ReportSubmissionRequest("MORTALITY", "Morning mortality",
+                mapper.readTree("{\"batchId\":\"batch-1\",\"quantity\":2}"));
+        assertThatThrownBy(() -> submissions.createDraft(changed, "retry-key-0001"))
+                .isInstanceOf(ApiException.class)
+                .hasMessageContaining("different report content");
+    }
+
     @Test
     void managerCanAssignCommentAndRequestChangesThenAuthorResubmitsNewVersion() throws Exception {
         Map<String, Object> created = submissions.createDraft(new ReportSubmissionRequest(
