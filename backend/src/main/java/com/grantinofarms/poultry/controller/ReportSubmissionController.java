@@ -11,9 +11,17 @@ import java.util.Map;
 @RequestMapping("/api/v1/submissions")
 public class ReportSubmissionController {
     private final ReportSubmissionService service;
+    private final com.grantinofarms.poultry.service.ReportReferenceService references;
 
-    public ReportSubmissionController(ReportSubmissionService service) {
+    public ReportSubmissionController(ReportSubmissionService service,
+                                      com.grantinofarms.poultry.service.ReportReferenceService references) {
         this.service = service;
+        this.references = references;
+    }
+
+    @GetMapping("/references")
+    public Map<String, Object> references() {
+        return Map.of("ok", true, "data", references.list());
     }
 
     @PostMapping
