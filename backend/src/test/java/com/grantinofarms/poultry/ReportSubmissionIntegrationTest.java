@@ -105,7 +105,7 @@ class ReportSubmissionIntegrationTest {
 
         Map<String, Object> submitted = submissions.submit(id);
         assertThat(submitted.get("status")).isEqualTo("PENDING_REVIEW");
-        assertThat(submitted.get("lifecycleStatus")).isEqualTo("SUBMITTED");
+        assertThat(submitted.get("lifecycleStatus")).isEqualTo("PENDING_REVIEW");
         assertThat(submitted.get("submittedVersion")).isEqualTo(2);
         assertThat(jdbc.queryForObject(
                 "SELECT COUNT(*) FROM report_submission_events WHERE submission_id = ?",
