@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useToast } from "./components/ToastProvider.jsx";
 import pomasLogo from "./assets/pomas-logo.png";
+// eslint-disable-next-line no-unused-vars
+import OnboardingWizard from "./components/OnboardingWizard.jsx";
 // eslint-disable-next-line no-unused-vars -- JSX component usage is not detected by the core rule
 import ValidatedForm from "./components/ValidatedForm.jsx";
 import { todayLocalDate, getLastBatchId, rememberLastBatchId } from "./utils/farmUx.js";
@@ -169,6 +171,7 @@ export default function App() {
   const batchCreateKeyRef = useRef(null);
   const [themePreference, setThemePreferenceState] = useState(getThemePreference);
   const [farm, setFarm] = useState(null);
+  const [onboardingActive, setOnboardingActive] = useState(false);
   const [farmForm, setFarmForm] = useState(emptyFarm);
   const [houses, setHouses] = useState([]);
   const [batches, setBatches] = useState([]);
@@ -499,6 +502,7 @@ export default function App() {
     try {
       const currentFarm = await farmApi.get();
       setFarm(currentFarm);
+      try { setOnboardingActive(JSON.parse(localStorage.getItem("pomas:onboarding:v1") || "{}").farmCreated === true); } catch { setOnboardingActive(false); }
       if (!preserveForms) setFarmForm({name:currentFarm.name,location:currentFarm.location||"",timezone:currentFarm.timezone,currency:currentFarm.currency});
       const settings = await farmApi.getSettings();
       if (!preserveForms) {
@@ -561,7 +565,9 @@ export default function App() {
     } catch (err) {
       if (err.code === "UNAUTHENTICATED") {
         setAuthStatus({ authenticated: false, setupRequired: false });
-      } else if (err.message !== "No farm has been created yet.") {
+      } else if (err.message === "No farm has been created yet.") {
+        setOnboardingActive(true);
+      } else {
         setDataLoadError(displayApiError(err));
         setError(displayApiError(err));
       }
@@ -911,7 +917,9 @@ export default function App() {
       setFeedTypes([]);
       setFeedInventory([]);
       setBatchForm(emptyBatch);
-    } catch (err) { setError(displayApiError(err)); } finally { setSaving(false); }
+      setOnboardingActive(true);
+      return true;
+    } catch (err) { setError(displayApiError(err)); return false; } finally { setSaving(false); }
   }
 
   async function saveFarm(event) {
@@ -1754,18 +1762,16 @@ export default function App() {
       </section>
     </main>
   );
-  if (!farm) return (
-    <main className="shell narrow">
-      <header className="hero"><p className="eyebrow">POMAS · FARM MANAGEMENT</p><h1>Set up your farm</h1><p className="muted">Create the local farm profile first. Everything else hangs from it.</p></header>
-      {error && <div className="error">{error}</div>}
-      <ValidatedForm className="card form-grid" onSubmit={submitFarm}>
-        <label>Farm name<input required value={farmForm.name} onChange={e=>setFarmForm({...farmForm,name:e.target.value})}/></label>
-        <label>Location<input value={farmForm.location} onChange={e=>setFarmForm({...farmForm,location:e.target.value})}/></label>
-        <label>Timezone<input required value={farmForm.timezone} onChange={e=>setFarmForm({...farmForm,timezone:e.target.value})}/></label>
-        <label>Currency<input required maxLength="3" value={farmForm.currency} onChange={e=>setFarmForm({...farmForm,currency:e.target.value.toUpperCase()})}/></label>
-        <button disabled={saving} type="submit">{saving ? "Creating..." : "Create farm"}</button>
-      </ValidatedForm>
-    </main>
+  if (!farm || onboardingActive) return (
+    <OnboardingWizard
+      account={account}
+      farmForm={farmForm}
+      setFarmForm={setFarmForm}
+      onCreateFarm={submitFarm}
+      onComplete={() => setOnboardingActive(false)}
+      saving={saving}
+      error={error}
+    />
   );
 
   function handleQuickAction(actionId) {
