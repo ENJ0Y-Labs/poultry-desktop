@@ -178,7 +178,10 @@ beforeEach(() => {
   localStorage.clear();
   window.location.hash = "";
   document.body.innerHTML = "";
-  vi.spyOn(authApi, "status").mockResolvedValue({ authenticated: true, setupRequired: false });
+  vi.spyOn(authApi, "status").mockResolvedValue({
+    authenticated: true, setupRequired: false,
+    user: { id: "user-1", username: "farm-owner", fullName: "Farm Owner", role: "MANAGER" },
+  });
   vi.spyOn(authApi, "me").mockResolvedValue({
     id: "user-1", username: "farm-owner", fullName: "Farm Owner", role: "MANAGER",
   });
