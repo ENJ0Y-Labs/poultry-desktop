@@ -242,6 +242,7 @@ export default function MyReportsPage({ userId = "" }) {
   const [selected, setSelected] = useState(null);
   const [comment, setComment] = useState("");
   const [loading, setLoading] = useState(true);
+  const [backendAvailable, setBackendAvailable] = useState(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -279,8 +280,13 @@ export default function MyReportsPage({ userId = "" }) {
     const [reportsResult, referencesResult] = await Promise.allSettled([
       reportSubmissionApi.mine(), reportSubmissionApi.references(),
     ]);
-    if (reportsResult.status === "fulfilled") setServerReports(reportsResult.value);
-    else setError(reportsResult.reason?.message || "Could not load your server submissions.");
+    if (reportsResult.status === "fulfilled") {
+      setBackendAvailable(true);
+      setServerReports(reportsResult.value);
+    } else {
+      setBackendAvailable(false);
+      setError(reportsResult.reason?.message || "Could not load your server submissions.");
+    }
     if (referencesResult.status === "fulfilled") persistReferences(referencesResult.value);
     else if (!references.batches.length && !references.feedTypes.length) {
       setNotice("Farm lists are unavailable offline. You can still save a local draft and sync it when connected.");
@@ -367,6 +373,11 @@ export default function MyReportsPage({ userId = "" }) {
     setNotice("");
     const local = saveLocalCopy();
     if (!local) {
+      setSaving(false);
+      return;
+    }
+    if (backendAvailable !== true) {
+      setNotice("Draft saved on this device. Server sync will be available when the farm computer reconnects.");
       setSaving(false);
       return;
     }
