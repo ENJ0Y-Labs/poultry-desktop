@@ -15,6 +15,7 @@ import com.grantinofarms.poultry.service.ReportReviewService;
 import com.grantinofarms.poultry.service.ReportMergeService;
 import com.grantinofarms.poultry.service.FarmIncidentService;
 import com.grantinofarms.poultry.service.ReportAttachmentService;
+import com.grantinofarms.poultry.service.ReportingConfigurationService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -49,6 +50,7 @@ class ReportSubmissionIntegrationTest {
     @Autowired ReportMergeService merges;
     @Autowired FarmIncidentService farmIncidents;
     @Autowired ReportAttachmentService attachments;
+    @Autowired ReportingConfigurationService reportingConfiguration;
     @Autowired AdminUserService adminUsers;
     @Autowired AuthService auth;
     @Autowired PasswordHasher passwordHasher;
@@ -310,6 +312,35 @@ class ReportSubmissionIntegrationTest {
                 "file", "fake.png", "image/png", content)))
                 .isInstanceOf(ApiException.class)
                 .hasMessageContaining("valid JPEG, PNG, PDF, or UTF-8 text");
+    }
+
+
+    @Test
+    void reportingSchedulesAndMortalityThresholdsAreManagerConfiguredAndStartEmpty() {
+        String managerId = UUID.randomUUID().toString();
+        String now = Instant.now().toString();
+        users.insertWithRole(managerId, "report-config-" + managerId.substring(0, 6),
+                null, "test-password-hash", "Reporting Manager", "MANAGER", now, null);
+        CurrentUserContext.set(managerId, "MANAGER");
+
+        assertThat(reportingConfiguration.schedules()).isEmpty();
+        assertThat(reportingConfiguration.thresholds()).isEmpty();
+
+        Map<String, Object> schedule = reportingConfiguration.createSchedule(
+                new ReportingConfigurationService.ScheduleRequest(
+                        "EGG_SALE", "FARM", null, null, "DAILY", "00:00", null, 0));
+        Map<String, Object> threshold = reportingConfiguration.createThreshold(
+                new ReportingConfigurationService.ThresholdRequest(
+                        "UNUSUAL_MORTALITY_COUNT", "FARM", null, null, 5, "BIRDS"));
+
+        assertThat(schedule.get("enabled")).isEqualTo(true);
+        assertThat(threshold.get("value")).isEqualTo(5.0);
+        assertThat(reportingConfiguration.missingReports())
+                .extracting(row -> row.get("id"))
+                .contains(schedule.get("id"));
+
+        reportingConfiguration.setScheduleEnabled(String.valueOf(schedule.get("id")), false);
+        assertThat(reportingConfiguration.missingReports()).isEmpty();
     }
 
     @Test
