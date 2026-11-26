@@ -101,6 +101,22 @@ export default function ReviewCentrePage({ currentUser }) {
     finally { setSaving(false); }
   }
 
+  async function mergeApproved() {
+    if (!selected) return;
+    setSaving(true);
+    setError("");
+    setNotice("");
+    try {
+      const operationKey = globalThis.crypto?.randomUUID?.()
+        || "merge-" + Date.now() + "-" + Math.random().toString(36).slice(2);
+      const updated = await reportReviewApi.merge(selected.id, operationKey);
+      setSelected(updated);
+      setNotice("Approved report merged into official farm records. Provenance links have been saved.");
+      await refreshQueue();
+    } catch (err) { setError(err.message || "Report merge failed. Official records were not partially updated."); }
+    finally { setSaving(false); }
+  }
+
   async function decide(decision) {
     if (!selected) return;
     if (decision !== "APPROVED" && !reason.trim()) {
@@ -200,6 +216,15 @@ export default function ReviewCentrePage({ currentUser }) {
                   <p className="muted">Approval authorizes this exact version only. Official records remain unchanged until a separate merge succeeds.</p>
                 </> : <p className="muted">No review decision is available for this report in its current state.</p>}
               </section>
+              {((selected.lifecycleStatus || selected.status) === "APPROVED") && <section className="review-merge">
+                <h4>Merge into official farm records</h4>
+                <p className="muted">The system will re-run validation and call the existing farm services in one transaction. If any write fails, all writes from this merge are rolled back.</p>
+                <button type="button" disabled={saving} onClick={mergeApproved}>{saving ? "Merging…" : "Merge approved report"}</button>
+              </section>}
+              {((selected.lifecycleStatus || selected.status) === "MERGED") && <section className="review-merge">
+                <h4>Official records created</h4>
+                {(selected.links || []).map(link => <article key={link.id}><strong>{label(link.recordType)}</strong><span>{link.recordId}</span><small>Version {link.version} · {link.createdAt}</small></article>)}
+              </section>}
               <section className="review-history"><h4>Decision and activity history</h4>{(selected.decisions || []).map(item => <article key={item.id}><strong>{label(item.decision)} · version {item.version}</strong><p>{item.reason || "No reason supplied"}</p><small>{item.managerName} · {item.createdAt}</small></article>)}{(selected.history || []).map(item => <p key={item.id}><strong>{label(item.event)}</strong> · {item.occurredAt}</p>)}</section>
             </>}
           </section>
