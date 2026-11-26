@@ -443,6 +443,8 @@ export const reportReviewApi = {
   merge: (id, operationKey) => request("/review/submissions/" + encodeURIComponent(id) + "/merge", {
     method: "POST", headers: { "Idempotency-Key": operationKey },
   }),
+  notifications: () => request("/review/notifications"),
+  markNotificationRead: id => request("/review/notifications/" + encodeURIComponent(id) + "/read", { method: "PATCH" }),
 };
 
 export const adminUserApi = {
@@ -456,5 +458,15 @@ export const adminUserApi = {
   }),
   resetPassword: (id, password) => request("/admin/users/" + encodeURIComponent(id) + "/password-reset", {
     method: "POST", body: JSON.stringify({ password }),
+  }),
+};
+
+
+export const incidentApi = {
+  list: () => request("/incidents"),
+  create: payload => request("/incidents", { method: "POST", body: JSON.stringify(payload) }),
+  acknowledge: id => request("/incidents/" + encodeURIComponent(id) + "/acknowledge", { method: "POST" }),
+  resolve: (id, notes) => request("/incidents/" + encodeURIComponent(id) + "/resolve", {
+    method: "POST", body: JSON.stringify({ notes }),
   }),
 };
