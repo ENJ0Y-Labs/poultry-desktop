@@ -213,7 +213,7 @@ export default function ReviewCentrePage({ currentUser }) {
                     <button type="button" className="danger-button" disabled={saving || !reason.trim()} onClick={() => decide("REJECTED")}>Reject report</button>
                     <button type="button" disabled={saving || (selected.lifecycleStatus || selected.status) === "BLOCKED"} onClick={() => decide("APPROVED")}>Approve version</button>
                   </div>
-                  <p className="muted">Approval authorizes this exact version only. Official records remain unchanged until a separate merge succeeds.</p>
+                  <p className="muted">Approval authorizes this exact version only. Official farm records remain unchanged until a separate merge succeeds.</p>
                 </> : <p className="muted">No review decision is available for this report in its current state.</p>}
               </section>
               {((selected.lifecycleStatus || selected.status) === "APPROVED") && <section className="review-merge">
