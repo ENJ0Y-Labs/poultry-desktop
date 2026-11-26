@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { reportSubmissionApi } from "../services/api.js";
+import { incidentApi, reportSubmissionApi } from "../services/api.js";
 import { parseNairaToKobo } from "../utils/moneyInput.js";
 
 const reportDefinitions = {
@@ -150,6 +150,12 @@ function today() {
   return local.toISOString().slice(0, 10);
 }
 
+function localNow() {
+  const date = new Date();
+  const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+  return local.toISOString().slice(0, 16);
+}
+
 function currentTime() {
   const date = new Date();
   return String(date.getHours()).padStart(2, "0") + ":" + String(date.getMinutes()).padStart(2, "0");
@@ -291,8 +297,8 @@ export default function MyReportsPage({ userId = "" }) {
   const refresh = useCallback(async () => {
     setLoading(true);
     setError("");
-    const [reportsResult, referencesResult] = await Promise.allSettled([
-      reportSubmissionApi.mine(), reportSubmissionApi.references(),
+    const [reportsResult, referencesResult, incidentResult] = await Promise.allSettled([
+      reportSubmissionApi.mine(), reportSubmissionApi.references(), incidentApi.list(),
     ]);
     if (reportsResult.status === "fulfilled") {
       setBackendAvailable(true);
@@ -305,6 +311,8 @@ export default function MyReportsPage({ userId = "" }) {
     else {
       setNotice("Farm lists could not be refreshed. Cached batch and feed references remain available.");
     }
+    const incidentsResult = await incidentResult;
+    if (incidentsResult.status === "fulfilled") setIncidents(incidentsResult.value);
     setLoading(false);
   }, [userId]);
 
@@ -379,6 +387,26 @@ export default function MyReportsPage({ userId = "" }) {
     if (!persistLocal(next)) throw new Error("The server draft was saved, but its local recovery copy could not be updated. Do not submit until local storage is available.");
     setEditing(synced);
     return detail;
+  }
+
+  async function submitIncident(event) {
+    event.preventDefault();
+    if (!incidentTitle.trim() || !incidentDescription.trim()) return;
+    setSaving(true);
+    setError("");
+    try {
+      const created = await incidentApi.create({
+        type: incidentType, severity: incidentSeverity, title: incidentTitle.trim(),
+        description: incidentDescription.trim(), batchId: incidentBatchId || null,
+        eventAt: incidentEventAt,
+      });
+      setIncidents(current => [created, ...current]);
+      setIncidentTitle("");
+      setIncidentDescription("");
+      setNotice("Emergency alert sent to the Manager notification inbox.");
+    } catch (err) {
+      setError(err.message || "Emergency alert could not be sent. Keep the incident details available and retry when the farm host is reachable.");
+    } finally { setSaving(false); }
   }
 
   async function saveDraft() {
