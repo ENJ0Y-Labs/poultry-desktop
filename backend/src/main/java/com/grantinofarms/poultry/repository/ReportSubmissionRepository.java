@@ -178,6 +178,79 @@ public class ReportSubmissionRepository {
         }, id);
     }
 
+    public void insertCheck(String id, String submissionId, int version, String code,
+                            String outcome, boolean overrideable, String explanation,
+                            String detailsJson, String checkedAt) {
+        jdbc.update("""
+                INSERT INTO report_submission_checks
+                    (id, submission_id, version_number, check_code, outcome, overrideable,
+                     explanation, details_json, checked_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, id, submissionId, version, code, outcome, overrideable ? 1 : 0,
+                explanation, detailsJson, checkedAt);
+    }
+
+    public List<String> findPotentialDuplicates(String farmId, String excludingId,
+                                                String reportType, String batchId, String eventDate) {
+        if (batchId == null || batchId.isBlank() || eventDate == null || eventDate.isBlank()) return List.of();
+        return jdbc.queryForList("""
+                SELECT s.id
+                FROM report_submissions s
+                JOIN report_submission_versions v
+                  ON v.submission_id = s.id AND v.version_number = s.current_version
+                WHERE s.farm_id = ? AND s.id <> ? AND s.report_type = ?
+                  AND s.lifecycle_status NOT IN ('DRAFT','REJECTED')
+                  AND json_extract(v.payload_json, '$.batchId') = ?
+                  AND json_extract(v.payload_json, '$.eventDate') = ?
+                ORDER BY s.submitted_at DESC
+                LIMIT 5
+                """, String.class, farmId, excludingId, reportType, batchId, eventDate);
+    }
+
+    public Map<String, Object> findCheck(String submissionId, int version, String checkId) {
+        return jdbc.query("""
+                SELECT id, check_code, outcome, overrideable, explanation
+                FROM report_submission_checks
+                WHERE submission_id = ? AND version_number = ? AND id = ?
+                """, rs -> {
+            if (!rs.next()) return null;
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("id", rs.getString("id"));
+            row.put("code", rs.getString("check_code"));
+            row.put("outcome", rs.getString("outcome"));
+            row.put("overrideable", rs.getInt("overrideable") == 1);
+            row.put("explanation", rs.getString("explanation"));
+            return row;
+        }, submissionId, version, checkId);
+    }
+
+    public boolean hasWarningOverride(String submissionId, int version, String checkId) {
+        Integer count = jdbc.queryForObject("""
+                SELECT COUNT(*) FROM report_submission_warning_overrides
+                WHERE submission_id = ? AND version_number = ? AND check_id = ?
+                """, Integer.class, submissionId, version, checkId);
+        return count != null && count > 0;
+    }
+
+    public void addWarningOverride(String submissionId, int version, String checkId,
+                                   String managerId, String reason, String now) {
+        jdbc.update("""
+                INSERT INTO report_submission_warning_overrides
+                    (id, submission_id, version_number, check_id, manager_user_id, reason, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                """, java.util.UUID.randomUUID().toString(), submissionId, version, checkId,
+                managerId, reason, now);
+    }
+
+    public int updateLifecycleStatus(String id, int version, String expectedStatus,
+                                     String nextStatus, String now) {
+        return jdbc.update("""
+                UPDATE report_submissions
+                SET lifecycle_status = ?, updated_at = ?
+                WHERE id = ? AND current_version = ? AND lifecycle_status = ?
+                """, nextStatus, now, id, version, expectedStatus);
+    }
+
     public List<Map<String, Object>> findComments(String id) {
         return jdbc.query("""
                 SELECT c.id, c.version_number, c.author_user_id, u.full_name AS author_name,
