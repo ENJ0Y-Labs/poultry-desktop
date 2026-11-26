@@ -180,7 +180,7 @@ function SidebarToggleIcon({ expanded }) {
   );
 }
 
-export default function AppShell({ farm, error, appInfo, onRetry, onQuickAction, children, batches = [], selectedBatchId = "", feedTypes = [], feedInventory = [], inventoryItems = [], attention = [], startPage = "dashboard", startPageReady = true, userRole = "MANAGER" }) {
+export default function AppShell({ farm, error, appInfo, onRetry, onQuickAction, onSignOut, children, batches = [], selectedBatchId = "", feedTypes = [], feedInventory = [], inventoryItems = [], attention = [], startPage = "dashboard", startPageReady = true, userRole = "MANAGER" }) {
   const [active, setActive] = useState(() => {
     const requested = resolvePage(window.location.hash, startPage);
     return allowedPagesForRole(userRole).includes(requested) ? requested : "my-reports";
@@ -410,6 +410,10 @@ export default function AppShell({ farm, error, appInfo, onRetry, onQuickAction,
             <span className="nav-icon-wrap"><span className="activity-avatar" aria-hidden="true">{farmInitials(farm.name)}</span></span>
             <span className="nav-label">Account</span>
           </button>
+          <button type="button" className="nav-item sidebar-sign-out" onClick={onSignOut}>
+            <span className="nav-icon-wrap" aria-hidden="true">↪</span>
+            <span className="nav-label">Sign out</span>
+          </button>
         </div>
       </aside>
 
@@ -423,7 +427,7 @@ export default function AppShell({ farm, error, appInfo, onRetry, onQuickAction,
             </div>
             <div className="topbar-actions">
               <button type="button" className="secondary-button attention-mobile-toggle" onClick={() => setAttentionMobileOpen(true)} aria-label={`Open attention panel, ${attentionCount} actionable alerts`} aria-expanded={attentionMobileOpen}>Attention <span>{attentionCount}</span></button>
-              <QuickActionsMenu activeBatch={activeBatch} hasFeedTypes={hasActiveFeedTypes} hasApplicableFeed={hasApplicableFeed} hasInventoryItems={hasActiveInventoryItems} onAction={onQuickAction} onNavigate={navigateQuickAction} />
+              {userRole === "MANAGER" && <QuickActionsMenu activeBatch={activeBatch} hasFeedTypes={hasActiveFeedTypes} hasApplicableFeed={hasApplicableFeed} hasInventoryItems={hasActiveInventoryItems} onAction={onQuickAction} onNavigate={navigateQuickAction} />}
               <button type="button" className="secondary-button keyboard-shortcuts-trigger" onClick={() => setShortcutsOpen(true)} aria-haspopup="dialog">Keyboard shortcuts</button>
               <div className="date-chip">{today}</div>
             </div>
