@@ -52,6 +52,7 @@ function fillMortalityForm() {
   fireEvent.change(screen.getByLabelText("Report title"), { target: { value: "Morning mortality" } });
   fireEvent.change(screen.getByLabelText("Batch / flock"), { target: { value: "batch-1" } });
   fireEvent.change(screen.getByLabelText("Number of birds"), { target: { value: "2" } });
+  fireEvent.change(screen.getByLabelText("Time of event"), { target: { value: "08:00" } });
 }
 
 describe("MyReportsPage", () => {
