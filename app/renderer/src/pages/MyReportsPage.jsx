@@ -162,7 +162,7 @@ function readLocalArray(key) {
 function emptyFields(type) {
   const values = {};
   for (const [key, , kind] of reportDefinitions[type].fields) {
-    values[key] = kind === "date" ? today() : "";
+    values[key] = kind === "date" ? today() : kind === "category" ? "OTHER" : "";
   }
   return values;
 }
