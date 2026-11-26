@@ -154,6 +154,40 @@ class ReportSubmissionIntegrationTest {
         assertThat((java.util.List<?>) resubmitted.get("versions")).hasSize(2);
     }
 
+
+    @Test
+    void lateReportRequiresReasonAndSeparateManagerAuthorizationBeforeApproval() throws Exception {
+        java.time.LocalDate lateDate = java.time.LocalDate.now(java.time.ZoneId.of("Africa/Lagos")).minusDays(2);
+        var request = new ReportSubmissionRequest("EXPENSE", "Late expense report",
+                mapper.readTree("{\"eventDate\":\"" + lateDate + "\",\"eventTime\":\"09:00\","
+                        + "\"lateReason\":\"Power outage prevented timely entry\","
+                        + "\"description\":\"Feed transport\",\"amountMinor\":50000,\"category\":\"OTHER\"}"));
+        Map<String, Object> created = submissions.createDraft(request);
+        String id = String.valueOf(created.get("id"));
+        Map<String, Object> submitted = submissions.submit(id);
+        assertThat(submitted.get("lifecycleStatus")).isEqualTo("FLAGGED");
+        @SuppressWarnings("unchecked")
+        java.util.List<Map<String, Object>> checks =
+                (java.util.List<Map<String, Object>>) submitted.get("checks");
+        Map<String, Object> lateCheck = checks.stream()
+                .filter(check -> "LATE_REPORT_REQUIRES_MANAGER_AUTHORIZATION".equals(check.get("code")))
+                .findFirst().orElseThrow();
+        assertThat(lateCheck.get("overrideable")).isEqualTo(true);
+
+        String managerId = UUID.randomUUID().toString();
+        String now = Instant.now().toString();
+        users.insertWithRole(managerId, "late-review-" + managerId.substring(0, 6),
+                null, "test-password-hash", "Late Review Manager", "MANAGER", now, null);
+        CurrentUserContext.set(managerId, "MANAGER");
+        Map<String, Object> authorized = reviews.overrideWarning(id, String.valueOf(lateCheck.get("id")),
+                "Verified the original event record and approved the late entry.");
+        assertThat((java.util.List<?>) authorized.get("history")).anySatisfy(event ->
+                assertThat(((Map<?, ?>) event).get("event")).isEqualTo("WARNING_OVERRIDDEN"));
+
+        Map<String, Object> approved = reviews.decide(id, "APPROVED", null);
+        assertThat(approved.get("lifecycleStatus")).isEqualTo("APPROVED");
+    }
+
     @Test
     void managerCannotApproveOwnSubmissionAndWorkerCannotOpenReviewQueue() throws Exception {
         String managerId = UUID.randomUUID().toString();
