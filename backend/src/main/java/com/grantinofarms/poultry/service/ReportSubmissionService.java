@@ -64,6 +64,7 @@ public class ReportSubmissionService {
         try {
             submissions.insert(id, farm.id(), actorId, reportType, reportTitle,
                     payloadJson, idempotencyKey, requestHash, now);
+            updateScopeMetadata(id, request.payload());
         } catch (org.springframework.dao.DuplicateKeyException ex) {
             Map<String, Object> raced = submissions.findByIdempotencyKey(farm.id(), actorId, idempotencyKey);
             if (raced != null) {
@@ -177,6 +178,18 @@ public class ReportSubmissionService {
             throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_REPORT",
                     "Report type and title are required.");
         }
+    }
+
+    private void updateScopeMetadata(String id, JsonNode payload) {
+        String batchId = payload.path("batchId").asText(null);
+        String houseId = payload.path("houseId").asText(null);
+        String scopeType = batchId != null && !batchId.isBlank() ? "BATCH"
+                : houseId != null && !houseId.isBlank() ? "HOUSE" : "FARM";
+        String scopeId = "BATCH".equals(scopeType) ? batchId : "HOUSE".equals(scopeType) ? houseId : null;
+        String eventDate = payload.path("eventDate").asText(null);
+        if (eventDate == null || eventDate.isBlank()) eventDate = payload.path("recordDate").asText(null);
+        String lateReason = payload.path("lateReason").asText(null);
+        submissions.updateScopeMetadata(id, scopeType, scopeId, eventDate, lateReason);
     }
 
     private void requireSameIdempotentRequest(Map<String, Object> existing, String requestHash) {
