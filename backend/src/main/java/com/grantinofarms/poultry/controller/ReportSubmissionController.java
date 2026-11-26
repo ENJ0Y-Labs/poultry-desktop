@@ -17,8 +17,10 @@ public class ReportSubmissionController {
     }
 
     @PostMapping
-    public Map<String, Object> create(@Valid @RequestBody ReportSubmissionRequest request) {
-        return Map.of("ok", true, "data", service.createDraft(request));
+    public Map<String, Object> create(
+            @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey,
+            @Valid @RequestBody ReportSubmissionRequest request) {
+        return Map.of("ok", true, "data", service.createDraft(request, idempotencyKey));
     }
 
     @PutMapping("/{id}")
