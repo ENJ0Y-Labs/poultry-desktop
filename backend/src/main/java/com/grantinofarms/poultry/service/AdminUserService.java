@@ -51,7 +51,8 @@ public class AdminUserService {
         String actor = CurrentUserContext.get();
         if (request == null || request.password() == null || request.password().length() < 10
                 || request.password().length() > 200 || request.fullName() == null || request.fullName().isBlank()
-                || request.role() == null || !java.util.Set.of("WORKER", "ADMINISTRATOR", "MANAGER").contains(request.role())) {
+                || request.username() == null || request.role() == null
+                || !java.util.Set.of("WORKER", "ADMINISTRATOR", "MANAGER").contains(request.role())) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_ACCOUNT", "Account details or role are invalid.");
         }
         String username = request.username().trim().toLowerCase(java.util.Locale.ROOT);
@@ -101,7 +102,7 @@ public class AdminUserService {
     public Map<String, Object> changeStatus(String userId, String status) {
         RoleAuthorization.requireAdministrator();
         String actor = CurrentUserContext.get();
-        if (!java.util.Set.of("ACTIVE", "SUSPENDED").contains(status))
+        if (status == null || !java.util.Set.of("ACTIVE", "SUSPENDED").contains(status))
             throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_ACCOUNT_STATUS", "Account status is invalid.");
         if (actor.equals(userId) && "SUSPENDED".equals(status))
             throw new ApiException(HttpStatus.CONFLICT, "CANNOT_SUSPEND_SELF", "You cannot suspend your own account.");
