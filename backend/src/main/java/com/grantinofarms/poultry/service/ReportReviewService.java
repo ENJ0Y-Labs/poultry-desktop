@@ -117,10 +117,10 @@ public class ReportReviewService {
         String now = Instant.now().toString();
         submissions.addWarningOverride(id, version, checkId, actor, cleanReason, now);
         submissions.appendEvent(id, version, actor, "WARNING_OVERRIDDEN",
-                "{\\"checkId\\":\\"" + checkId + "\\",\\"reason\\":\\"" + escape(cleanReason) + "\\"}", now);
+                "{\"checkId\":\"" + checkId + "\",\"reason\":\"" + escape(cleanReason) + "\"}", now);
         audit.append(String.valueOf(header.get("farmId")), "OVERRIDE_WARNING", "REPORT_SUBMISSION", id,
                 "Manager authorized an overrideable report warning", null,
-                "{\\"checkId\\":\\"" + checkId + "\\",\\"version\\":" + version + "}", now);
+                "{\"checkId\":\"" + checkId + "\",\"version\":" + version + "}", now);
         return detail(requireHeader(id));
     }
 
@@ -219,7 +219,7 @@ public class ReportReviewService {
     }
 
     private String escape(String value) {
-        return value.replace("\\", "\\\\").replace("\"", "\\\"")
+        return value.replace("\", "\\\").replace("\"", "\\"")
                 .replace("\n", " ").replace("\r", " ");
     }
 }
