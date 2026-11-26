@@ -25,7 +25,6 @@ function readProgress(account) {
 export default function OnboardingWizard({ account, farmForm, setFarmForm, onCreateFarm, onComplete, saving, error }) {
   const [progress, setProgress] = useState(() => readProgress(account));
   const [localError, setLocalError] = useState("");
-  const [farmCreated, setFarmCreated] = useState(Boolean(progress.farmCreated));
   const step = progress.step;
   const fullName = [progress.firstName, progress.familyName].filter(Boolean).join(" ");
   const initials = useMemo(() => fullName.split(/\s+/).filter(Boolean).map(part => part[0]).join("").slice(0, 2).toUpperCase() || "P", [fullName]);
@@ -61,9 +60,12 @@ export default function OnboardingWizard({ account, farmForm, setFarmForm, onCre
     event.preventDefault();
     setLocalError("");
     if (!farmForm.name.trim()) return setLocalError("Enter your farm name.");
+    if (progress.farmCreated) {
+      update("step", 5);
+      return;
+    }
     const created = await onCreateFarm(event);
     if (!created) return;
-    setFarmCreated(true);
     setProgress(current => ({ ...current, farmCreated: true, step: 5 }));
   }
   function finish() {
@@ -128,19 +130,28 @@ export default function OnboardingWizard({ account, farmForm, setFarmForm, onCre
             {step === 4 && <>
               <p className="onboarding-eyebrow">STEP 4 · FARM SETUP</p>
               <h1>Howdy, {progress.firstName || "there"}!</h1><p className="onboarding-subtitle">Let's set up your farm.</p>
-              <form className="onboarding-fields" onSubmit={createFarm}>
-                <div className="onboarding-create-label">CREATE NEW FARM</div>
-                <h2>About your farm</h2>
-                <label>Farm name<input required autoFocus value={farmForm.name} onChange={e => setFarmForm(current => ({ ...current, name: e.target.value }))} placeholder="e.g. Grantino Farms" /></label>
-                <label>Farm location<input value={farmForm.location} onChange={e => setFarmForm(current => ({ ...current, location: e.target.value }))} placeholder="Town, city or address" /></label>
-                <div className="onboarding-two-fields">
-                  <label>Country<input value="Nigeria" readOnly /></label>
-                  <label>Currency<select value={farmForm.currency} onChange={e => setFarmForm(current => ({ ...current, currency: e.target.value }))}><option value="NGN">₦ Naira (NGN)</option><option value="USD">$ US Dollar (USD)</option><option value="GBP">£ Pound Sterling (GBP)</option></select></label>
+              {progress.farmCreated ? (
+                <div className="onboarding-fields">
+                  <div className="onboarding-create-label">FARM CREATED</div>
+                  <h2>{farmForm.name}</h2>
+                  <p className="onboarding-privacy">Your farm is already saved. Continue setting up your Pomas workspace.</p>
+                  <button className="onboarding-primary" type="button" onClick={next}>CONTINUE <span>→</span></button>
                 </div>
-                <label>Timezone<select required value={farmForm.timezone} onChange={e => setFarmForm(current => ({ ...current, timezone: e.target.value }))}><option value="Africa/Lagos">Africa/Lagos</option><option value="Africa/Accra">Africa/Accra</option><option value="Africa/Nairobi">Africa/Nairobi</option><option value="UTC">UTC</option></select></label>
-                <p className="onboarding-privacy">Your farm records are stored locally on this device. Farm information organizes your records and reports.</p>
-                <button className="onboarding-primary" type="submit" disabled={saving}>{saving ? "CREATING FARM…" : "CREATE FARM & CONTINUE"} <span>→</span></button>
-              </form>
+              ) : (
+                <form className="onboarding-fields" onSubmit={createFarm}>
+                  <div className="onboarding-create-label">CREATE NEW FARM</div>
+                  <h2>About your farm</h2>
+                  <label>Farm name<input required autoFocus value={farmForm.name} onChange={e => setFarmForm(current => ({ ...current, name: e.target.value }))} placeholder="e.g. Grantino Farms" /></label>
+                  <label>Farm location<input value={farmForm.location} onChange={e => setFarmForm(current => ({ ...current, location: e.target.value }))} placeholder="Town, city or address" /></label>
+                  <div className="onboarding-two-fields">
+                    <label>Country<input value="Nigeria" readOnly /></label>
+                    <label>Currency<input value="₦ Naira (NGN)" readOnly /></label>
+                  </div>
+                  <label>Timezone<input value="Africa/Lagos" readOnly /></label>
+                  <p className="onboarding-privacy">Your farm records are stored locally on this device. Farm information organizes your records and reports.</p>
+                  <button className="onboarding-primary" type="submit" disabled={saving}>{saving ? "CREATING FARM…" : "CREATE FARM & CONTINUE"} <span>→</span></button>
+                </form>
+              )}
             </>}
             {step === 5 && <>
               <p className="onboarding-eyebrow">STEP 5 · FARM TYPE</p>
