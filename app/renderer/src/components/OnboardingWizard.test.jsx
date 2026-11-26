@@ -55,7 +55,10 @@ describe("OnboardingWizard", () => {
   it("restores the saved step and selections after remounting", () => {
     localStorage.setItem("pomas:onboarding:v1", JSON.stringify({
       step: 5, firstName: "Ada", familyName: "Farmer", role: "FARM MANAGER",
-      discovery: "WhatsApp", poultryTypes: ["TURKEYS"], priorities: [], farmCreated: true,
+      discovery: "WhatsApp",
+      poultryTypes: ["TURKEYS"],
+      priorities: [],
+      farmCreated: true,
       farmDraft: { name: "Saved Farm", location: "Port Harcourt", timezone: "Africa/Lagos", currency: "NGN" },
     }));
     render(<Harness account={{ fullName: "Ada Farmer" }} onSaveProfile={vi.fn().mockResolvedValue(true)} onCreateFarm={vi.fn()} onComplete={vi.fn()} saving={false} error="" />);
