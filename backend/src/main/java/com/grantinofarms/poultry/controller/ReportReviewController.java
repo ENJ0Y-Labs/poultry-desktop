@@ -12,11 +12,25 @@ import java.util.Map;
 public class ReportReviewController {
     private final ReportReviewService service;
     private final com.grantinofarms.poultry.service.ReportMergeService merges;
+    private final com.grantinofarms.poultry.service.FarmIncidentService incidents;
 
     public ReportReviewController(ReportReviewService service,
-                                  com.grantinofarms.poultry.service.ReportMergeService merges) {
+                                  com.grantinofarms.poultry.service.ReportMergeService merges,
+                                  com.grantinofarms.poultry.service.FarmIncidentService incidents) {
         this.service = service;
         this.merges = merges;
+        this.incidents = incidents;
+    }
+
+    @GetMapping("/notifications")
+    public Map<String, Object> notifications() {
+        return Map.of("ok", true, "data", incidents.notifications());
+    }
+
+    @PatchMapping("/notifications/{id}/read")
+    public Map<String, Object> markNotificationRead(@PathVariable String id) {
+        incidents.markNotificationRead(id);
+        return Map.of("ok", true, "data", Map.of("read", true));
     }
 
     @GetMapping("/queue")
