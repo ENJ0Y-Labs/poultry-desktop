@@ -50,7 +50,7 @@ class AuditAndAuthIntegrationTest {
 
         var session=auth.login(new LoginRequest("OWNER@example.com","correct-horse-battery", false));
         assertThat(session.token()).isNotBlank();
-        assertThat(session.user().get("role")).isEqualTo("OWNER");
+        assertThat(session.user().get("role")).isEqualTo("ADMINISTRATOR");
         assertThat(auth.current(session.token()).get("email")).isEqualTo("owner@example.com");
         auth.logout(session.token());
         assertThat(auth.current(session.token())).isNull();
