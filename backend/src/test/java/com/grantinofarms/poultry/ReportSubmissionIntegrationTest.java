@@ -2,6 +2,7 @@ package com.grantinofarms.poultry;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.grantinofarms.poultry.dto.ReportSubmissionRequest;
+import com.grantinofarms.poultry.dto.ExpenseCategoryRequest;
 import com.grantinofarms.poultry.exception.ApiException;
 import com.grantinofarms.poultry.repository.FarmRepository;
 import com.grantinofarms.poultry.repository.ExpenseCategoryRepository;
@@ -13,6 +14,7 @@ import com.grantinofarms.poultry.service.PasswordHasher;
 import com.grantinofarms.poultry.service.ReportSubmissionService;
 import com.grantinofarms.poultry.service.ReportReviewService;
 import com.grantinofarms.poultry.service.ReportMergeService;
+import com.grantinofarms.poultry.service.ExpenseCategoryService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -45,6 +47,7 @@ class ReportSubmissionIntegrationTest {
     @Autowired ReportSubmissionService submissions;
     @Autowired ReportReviewService reviews;
     @Autowired ReportMergeService merges;
+    @Autowired ExpenseCategoryService expenseCategories;
     @Autowired AdminUserService adminUsers;
     @Autowired AuthService auth;
     @Autowired PasswordHasher passwordHasher;
@@ -220,6 +223,7 @@ class ReportSubmissionIntegrationTest {
         java.time.ZoneId zone = java.time.ZoneId.of("Africa/Lagos");
         String eventDate = java.time.LocalDate.now(zone).toString();
         String eventTime = java.time.LocalTime.now(zone).format(java.time.format.DateTimeFormatter.ofPattern("HH:mm"));
+        expenseCategories.create(new ExpenseCategoryRequest("OTHER"));
         var request = new ReportSubmissionRequest("EXPENSE", "Feed transport expense",
                 mapper.readTree("{\"eventDate\":\"" + eventDate + "\",\"eventTime\":\"" + eventTime + "\","
                         + "\"description\":\"Feed transport\",\"amountMinor\":120000,\"category\":\"OTHER\"}"));
