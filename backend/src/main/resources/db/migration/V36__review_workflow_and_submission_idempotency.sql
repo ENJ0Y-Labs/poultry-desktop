@@ -172,6 +172,9 @@ BEGIN
     SELECT RAISE(ABORT, 'Report submission links are immutable');
 END;
 
+CREATE UNIQUE INDEX uq_submission_warning_override
+    ON report_submission_warning_overrides(submission_id, version_number, check_id);
+
 CREATE TRIGGER trg_report_submission_warning_overrides_no_update
 BEFORE UPDATE ON report_submission_warning_overrides
 BEGIN
