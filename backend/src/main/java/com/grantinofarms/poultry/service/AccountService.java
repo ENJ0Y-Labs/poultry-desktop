@@ -6,6 +6,7 @@ import com.grantinofarms.poultry.dto.AccountUpdateRequest;
 import com.grantinofarms.poultry.exception.ApiException;
 import com.grantinofarms.poultry.repository.AuditRepository;
 import com.grantinofarms.poultry.repository.FarmRepository;
+import com.grantinofarms.poultry.repository.SessionRepository;
 import com.grantinofarms.poultry.repository.UserRepository;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
@@ -27,14 +28,16 @@ public class AccountService {
     private final PasswordHasher passwords;
     private final FarmRepository farms;
     private final AuditRepository audit;
+    private final SessionRepository sessions;
     private final ObjectMapper objectMapper;
 
     public AccountService(UserRepository users, PasswordHasher passwords, FarmRepository farms,
-                          AuditRepository audit, ObjectMapper objectMapper) {
+                          AuditRepository audit, SessionRepository sessions, ObjectMapper objectMapper) {
         this.users = users;
         this.passwords = passwords;
         this.farms = farms;
         this.audit = audit;
+        this.sessions = sessions;
         this.objectMapper = objectMapper;
     }
 
@@ -75,6 +78,9 @@ public class AccountService {
                 throw new ApiException(HttpStatus.BAD_REQUEST, "CURRENT_PASSWORD_INVALID", "Current password is incorrect.");
             }
             users.updatePassword(id, passwords.hash(request.newPassword()), Instant.now().toString());
+            String currentSessionHash = CurrentUserContext.getSessionTokenHash();
+            if (currentSessionHash == null) sessions.deleteForUser(id);
+            else sessions.deleteOtherSessions(id, currentSessionHash);
         }
 
         String oldUsername = String.valueOf(current.get("username"));
@@ -91,17 +97,18 @@ public class AccountService {
         String now = Instant.now().toString();
         audit.append(farm == null ? null : farm.id(), "UPDATE", "USER_ACCOUNT", id,
                 "User account settings changed",
-                auditJson(oldUsername, oldEmail, oldName),
-                auditJson(username, email, fullName), now);
+                auditJson(oldUsername, oldEmail, oldName, false),
+                auditJson(username, email, fullName, changingPassword), now);
         return current();
     }
 
-    private String auditJson(String username, String email, String fullName) {
+    private String auditJson(String username, String email, String fullName, boolean passwordChanged) {
         try {
             Map<String, Object> details = new LinkedHashMap<>();
             details.put("username", username);
             details.put("email", email);
             details.put("fullName", fullName);
+            details.put("passwordChanged", passwordChanged);
             return objectMapper.writeValueAsString(details);
         } catch (JsonProcessingException e) {
             throw new IllegalStateException("Could not serialize account audit details.", e);
