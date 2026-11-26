@@ -209,6 +209,7 @@ public class ReportMergeTransactionService {
         result.put("decisions", submissions.findDecisions(id));
         result.put("assignments", submissions.findAssignments(id));
         result.put("links", submissions.findLinks(id));
+        result.put("attachments", submissions.findAttachments(id, version));
         return result;
     }
 
