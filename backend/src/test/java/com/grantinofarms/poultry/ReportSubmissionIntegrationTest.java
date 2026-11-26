@@ -11,6 +11,7 @@ import com.grantinofarms.poultry.service.CurrentUserContext;
 import com.grantinofarms.poultry.service.PasswordHasher;
 import com.grantinofarms.poultry.service.ReportSubmissionService;
 import com.grantinofarms.poultry.service.ReportReviewService;
+import com.grantinofarms.poultry.service.ReportMergeService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -41,6 +42,7 @@ class ReportSubmissionIntegrationTest {
     @Autowired UserRepository users;
     @Autowired ReportSubmissionService submissions;
     @Autowired ReportReviewService reviews;
+    @Autowired ReportMergeService merges;
     @Autowired AdminUserService adminUsers;
     @Autowired AuthService auth;
     @Autowired PasswordHasher passwordHasher;
@@ -186,6 +188,42 @@ class ReportSubmissionIntegrationTest {
 
         Map<String, Object> approved = reviews.decide(id, "APPROVED", null);
         assertThat(approved.get("lifecycleStatus")).isEqualTo("APPROVED");
+    }
+
+
+    @Test
+    void approvedExpenseMergesOnceIntoTheExistingLedgerAndKeepsProvenance() throws Exception {
+        java.time.ZoneId zone = java.time.ZoneId.of("Africa/Lagos");
+        String eventDate = java.time.LocalDate.now(zone).toString();
+        String eventTime = java.time.LocalTime.now(zone).format(java.time.format.DateTimeFormatter.ofPattern("HH:mm"));
+        var request = new ReportSubmissionRequest("EXPENSE", "Feed transport expense",
+                mapper.readTree("{\"eventDate\":\"" + eventDate + "\",\"eventTime\":\"" + eventTime + "\","
+                        + "\"description\":\"Feed transport\",\"amountMinor\":120000,\"category\":\"OTHER\"}"));
+        Map<String, Object> created = submissions.createDraft(request);
+        String id = String.valueOf(created.get("id"));
+        Map<String, Object> submitted = submissions.submit(id);
+        assertThat(submitted.get("lifecycleStatus")).isEqualTo("PENDING_REVIEW");
+
+        String managerId = UUID.randomUUID().toString();
+        String now = Instant.now().toString();
+        users.insertWithRole(managerId, "merge-manager-" + managerId.substring(0, 6),
+                null, "test-password-hash", "Merge Manager", "MANAGER", now, null);
+        CurrentUserContext.set(managerId, "MANAGER");
+        reviews.decide(id, "APPROVED", null);
+
+        Map<String, Object> merged = merges.merge(id, "expense-merge-key-001");
+        assertThat(merged.get("lifecycleStatus")).isEqualTo("MERGED");
+        assertThat((java.util.List<?>) merged.get("links")).hasSize(1);
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM expenses WHERE description = ?",
+                Integer.class, "Feed transport")).isEqualTo(1);
+
+        Map<String, Object> retry = merges.merge(id, "expense-merge-key-001");
+        assertThat(retry.get("lifecycleStatus")).isEqualTo("MERGED");
+        assertThat((java.util.List<?>) retry.get("links")).hasSize(1);
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM expenses WHERE description = ?",
+                Integer.class, "Feed transport")).isEqualTo(1);
     }
 
     @Test
