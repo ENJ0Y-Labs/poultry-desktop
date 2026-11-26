@@ -903,6 +903,33 @@ export default function App() {
     return () => { current = false; };
   }, [dailyForm.batchId, dailyForm.date, dailyRecordReloadKey]);
 
+  async function saveOnboardingProfile(fullName) {
+    if (!account?.username) {
+      setError("Your account details could not be loaded. Retry the connection before continuing.");
+      return false;
+    }
+    if (String(account.fullName || "").trim() === fullName.trim()) return true;
+    setSaving(true);
+    setError("");
+    try {
+      const updated = await accountApi.update({
+        username: account.username,
+        email: account.email || "",
+        fullName: fullName.trim(),
+        currentPassword: "",
+        newPassword: "",
+      });
+      setAccount(updated);
+      setAccountForm(form => ({ ...form, fullName: updated.fullName }));
+      return true;
+    } catch (err) {
+      setError(displayApiError(err));
+      return false;
+    } finally {
+      setSaving(false);
+    }
+  }
+
   async function submitFarm(event) {
     event.preventDefault(); setSaving(true); setError("");
     try {
@@ -1775,6 +1802,7 @@ export default function App() {
       account={account}
       farmForm={farmForm}
       setFarmForm={setFarmForm}
+      onSaveProfile={saveOnboardingProfile}
       onCreateFarm={submitFarm}
       onComplete={() => setOnboardingActive(false)}
       saving={saving}
