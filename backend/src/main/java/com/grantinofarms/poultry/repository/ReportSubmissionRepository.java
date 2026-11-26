@@ -260,6 +260,18 @@ public class ReportSubmissionRepository {
         return updated;
     }
 
+    public List<Map<String, Object>> findActiveManagers() {
+        return jdbc.query("""
+                SELECT u.id, u.username, u.full_name
+                FROM users u JOIN user_roles r ON r.user_id = u.id
+                WHERE u.status = 'ACTIVE' AND r.role = 'MANAGER'
+                ORDER BY u.full_name, u.username
+                """, (rs, n) -> Map.of(
+                "id", rs.getString("id"),
+                "username", rs.getString("username"),
+                "fullName", rs.getString("full_name")));
+    }
+
     public boolean isActiveManager(String managerId) {
         Integer count = jdbc.queryForObject("""
                 SELECT COUNT(*) FROM users u JOIN user_roles r ON r.user_id = u.id
