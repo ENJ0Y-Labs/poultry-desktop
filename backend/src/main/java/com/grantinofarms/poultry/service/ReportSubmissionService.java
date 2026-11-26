@@ -83,7 +83,7 @@ public class ReportSubmissionService {
         String actorId = CurrentUserContext.get();
         Map<String, Object> header = requireOwnedHeader(id, actorId);
         String status = String.valueOf(header.get("lifecycleStatus"));
-        if (!"DRAFT".equals(status) && !"CHANGES_REQUESTED".equals(status)) {
+        if (!List.of("DRAFT", "CHANGES_REQUESTED", "BLOCKED").contains(status)) {
             throw new ApiException(HttpStatus.CONFLICT, "SUBMISSION_NOT_EDITABLE",
                     "Only a draft or a report returned for changes can be edited.");
         }
