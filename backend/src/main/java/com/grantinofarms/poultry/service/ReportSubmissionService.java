@@ -34,16 +34,32 @@ public class ReportSubmissionService {
 
     @Transactional
     public Map<String, Object> createDraft(ReportSubmissionRequest request) {
+        return createDraft(request, UUID.randomUUID().toString());
+    }
+
+    public Map<String, Object> createDraft(ReportSubmissionRequest request, String idempotencyKey) {
         RoleAuthorization.requireReportSubmitter();
+        if (idempotencyKey == null || !idempotencyKey.matches("[A-Za-z0-9._:-]{8,128}")) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "IDEMPOTENCY_KEY_REQUIRED",
+                    "A valid Idempotency-Key header is required.");
+        }
         String actorId = CurrentUserContext.get();
         var farm = farms.findActive();
         if (farm == null) throw new ApiException(HttpStatus.CONFLICT, "FARM_NOT_CONFIGURED",
                 "Create or activate a farm before saving reports.");
         validateRequest(request);
+        Map<String, Object> existing = submissions.findByIdempotencyKey(farm.id(), actorId, idempotencyKey);
+        if (existing != null) return getOwned(String.valueOf(existing.get("id")), actorId);
         String id = UUID.randomUUID().toString();
         String now = Instant.now().toString();
-        submissions.insert(id, farm.id(), actorId, request.reportType().trim().toUpperCase(),
-                request.title().trim(), json(request.payload()), now);
+        try {
+            submissions.insert(id, farm.id(), actorId, request.reportType().trim().toUpperCase(),
+                    request.title().trim(), json(request.payload()), idempotencyKey, now);
+        } catch (org.springframework.dao.DuplicateKeyException ex) {
+            Map<String, Object> raced = submissions.findByIdempotencyKey(farm.id(), actorId, idempotencyKey);
+            if (raced != null) return getOwned(String.valueOf(raced.get("id")), actorId);
+            throw ex;
+        }
         audit.append(farm.id(), "CREATE", "REPORT_SUBMISSION", id, "Report draft created",
                 null, "{\"status\":\"DRAFT\",\"version\":1}", now);
         return getOwned(id, actorId);
@@ -54,7 +70,7 @@ public class ReportSubmissionService {
         RoleAuthorization.requireReportSubmitter();
         String actorId = CurrentUserContext.get();
         Map<String, Object> header = requireOwnedHeader(id, actorId);
-        String status = String.valueOf(header.get("status"));
+        String status = String.valueOf(header.get("lifecycleStatus"));
         if (!"DRAFT".equals(status) && !"CHANGES_REQUESTED".equals(status)) {
             throw new ApiException(HttpStatus.CONFLICT, "SUBMISSION_NOT_EDITABLE",
                     "Only a draft or a report returned for changes can be edited.");
@@ -112,6 +128,10 @@ public class ReportSubmissionService {
         Map<String, Object> result = new LinkedHashMap<>(header);
         result.put("versions", submissions.findVersions(id));
         result.put("history", submissions.findEvents(id));
+        result.put("comments", submissions.findComments(id));
+        result.put("checks", submissions.findChecks(id, ((Number) header.get("currentVersion")).intValue()));
+        result.put("decisions", submissions.findDecisions(id));
+        result.put("assignments", submissions.findAssignments(id));
         return result;
     }
 
