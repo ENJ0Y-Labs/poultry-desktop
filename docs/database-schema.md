@@ -1,6 +1,6 @@
 # Database schema
 
-SQLite schema changes are managed by Flyway. Migrations are forward-only and currently run through V34.
+SQLite schema changes are managed by Flyway. Migrations are forward-only and currently run through V35.
 
 ## Design rules
 
@@ -24,7 +24,7 @@ Key data includes name, location, timezone, currency, status and timestamps.
 
 ### `users`
 
-Farm users and authentication data. Passwords are stored only as password hashes. Current application role is OWNER, with ACTIVE/SUSPENDED account status.
+Farm users and authentication data. Passwords are stored only as password hashes. The legacy `users.role` column remains OWNER for upgrade compatibility; `user_roles` is authoritative for WORKER, ADMINISTRATOR, and MANAGER permissions. Existing OWNER accounts migrate to ADMINISTRATOR. Account status remains ACTIVE/SUSPENDED.
 
 ### `houses`
 
@@ -178,9 +178,25 @@ Feed inventory remains on the dedicated feed/FIFO path rather than being duplica
 
 Append-only material-change history containing actor, action, entity, scope, reason and snapshots where applicable. Database triggers reject UPDATE and DELETE.
 
+### `user_roles`
+
+One authoritative operational role per user: WORKER, ADMINISTRATOR, or MANAGER. Existing owner accounts are seeded as ADMINISTRATOR. Role changes record the actor and timestamps; session lookups join this table so role changes take effect immediately.
+
 ### `user_sessions`
 
-Session-token hashes and session state used by authentication.
+Session-token hashes and session state used by authentication. Session lookups require an ACTIVE account and read its current role assignment.
+
+### `report_submissions`
+
+Farm-scoped report draft and lifecycle header. Stores author, report type, status, current version, submitted version, and server timestamps. Authors can access only their own submissions until the Manager review endpoints are introduced.
+
+### `report_submission_versions`
+
+Append-only report payload snapshots. Each save creates a new version; database triggers reject UPDATE and DELETE. Submission records point to the exact submitted version.
+
+### `report_submission_events`
+
+Append-only actor-attributed submission lifecycle history with optional version reference, structured details, and server timestamp. Database triggers reject UPDATE and DELETE.
 
 ### `application_settings`
 
@@ -236,7 +252,7 @@ farm
 
 ## Migration history
 
-The repository currently contains V1 through V32, including independent Turkey support, population confidence/adjustments, feed opening balances, and multi-type feed applicability.
+The repository contains forward-only migrations through V35, including independent Turkey support, population confidence/adjustments, feed opening balances, multi-type feed applicability, idempotent batch creation, operational roles, and report submission history.
 
 Broad progression:
 
@@ -271,6 +287,7 @@ Broad progression:
 - V29: estimated/verified population confidence and auditable physical-count adjustments
 - V30: feed brand and packaging metadata
 - V33: brand-aware feed product identity, preserving existing feed type IDs and linked history\n- V34: idempotent batch creation and audited cancellation lifecycle
+- V35: operational roles and immutable report submission versions/history
 - V31: append-only feed opening balances
 - V32: normalized multi-type feed applicability
 
