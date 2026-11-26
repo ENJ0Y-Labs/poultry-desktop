@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { incidentApi, reportReviewApi } from "../services/api.js";
+import { reportReviewApi } from "../services/api.js";
 
 const statuses = ["SUBMITTED", "PENDING_REVIEW", "FLAGGED", "BLOCKED", "APPROVED"];
 
@@ -17,9 +17,6 @@ export default function ReviewCentrePage({ currentUser }) {
   const [comment, setComment] = useState("");
   const [reason, setReason] = useState("");
   const [overrideReasons, setOverrideReasons] = useState({});
-  const [incidents, setIncidents] = useState([]);
-  const [notifications, setNotifications] = useState([]);
-  const [resolutionNotes, setResolutionNotes] = useState({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -45,13 +42,6 @@ export default function ReviewCentrePage({ currentUser }) {
   }, [status, reportType, selected?.id]);
 
   useEffect(() => { refreshQueue(); }, [refreshQueue]);
-
-  useEffect(() => {
-    Promise.allSettled([incidentApi.list(), reportReviewApi.notifications()]).then(([incidentResult, notificationResult]) => {
-      if (incidentResult.status === "fulfilled") setIncidents(incidentResult.value);
-      if (notificationResult.status === "fulfilled") setNotifications(notificationResult.value);
-    });
-  }, []);
 
   async function openSubmission(row) {
     setError("");
@@ -109,31 +99,6 @@ export default function ReviewCentrePage({ currentUser }) {
       await refreshQueue();
     } catch (err) { setError(err.message || "Warning could not be authorized."); }
     finally { setSaving(false); }
-  }
-
-  async function acknowledgeIncident(incidentId) {
-    try {
-      const updated = await incidentApi.acknowledge(incidentId);
-      setIncidents(current => current.map(item => item.id === incidentId ? updated : item));
-    } catch (err) { setError(err.message || "Incident could not be acknowledged."); }
-  }
-
-  async function resolveIncident(incidentId) {
-    const notes = (resolutionNotes[incidentId] || "").trim();
-    if (!notes) { setError("Resolution notes are required."); return; }
-    try {
-      const updated = await incidentApi.resolve(incidentId, notes);
-      setIncidents(current => current.map(item => item.id === incidentId ? updated : item));
-      setResolutionNotes(current => ({ ...current, [incidentId]: "" }));
-    } catch (err) { setError(err.message || "Incident could not be resolved."); }
-  }
-
-  async function markNotificationRead(notificationId) {
-    try {
-      await reportReviewApi.markNotificationRead(notificationId);
-      setNotifications(current => current.map(item => item.id === notificationId
-        ? { ...item, readAt: new Date().toISOString() } : item));
-    } catch (err) { setError(err.message || "Notification could not be marked as read."); }
   }
 
   async function mergeApproved() {
