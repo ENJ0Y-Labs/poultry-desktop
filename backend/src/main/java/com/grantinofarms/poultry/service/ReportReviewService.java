@@ -195,6 +195,7 @@ public class ReportReviewService {
         result.put("checks", submissions.findChecks(id, submittedVersion(header)));
         result.put("decisions", submissions.findDecisions(id));
         result.put("assignments", submissions.findAssignments(id));
+        result.put("links", submissions.findLinks(id));
         return result;
     }
 
