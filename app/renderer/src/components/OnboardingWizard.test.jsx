@@ -31,6 +31,9 @@ describe("OnboardingWizard", () => {
     fireEvent.click(screen.getByRole("button", { name: /create farm & continue/i }));
     await waitFor(() => expect(onCreateFarm).toHaveBeenCalled());
     expect(screen.getByRole("heading", { name: "What type of poultry do you manage?" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "BACK" }));
+    fireEvent.click(screen.getByRole("button", { name: /continue/i }));
+    expect(onCreateFarm).toHaveBeenCalledOnce();
 
     fireEvent.click(screen.getByLabelText("BROILERS"));
     fireEvent.click(screen.getByLabelText("LAYERS"));
@@ -47,10 +50,10 @@ describe("OnboardingWizard", () => {
   it("restores the saved step and selections after remounting", () => {
     localStorage.setItem("pomas:onboarding:v1", JSON.stringify({
       step: 5, firstName: "Ada", familyName: "Farmer", role: "FARM MANAGER",
-      discovery: "WhatsApp", poultryTypes: ["TURKEYS"], priorities: [], farmCreated: true,
+      discovery: "WhatsApp", poultryTypes: ["TURKEYS"], priorities: [], farmCreated: true,\n      farmDraft: { name: "Saved Farm", location: "Port Harcourt", timezone: "Africa/Lagos", currency: "NGN" },
     }));
     render(<OnboardingWizard account={{ fullName: "Ada Farmer" }} farmForm={farmForm} setFarmForm={vi.fn()} onSaveProfile={vi.fn().mockResolvedValue(true)} onCreateFarm={vi.fn()} onComplete={vi.fn()} saving={false} error="" />);
     expect(screen.getByRole("heading", { name: "What type of poultry do you manage?" })).toBeInTheDocument();
-    expect(screen.getByLabelText("TURKEYS")).toBeChecked();
+    expect(screen.getByLabelText("TURKEYS")).toBeChecked();\n    expect(screen.getByRole("heading", { name: "Saved Farm" })).toBeInTheDocument();
   });
 });
