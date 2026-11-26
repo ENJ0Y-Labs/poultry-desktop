@@ -60,10 +60,6 @@ public class AuthFilter extends OncePerRequestFilter {
                 denyRole(response);
                 return;
             }
-            if (user != null && "ADMINISTRATOR".equals(user.get("role")) && !administratorEndpoint(path)) {
-                denyRole(response);
-                return;
-            }
             if (required && !publicEndpoint) {
                 boolean bootstrap = users.count() == 0;
                 if (!bootstrap && user == null) {
@@ -91,15 +87,6 @@ public class AuthFilter extends OncePerRequestFilter {
 
     private boolean workerEndpoint(String path) {
         return (path.equals("/api/v1/submissions") || path.startsWith("/api/v1/submissions/"))
-                || (path.equals("/api/v1/account") || path.startsWith("/api/v1/account/"))
-                || path.equals("/api/v1/auth/me")
-                || path.equals("/api/v1/health")
-                || path.matches("^/api/v1/review/submissions/[^/]+/comments$");
-    }
-
-    private boolean administratorEndpoint(String path) {
-        return (path.equals("/api/v1/submissions") || path.startsWith("/api/v1/submissions/"))
-                || (path.equals("/api/v1/admin/users") || path.startsWith("/api/v1/admin/users/"))
                 || (path.equals("/api/v1/account") || path.startsWith("/api/v1/account/"))
                 || path.equals("/api/v1/auth/me")
                 || path.equals("/api/v1/health")
