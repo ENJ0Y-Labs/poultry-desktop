@@ -436,6 +436,10 @@ export const reportReviewApi = {
   decide: (id, decision, reason) => request("/review/submissions/" + encodeURIComponent(id) + "/decision", {
     method: "POST", body: JSON.stringify({ decision, reason }),
   }),
+  overrideWarning: (id, checkId, reason) => request("/review/submissions/" + encodeURIComponent(id)
+    + "/checks/" + encodeURIComponent(checkId) + "/override", {
+      method: "POST", body: JSON.stringify({ reason }),
+    }),
 };
 
 export const adminUserApi = {
