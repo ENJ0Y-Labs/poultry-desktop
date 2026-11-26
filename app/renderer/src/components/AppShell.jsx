@@ -29,12 +29,15 @@ const groups = [
     { label: "Production", target: "production", icon: "eggs", shortcut: "Ctrl+6" },
     { label: "Sales & Money", target: "sales-money", icon: "sales", shortcut: "Ctrl+7" },
     { label: "Reports", target: "reports", icon: "reports", shortcut: "Ctrl+8" },
+    { label: "My Reports", target: "my-reports", icon: "reports" },
+    { label: "Review Centre", target: "review-centre", icon: "health" },
+    { label: "User Management", target: "user-management", icon: "customers" },
     { label: "Import / Export", target: "import-export", icon: "importExport", shortcut: "Ctrl+9" },
     { label: "Settings", target: "settings", icon: "settings", shortcut: "Ctrl+0" },
   ]},
 ];
 
-const validPages = ["dashboard", "flocks", "daily-work", "feed-stock", "health", "production", "sales-money", "reports", "import-export", "settings"];
+const validPages = ["dashboard", "flocks", "daily-work", "feed-stock", "health", "production", "sales-money", "reports", "my-reports", "review-centre", "user-management", "import-export", "settings"];
 const validStartPages = ["dashboard", "flocks", "daily-work", "feed-stock", "health", "production", "sales-money", "reports", "settings"];
 const legacyRoutes = {
   houses: "flocks", batches: "flocks", "batch-dashboard": "flocks",
@@ -89,6 +92,9 @@ const pageTabs = {
     { id: "batch-report", label: "Batch report" },
     { id: "batch-comparison", label: "Compare batches" },
   ],
+  "my-reports": [{ id: "overview", label: "My submissions" }],
+  "review-centre": [{ id: "overview", label: "Review queue" }],
+  "user-management": [{ id: "overview", label: "User accounts" }],
   settings: [
     { id: "farm", label: "Farm profile" },
     { id: "farm-defaults", label: "Farm defaults" },
@@ -98,7 +104,7 @@ const pageTabs = {
   ],
 };
 const defaultTabs = {
-  dashboard: "overview", flocks: "batch-dashboard", "daily-work": "daily-record",
+  dashboard: "overview", "my-reports": "overview", "review-centre": "overview", "user-management": "overview", flocks: "batch-dashboard", "daily-work": "daily-record",
   health: "health-record", "feed-stock": "feed", production: "eggs",
   "sales-money": "sales", reports: "farm-report", "import-export": "overview", settings: "farm",
 };
@@ -169,7 +175,7 @@ function SidebarToggleIcon({ expanded }) {
   );
 }
 
-export default function AppShell({ farm, error, appInfo, onRetry, onQuickAction, children, batches = [], selectedBatchId = "", feedTypes = [], feedInventory = [], inventoryItems = [], attention = [], startPage = "dashboard", startPageReady = true }) {
+export default function AppShell({ farm, error, appInfo, onRetry, onQuickAction, children, batches = [], selectedBatchId = "", feedTypes = [], feedInventory = [], inventoryItems = [], attention = [], startPage = "dashboard", startPageReady = true, userRole = "MANAGER" }) {
   const [active, setActive] = useState(() => resolvePage(window.location.hash, startPage));
   const [activeTab, setActiveTab] = useState(() => resolveTab(window.location.hash, resolvePage(window.location.hash, startPage)));
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => localStorage.getItem("pomas:sidebar-collapsed") === "true");
@@ -184,6 +190,14 @@ export default function AppShell({ farm, error, appInfo, onRetry, onQuickAction,
   const [retrying, setRetrying] = useState(false);
   const [hasUserNavigated, setHasUserNavigated] = useState(Boolean(window.location.hash));
   const mainContentRef = useRef(null);
+  const allowedPages = userRole === "MANAGER"
+    ? validPages
+    : userRole === "ADMINISTRATOR"
+      ? ["my-reports", "user-management"]
+      : ["my-reports"];
+  const visibleGroups = groups.map(group => ({ ...group, items: group.items.filter(item => allowedPages.includes(item.target)) }))
+    .filter(group => group.items.length > 0);
+  const safePage = page => allowedPages.includes(page) ? page : "my-reports";
 
   async function retryBackend() {
     if (!onRetry || retrying) return;
@@ -221,7 +235,7 @@ export default function AppShell({ farm, error, appInfo, onRetry, onQuickAction,
     ? backendConnected ? "Connected · refresh needed" : "Offline"
     : backendConnected ? "Connected" : "Connecting";
   function navigate(target) {
-    const page = resolvePage(`#${target}`, startPage);
+    const page = safePage(resolvePage(`#${target}`, startPage));
     const tab = defaultTabs[page] || "overview";
     setHasUserNavigated(true);
     if (window.location.hash !== `#${page}/${tab}`) window.location.hash = `${page}/${tab}`;
@@ -230,7 +244,8 @@ export default function AppShell({ farm, error, appInfo, onRetry, onQuickAction,
   }
 
   function navigateQuickAction(target) {
-    const [page, tab] = target.replace(/^#/, "").split("/");
+    const [requestedPage, tab] = target.replace(/^#/, "").split("/");
+    const page = safePage(requestedPage);
     setHasUserNavigated(true);
     window.location.hash = target.replace(/^#/, "");
     setActive(page);
@@ -238,7 +253,8 @@ export default function AppShell({ farm, error, appInfo, onRetry, onQuickAction,
   }
 
   function navigateTourTarget(target) {
-    const [page, tab] = target.split("/");
+    const [requestedPage, tab] = target.split("/");
+    const page = safePage(requestedPage);
     setHasUserNavigated(true);
     if (window.location.hash !== `#${page}/${tab}`) window.location.hash = `${page}/${tab}`;
     setActive(page);
@@ -246,7 +262,7 @@ export default function AppShell({ farm, error, appInfo, onRetry, onQuickAction,
   }
 
   function navigateTab(tab) {
-    const nextHash = `${active}/${tab}`;
+    const nextHash = `${safePage(active)}/${tab}`;
     setHasUserNavigated(true);
     if (window.location.hash !== `#${nextHash}`) window.location.hash = nextHash;
     setActiveTab(tab);
@@ -254,14 +270,14 @@ export default function AppShell({ farm, error, appInfo, onRetry, onQuickAction,
 
   useEffect(() => {
     const syncRoute = () => {
-      const page = resolvePage(window.location.hash, startPage);
+      const page = safePage(resolvePage(window.location.hash, startPage));
       setActive(page);
       setActiveTab(resolveTab(window.location.hash, page));
     };
     window.addEventListener("hashchange", syncRoute);
     if (window.location.hash) syncRoute();
     else if (startPageReady && !hasUserNavigated) {
-      const initialPage = resolvePage("", startPage);
+      const initialPage = safePage(resolvePage("", startPage));
       window.location.hash = `${initialPage}/${defaultTabs[initialPage] || "overview"}`;
     }
     return () => window.removeEventListener("hashchange", syncRoute);
@@ -356,7 +372,7 @@ export default function AppShell({ farm, error, appInfo, onRetry, onQuickAction,
         </div>
 
         <nav className="sidebar-nav" aria-label="Main navigation">
-          {groups.map(group => (
+          {visibleGroups.map(group => (
             <div className="nav-group" key={group.label}>
               <p>{group.label}</p>
               {group.items.map(item => (
@@ -385,7 +401,7 @@ export default function AppShell({ farm, error, appInfo, onRetry, onQuickAction,
             className="nav-item"
             aria-label="Account"
             title="Account"
-            onClick={() => { window.location.hash = "settings/application"; setActive("settings"); setActiveTab("application"); }}
+            onClick={() => navigate(userRole === "ADMINISTRATOR" ? "user-management" : "my-reports")}
           >
             <span className="nav-icon-wrap"><span className="activity-avatar" aria-hidden="true">{farmInitials(farm.name)}</span></span>
             <span className="nav-label">Account</span>
@@ -436,7 +452,7 @@ export default function AppShell({ farm, error, appInfo, onRetry, onQuickAction,
               ))}
             </nav>
           )}
-          <NavigationContext.Provider value={{ activePage: active, activeTab }}>
+          <NavigationContext.Provider value={{ activePage: active, activeTab, userRole }}>
             {children}
           </NavigationContext.Provider>
         </div>
@@ -444,7 +460,7 @@ export default function AppShell({ farm, error, appInfo, onRetry, onQuickAction,
           <div className="keyboard-shortcut-reference">
             <div><span>Open quick actions</span><kbd>Ctrl + K</kbd></div>
             <div><span>Focus page record search</span><kbd>Ctrl + F</kbd></div>
-            {groups[0].items.map(item => <div key={item.target}><span>Go to {item.label}</span><kbd>{item.shortcut}</kbd></div>)}
+            {visibleGroups.flatMap(group => group.items).filter(item => item.shortcut).map(item => <div key={item.target}><span>Go to {item.label}</span><kbd>{item.shortcut}</kbd></div>)}
             <div><span>Close active modal or drawer</span><kbd>Esc</kbd></div>
             <p>Ctrl + N and Ctrl + S are not intercepted. They retain native behavior until a single safe app-wide create/save action exists.</p>
           </div>
