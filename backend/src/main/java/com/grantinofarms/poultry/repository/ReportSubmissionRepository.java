@@ -267,6 +267,14 @@ public class ReportSubmissionRepository {
                 """, nextStatus, now, id, version);
     }
 
+    public void updateScopeMetadata(String id, String scopeType, String scopeId, String eventDate, String lateReason) {
+        jdbc.update("""
+                UPDATE report_submissions
+                SET scope_type = ?, scope_id = ?, event_date = ?, late_reason = ?
+                WHERE id = ?
+                """, scopeType, scopeId, eventDate, lateReason, id);
+    }
+
     public int updateLifecycleStatus(String id, int version, String expectedStatus,
                                      String nextStatus, String now) {
         return jdbc.update("""
