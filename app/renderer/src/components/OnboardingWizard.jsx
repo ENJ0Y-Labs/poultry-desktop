@@ -30,8 +30,14 @@ export default function OnboardingWizard({ account, farmForm, setFarmForm, onSav
   const initials = useMemo(() => fullName.split(/\s+/).filter(Boolean).map(part => part[0]).join("").slice(0, 2).toUpperCase() || "P", [fullName]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
-  }, [progress]);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...progress, farmDraft: farmForm }));
+  }, [progress, farmForm]);
+
+  useEffect(() => {
+    if (progress.farmDraft) setFarmForm(current => ({ ...current, ...progress.farmDraft }));
+  // Restore the incomplete farm form once when resuming onboarding.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function update(key, value) {
     setProgress(current => ({ ...current, [key]: value }));
@@ -73,7 +79,9 @@ export default function OnboardingWizard({ account, farmForm, setFarmForm, onSav
     }
     const created = await onCreateFarm(event);
     if (!created) return;
-    setProgress(current => ({ ...current, farmCreated: true, step: 5 }));
+    const completedFarm = { ...progress, farmCreated: true, step: 5, farmDraft: farmForm };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(completedFarm));
+    setProgress(completedFarm);
   }
   function finish() {
     localStorage.setItem("pomas:onboarding:preferences", JSON.stringify({ role: progress.role, discovery: progress.discovery, poultryTypes: progress.poultryTypes, priorities: progress.priorities }));
