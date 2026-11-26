@@ -10,6 +10,7 @@ import com.grantinofarms.poultry.service.AuthService;
 import com.grantinofarms.poultry.service.CurrentUserContext;
 import com.grantinofarms.poultry.service.PasswordHasher;
 import com.grantinofarms.poultry.service.ReportSubmissionService;
+import com.grantinofarms.poultry.service.ReportReviewService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -38,6 +39,7 @@ class ReportSubmissionIntegrationTest {
     @Autowired FarmRepository farms;
     @Autowired UserRepository users;
     @Autowired ReportSubmissionService submissions;
+    @Autowired ReportReviewService reviews;
     @Autowired AdminUserService adminUsers;
     @Autowired AuthService auth;
     @Autowired PasswordHasher passwordHasher;
@@ -86,6 +88,7 @@ class ReportSubmissionIntegrationTest {
 
         Map<String, Object> submitted = submissions.submit(id);
         assertThat(submitted.get("status")).isEqualTo("PENDING_REVIEW");
+        assertThat(submitted.get("lifecycleStatus")).isEqualTo("SUBMITTED");
         assertThat(submitted.get("submittedVersion")).isEqualTo(2);
         assertThat(jdbc.queryForObject(
                 "SELECT COUNT(*) FROM report_submission_events WHERE submission_id = ?",
@@ -97,6 +100,59 @@ class ReportSubmissionIntegrationTest {
                 """, id)).isInstanceOf(Exception.class);
         assertThatThrownBy(() -> submissions.saveDraft(id, second))
                 .isInstanceOf(ApiException.class);
+    }
+
+
+    @Test
+    void managerCanAssignCommentAndRequestChangesThenAuthorResubmitsNewVersion() throws Exception {
+        Map<String, Object> created = submissions.createDraft(new ReportSubmissionRequest(
+                "MORTALITY", "Mortality report", mapper.readTree("{\"quantity\":1,\"eventDate\":\"2026-11-26\"}")));
+        String id = String.valueOf(created.get("id"));
+        submissions.submit(id);
+
+        String managerId = UUID.randomUUID().toString();
+        String now = Instant.now().toString();
+        users.insertWithRole(managerId, "review-manager-" + managerId.substring(0, 6),
+                null, "test-password-hash", "Review Manager", "MANAGER", now, null);
+        CurrentUserContext.set(managerId, "MANAGER");
+
+        assertThat(reviews.queue(null, null, null)).hasSize(1);
+        Map<String, Object> assigned = reviews.assign(id, managerId);
+        assertThat(assigned.get("assignedManagerId")).isEqualTo(managerId);
+        reviews.comment(id, "Please confirm the affected batch and observation time.");
+        Map<String, Object> returned = reviews.decide(id, "CHANGES_REQUESTED", "The batch reference is missing.");
+        assertThat(returned.get("lifecycleStatus")).isEqualTo("CHANGES_REQUESTED");
+        assertThat((java.util.List<?>) returned.get("comments")).hasSize(1);
+        assertThat((java.util.List<?>) returned.get("decisions")).hasSize(1);
+
+        CurrentUserContext.set(workerId, "WORKER");
+        Map<String, Object> revised = submissions.saveDraft(id, new ReportSubmissionRequest(
+                "MORTALITY", "Mortality report", mapper.readTree("{\"quantity\":1,\"batchId\":\"batch-1\",\"eventDate\":\"2026-11-26\"}")));
+        assertThat(revised.get("currentVersion")).isEqualTo(2);
+        Map<String, Object> resubmitted = submissions.submit(id);
+        assertThat(resubmitted.get("lifecycleStatus")).isEqualTo("SUBMITTED");
+        assertThat((java.util.List<?>) resubmitted.get("versions")).hasSize(2);
+    }
+
+    @Test
+    void managerCannotApproveOwnSubmissionAndWorkerCannotOpenReviewQueue() throws Exception {
+        String managerId = UUID.randomUUID().toString();
+        String now = Instant.now().toString();
+        users.insertWithRole(managerId, "self-manager-" + managerId.substring(0, 6),
+                null, "test-password-hash", "Self Review Manager", "MANAGER", now, null);
+        CurrentUserContext.set(managerId, "MANAGER");
+        Map<String, Object> created = submissions.createDraft(new ReportSubmissionRequest(
+                "DAILY_OPERATIONS", "Manager's own report", mapper.readTree("{\"notes\":\"test\"}")));
+        String id = String.valueOf(created.get("id"));
+        submissions.submit(id);
+        assertThatThrownBy(() -> reviews.decide(id, "APPROVED", null))
+                .isInstanceOf(ApiException.class)
+                .hasMessageContaining("own submission");
+
+        CurrentUserContext.set(workerId, "WORKER");
+        assertThatThrownBy(() -> reviews.queue(null, null, null))
+                .isInstanceOf(ApiException.class)
+                .hasMessageContaining("permission");
     }
 
     @Test
