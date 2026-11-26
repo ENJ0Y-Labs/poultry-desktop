@@ -25,6 +25,11 @@ public class ReportSubmissionRepository {
 
     public void insert(String id, String farmId, String authorId, String reportType, String title,
                        String payloadJson, String idempotencyKey, String now) {
+        insert(id, farmId, authorId, reportType, title, payloadJson, idempotencyKey, null, now);
+    }
+
+    public void insert(String id, String farmId, String authorId, String reportType, String title,
+                       String payloadJson, String idempotencyKey, String idempotencyPayloadHash, String now) {
         jdbc.update("""
                 INSERT INTO report_submissions
                     (id, farm_id, author_user_id, report_type, title, status, lifecycle_status,
@@ -81,7 +86,8 @@ public class ReportSubmissionRepository {
         return jdbc.query("""
                 SELECT id, farm_id, author_user_id, report_type, title, status, lifecycle_status,
                        current_version, submitted_version, created_at, updated_at, submitted_at,
-                       idempotency_payload_hash
+                       assigned_manager_user_id, scope_type, scope_id, event_date, late_reason,
+                       decision_version, merged_at, idempotency_payload_hash
                 FROM report_submissions
                 WHERE farm_id = ? AND author_user_id = ? AND idempotency_key = ?
                 """, rs -> {
