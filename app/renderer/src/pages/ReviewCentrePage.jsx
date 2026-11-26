@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { reportReviewApi } from "../services/api.js";
 
 const statuses = ["SUBMITTED", "PENDING_REVIEW", "FLAGGED", "BLOCKED", "APPROVED"];
@@ -21,7 +21,7 @@ export default function ReviewCentrePage({ currentUser }) {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
 
-  async function refreshQueue() {
+  const refreshQueue = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
@@ -38,9 +38,9 @@ export default function ReviewCentrePage({ currentUser }) {
       }
     } catch (err) { setError(err.message || "Review queue could not be loaded."); }
     finally { setLoading(false); }
-  }
+  }, [status, reportType, selected?.id]);
 
-  useEffect(() => { refreshQueue(); }, [status, reportType]);
+  useEffect(() => { refreshQueue(); }, [refreshQueue]);
 
   async function openSubmission(row) {
     setError("");
