@@ -101,6 +101,18 @@ export default function ReviewCentrePage({ currentUser }) {
     finally { setSaving(false); }
   }
 
+  async function downloadEvidence(attachment) {
+    try {
+      const blob = await reportAttachmentApi.download(selected.id, attachment.id);
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = attachment.fileName;
+      anchor.click();
+      URL.revokeObjectURL(url);
+    } catch (err) { setError(err.message || "Evidence download failed."); }
+  }
+
   async function mergeApproved() {
     if (!selected) return;
     setSaving(true);
@@ -189,6 +201,7 @@ export default function ReviewCentrePage({ currentUser }) {
                 <div><small>Assigned manager</small><strong>{selected.assignedManagerId || "Unassigned"}</strong></div>
               </div>
               <section className="review-payload"><h4>Submitted report snapshot</h4><pre>{JSON.stringify(selected.versions?.find(item => item.version === (selected.submittedVersion || selected.currentVersion))?.payload || {}, null, 2)}</pre></section>
+              {(selected.attachments || []).length > 0 && <section className="review-evidence"><h4>Evidence attachments</h4>{selected.attachments.map(attachment => <article key={attachment.id}><strong>{attachment.fileName}</strong><span>{Math.round(attachment.fileSize / 1024)} KB · {attachment.mimeType}</span><button type="button" className="secondary-button" onClick={() => downloadEvidence(attachment)}>Download evidence</button></article>)}</section>}
               <section className="review-checks"><h4>Automated checks</h4>{(selected.checks || []).length === 0 ? <p className="muted">No automated checks have been recorded for this version yet.</p> : selected.checks.map(check => <article key={check.id}><span className={"check-outcome check-" + check.outcome.toLowerCase()}>{label(check.outcome)}</span><strong>{label(check.code)}</strong><p>{check.explanation}</p>
                 {check.outcome === "WARNING" && check.overrideable && !(selected.history || []).some(event => event.event === "WARNING_OVERRIDDEN" && event.details?.checkId === check.id) && <div className="warning-override-form"><label htmlFor={"override-" + check.id}>Manager authorization reason</label><textarea id={"override-" + check.id} rows={2} maxLength={1000} value={overrideReasons[check.id] || ""} onChange={event => setOverrideReasons(current => ({ ...current, [check.id]: event.target.value }))} /><button type="button" className="secondary-button" disabled={saving || !(overrideReasons[check.id] || "").trim()} onClick={() => authorizeWarning(check)}>Authorize this warning</button></div>}
                 {check.outcome === "WARNING" && (selected.history || []).some(event => event.event === "WARNING_OVERRIDDEN" && event.details?.checkId === check.id) && <small>Manager authorization recorded.</small>}
