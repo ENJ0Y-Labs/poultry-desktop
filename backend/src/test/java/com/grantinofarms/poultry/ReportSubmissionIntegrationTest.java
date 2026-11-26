@@ -77,6 +77,12 @@ class ReportSubmissionIntegrationTest {
         Map<String, Object> saved = submissions.saveDraft(id, second);
         assertThat(saved.get("currentVersion")).isEqualTo(2);
         assertThat((java.util.List<?>) saved.get("versions")).hasSize(2);
+        @SuppressWarnings("unchecked")
+        java.util.List<Map<String, Object>> versions =
+                (java.util.List<Map<String, Object>>) saved.get("versions");
+        assertThat(versions.get(0)).containsEntry("title", "Morning report")
+                .containsEntry("reportType", "DAILY_OPERATIONS");
+        assertThat(versions.get(1)).containsEntry("title", "Morning report revised");
 
         Map<String, Object> submitted = submissions.submit(id);
         assertThat(submitted.get("status")).isEqualTo("PENDING_REVIEW");
