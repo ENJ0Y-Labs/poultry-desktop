@@ -1515,3 +1515,14 @@ actions that require confirmation or a reason. Do not rely on browser-native
 business validation and persistence in the existing API/backend layers, and
 keep the dialog open when a destructive request fails so the operator can
 review the error.
+
+
+## First-run onboarding
+
+- After authentication, a farm-less installation uses the seven-step Pomas onboarding wizard. Existing farms bypass it unless a locally saved onboarding record has `farmCreated: true`, which resumes the unfinished post-creation steps.
+- Reuse the authenticated account's full name and email; do not ask for credentials or birthdate again. Email is read-only in onboarding. Account/authentication APIs remain unchanged.
+- Create the farm only at the farm-setup step through the existing `farmApi.create` contract. Persist the farm-created marker before moving to poultry-type and priorities steps; when resuming, never issue a second create request.
+- Role, discovery source, poultry-type selections and priorities are onboarding preferences only. Do not create houses, batches, feed, inventory, sales, expenses or other operational records from these selections.
+- Save wizard progress locally under `pomas:onboarding:v1`; clear it only when the user chooses GO TO DASHBOARD. This metadata is not farm ledger data and must not be used as an authoritative permission or operational setting.
+- Keep the wizard offline-capable and use only local assets/CSS. No remote illustrations, fonts, maps, analytics, telemetry or CDN resources.
+- Preserve existing farm data and auth flows. Add renderer tests for progression, multi-select, resume after restart, duplicate-farm prevention, validation and existing-farm bypass. See `docs/onboarding.md`.
