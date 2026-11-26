@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { reportReviewApi } from "../services/api.js";
+import { reportAttachmentApi, reportReviewApi } from "../services/api.js";
 
 const statuses = ["SUBMITTED", "PENDING_REVIEW", "FLAGGED", "BLOCKED", "APPROVED"];
 
