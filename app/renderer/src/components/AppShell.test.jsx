@@ -35,7 +35,7 @@ describe("AppShell", () => {
   });
 
 
-  it("restricts the worker workspace to My Reports even when a farm route is requested", () => {
+  it("restricts the worker workspace to My Reports even when a farm route is requested", async () => {
     window.location.hash = "#dashboard/overview";
     render(
       <AppShell userRole="WORKER" farm={{ name: "Grantino", location: "", currency: "NGN", timezone: "Africa/Lagos" }}>
