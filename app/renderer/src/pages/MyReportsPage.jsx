@@ -260,8 +260,10 @@ export default function MyReportsPage({ userId = "" }) {
 
   const selectedDefinition = reportDefinitions[reportType];
   const allReports = useMemo(() => {
-    const localOnly = localDrafts.filter(item => !item.serverId)
-      .map(item => ({ ...item, localOnly: true, status: "LOCAL_DRAFT" }));
+    const knownServerIds = new Set(serverReports.map(report => report.id));
+    const localOnly = localDrafts
+      .filter(item => !item.serverId || !knownServerIds.has(item.serverId))
+      .map(item => ({ ...item, localOnly: true, syncedPreviously: Boolean(item.serverId), status: "LOCAL_DRAFT" }));
     const serverItems = serverReports.map(report => ({
       ...report,
       localCopy: localDrafts.find(item => item.serverId === report.id) || null,
@@ -575,7 +577,7 @@ export default function MyReportsPage({ userId = "" }) {
                   <article className="report-submission-item" key={report.id}>
                     <div className="report-submission-item-heading">
                       <strong>{report.title || "Untitled draft"}</strong>
-                      <span className={report.localOnly ? "status-pill status-local" : "status-pill"}>{report.localOnly ? "Local draft" : statusLabel(report)}</span>
+                      <span className={report.localOnly ? "status-pill status-local" : "status-pill"}>{report.localOnly ? (report.syncedPreviously ? "Offline recovery copy" : "Local draft") : statusLabel(report)}</span>
                     </div>
                     <p className="muted">{reportDefinitions[report.reportType]?.label || report.reportType} · {report.updatedAt || report.createdAt || "Not saved"}</p>
                     {report.localCopy && <p className="muted">A local recovery copy is available on this device.</p>}
@@ -583,7 +585,7 @@ export default function MyReportsPage({ userId = "" }) {
                       {report.localOnly
                         ? <button type="button" className="secondary-button" onClick={() => openLocalDraft(report)}>Open</button>
                         : <button type="button" className="secondary-button" onClick={() => openServerReport(report)}>View</button>}
-                      {report.localOnly && <button type="button" className="text-button" onClick={() => removeLocalDraft(report.id)}>Discard</button>}
+                      {report.localOnly && <button type="button" className="text-button" onClick={() => removeLocalDraft(report.id)}>Discard local copy</button>}
                     </div>
                   </article>
                 ))}
