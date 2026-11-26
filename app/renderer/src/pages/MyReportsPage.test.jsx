@@ -148,6 +148,34 @@ describe("MyReportsPage", () => {
     expect(await screen.findByText(/Server sync will be available when the farm computer reconnects/)).toBeInTheDocument();
   });
 
+
+  it("restores a previously synced draft from its local recovery copy while offline", async () => {
+    reportSubmissionApi.mine.mockRejectedValue(new Error("The local backend is not responding."));
+    localStorage.setItem("pomas:report-submission-drafts:worker-1", JSON.stringify([{
+      id: "local-copy-1",
+      serverId: "submission-1",
+      idempotencyKey: "retry-key-0001",
+      reportType: "MORTALITY",
+      title: "Recovered mortality report",
+      fields: {
+        eventDate: "2026-11-26", eventTime: "08:00", batchId: "batch-1",
+        quantity: "4", reason: "Injury", notes: "",
+      },
+      updatedAt: "2026-11-26T08:00:00Z",
+    }]));
+    localStorage.setItem("pomas:report-submission-references:worker-1", JSON.stringify({
+      batches: [{ id: "batch-1", code: "LAYER-01", type: "LAYER" }],
+      feedTypes: [],
+    }));
+
+    render(<MyReportsPage userId="worker-1" />);
+    expect(await screen.findByText("Offline recovery copy")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Open" }));
+    expect(screen.getByLabelText("Report title")).toHaveValue("Recovered mortality report");
+    expect(screen.getByLabelText("Number of birds")).toHaveValue(4);
+    expect(screen.getByLabelText("Time of event")).toHaveValue("08:00");
+  });
+
   it("shows immutable version snapshots and activity history for a server report", async () => {
     reportSubmissionApi.mine.mockResolvedValue([{
       id: "submission-1",
@@ -174,6 +202,7 @@ describe("MyReportsPage", () => {
         },
       ],
       history: [{ id: "event-1", event: "SUBMITTED", occurredAt: "2026-11-26T09:01:00Z" }],
+      checks: [{ id: "check-1", code: "REPORT_DATA_VALIDATION", outcome: "BLOCKED", explanation: "Choose an active batch." }],
     });
 
     render(<MyReportsPage userId="worker-1" />);
@@ -182,6 +211,7 @@ describe("MyReportsPage", () => {
     expect(await screen.findByText(/submitted version 2/i)).toBeInTheDocument();
     expect(screen.getByText(/Version history/)).toBeInTheDocument();
     expect(screen.getByText(/Activity history/)).toBeInTheDocument();
+    expect(screen.getByText("Choose an active batch.")).toBeInTheDocument();
     expect(screen.getByText("SUBMITTED")).toBeInTheDocument();
     expect(screen.getAllByText(/Morning mortality/).length).toBeGreaterThan(1);
   });
