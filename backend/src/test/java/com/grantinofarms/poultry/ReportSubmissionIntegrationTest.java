@@ -5,6 +5,7 @@ import com.grantinofarms.poultry.dto.ReportSubmissionRequest;
 import com.grantinofarms.poultry.exception.ApiException;
 import com.grantinofarms.poultry.repository.FarmRepository;
 import com.grantinofarms.poultry.repository.UserRepository;
+import com.grantinofarms.poultry.service.AdminUserService;
 import com.grantinofarms.poultry.service.CurrentUserContext;
 import com.grantinofarms.poultry.service.ReportSubmissionService;
 import org.junit.jupiter.api.AfterEach;
@@ -29,6 +30,7 @@ class ReportSubmissionIntegrationTest {
     @Autowired FarmRepository farms;
     @Autowired UserRepository users;
     @Autowired ReportSubmissionService submissions;
+    @Autowired AdminUserService adminUsers;
     @Autowired ObjectMapper mapper;
 
     private String farmId;
@@ -97,8 +99,36 @@ class ReportSubmissionIntegrationTest {
     }
 
     @Test
-    void workerCannotUseAdministratorGuard() {
+    void administratorCanCreateManageAndRevokeUserAccounts() {
+        String adminId = UUID.randomUUID().toString();
+        String now = Instant.now().toString();
+        users.insertWithRole(adminId, "admin-" + adminId.substring(0, 8),
+                null, "test-password-hash", "Test Administrator", "ADMINISTRATOR", now, null);
+        CurrentUserContext.set(adminId, "ADMINISTRATOR");
+
+        Map<String, Object> created = adminUsers.create(new com.grantinofarms.poultry.dto.AdminUserCreateRequest(
+                "new-worker-" + adminId.substring(0, 6), null, "New Worker",
+                "a-secure-password", "WORKER"));
+        String newUserId = String.valueOf(created.get("id"));
+        assertThat(created.get("role")).isEqualTo("WORKER");
+        assertThat(created.get("status")).isEqualTo("ACTIVE");
+
+        assertThat(adminUsers.changeStatus(newUserId, "SUSPENDED").get("status")).isEqualTo("SUSPENDED");
+        assertThat(adminUsers.changeStatus(newUserId, "ACTIVE").get("status")).isEqualTo("ACTIVE");
+        assertThat(adminUsers.changeRole(newUserId, "MANAGER").get("role")).isEqualTo("MANAGER");
+        assertThat(adminUsers.resetPassword(newUserId, "another-secure-password").get("id")).isEqualTo(newUserId);
+
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM audit_logs WHERE entity_type='USER_ACCOUNT' AND entity_id=?",
+                Integer.class, newUserId)).isEqualTo(4);
+    }
+
+    @Test
+    void workerCannotUseAdministratorGuardOrManageAccounts() {
         assertThatThrownBy(com.grantinofarms.poultry.service.RoleAuthorization::requireAdministrator)
+                .isInstanceOf(ApiException.class)
+                .hasMessageContaining("permission");
+        assertThatThrownBy(adminUsers::list)
                 .isInstanceOf(ApiException.class)
                 .hasMessageContaining("permission");
     }
