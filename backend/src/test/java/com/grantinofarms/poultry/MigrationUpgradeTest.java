@@ -261,8 +261,10 @@ class MigrationUpgradeTest {
 
         try (Connection connection = DriverManager.getConnection(databaseUrl);
              PreparedStatement query = connection.prepareStatement("""
-                     SELECT u.username, u.email, u.password_hash, u.full_name, s.id
-                     FROM users u JOIN user_sessions s ON s.user_id = u.id
+                     SELECT u.username, u.email, u.password_hash, u.full_name, s.id, r.role
+                     FROM users u
+                     JOIN user_sessions s ON s.user_id = u.id
+                     JOIN user_roles r ON r.user_id = u.id
                      WHERE u.id = ? AND s.id = ?
                      """)) {
             query.setString(1, userId);
@@ -274,6 +276,7 @@ class MigrationUpgradeTest {
                 assertThat(result.getString("password_hash")).isEqualTo("existing-password-hash");
                 assertThat(result.getString("full_name")).isEqualTo("Existing Owner");
                 assertThat(result.getString("id")).isEqualTo(sessionId);
+                assertThat(result.getString("role")).isEqualTo("ADMINISTRATOR");
                 assertThat(result.next()).isFalse();
             }
         }
