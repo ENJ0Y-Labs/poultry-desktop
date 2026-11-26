@@ -153,6 +153,46 @@ async function request(path, options = {}) {
   return body.data;
 }
 
+
+async function uploadRequest(path, formData) {
+  const apiBase = await getApiBase();
+  let response;
+  try {
+    response = await fetch(apiBase + path, {
+      method: "POST", body: formData, credentials: "include",
+      headers: { "X-Requested-With": "XMLHttpRequest" },
+      signal: AbortSignal.timeout(120000),
+    });
+  } catch {
+    signalBackendUnavailable();
+    throw new ApiError("BACKEND_UNAVAILABLE", "The local backend is not responding.", 503);
+  }
+  const body = await response.json().catch(() => ({}));
+  if (!response.ok) throw new ApiError(body?.error?.code || "REQUEST_FAILED",
+    body?.error?.message || "Upload failed.", response.status, body?.error?.details);
+  window.dispatchEvent(new CustomEvent("pomas:data-mutated", { detail: { path, method: "POST" } }));
+  return body.data;
+}
+
+async function downloadRequest(path) {
+  const apiBase = await getApiBase();
+  let response;
+  try {
+    response = await fetch(apiBase + path, {
+      credentials: "include", headers: { "X-Requested-With": "XMLHttpRequest" },
+      signal: AbortSignal.timeout(120000),
+    });
+  } catch {
+    signalBackendUnavailable();
+    throw new ApiError("BACKEND_UNAVAILABLE", "The local backend is not responding.", 503);
+  }
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({}));
+    throw new ApiError(body?.error?.code || "REQUEST_FAILED", body?.error?.message || "Download failed.", response.status);
+  }
+  return response.blob();
+}
+
 export const farmApi = {
   get: () => request("/farm"),
   create: (data) => request("/farm", { method: "POST", body: JSON.stringify(data) }),
@@ -469,4 +509,15 @@ export const incidentApi = {
   resolve: (id, notes) => request("/incidents/" + encodeURIComponent(id) + "/resolve", {
     method: "POST", body: JSON.stringify({ notes }),
   }),
+};
+
+export const reportAttachmentApi = {
+  upload: (submissionId, file) => {
+    const form = new FormData();
+    form.append("file", file);
+    return uploadRequest("/submissions/" + encodeURIComponent(submissionId) + "/attachments", form);
+  },
+  download: (submissionId, attachmentId) => downloadRequest(
+    "/submissions/" + encodeURIComponent(submissionId) + "/attachments/" + encodeURIComponent(attachmentId),
+  ),
 };
