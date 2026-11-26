@@ -54,6 +54,14 @@ public class AuthFilter extends OncePerRequestFilter {
 
         boolean required = environment.getProperty("poultry.auth-required", Boolean.class, false);
         try {
+            if (user != null && "WORKER".equals(user.get("role")) && !workerEndpoint(path)) {
+                response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                response.setContentType("application/json");
+                response.getWriter().write("""
+                        {"ok":false,"error":{"code":"ROLE_FORBIDDEN","message":"Your account does not have permission to access this resource."}}
+                        """);
+                return;
+            }
             if (required && !publicEndpoint) {
                 boolean bootstrap = users.count() == 0;
                 if (!bootstrap && user == null) {
@@ -69,6 +77,13 @@ public class AuthFilter extends OncePerRequestFilter {
         } finally {
             CurrentUserContext.clear();
         }
+    }
+
+    private boolean workerEndpoint(String path) {
+        return path.startsWith("/api/v1/submissions")
+                || path.startsWith("/api/v1/account")
+                || path.equals("/api/v1/auth/me")
+                || path.equals("/api/v1/health");
     }
 
     private String token(HttpServletRequest request) {
