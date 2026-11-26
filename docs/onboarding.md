@@ -2,7 +2,7 @@
 
 The authenticated first-run experience uses a seven-step wizard:
 
-1. User profile: first/family name are prefilled from the authenticated account; account email is shown read-only.
+1. User profile: first/family name are prefilled from the authenticated account; edited names are saved through the existing audited account-update API; account email is shown read-only.
 2. Role: the user's poultry-farming role.
 3. Discovery: how the user heard about Pomas.
 4. Farm setup: create the farm through the existing `POST /farm` API. Country is Nigeria by default, currency is NGN, and timezone is Africa/Lagos.
