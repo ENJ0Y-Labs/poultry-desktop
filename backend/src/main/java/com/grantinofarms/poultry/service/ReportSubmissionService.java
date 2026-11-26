@@ -67,7 +67,8 @@ public class ReportSubmissionService {
                 request.title().trim(), previousVersion, nextVersion, now);
         if (updated != 1) throw new ApiException(HttpStatus.CONFLICT, "SUBMISSION_CHANGED",
                 "The report changed while it was being saved. Reload it and try again.");
-        submissions.insertVersion(id, nextVersion, json(request.payload()), actorId, now);
+        submissions.insertVersion(id, nextVersion, request.reportType().trim().toUpperCase(),
+                request.title().trim(), json(request.payload()), actorId, now);
         submissions.appendEvent(id, nextVersion, actorId, "DRAFT_VERSION_SAVED",
                 "{\"previousVersion\":" + (nextVersion - 1) + "}", now);
         audit.append((String) header.get("farmId"), "UPDATE", "REPORT_SUBMISSION", id,
