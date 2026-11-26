@@ -306,7 +306,7 @@ export default function MyReportsPage({ userId = "" }) {
       setNotice("Farm lists could not be refreshed. Cached batch and feed references remain available.");
     }
     setLoading(false);
-  }, [userId, persistReferences]);
+  }, [persistReferences]);
 
   useEffect(() => { refresh(); }, [refresh]);
 
