@@ -159,10 +159,12 @@ public class AuthService {
     }
 
     public Map<String, Object> status(String token) {
-        return Map.of(
-                "authenticated", current(token) != null,
-                "setupRequired", users.count() == 0
-        );
+        Map<String, Object> user = current(token);
+        Map<String, Object> result = new java.util.LinkedHashMap<>();
+        result.put("authenticated", user != null);
+        result.put("setupRequired", users.count() == 0);
+        if (user != null) result.put("user", user);
+        return result;
     }
 
     @Transactional
