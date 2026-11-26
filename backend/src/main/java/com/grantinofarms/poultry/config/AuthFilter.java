@@ -49,13 +49,11 @@ public class AuthFilter extends OncePerRequestFilter {
         Map<String, Object> user = needsFilterSession ? auth.current(token(request)) : null;
         if (user != null) {
             request.setAttribute("poultry.user", user);
-            CurrentUserContext.set(String.valueOf(user.get("id")));
+            CurrentUserContext.set(String.valueOf(user.get("id")), String.valueOf(user.get("role")));
         }
 
         boolean required = environment.getProperty("poultry.auth-required", Boolean.class, false);
         try {
-            // Public setup/login/status routes do not need the filter's session lookup.
-            // Only count users when auth enforcement needs to decide whether bootstrap is active.
             if (required && !publicEndpoint) {
                 boolean bootstrap = users.count() == 0;
                 if (!bootstrap && user == null) {
