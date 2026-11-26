@@ -11,9 +11,12 @@ import java.util.Map;
 @RequestMapping("/api/v1/review")
 public class ReportReviewController {
     private final ReportReviewService service;
+    private final com.grantinofarms.poultry.service.ReportMergeService merges;
 
-    public ReportReviewController(ReportReviewService service) {
+    public ReportReviewController(ReportReviewService service,
+                                  com.grantinofarms.poultry.service.ReportMergeService merges) {
         this.service = service;
+        this.merges = merges;
     }
 
     @GetMapping("/queue")
@@ -49,6 +52,12 @@ public class ReportReviewController {
                                                @RequestBody OverrideRequest request) {
         return Map.of("ok", true, "data", service.overrideWarning(id, checkId,
                 request == null ? null : request.reason()));
+    }
+
+    @PostMapping("/submissions/{id}/merge")
+    public Map<String, Object> merge(@PathVariable String id,
+            @RequestHeader(value = "Idempotency-Key", required = false) String operationKey) {
+        return Map.of("ok", true, "data", merges.merge(id, operationKey));
     }
 
     @PostMapping("/submissions/{id}/decision")
