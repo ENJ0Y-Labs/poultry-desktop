@@ -139,7 +139,6 @@ const reportDefinitions = {
 };
 
 const editableStatuses = ["DRAFT", "CHANGES_REQUESTED"];
-const terminalOrSubmittedStatuses = ["SUBMITTED", "PENDING_REVIEW", "FLAGGED", "BLOCKED", "APPROVED", "MERGED", "REJECTED"];
 
 function makeId() {
   return globalThis.crypto?.randomUUID?.() || "report-" + Date.now() + "-" + Math.random().toString(36).slice(2);
@@ -247,6 +246,7 @@ export default function MyReportsPage({ userId = "" }) {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
 
+  const selectedDefinition = reportDefinitions[reportType];
   const allReports = useMemo(() => {
     const localOnly = localDrafts.filter(item => !item.serverId)
       .map(item => ({ ...item, localOnly: true, status: "LOCAL_DRAFT" }));
