@@ -440,6 +440,9 @@ export const reportReviewApi = {
     + "/checks/" + encodeURIComponent(checkId) + "/override", {
       method: "POST", body: JSON.stringify({ reason }),
     }),
+  merge: (id, operationKey) => request("/review/submissions/" + encodeURIComponent(id) + "/merge", {
+    method: "POST", headers: { "Idempotency-Key": operationKey },
+  }),
 };
 
 export const adminUserApi = {
