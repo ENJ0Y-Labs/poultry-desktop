@@ -138,7 +138,7 @@ const reportDefinitions = {
   },
 };
 
-const editableStatuses = ["DRAFT", "CHANGES_REQUESTED"];
+const editableStatuses = ["DRAFT", "CHANGES_REQUESTED", "BLOCKED"];
 
 function makeId() {
   return globalThis.crypto?.randomUUID?.() || "report-" + Date.now() + "-" + Math.random().toString(36).slice(2);
@@ -598,7 +598,7 @@ export default function MyReportsPage({ userId = "" }) {
             {(selected.history || []).map(item => <div key={item.id}><strong>{String(item.event || "").replaceAll("_", " ")}</strong><span>{item.occurredAt}</span></div>)}
           </div>
           {(selected.comments || []).length > 0 && <div className="report-comments"><h4>Discussion</h4>{selected.comments.map(item => <article key={item.id}><strong>{item.authorName || "Farm user"}</strong><p>{item.body}</p><small>{item.createdAt}</small></article>)}</div>}
-          {["SUBMITTED", "PENDING_REVIEW", "CHANGES_REQUESTED"].includes(selected.lifecycleStatus || selected.status) && <form className="report-comment-form" onSubmit={postComment}>
+          {["SUBMITTED", "PENDING_REVIEW", "CHANGES_REQUESTED", "BLOCKED", "FLAGGED"].includes(selected.lifecycleStatus || selected.status) && <form className="report-comment-form" onSubmit={postComment}>
             <label htmlFor="report-comment">Add a comment</label>
             <textarea id="report-comment" rows={2} value={comment} onChange={event => setComment(event.target.value)} maxLength={4000} />
             <button type="submit" disabled={saving || !comment.trim()}>Send comment</button>
