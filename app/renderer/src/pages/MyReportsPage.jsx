@@ -166,7 +166,7 @@ function toPayload(type, values) {
 
 function fromPayload(type, payload = {}) {
   const values = emptyFields(type);
-  for (const [key, , kind] of reportDefinitions[type].fields) {
+  for (const [key] of reportDefinitions[type].fields) {
     let value = payload[key];
     if (key === "costNaira") value = payload.costMinor == null ? "" : (Number(payload.costMinor) / 100).toFixed(2);
     if (key === "pricePerBirdNaira") value = payload.pricePerBirdMinor == null ? "" : (Number(payload.pricePerBirdMinor) / 100).toFixed(2);
