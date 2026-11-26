@@ -524,10 +524,13 @@ export default function MyReportsPage({ userId = "" }) {
         </select>
       </label>;
     }
+    const minimum = kind === "number"
+      ? (reportType === "EGG_COLLECTION" && ["good", "cracked"].includes(key) ? "0" : "1")
+      : kind === "decimal" || kind === "money" ? "0.01" : undefined;
     return <label className={kind === "textarea" ? "field-span-2" : ""} key={key}>{label}
       {kind === "textarea"
         ? <textarea value={fields[key] || ""} onChange={event => setFields(current => ({ ...current, [key]: event.target.value }))} rows={3} required={required} />
-        : <input type={kind === "money" ? "number" : kind} step={kind === "decimal" || kind === "money" ? "0.01" : "1"} min={kind === "number" || kind === "decimal" || kind === "money" ? "0" : undefined} value={fields[key] || ""} onChange={event => setFields(current => ({ ...current, [key]: event.target.value }))} required={required} />}
+        : <input type={kind === "money" ? "number" : kind} step={kind === "decimal" || kind === "money" ? "0.01" : "1"} min={minimum} value={fields[key] || ""} onChange={event => setFields(current => ({ ...current, [key]: event.target.value }))} required={required} />}
     </label>;
   }
 
