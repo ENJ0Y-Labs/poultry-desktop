@@ -33,7 +33,7 @@ public class ReportReferenceService {
                     Map<String, Object> row = new LinkedHashMap<>();
                     row.put("id", batch.id());
                     row.put("code", batch.code());
-                    row.put("type", batch.batchType());
+                    row.put("type", batch.type());
                     row.put("houseId", batch.houseId());
                     row.put("placementDate", batch.placementDate());
                     return row;
