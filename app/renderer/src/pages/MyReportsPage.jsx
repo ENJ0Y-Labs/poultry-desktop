@@ -7,7 +7,7 @@ const reportDefinitions = {
     label: "Daily operations",
     fields: [
       ["eventDate", "Observation date", "date", true],
-      ["batchCode", "Batch code", "text", true],
+      ["batchId", "Batch / flock", "batch", true],
       ["notes", "What happened today?", "textarea", true],
       ["waterNotes", "Water observations", "textarea", false],
     ],
@@ -89,9 +89,8 @@ const reportDefinitions = {
     fields: [
       ["eventDate", "Usage date", "date", true],
       ["batchCode", "Batch code", "text", true],
-      ["feedName", "Feed type / name", "text", true],
+      ["feedTypeId", "Feed type", "feed", true],
       ["quantity", "Quantity used", "decimal", true],
-      ["unit", "Unit", "text", true],
       ["reason", "Notes", "textarea", false],
     ],
   },
@@ -185,6 +184,7 @@ function statusLabel(report) {
 export default function MyReportsPage({ userId = "" }) {
   const storageKey = "pomas:report-submission-drafts:" + (userId || "local-user");
   const [serverReports, setServerReports] = useState([]);
+  const [references, setReferences] = useState({ batches: [], feedTypes: [] });
   const [localDrafts, setLocalDrafts] = useState(() => {
     try {
       const parsed = JSON.parse(localStorage.getItem(storageKey) || "[]");
@@ -217,9 +217,14 @@ export default function MyReportsPage({ userId = "" }) {
   async function refresh() {
     setLoading(true);
     setError("");
-    try { setServerReports(await reportSubmissionApi.mine()); }
-    catch (err) { setError(err.message || "Could not load submitted reports."); }
-    finally { setLoading(false); }
+    const [reportsResult, referencesResult] = await Promise.allSettled([
+      reportSubmissionApi.mine(), reportSubmissionApi.references(),
+    ]);
+    if (reportsResult.status === "fulfilled") setServerReports(reportsResult.value);
+    else setError(reportsResult.reason?.message || "Could not load submitted reports.");
+    if (referencesResult.status === "fulfilled") setReferences(referencesResult.value);
+    else if (reportsResult.status === "fulfilled") setError(referencesResult.reason?.message || "Farm references could not be loaded. Saved local drafts remain available.");
+    setLoading(false);
   }
 
   useEffect(() => { refresh(); }, [userId]);
@@ -294,6 +299,10 @@ export default function MyReportsPage({ userId = "" }) {
     try {
       const local = saveLocalDraft();
       const payload = toPayload(reportType, fields);
+      if (reportType === "FEED_USAGE") {
+        const feedType = references.feedTypes.find(item => item.id === fields.feedTypeId);
+        if (feedType) payload.unit = feedType.unit;
+      }
       const request = { reportType, title: title.trim(), payload };
       if (!request.title) throw new Error("Enter a report title before submitting.");
       let detail;
@@ -373,13 +382,35 @@ export default function MyReportsPage({ userId = "" }) {
                 <label>Report title
                   <input value={title} onChange={event => setTitle(event.target.value)} maxLength={160} required placeholder="e.g. Morning mortality report" />
                 </label>
-                {selectedDefinition.fields.map(([key, label, kind, required]) => (
-                  <label className={kind === "textarea" ? "field-span-2" : ""} key={key}>{label}
+                {selectedDefinition.fields.map(([key, label, kind, required]) => {
+                  if (kind === "batch") {
+                    const allowedTypes = reportType === "EGG_COLLECTION" || reportType === "EGG_SALE"
+                      ? ["LAYER"] : reportType === "WEIGHT_RECORD" || reportType === "BIRD_SALE"
+                        ? ["BROILER", "TURKEY"] : null;
+                    const options = references.batches.filter(batch => !allowedTypes || allowedTypes.includes(batch.type));
+                    return <label key={key}>{label}
+                      <select value={fields[key] || ""} onChange={event => setFields(current => ({ ...current, [key]: event.target.value }))} required={required}>
+                        <option value="">Select an active batch</option>
+                        {options.map(batch => <option key={batch.id} value={batch.id}>{batch.code} · {batch.type}</option>)}
+                      </select>
+                    </label>;
+                  }
+                  if (kind === "feed") {
+                    const selectedBatch = references.batches.find(batch => batch.id === fields.batchId);
+                    const options = references.feedTypes.filter(feed => !selectedBatch || feed.applicableTypes.includes(selectedBatch.type));
+                    return <label key={key}>{label}
+                      <select value={fields[key] || ""} onChange={event => setFields(current => ({ ...current, [key]: event.target.value }))} required={required}>
+                        <option value="">Select an active feed type</option>
+                        {options.map(feed => <option key={feed.id} value={feed.id}>{feed.name} · {feed.unit}</option>)}
+                      </select>
+                    </label>;
+                  }
+                  return <label className={kind === "textarea" ? "field-span-2" : ""} key={key}>{label}
                     {kind === "textarea"
                       ? <textarea value={fields[key] || ""} onChange={event => setFields(current => ({ ...current, [key]: event.target.value }))} rows={3} required={required} />
                       : <input type={kind === "money" ? "number" : kind} step={kind === "decimal" || kind === "money" ? "0.01" : "1"} min={kind === "number" || kind === "decimal" || kind === "money" ? "0" : undefined} value={fields[key] || ""} onChange={event => setFields(current => ({ ...current, [key]: event.target.value }))} required={required} /> }
-                  </label>
-                ))}
+                  </label>;
+                })}
               </div>
               <p className="muted report-draft-hint">Saving here stores a local draft only. It does not update official farm records or send anything to a Manager.</p>
               <div className="inline-form">
