@@ -399,3 +399,37 @@ export const csvImportApi = {
   previewProductionRecords: (module, records) => request("/imports/csv/production/preview", { method: "POST", body: JSON.stringify({ module, records }) }),
   importProductionRecords: (module, records) => request("/imports/csv/production", { method: "POST", body: JSON.stringify({ module, records }) }),
 };
+
+export const reportSubmissionApi = {
+  create: (data, idempotencyKey) => request("/submissions", {
+    method: "POST", headers: { "Idempotency-Key": idempotencyKey }, body: JSON.stringify(data),
+  }),
+  save: (id, data) => request("/submissions/" + encodeURIComponent(id), {
+    method: "PUT", body: JSON.stringify(data),
+  }),
+  submit: (id) => request("/submissions/" + encodeURIComponent(id) + "/submit", { method: "POST" }),
+  mine: () => request("/submissions"),
+  get: (id) => request("/submissions/" + encodeURIComponent(id)),
+  comment: (id, body) => request("/review/submissions/" + encodeURIComponent(id) + "/comments", {
+    method: "POST", body: JSON.stringify({ body }),
+  }),
+};
+
+export const reportReviewApi = {
+  queue: (filters = {}) => {
+    const params = new URLSearchParams();
+    Object.entries(filters).forEach(([key, value]) => { if (value) params.set(key, value); });
+    const query = params.toString();
+    return request("/review/queue" + (query ? "?" + query : ""));
+  },
+  get: (id) => request("/review/submissions/" + encodeURIComponent(id)),
+  assign: (id, managerId) => request("/review/submissions/" + encodeURIComponent(id) + "/assign", {
+    method: "POST", body: JSON.stringify({ managerId }),
+  }),
+  comment: (id, body) => request("/review/submissions/" + encodeURIComponent(id) + "/comments", {
+    method: "POST", body: JSON.stringify({ body }),
+  }),
+  decide: (id, decision, reason) => request("/review/submissions/" + encodeURIComponent(id) + "/decision", {
+    method: "POST", body: JSON.stringify({ decision, reason }),
+  }),
+};
