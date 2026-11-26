@@ -1,8 +1,14 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { useState } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import OnboardingWizard from "./OnboardingWizard.jsx";
 
-const farmForm = { name: "", location: "", timezone: "Africa/Lagos", currency: "NGN" };
+const initialFarmForm = { name: "", location: "", timezone: "Africa/Lagos", currency: "NGN" };
+
+function Harness(props) {
+  const [farmForm, setFarmForm] = useState(initialFarmForm);
+  return <OnboardingWizard {...props} farmForm={farmForm} setFarmForm={setFarmForm} />;
+}
 
 describe("OnboardingWizard", () => {
   beforeEach(() => localStorage.clear());
@@ -12,7 +18,7 @@ describe("OnboardingWizard", () => {
     const onCreateFarm = vi.fn().mockResolvedValue(true);
     const onComplete = vi.fn();
     const setFarmForm = vi.fn();
-    render(<OnboardingWizard account={{ fullName: "Ada Farmer", email: "ada@example.com" }} farmForm={farmForm} setFarmForm={setFarmForm} onSaveProfile={onSaveProfile} onCreateFarm={onCreateFarm} onComplete={onComplete} saving={false} error="" />);
+    render(<Harness account={{ fullName: "Ada Farmer", email: "ada@example.com" }} onSaveProfile={onSaveProfile} onCreateFarm={onCreateFarm} onComplete={onComplete} saving={false} error="" />);
 
     expect(screen.getByRole("heading", { name: "Welcome to Pomas!" })).toBeInTheDocument();
     expect(screen.getByLabelText("First name")).toHaveValue("Ada");
@@ -52,7 +58,7 @@ describe("OnboardingWizard", () => {
       step: 5, firstName: "Ada", familyName: "Farmer", role: "FARM MANAGER",
       discovery: "WhatsApp", poultryTypes: ["TURKEYS"], priorities: [], farmCreated: true,\n      farmDraft: { name: "Saved Farm", location: "Port Harcourt", timezone: "Africa/Lagos", currency: "NGN" },
     }));
-    render(<OnboardingWizard account={{ fullName: "Ada Farmer" }} farmForm={farmForm} setFarmForm={vi.fn()} onSaveProfile={vi.fn().mockResolvedValue(true)} onCreateFarm={vi.fn()} onComplete={vi.fn()} saving={false} error="" />);
+    render(<Harness account={{ fullName: "Ada Farmer" }} onSaveProfile={vi.fn().mockResolvedValue(true)} onCreateFarm={vi.fn()} onComplete={vi.fn()} saving={false} error="" />);
     expect(screen.getByRole("heading", { name: "What type of poultry do you manage?" })).toBeInTheDocument();
     expect(screen.getByLabelText("TURKEYS")).toBeChecked();\n    expect(screen.getByRole("heading", { name: "Saved Farm" })).toBeInTheDocument();
   });
