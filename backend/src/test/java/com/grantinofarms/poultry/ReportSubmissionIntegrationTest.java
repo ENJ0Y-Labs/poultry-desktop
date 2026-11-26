@@ -28,6 +28,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @AutoConfigureMockMvc
@@ -184,6 +185,44 @@ class ReportSubmissionIntegrationTest {
         mockMvc.perform(get("/api/v1/admin/users")
                         .cookie(new Cookie(AuthService.COOKIE, session.token())))
                 .andExpect(status().isForbidden());
+    }
+
+
+    @Test
+    void administratorCannotCallManagerReviewApiDirectly() throws Exception {
+        String password = "administrator-login-password";
+        String adminId = UUID.randomUUID().toString();
+        String now = Instant.now().toString();
+        users.insertWithRole(adminId, "api-admin-" + adminId.substring(0, 6), null,
+                passwordHasher.hash(password), "API Administrator", "ADMINISTRATOR", now, null);
+        var session = auth.login(new com.grantinofarms.poultry.dto.LoginRequest(
+                "api-admin-" + adminId.substring(0, 6), password, false));
+
+        mockMvc.perform(get("/api/v1/review/queue")
+                        .cookie(new Cookie(AuthService.COOKIE, session.token())))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void workerCanCommentOnOwnSubmissionThroughTheScopedReviewCommentEndpoint() throws Exception {
+        Map<String, Object> created = submissions.createDraft(new ReportSubmissionRequest(
+                "DAILY_OPERATIONS", "Worker report", mapper.readTree("{\"notes\":\"test\"}")));
+        String id = String.valueOf(created.get("id"));
+        String password = "worker-comment-password";
+        String now = Instant.now().toString();
+        users.updatePassword(workerId, passwordHasher.hash(password), now);
+        var session = auth.login(new com.grantinofarms.poultry.dto.LoginRequest(
+                "worker-" + workerId.substring(0, 8), password, false));
+
+        mockMvc.perform(post("/api/v1/review/submissions/" + id + "/comments")
+                        .cookie(new Cookie(AuthService.COOKIE, session.token()))
+                        .header("X-Requested-With", "XMLHttpRequest")
+                        .contentType("application/json")
+                        .content("{\"body\":\"I have added the missing details.\"}"))
+                .andExpect(status().isOk());
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM report_submission_comments WHERE submission_id = ?",
+                Integer.class, id)).isEqualTo(1);
     }
 
     @Test
