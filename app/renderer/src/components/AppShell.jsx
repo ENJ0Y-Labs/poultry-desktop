@@ -46,6 +46,11 @@ const legacyRoutes = {
   sales: "sales-money", customers: "sales-money", expenses: "sales-money",
   "batch-reports": "reports",
 };
+function allowedPagesForRole(role) {
+  if (role === "MANAGER") return validPages;
+  if (role === "ADMINISTRATOR") return ["my-reports", "user-management"];
+  return ["my-reports"];
+}
 function resolvePage(hash, startPage = "dashboard") {
   const candidate = String(hash || "").replace(/^#\/?/, "").split("/")[0];
   if (validPages.includes(candidate)) return candidate;
@@ -176,7 +181,10 @@ function SidebarToggleIcon({ expanded }) {
 }
 
 export default function AppShell({ farm, error, appInfo, onRetry, onQuickAction, children, batches = [], selectedBatchId = "", feedTypes = [], feedInventory = [], inventoryItems = [], attention = [], startPage = "dashboard", startPageReady = true, userRole = "MANAGER" }) {
-  const [active, setActive] = useState(() => resolvePage(window.location.hash, startPage));
+  const [active, setActive] = useState(() => {
+    const requested = resolvePage(window.location.hash, startPage);
+    return allowedPagesForRole(userRole).includes(requested) ? requested : "my-reports";
+  });
   const [activeTab, setActiveTab] = useState(() => resolveTab(window.location.hash, resolvePage(window.location.hash, startPage)));
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => localStorage.getItem("pomas:sidebar-collapsed") === "true");
   const [attentionCollapsed, setAttentionCollapsed] = useState(() => localStorage.getItem("pomas:attention-collapsed") === "true");
@@ -190,11 +198,7 @@ export default function AppShell({ farm, error, appInfo, onRetry, onQuickAction,
   const [retrying, setRetrying] = useState(false);
   const [hasUserNavigated, setHasUserNavigated] = useState(Boolean(window.location.hash));
   const mainContentRef = useRef(null);
-  const allowedPages = userRole === "MANAGER"
-    ? validPages
-    : userRole === "ADMINISTRATOR"
-      ? ["my-reports", "user-management"]
-      : ["my-reports"];
+  const allowedPages = allowedPagesForRole(userRole);
   const visibleGroups = groups.map(group => ({ ...group, items: group.items.filter(item => allowedPages.includes(item.target)) }))
     .filter(group => group.items.length > 0);
   const safePage = page => allowedPages.includes(page) ? page : "my-reports";
