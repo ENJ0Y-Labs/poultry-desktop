@@ -56,7 +56,7 @@ public class ReportSubmissionRepository {
                 SET report_type = ?, title = ?, current_version = ?, status = 'DRAFT',
                     lifecycle_status = 'DRAFT', updated_at = ?
                 WHERE id = ? AND author_user_id = ?
-                  AND lifecycle_status IN ('DRAFT','CHANGES_REQUESTED')
+                  AND lifecycle_status IN ('DRAFT','CHANGES_REQUESTED','BLOCKED')
                   AND current_version = ?
                 """, reportType, title, nextVersion, now, id, actorId, expectedVersion);
     }
