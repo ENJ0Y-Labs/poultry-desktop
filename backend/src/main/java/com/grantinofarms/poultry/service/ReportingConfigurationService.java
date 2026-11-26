@@ -146,6 +146,11 @@ public class ReportingConfigurationService {
             }
             LocalDateTime dueAt = LocalDateTime.of(dueDate, dueTime);
             LocalDateTime graceUntil = dueAt.plusMinutes(((Number) schedule.get("graceMinutes")).longValue());
+            if (now.isBefore(graceUntil)) {
+                dueDate = dueDate.minusDays("WEEKLY".equals(schedule.get("frequency")) ? 7 : 1);
+                dueAt = LocalDateTime.of(dueDate, dueTime);
+                graceUntil = dueAt.plusMinutes(((Number) schedule.get("graceMinutes")).longValue());
+            }
             if (now.isBefore(graceUntil)) continue;
             LocalDateTime windowEnd = dueAt.plusDays("WEEKLY".equals(schedule.get("frequency")) ? 7 : 1);
             String scopeType = String.valueOf(schedule.get("scopeType"));
