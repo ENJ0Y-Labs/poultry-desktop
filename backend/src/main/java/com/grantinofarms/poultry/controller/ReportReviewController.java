@@ -1,0 +1,51 @@
+package com.grantinofarms.poultry.controller;
+
+import com.grantinofarms.poultry.service.ReportReviewService;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
+
+@RestController
+@RequestMapping("/api/v1/review")
+public class ReportReviewController {
+    private final ReportReviewService service;
+
+    public ReportReviewController(ReportReviewService service) {
+        this.service = service;
+    }
+
+    @GetMapping("/queue")
+    public Map<String, Object> queue(
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String reportType,
+            @RequestParam(required = false) String authorId) {
+        return Map.of("ok", true, "data", service.queue(status, reportType, authorId));
+    }
+
+    @GetMapping("/submissions/{id}")
+    public Map<String, Object> get(@PathVariable String id) {
+        return Map.of("ok", true, "data", service.get(id));
+    }
+
+    @PostMapping("/submissions/{id}/assign")
+    public Map<String, Object> assign(@PathVariable String id, @RequestBody Map<String, String> body) {
+        return Map.of("ok", true, "data", service.assign(id, body == null ? null : body.get("managerId")));
+    }
+
+    @PostMapping("/submissions/{id}/comments")
+    public Map<String, Object> comment(@PathVariable String id, @RequestBody CommentRequest request) {
+        return Map.of("ok", true, "data", service.comment(id, request == null ? null : request.body()));
+    }
+
+    @PostMapping("/submissions/{id}/decision")
+    public Map<String, Object> decide(@PathVariable String id, @RequestBody DecisionRequest request) {
+        return Map.of("ok", true, "data", service.decide(id,
+                request == null ? null : request.decision(),
+                request == null ? null : request.reason()));
+    }
+
+    public record CommentRequest(@NotBlank @Size(max = 4000) String body) {}
+    public record DecisionRequest(@NotBlank String decision, @Size(max = 2000) String reason) {}
+}
