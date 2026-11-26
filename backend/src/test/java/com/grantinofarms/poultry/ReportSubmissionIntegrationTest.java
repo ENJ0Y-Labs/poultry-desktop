@@ -75,15 +75,15 @@ class ReportSubmissionIntegrationTest {
 
     @Test
     void savesAppendOnlyVersionsAndSubmitsTheExactCurrentVersion() throws Exception {
-        var first = new ReportSubmissionRequest("DAILY_OPERATIONS", "Morning report",
-                mapper.readTree("{\"mortality\":0,\"notes\":\"No activity\"}"));
+        var first = new ReportSubmissionRequest("EXPENSE", "Morning report",
+                mapper.readTree("{\"occurredDate\":\"2026-11-26\",\"eventDate\":\"2026-11-26\",\"eventTime\":\"08:00\",\"description\":\"Initial farm expense\",\"amountMinor\":1200,\"category\":\"OTHER\"}"));
         Map<String, Object> created = submissions.createDraft(first);
         String id = String.valueOf(created.get("id"));
         assertThat(created.get("status")).isEqualTo("DRAFT");
         assertThat(created.get("currentVersion")).isEqualTo(1);
 
-        var second = new ReportSubmissionRequest("DAILY_OPERATIONS", "Morning report revised",
-                mapper.readTree("{\"mortality\":1,\"notes\":\"One bird found dead\"}"));
+        var second = new ReportSubmissionRequest("EXPENSE", "Morning report revised",
+                mapper.readTree("{\"occurredDate\":\"2026-11-26\",\"eventDate\":\"2026-11-26\",\"eventTime\":\"08:00\",\"description\":\"Revised farm expense\",\"amountMinor\":2400,\"category\":\"OTHER\"}"));
         Map<String, Object> saved = submissions.saveDraft(id, second);
         assertThat(saved.get("currentVersion")).isEqualTo(2);
         assertThat((java.util.List<?>) saved.get("versions")).hasSize(2);
@@ -91,12 +91,12 @@ class ReportSubmissionIntegrationTest {
         java.util.List<Map<String, Object>> versions =
                 (java.util.List<Map<String, Object>>) saved.get("versions");
         assertThat(versions.get(0)).containsEntry("title", "Morning report")
-                .containsEntry("reportType", "DAILY_OPERATIONS");
+                .containsEntry("reportType", "EXPENSE");
         assertThat(versions.get(1)).containsEntry("title", "Morning report revised");
 
         Map<String, Object> submitted = submissions.submit(id);
         assertThat(submitted.get("status")).isEqualTo("PENDING_REVIEW");
-        assertThat(submitted.get("lifecycleStatus")).isEqualTo("BLOCKED");
+        assertThat(submitted.get("lifecycleStatus")).isEqualTo("SUBMITTED");
         assertThat(submitted.get("submittedVersion")).isEqualTo(2);
         assertThat(jdbc.queryForObject(
                 "SELECT COUNT(*) FROM report_submission_events WHERE submission_id = ?",
