@@ -41,6 +41,8 @@ CREATE INDEX idx_report_submissions_farm_status ON report_submissions(farm_id, s
 CREATE TABLE report_submission_versions (
     submission_id TEXT NOT NULL,
     version_number INTEGER NOT NULL CHECK (version_number > 0),
+    report_type TEXT NOT NULL CHECK (length(trim(report_type)) BETWEEN 1 AND 80),
+    title TEXT NOT NULL CHECK (length(trim(title)) BETWEEN 1 AND 160),
     payload_json TEXT NOT NULL CHECK (json_valid(payload_json)),
     created_by TEXT NOT NULL,
     created_at TEXT NOT NULL,
