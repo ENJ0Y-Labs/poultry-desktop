@@ -80,8 +80,8 @@ public class AuthFilter extends OncePerRequestFilter {
     }
 
     private boolean workerEndpoint(String path) {
-        return path.startsWith("/api/v1/submissions")
-                || path.startsWith("/api/v1/account")
+        return (path.equals("/api/v1/submissions") || path.startsWith("/api/v1/submissions/"))
+                || (path.equals("/api/v1/account") || path.startsWith("/api/v1/account/"))
                 || path.equals("/api/v1/auth/me")
                 || path.equals("/api/v1/health");
     }
