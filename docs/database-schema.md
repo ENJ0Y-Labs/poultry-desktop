@@ -276,7 +276,7 @@ farm
 
 ## Migration history
 
-The repository contains forward-only migrations through V36, including independent Turkey support, population confidence/adjustments, feed opening balances, multi-type feed applicability, idempotent batch creation, operational roles, report version history, review workflow, immutable checks, and merge provenance.
+The repository contains forward-only migrations through V37, including independent Turkey support, population confidence/adjustments, feed opening balances, multi-type feed applicability, idempotent batch creation, operational roles, report version history, review workflow, immutable checks, and merge provenance.
 
 Broad progression:
 
@@ -313,6 +313,7 @@ Broad progression:
 - V33: brand-aware feed product identity, preserving existing feed type IDs and linked history\n- V34: idempotent batch creation and audited cancellation lifecycle
 - V35: operational roles and immutable report submission versions/history
 - V36: review comments, assignments, decisions, check runs/results, warning overrides, submission idempotency, merge operation keys, and official-record provenance
+- V37: emergency incidents/events, Manager notifications, configurable report schedules/thresholds, and version-bound BLOB evidence attachments
 - V31: append-only feed opening balances
 - V32: normalized multi-type feed applicability
 
