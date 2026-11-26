@@ -20,7 +20,7 @@ public class ReportSubmissionRepository {
 
     public void insert(String id, String farmId, String authorId, String reportType, String title,
                        String payloadJson, String now) {
-        insert(id, farmId, authorId, reportType, title, payloadJson, null, now);
+        insert(id, farmId, authorId, reportType, title, payloadJson, null, null, now);
     }
 
     public void insert(String id, String farmId, String authorId, String reportType, String title,
@@ -28,9 +28,9 @@ public class ReportSubmissionRepository {
         jdbc.update("""
                 INSERT INTO report_submissions
                     (id, farm_id, author_user_id, report_type, title, status, lifecycle_status,
-                     current_version, idempotency_key, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, 'DRAFT', 'DRAFT', 1, ?, ?, ?)
-                """, id, farmId, authorId, reportType, title, idempotencyKey, now, now);
+                     current_version, idempotency_key, idempotency_payload_hash, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, 'DRAFT', 'DRAFT', 1, ?, ?, ?, ?)
+                """, id, farmId, authorId, reportType, title, idempotencyKey, idempotencyPayloadHash, now, now);
         insertVersion(id, 1, reportType, title, payloadJson, authorId, now);
         appendEvent(id, 1, authorId, "DRAFT_CREATED", null, now);
     }
@@ -80,10 +80,16 @@ public class ReportSubmissionRepository {
         if (key == null || key.isBlank()) return null;
         return jdbc.query("""
                 SELECT id, farm_id, author_user_id, report_type, title, status, lifecycle_status,
-                       current_version, submitted_version, created_at, updated_at, submitted_at
+                       current_version, submitted_version, created_at, updated_at, submitted_at,
+                       idempotency_payload_hash
                 FROM report_submissions
                 WHERE farm_id = ? AND author_user_id = ? AND idempotency_key = ?
-                """, rs -> rs.next() ? header(rs) : null, farmId, authorId, key);
+                """, rs -> {
+            if (!rs.next()) return null;
+            Map<String, Object> row = header(rs);
+            row.put("idempotencyPayloadHash", rs.getString("idempotency_payload_hash"));
+            return row;
+        }, farmId, authorId, key);
     }
 
     public Map<String, Object> findHeader(String id) {
