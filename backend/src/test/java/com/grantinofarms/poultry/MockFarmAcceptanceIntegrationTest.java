@@ -48,6 +48,8 @@ class MockFarmAcceptanceIntegrationTest {
         var layer = batches.create(new BatchCreateRequest("LAYER", PLACEMENT, layerHouse.id(), 500, null, 5_000_000L));
         var broiler = batches.create(new BatchCreateRequest("BROILER", PLACEMENT, broilerHouse.id(), 100, null, 1_000_000L));
 
+        farms.updateSettings(new FarmSettingsRequest(30, 25, List.of(25, 75), "litres"));
+
         var broilerFeed = feed.createType(new FeedTypeCreateRequest("Mock Broiler Starter", "kg", "BROILER"));
         feed.purchase(new FeedPurchaseRequest(broilerFeed.id(), null, PLACEMENT,
                 new BigDecimal("10.000"), "kg", 500_000L));
