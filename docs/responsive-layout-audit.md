@@ -10,6 +10,7 @@ The previous narrow-screen CSS did not establish a supported phone workflow and 
 
 | Viewport/window | Status | Expected behavior |
 | --- | --- | --- |
+| 320×640 | Supported for Worker browser only | Manager/Administrator remain desktop-canvas diagnostics; horizontal scrolling is expected. |
 | 360×800 | Supported for Worker browser only | Manager/Administrator remain desktop-canvas diagnostics; horizontal scrolling is expected. |
 | 390×844 | Supported for Worker browser only | Manager/Administrator remain desktop-canvas diagnostics; horizontal scrolling is expected. |
 | 768×1024 (tablet portrait width) | Worker layout uses desktop breakpoint | Manager/Administrator remain desktop-canvas diagnostics; horizontal scrolling is expected. |
