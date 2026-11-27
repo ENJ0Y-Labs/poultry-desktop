@@ -408,6 +408,8 @@ class ReportSubmissionIntegrationTest {
 
         reportingConfiguration.setScheduleEnabled(String.valueOf(schedule.get("id")), false);
         assertThat(reportingConfiguration.missingReports()).isEmpty();
+        reportingConfiguration.setScheduleEnabled(String.valueOf(schedule.get("id")), true);
+        assertThat(reportingConfiguration.missingReports()).isEmpty();
     }
 
     @Test
