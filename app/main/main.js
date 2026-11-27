@@ -34,6 +34,14 @@ ipcMain.handle("backend:base-url", async (_event, ...args) => {
 });
 
 
+async function loadLocalDesktopRenderer() {
+  if (process.env.ELECTRON_RENDERER_URL) {
+    await mainWindow.loadURL(process.env.ELECTRON_RENDERER_URL);
+  } else {
+    await mainWindow.loadFile(join(__dirname, "../renderer/index.html"));
+  }
+}
+
 async function requireManagerSession(event) {
   if (event.sender !== mainWindow?.webContents || !backendManager?.process) {
     throw new Error("This desktop action is not available from this window.");
@@ -94,12 +102,18 @@ ipcMain.handle("lan-access:enable", async (event, selection, ...args) => {
   if (confirmation.response !== 0) return { canceled: true };
   const status = await backendManager.enableLanAccess(selection);
   try {
+    const browserResponse = await fetch(status.url + "/", { redirect: "manual" });
+    const browserHtml = browserResponse.ok && (browserResponse.headers.get("content-type") || "").includes("text/html")
+      ? await browserResponse.text() : "";
+    if (!browserHtml.includes('<div id="root">') || !browserHtml.includes("theme-init.js")) {
+      throw new Error("The production browser workspace is missing or incomplete. Build the renderer before enabling LAN access.");
+    }
     await moveDesktopSessionCookie(status.url, token, true);
     await mainWindow.loadURL(status.url);
     return status;
   } catch (error) {
     await backendManager.disableLanAccess();
-    await mainWindow.loadFile(join(__dirname, "../renderer/index.html"));
+    await loadLocalDesktopRenderer();
     throw new Error("LAN access was rolled back because the browser workspace could not be opened. " + error.message);
   }
 });
@@ -119,7 +133,7 @@ ipcMain.handle("lan-access:disable", async (event, ...args) => {
   if (confirmation.response !== 0) return { canceled: true };
   await backendManager.disableLanAccess();
   await moveDesktopSessionCookie(backendManager.baseUrl, token, false);
-  await mainWindow.loadFile(join(__dirname, "../renderer/index.html"));
+  await loadLocalDesktopRenderer();
   return backendManager.lanStatus;
 });
 
