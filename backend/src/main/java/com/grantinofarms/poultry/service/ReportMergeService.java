@@ -63,8 +63,32 @@ public class ReportMergeService {
             throw new ApiException(HttpStatus.CONFLICT, "MERGE_KEY_ALREADY_USED",
                     "This Idempotency-Key has already been used for another report merge.");
         } catch (org.springframework.dao.TransientDataAccessException exception) {
-            throw new ApiException(HttpStatus.CONFLICT, "MERGE_CONCURRENCY_CONFLICT",
-                    "Another merge is committing a database change. Retry with the same Idempotency-Key.");
+            throw concurrencyConflict();
+        } catch (org.springframework.dao.DataAccessException exception) {
+            if (isSqliteLockConflict(exception)) throw concurrencyConflict();
+            throw exception;
         }
+    }
+
+    private ApiException concurrencyConflict() {
+        return new ApiException(HttpStatus.CONFLICT, "MERGE_CONCURRENCY_CONFLICT",
+                "Another merge is committing a database change. Retry with the same Idempotency-Key.");
+    }
+
+    private boolean isSqliteLockConflict(Throwable failure) {
+        for (Throwable current = failure; current != null; current = current.getCause()) {
+            if (current instanceof java.sql.SQLException sql) {
+                int primaryCode = sql.getErrorCode() & 0xff;
+                if (primaryCode == 5 || primaryCode == 6) return true;
+            }
+            String message = current.getMessage();
+            if (message != null) {
+                String normalized = message.toLowerCase(java.util.Locale.ROOT);
+                if (normalized.contains("database is locked")
+                        || normalized.contains("database table is locked")
+                        || normalized.contains("database is busy")) return true;
+            }
+        }
+        return false;
     }
 }
