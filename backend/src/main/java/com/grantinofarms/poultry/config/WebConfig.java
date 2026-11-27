@@ -19,7 +19,7 @@ public class WebConfig implements WebMvcConfigurer {
                         "http://127.0.0.1:4173",
                         "null")
                 .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
-                .allowedHeaders("Content-Type", "X-Requested-With")
+                .allowedHeaders("Content-Type", "X-Requested-With", "Idempotency-Key")
                 .allowCredentials(true)
                 .maxAge(600);
     }

@@ -57,11 +57,7 @@ public class AuthFilter extends OncePerRequestFilter {
         boolean required = environment.getProperty("poultry.auth-required", Boolean.class, false);
         try {
             if (user != null && "WORKER".equals(user.get("role")) && !workerEndpoint(path)) {
-                response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-                response.setContentType("application/json");
-                response.getWriter().write("""
-                        {"ok":false,"error":{"code":"ROLE_FORBIDDEN","message":"Your account does not have permission to access this resource."}}
-                        """);
+                denyRole(response);
                 return;
             }
             if (required && !publicEndpoint) {
@@ -81,11 +77,21 @@ public class AuthFilter extends OncePerRequestFilter {
         }
     }
 
+    private void denyRole(HttpServletResponse response) throws IOException {
+        response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+        response.setContentType("application/json");
+        response.getWriter().write("""
+                {"ok":false,"error":{"code":"ROLE_FORBIDDEN","message":"Your account does not have permission to access this resource."}}
+                """);
+    }
+
     private boolean workerEndpoint(String path) {
         return (path.equals("/api/v1/submissions") || path.startsWith("/api/v1/submissions/"))
+                || (path.equals("/api/v1/incidents") || path.startsWith("/api/v1/incidents/"))
                 || (path.equals("/api/v1/account") || path.startsWith("/api/v1/account/"))
                 || path.equals("/api/v1/auth/me")
-                || path.equals("/api/v1/health");
+                || path.equals("/api/v1/health")
+                || path.matches("^/api/v1/review/submissions/[^/]+/comments$");
     }
 
     private String token(HttpServletRequest request) {

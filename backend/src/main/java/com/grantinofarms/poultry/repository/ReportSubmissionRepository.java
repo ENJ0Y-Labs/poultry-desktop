@@ -1,6 +1,5 @@
 package com.grantinofarms.poultry.repository;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
@@ -21,12 +20,22 @@ public class ReportSubmissionRepository {
 
     public void insert(String id, String farmId, String authorId, String reportType, String title,
                        String payloadJson, String now) {
+        insert(id, farmId, authorId, reportType, title, payloadJson, null, null, now);
+    }
+
+    public void insert(String id, String farmId, String authorId, String reportType, String title,
+                       String payloadJson, String idempotencyKey, String now) {
+        insert(id, farmId, authorId, reportType, title, payloadJson, idempotencyKey, null, now);
+    }
+
+    public void insert(String id, String farmId, String authorId, String reportType, String title,
+                       String payloadJson, String idempotencyKey, String idempotencyPayloadHash, String now) {
         jdbc.update("""
                 INSERT INTO report_submissions
-                    (id, farm_id, author_user_id, report_type, title, status, current_version,
-                     created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, 'DRAFT', 1, ?, ?)
-                """, id, farmId, authorId, reportType, title, now, now);
+                    (id, farm_id, author_user_id, report_type, title, status, lifecycle_status,
+                     current_version, idempotency_key, idempotency_payload_hash, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, 'DRAFT', 'DRAFT', 1, ?, ?, ?, ?)
+                """, id, farmId, authorId, reportType, title, idempotencyKey, idempotencyPayloadHash, now, now);
         insertVersion(id, 1, reportType, title, payloadJson, authorId, now);
         appendEvent(id, 1, authorId, "DRAFT_CREATED", null, now);
     }
@@ -44,8 +53,10 @@ public class ReportSubmissionRepository {
                            int expectedVersion, int nextVersion, String now) {
         return jdbc.update("""
                 UPDATE report_submissions
-                SET report_type = ?, title = ?, current_version = ?, status = 'DRAFT', updated_at = ?
-                WHERE id = ? AND author_user_id = ? AND status IN ('DRAFT','CHANGES_REQUESTED')
+                SET report_type = ?, title = ?, current_version = ?, status = 'DRAFT',
+                    lifecycle_status = 'DRAFT', updated_at = ?
+                WHERE id = ? AND author_user_id = ?
+                  AND lifecycle_status IN ('DRAFT','CHANGES_REQUESTED','BLOCKED')
                   AND current_version = ?
                 """, reportType, title, nextVersion, now, id, actorId, expectedVersion);
     }
@@ -62,26 +73,71 @@ public class ReportSubmissionRepository {
     public int submit(String id, String actorId, int version, String now) {
         return jdbc.update("""
                 UPDATE report_submissions
-                SET status = 'PENDING_REVIEW', submitted_version = ?, submitted_at = ?, updated_at = ?
-                WHERE id = ? AND author_user_id = ? AND status = 'DRAFT' AND current_version = ?
+                SET status = 'PENDING_REVIEW', lifecycle_status = 'SUBMITTED',
+                    submitted_version = ?, submitted_at = ?, updated_at = ?
+                WHERE id = ? AND author_user_id = ?
+                  AND lifecycle_status IN ('DRAFT','CHANGES_REQUESTED','BLOCKED')
+                  AND current_version = ?
                 """, version, now, now, id, actorId, version);
+    }
+
+    public Map<String, Object> findByIdempotencyKey(String farmId, String authorId, String key) {
+        if (key == null || key.isBlank()) return null;
+        return jdbc.query("""
+                SELECT id, farm_id, author_user_id, report_type, title, status, lifecycle_status,
+                       current_version, submitted_version, created_at, updated_at, submitted_at,
+                       assigned_manager_user_id, scope_type, scope_id, event_date, late_reason,
+                       decision_version, merged_at, merge_operation_key, idempotency_payload_hash
+                FROM report_submissions
+                WHERE farm_id = ? AND author_user_id = ? AND idempotency_key = ?
+                """, rs -> {
+            if (!rs.next()) return null;
+            Map<String, Object> row = header(rs);
+            row.put("idempotencyPayloadHash", rs.getString("idempotency_payload_hash"));
+            return row;
+        }, farmId, authorId, key);
     }
 
     public Map<String, Object> findHeader(String id) {
         return jdbc.query("""
-                SELECT id, farm_id, author_user_id, report_type, title, status, current_version,
-                       submitted_version, created_at, updated_at, submitted_at
-                FROM report_submissions WHERE id = ?
+                SELECT s.id, s.farm_id, s.author_user_id, s.report_type, s.title, s.status, s.lifecycle_status,
+                       s.current_version, s.submitted_version, s.created_at, s.updated_at, s.submitted_at,
+                       s.assigned_manager_user_id, s.scope_type, s.scope_id, s.event_date, s.late_reason,
+                       s.decision_version, s.merged_at, s.merge_operation_key, u.username AS author_username,
+                       u.full_name AS author_full_name
+                FROM report_submissions s JOIN users u ON u.id = s.author_user_id WHERE s.id = ?
                 """, rs -> rs.next() ? header(rs) : null, id);
     }
 
     public List<Map<String, Object>> findMine(String actorId) {
         return jdbc.query("""
-                SELECT id, farm_id, author_user_id, report_type, title, status, current_version,
-                       submitted_version, created_at, updated_at, submitted_at
+                SELECT id, farm_id, author_user_id, report_type, title, status, lifecycle_status,
+                       current_version, submitted_version, created_at, updated_at, submitted_at,
+                       assigned_manager_user_id, scope_type, scope_id, event_date, late_reason,
+                       decision_version, merged_at, merge_operation_key
                 FROM report_submissions WHERE author_user_id = ?
                 ORDER BY updated_at DESC, id
                 """, (rs, n) -> header(rs), actorId);
+    }
+
+    public List<Map<String, Object>> findReviewQueue(String lifecycleStatus, String reportType, String authorId) {
+        return jdbc.query("""
+                SELECT s.id, s.farm_id, s.author_user_id, s.report_type, s.title, s.status,
+                       s.lifecycle_status, s.current_version, s.submitted_version, s.created_at,
+                       s.updated_at, s.submitted_at, s.assigned_manager_user_id, s.scope_type,
+                       s.scope_id, s.event_date, s.late_reason, s.decision_version, s.merged_at, s.merge_operation_key,
+                       u.username AS author_username, u.full_name AS author_full_name
+                FROM report_submissions s JOIN users u ON u.id = s.author_user_id
+                WHERE (? IS NULL OR s.lifecycle_status = ?)
+                  AND (? IS NULL OR s.report_type = ?)
+                  AND (? IS NULL OR s.author_user_id = ?)
+                  AND s.lifecycle_status NOT IN ('DRAFT','CHANGES_REQUESTED','MERGED','REJECTED')
+                ORDER BY CASE s.lifecycle_status
+                    WHEN 'BLOCKED' THEN 0 WHEN 'FLAGGED' THEN 1
+                    WHEN 'SUBMITTED' THEN 2 WHEN 'PENDING_REVIEW' THEN 3 ELSE 4 END,
+                    s.submitted_at, s.id
+                """, (rs, n) -> header(rs), lifecycleStatus, lifecycleStatus,
+                reportType, reportType, authorId, authorId);
     }
 
     public List<Map<String, Object>> findVersions(String id) {
@@ -122,6 +178,367 @@ public class ReportSubmissionRepository {
         }, id);
     }
 
+    public void insertCheckRun(String id, String submissionId, int version, String outcome, String checkedAt) {
+        jdbc.update("""
+                INSERT INTO report_submission_check_runs
+                    (id, submission_id, version_number, outcome, checked_at)
+                VALUES (?, ?, ?, ?, ?)
+                """, id, submissionId, version, outcome, checkedAt);
+    }
+
+    public String findLatestCheckRunOutcome(String submissionId, int version) {
+        List<String> outcomes = jdbc.queryForList("""
+                SELECT outcome FROM report_submission_check_runs
+                WHERE submission_id = ? AND version_number = ?
+                ORDER BY checked_at DESC, id DESC LIMIT 1
+                """, String.class, submissionId, version);
+        return outcomes.isEmpty() ? null : outcomes.get(0);
+    }
+
+    public void insertCheck(String id, String runId, String submissionId, int version, String code,
+                            String outcome, boolean overrideable, String explanation,
+                            String detailsJson, String checkedAt) {
+        jdbc.update("""
+                INSERT INTO report_submission_checks
+                    (id, check_run_id, submission_id, version_number, check_code, outcome,
+                     overrideable, explanation, details_json, checked_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, id, runId, submissionId, version, code, outcome, overrideable ? 1 : 0,
+                explanation, detailsJson, checkedAt);
+    }
+
+    public List<String> findPotentialDuplicates(String farmId, String excludingId,
+                                                String reportType, String batchId, String eventDate) {
+        if (batchId == null || batchId.isBlank() || eventDate == null || eventDate.isBlank()) return List.of();
+        return jdbc.queryForList("""
+                SELECT s.id
+                FROM report_submissions s
+                JOIN report_submission_versions v
+                  ON v.submission_id = s.id AND v.version_number = s.current_version
+                WHERE s.farm_id = ? AND s.id <> ? AND s.report_type = ?
+                  AND s.lifecycle_status NOT IN ('DRAFT','REJECTED')
+                  AND json_extract(v.payload_json, '$.batchId') = ?
+                  AND json_extract(v.payload_json, '$.eventDate') = ?
+                ORDER BY s.submitted_at DESC
+                LIMIT 5
+                """, String.class, farmId, excludingId, reportType, batchId, eventDate);
+    }
+
+    public Map<String, Object> findCheck(String submissionId, int version, String checkId) {
+        return jdbc.query("""
+                SELECT id, check_code, outcome, overrideable, explanation
+                FROM report_submission_checks
+                WHERE submission_id = ? AND version_number = ? AND id = ?
+                """, rs -> {
+            if (!rs.next()) return null;
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("id", rs.getString("id"));
+            row.put("code", rs.getString("check_code"));
+            row.put("outcome", rs.getString("outcome"));
+            row.put("overrideable", rs.getInt("overrideable") == 1);
+            row.put("explanation", rs.getString("explanation"));
+            return row;
+        }, submissionId, version, checkId);
+    }
+
+    public boolean hasWarningOverride(String submissionId, int version, String checkId) {
+        Integer count = jdbc.queryForObject("""
+                SELECT COUNT(*) FROM report_submission_warning_overrides
+                WHERE submission_id = ? AND version_number = ? AND check_id = ?
+                """, Integer.class, submissionId, version, checkId);
+        return count != null && count > 0;
+    }
+
+    public void addWarningOverride(String submissionId, int version, String checkId,
+                                   String managerId, String reason, String now) {
+        jdbc.update("""
+                INSERT INTO report_submission_warning_overrides
+                    (id, submission_id, version_number, check_id, manager_user_id, reason, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                """, java.util.UUID.randomUUID().toString(), submissionId, version, checkId,
+                managerId, reason, now);
+    }
+
+    public int reopenApprovedAfterRecheck(String id, int version, String nextStatus, String now) {
+        return jdbc.update("""
+                UPDATE report_submissions
+                SET lifecycle_status = ?, status = 'PENDING_REVIEW', updated_at = ?
+                WHERE id = ? AND current_version = ? AND lifecycle_status = 'APPROVED'
+                """, nextStatus, now, id, version);
+    }
+
+    public void updateScopeMetadata(String id, String scopeType, String scopeId, String eventDate, String lateReason) {
+        jdbc.update("""
+                UPDATE report_submissions
+                SET scope_type = ?, scope_id = ?, event_date = ?, late_reason = ?
+                WHERE id = ?
+                """, scopeType, scopeId, eventDate, lateReason, id);
+    }
+
+    public int updateLifecycleStatus(String id, int version, String expectedStatus,
+                                     String nextStatus, String now) {
+        return jdbc.update("""
+                UPDATE report_submissions
+                SET lifecycle_status = ?, updated_at = ?
+                WHERE id = ? AND current_version = ? AND lifecycle_status = ?
+                """, nextStatus, now, id, version, expectedStatus);
+    }
+
+    public List<Map<String, Object>> findComments(String id) {
+        return jdbc.query("""
+                SELECT c.id, c.version_number, c.author_user_id, u.full_name AS author_name,
+                       c.body, c.created_at
+                FROM report_submission_comments c
+                JOIN users u ON u.id = c.author_user_id
+                WHERE c.submission_id = ?
+                ORDER BY c.created_at, c.id
+                """, (rs, n) -> {
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("id", rs.getString("id"));
+            row.put("version", rs.getInt("version_number"));
+            row.put("authorId", rs.getString("author_user_id"));
+            row.put("authorName", rs.getString("author_name"));
+            row.put("body", rs.getString("body"));
+            row.put("createdAt", rs.getString("created_at"));
+            return row;
+        }, id);
+    }
+
+    public List<Map<String, Object>> findChecks(String id, int version) {
+        return jdbc.query("""
+                SELECT id, check_code, outcome, overrideable, explanation, details_json, checked_at
+                FROM report_submission_checks
+                WHERE submission_id = ? AND version_number = ?
+                  AND check_run_id = (
+                    SELECT id FROM report_submission_check_runs
+                    WHERE submission_id = ? AND version_number = ?
+                    ORDER BY checked_at DESC, id DESC LIMIT 1
+                  )
+                ORDER BY checked_at, check_code
+                """, (rs, n) -> {
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("id", rs.getString("id"));
+            row.put("code", rs.getString("check_code"));
+            row.put("outcome", rs.getString("outcome"));
+            row.put("overrideable", rs.getInt("overrideable") == 1);
+            row.put("explanation", rs.getString("explanation"));
+            try {
+                String details = rs.getString("details_json");
+                row.put("details", details == null ? null : mapper.readTree(details));
+            } catch (Exception e) { throw new IllegalStateException("Stored report check is invalid.", e); }
+            row.put("checkedAt", rs.getString("checked_at"));
+            return row;
+        }, id, version, id, version);
+    }
+
+    public List<Map<String, Object>> findDecisions(String id) {
+        return jdbc.query("""
+                SELECT d.id, d.version_number, d.manager_user_id, u.full_name AS manager_name,
+                       d.decision, d.reason, d.created_at
+                FROM report_submission_decisions d
+                JOIN users u ON u.id = d.manager_user_id
+                WHERE d.submission_id = ?
+                ORDER BY d.created_at, d.id
+                """, (rs, n) -> {
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("id", rs.getString("id"));
+            row.put("version", rs.getInt("version_number"));
+            row.put("managerId", rs.getString("manager_user_id"));
+            row.put("managerName", rs.getString("manager_name"));
+            row.put("decision", rs.getString("decision"));
+            row.put("reason", rs.getString("reason"));
+            row.put("createdAt", rs.getString("created_at"));
+            return row;
+        }, id);
+    }
+
+    public List<Map<String, Object>> findAssignments(String id) {
+        return jdbc.query("""
+                SELECT a.id, a.manager_user_id, m.full_name AS manager_name,
+                       a.assigned_by_user_id, a.created_at
+                FROM report_submission_assignments a
+                JOIN users m ON m.id = a.manager_user_id
+                WHERE a.submission_id = ?
+                ORDER BY a.created_at, a.id
+                """, (rs, n) -> {
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("id", rs.getString("id"));
+            row.put("managerId", rs.getString("manager_user_id"));
+            row.put("managerName", rs.getString("manager_name"));
+            row.put("assignedBy", rs.getString("assigned_by_user_id"));
+            row.put("createdAt", rs.getString("created_at"));
+            return row;
+        }, id);
+    }
+
+    public int assign(String submissionId, String managerId, String actorId, String now) {
+        int updated = jdbc.update("""
+                UPDATE report_submissions SET assigned_manager_user_id = ?, updated_at = ?
+                WHERE id = ? AND lifecycle_status IN ('SUBMITTED','PENDING_REVIEW','FLAGGED','BLOCKED')
+                """, managerId, now, submissionId);
+        if (updated == 1) jdbc.update("""
+                INSERT INTO report_submission_assignments
+                    (id, submission_id, manager_user_id, assigned_by_user_id, created_at)
+                VALUES (?, ?, ?, ?, ?)
+                """, java.util.UUID.randomUUID().toString(), submissionId, managerId, actorId, now);
+        return updated;
+    }
+
+    public List<Map<String, Object>> findActiveManagers() {
+        return jdbc.query("""
+                SELECT u.id, u.username, u.full_name
+                FROM users u JOIN user_roles r ON r.user_id = u.id
+                WHERE u.status = 'ACTIVE' AND r.role = 'MANAGER'
+                ORDER BY u.full_name, u.username
+                """, (rs, n) -> Map.of(
+                "id", rs.getString("id"),
+                "username", rs.getString("username"),
+                "fullName", rs.getString("full_name")));
+    }
+
+    public boolean isActiveManager(String managerId) {
+        Integer count = jdbc.queryForObject("""
+                SELECT COUNT(*) FROM users u JOIN user_roles r ON r.user_id = u.id
+                WHERE u.id = ? AND u.status = 'ACTIVE' AND r.role = 'MANAGER'
+                """, Integer.class, managerId);
+        return count != null && count > 0;
+    }
+
+    public void addComment(String id, int version, String actorId, String body, String now) {
+        jdbc.update("""
+                INSERT INTO report_submission_comments
+                    (id, submission_id, version_number, author_user_id, body, created_at)
+                VALUES (?, ?, ?, ?, ?, ?)
+                """, java.util.UUID.randomUUID().toString(), id, version, actorId, body, now);
+    }
+
+    public void addDecision(String id, int version, String managerId, String decision,
+                            String reason, String now) {
+        jdbc.update("""
+                INSERT INTO report_submission_decisions
+                    (id, submission_id, version_number, manager_user_id, decision, reason, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                """, java.util.UUID.randomUUID().toString(), id, version, managerId, decision, reason, now);
+    }
+
+    public int transition(String id, int expectedVersion, String expectedStatus,
+                          String nextStatus, String actorId, String now) {
+        String legacyStatus = switch (nextStatus) {
+            case "CHANGES_REQUESTED" -> "CHANGES_REQUESTED";
+            case "REJECTED" -> "REJECTED";
+            case "APPROVED" -> "APPROVED";
+            case "PENDING_REVIEW" -> "PENDING_REVIEW";
+            default -> expectedStatus.equals("DRAFT") ? "DRAFT" : "PENDING_REVIEW";
+        };
+        return jdbc.update("""
+                UPDATE report_submissions
+                SET lifecycle_status = ?, status = ?, decision_version = ?,
+                    updated_at = ?
+                WHERE id = ? AND current_version = ? AND lifecycle_status = ?
+                """, nextStatus, legacyStatus, expectedVersion, now, id, expectedVersion, expectedStatus);
+    }
+
+    public int beginMerge(String id, int version, String operationKey, String now) {
+        return jdbc.update("""
+                UPDATE report_submissions
+                SET lifecycle_status = 'MERGING', merge_operation_key = ?, updated_at = ?
+                WHERE id = ? AND current_version = ? AND submitted_version = ?
+                  AND decision_version = ? AND lifecycle_status = 'APPROVED'
+                """, operationKey, now, id, version, version, version);
+    }
+
+    public int completeMerge(String id, String operationKey, String now) {
+        return jdbc.update("""
+                UPDATE report_submissions
+                SET lifecycle_status = 'MERGED', status = 'MERGED', merged_at = ?, updated_at = ?
+                WHERE id = ? AND lifecycle_status = 'MERGING' AND merge_operation_key = ?
+                """, now, now, id, operationKey);
+    }
+
+    public void insertLink(String submissionId, int version, String recordType, String recordId, String now) {
+        jdbc.update("""
+                INSERT INTO report_submission_links
+                    (id, submission_id, version_number, official_record_type, official_record_id, created_at)
+                VALUES (?, ?, ?, ?, ?, ?)
+                """, java.util.UUID.randomUUID().toString(), submissionId, version, recordType, recordId, now);
+    }
+
+    public void insertAttachment(String id, String submissionId, int version, String fileName,
+                                 String mimeType, long fileSize, String sha256, byte[] content,
+                                 String actorId, String now) {
+        jdbc.update("""
+                INSERT INTO report_submission_attachments
+                    (id, submission_id, version_number, file_name, mime_type, file_size,
+                     sha256, file_content, uploaded_by, uploaded_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, id, submissionId, version, fileName, mimeType, fileSize, sha256, content, actorId, now);
+    }
+
+    public List<Map<String, Object>> findAttachments(String submissionId, int version) {
+        return jdbc.query("""
+                SELECT id, file_name, mime_type, file_size, sha256, uploaded_by, uploaded_at
+                FROM report_submission_attachments
+                WHERE submission_id = ? AND version_number = ?
+                ORDER BY uploaded_at, id
+                """, (rs, n) -> {
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("id", rs.getString("id"));
+            row.put("fileName", rs.getString("file_name"));
+            row.put("mimeType", rs.getString("mime_type"));
+            row.put("fileSize", rs.getLong("file_size"));
+            row.put("sha256", rs.getString("sha256"));
+            row.put("uploadedBy", rs.getString("uploaded_by"));
+            row.put("uploadedAt", rs.getString("uploaded_at"));
+            return row;
+        }, submissionId, version);
+    }
+
+    public Map<String, Object> findAttachment(String submissionId, String attachmentId) {
+        return jdbc.query("""
+                SELECT id, submission_id, version_number, file_name, mime_type, file_size,
+                       sha256, file_content, uploaded_by, uploaded_at
+                FROM report_submission_attachments
+                WHERE submission_id = ? AND id = ?
+                """, rs -> {
+            if (!rs.next()) return null;
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("id", rs.getString("id"));
+            row.put("submissionId", rs.getString("submission_id"));
+            row.put("version", rs.getInt("version_number"));
+            row.put("fileName", rs.getString("file_name"));
+            row.put("mimeType", rs.getString("mime_type"));
+            row.put("fileSize", rs.getLong("file_size"));
+            row.put("sha256", rs.getString("sha256"));
+            row.put("content", rs.getBytes("file_content"));
+            row.put("uploadedBy", rs.getString("uploaded_by"));
+            row.put("uploadedAt", rs.getString("uploaded_at"));
+            return row;
+        }, submissionId, attachmentId);
+    }
+
+    public List<Map<String, Object>> findLinks(String submissionId) {
+        return jdbc.query("""
+                SELECT id, version_number, official_record_type, official_record_id, created_at
+                FROM report_submission_links WHERE submission_id = ?
+                ORDER BY created_at, id
+                """, (rs, n) -> {
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("id", rs.getString("id"));
+            row.put("version", rs.getInt("version_number"));
+            row.put("recordType", rs.getString("official_record_type"));
+            row.put("recordId", rs.getString("official_record_id"));
+            row.put("createdAt", rs.getString("created_at"));
+            return row;
+        }, submissionId);
+    }
+
+    public Map<String, Object> findUser(String userId) {
+        return jdbc.query("""
+                SELECT id, status, role FROM users WHERE id = ?
+                """, rs -> rs.next() ? Map.of("id", rs.getString("id"),
+                "status", rs.getString("status"), "legacyRole", rs.getString("role")) : null, userId);
+    }
+
     private Map<String, Object> header(java.sql.ResultSet rs) throws java.sql.SQLException {
         Map<String, Object> row = new LinkedHashMap<>();
         row.put("id", rs.getString("id"));
@@ -130,12 +547,28 @@ public class ReportSubmissionRepository {
         row.put("reportType", rs.getString("report_type"));
         row.put("title", rs.getString("title"));
         row.put("status", rs.getString("status"));
+        row.put("legacyStatus", rs.getString("status"));
+        row.put("lifecycleStatus", rs.getString("lifecycle_status"));
         row.put("currentVersion", rs.getInt("current_version"));
         Number submittedVersion = (Number) rs.getObject("submitted_version");
         row.put("submittedVersion", submittedVersion == null ? null : submittedVersion.intValue());
         row.put("createdAt", rs.getString("created_at"));
         row.put("updatedAt", rs.getString("updated_at"));
         row.put("submittedAt", rs.getString("submitted_at"));
+        row.put("assignedManagerId", rs.getString("assigned_manager_user_id"));
+        row.put("scopeType", rs.getString("scope_type"));
+        row.put("scopeId", rs.getString("scope_id"));
+        row.put("eventDate", rs.getString("event_date"));
+        row.put("lateReason", rs.getString("late_reason"));
+        row.put("decisionVersion", rs.getObject("decision_version"));
+        row.put("mergedAt", rs.getString("merged_at"));
+        row.put("mergeOperationKey", rs.getString("merge_operation_key"));
+        try {
+            row.put("authorUsername", rs.getString("author_username"));
+            row.put("authorFullName", rs.getString("author_full_name"));
+        } catch (java.sql.SQLException ignored) {
+            // Author fields are available only on the manager queue query.
+        }
         return row;
     }
 }

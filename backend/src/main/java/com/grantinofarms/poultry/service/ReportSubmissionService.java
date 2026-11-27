@@ -23,27 +23,56 @@ public class ReportSubmissionService {
     private final FarmRepository farms;
     private final AuditRepository audit;
     private final ObjectMapper mapper;
+    private final ReportCheckService checks;
 
     public ReportSubmissionService(ReportSubmissionRepository submissions, FarmRepository farms,
-                                   AuditRepository audit, ObjectMapper mapper) {
+                                   AuditRepository audit, ObjectMapper mapper, ReportCheckService checks) {
         this.submissions = submissions;
         this.farms = farms;
         this.audit = audit;
         this.mapper = mapper;
+        this.checks = checks;
     }
 
     @Transactional
     public Map<String, Object> createDraft(ReportSubmissionRequest request) {
+        return createDraft(request, UUID.randomUUID().toString());
+    }
+
+    public Map<String, Object> createDraft(ReportSubmissionRequest request, String idempotencyKey) {
         RoleAuthorization.requireReportSubmitter();
+        if (idempotencyKey == null || !idempotencyKey.matches("[A-Za-z0-9._:-]{8,128}")) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "IDEMPOTENCY_KEY_REQUIRED",
+                    "A valid Idempotency-Key header is required.");
+        }
         String actorId = CurrentUserContext.get();
         var farm = farms.findActive();
         if (farm == null) throw new ApiException(HttpStatus.CONFLICT, "FARM_NOT_CONFIGURED",
                 "Create or activate a farm before saving reports.");
         validateRequest(request);
+        String reportType = request.reportType().trim().toUpperCase();
+        String reportTitle = request.title().trim();
+        String payloadJson = json(request.payload());
+        String requestHash = requestHash(reportType, reportTitle, payloadJson);
+        Map<String, Object> existing = submissions.findByIdempotencyKey(farm.id(), actorId, idempotencyKey);
+        if (existing != null) {
+            requireSameIdempotentRequest(existing, requestHash);
+            return getOwned(String.valueOf(existing.get("id")), actorId);
+        }
         String id = UUID.randomUUID().toString();
         String now = Instant.now().toString();
-        submissions.insert(id, farm.id(), actorId, request.reportType().trim().toUpperCase(),
-                request.title().trim(), json(request.payload()), now);
+        try {
+            submissions.insert(id, farm.id(), actorId, reportType, reportTitle,
+                    payloadJson, idempotencyKey, requestHash, now);
+            updateScopeMetadata(id, request.payload());
+        } catch (org.springframework.dao.DuplicateKeyException ex) {
+            Map<String, Object> raced = submissions.findByIdempotencyKey(farm.id(), actorId, idempotencyKey);
+            if (raced != null) {
+                requireSameIdempotentRequest(raced, requestHash);
+                return getOwned(String.valueOf(raced.get("id")), actorId);
+            }
+            throw ex;
+        }
         audit.append(farm.id(), "CREATE", "REPORT_SUBMISSION", id, "Report draft created",
                 null, "{\"status\":\"DRAFT\",\"version\":1}", now);
         return getOwned(id, actorId);
@@ -54,8 +83,8 @@ public class ReportSubmissionService {
         RoleAuthorization.requireReportSubmitter();
         String actorId = CurrentUserContext.get();
         Map<String, Object> header = requireOwnedHeader(id, actorId);
-        String status = String.valueOf(header.get("status"));
-        if (!"DRAFT".equals(status) && !"CHANGES_REQUESTED".equals(status)) {
+        String status = String.valueOf(header.get("lifecycleStatus"));
+        if (!List.of("DRAFT", "CHANGES_REQUESTED", "BLOCKED").contains(status)) {
             throw new ApiException(HttpStatus.CONFLICT, "SUBMISSION_NOT_EDITABLE",
                     "Only a draft or a report returned for changes can be edited.");
         }
@@ -89,9 +118,19 @@ public class ReportSubmissionService {
                     "Only the current draft version can be submitted.");
         }
         submissions.appendEvent(id, version, actorId, "SUBMITTED", null, now);
+        List<Map<String, Object>> versions = submissions.findVersions(id);
+        JsonNode payload = (JsonNode) versions.get(versions.size() - 1).get("payload");
+        String nextStatus = checks.run(id, version, String.valueOf(header.get("farmId")),
+                String.valueOf(header.get("reportType")), payload);
+        if (submissions.updateLifecycleStatus(id, version, "SUBMITTED", nextStatus, now) != 1) {
+            throw new ApiException(HttpStatus.CONFLICT, "SUBMISSION_CHANGED",
+                    "The report changed while its checks were running. Reload and submit again.");
+        }
+        submissions.appendEvent(id, version, actorId, "CHECKS_COMPLETED",
+                "{\"lifecycleStatus\":\"" + nextStatus + "\"}", now);
         audit.append((String) header.get("farmId"), "SUBMIT", "REPORT_SUBMISSION", id,
-                "Report submitted for review", null,
-                "{\"status\":\"PENDING_REVIEW\",\"version\":" + version + "}", now);
+                "Report submitted and automated checks completed", null,
+                "{\"lifecycleStatus\":\"" + nextStatus + "\",\"version\":" + version + "}", now);
         return getOwned(id, actorId);
     }
 
@@ -112,6 +151,10 @@ public class ReportSubmissionService {
         Map<String, Object> result = new LinkedHashMap<>(header);
         result.put("versions", submissions.findVersions(id));
         result.put("history", submissions.findEvents(id));
+        result.put("comments", submissions.findComments(id));
+        result.put("checks", submissions.findChecks(id, ((Number) header.get("currentVersion")).intValue()));
+        result.put("decisions", submissions.findDecisions(id));
+        result.put("assignments", submissions.findAssignments(id));
         return result;
     }
 
@@ -134,6 +177,36 @@ public class ReportSubmissionService {
                 || request.title() == null || request.title().isBlank() || request.title().length() > 160) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_REPORT",
                     "Report type and title are required.");
+        }
+    }
+
+    private void updateScopeMetadata(String id, JsonNode payload) {
+        String batchId = payload.path("batchId").asText(null);
+        String houseId = payload.path("houseId").asText(null);
+        String scopeType = batchId != null && !batchId.isBlank() ? "BATCH"
+                : houseId != null && !houseId.isBlank() ? "HOUSE" : "FARM";
+        String scopeId = "BATCH".equals(scopeType) ? batchId : "HOUSE".equals(scopeType) ? houseId : null;
+        String eventDate = payload.path("eventDate").asText(null);
+        if (eventDate == null || eventDate.isBlank()) eventDate = payload.path("recordDate").asText(null);
+        String lateReason = payload.path("lateReason").asText(null);
+        submissions.updateScopeMetadata(id, scopeType, scopeId, eventDate, lateReason);
+    }
+
+    private void requireSameIdempotentRequest(Map<String, Object> existing, String requestHash) {
+        if (!requestHash.equals(existing.get("idempotencyPayloadHash"))) {
+            throw new ApiException(HttpStatus.CONFLICT, "IDEMPOTENCY_KEY_REUSED",
+                    "This Idempotency-Key was already used with different report content.");
+        }
+    }
+
+    private String requestHash(String reportType, String title, String payloadJson) {
+        try {
+            byte[] digest = java.security.MessageDigest.getInstance("SHA-256")
+                    .digest((reportType + "\\n" + title + "\\n" + payloadJson)
+                            .getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            return java.util.HexFormat.of().formatHex(digest);
+        } catch (java.security.NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 is unavailable.", e);
         }
     }
 

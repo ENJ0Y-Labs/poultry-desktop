@@ -1580,7 +1580,6 @@ body { min-width: 1100px; }
 @media(max-width:1000px){.report-submission-layout,.review-layout{grid-template-columns:1fr}.review-queue{max-height:420px}}
 @media(max-width:650px){.report-composer .form-grid,.user-create-section .form-grid{grid-template-columns:1fr}.field-span-2{grid-column:auto}.review-filters{flex-direction:column}.review-meta-grid{grid-template-columns:1fr}.report-submission-item-heading{flex-direction:column}}
 
-
 /* Pomas first-run onboarding */
 .pomas-onboarding{min-height:100vh;background:var(--bg);color:var(--text)}
 .onboarding-topbar{height:68px;display:flex;align-items:center;justify-content:space-between;padding:0 28px;border-bottom:1px solid var(--border);background:var(--panel)}

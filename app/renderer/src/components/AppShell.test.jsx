@@ -34,6 +34,36 @@ describe("AppShell", () => {
     }
   });
 
+
+  it("restricts the worker workspace to My Reports even when a farm route is requested", async () => {
+    window.location.hash = "#dashboard/overview";
+    render(
+      <AppShell userRole="WORKER" farm={{ name: "Grantino", location: "", currency: "NGN", timezone: "Africa/Lagos" }}>
+        <PageSection page="my-reports"><section>Private submissions</section></PageSection>
+        <PageSection page="dashboard"><section>Farm dashboard</section></PageSection>
+      </AppShell>
+    );
+    const navigation = screen.getByRole("navigation", { name: "Main navigation" });
+    expect(within(navigation).getByRole("button", { name: "My Reports" })).toBeInTheDocument();
+    expect(within(navigation).queryByRole("button", { name: "Dashboard" })).not.toBeInTheDocument();
+    expect(within(navigation).queryByRole("button", { name: "Review Centre" })).not.toBeInTheDocument();
+    expect(screen.getByText("Private submissions")).toBeInTheDocument();
+    expect(screen.queryByText("Farm dashboard")).not.toBeInTheDocument();
+    await waitFor(() => expect(window.location.hash).toBe("#my-reports/overview"));
+  });
+
+  it("shows account management to Administrators but keeps the review centre separate", () => {
+    render(
+      <AppShell userRole="ADMINISTRATOR" farm={{ name: "Farm workspace", location: "", currency: "", timezone: "" }}>
+        <PageSection page="user-management"><section>Account controls</section></PageSection>
+      </AppShell>
+    );
+    const navigation = screen.getByRole("navigation", { name: "Main navigation" });
+    expect(within(navigation).getByRole("button", { name: "User Management" })).toBeInTheDocument();
+    expect(within(navigation).getByRole("button", { name: "My Reports" })).toBeInTheDocument();
+    expect(within(navigation).queryByRole("button", { name: "Review Centre" })).not.toBeInTheDocument();
+    expect(within(navigation).getByRole("button", { name: "Dashboard" })).toBeInTheDocument();
+  });
   it("uses the saved farm profile name in the shell", () => {
     render(
       <AppShell farm={{ name: "Riverbend Poultry", location: "", currency: "NGN", timezone: "Africa/Lagos" }}>
