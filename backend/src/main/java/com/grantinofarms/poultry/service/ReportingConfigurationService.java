@@ -73,6 +73,13 @@ public class ReportingConfigurationService {
         if (request.batchType() != null && !Set.of("LAYER","BROILER","TURKEY").contains(request.batchType())) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_BATCH_TYPE", "Batch type is invalid.");
         }
+        if ("BATCH".equals(request.scopeType()) && request.batchType() != null) {
+            var scopedBatch = batches.findById(request.scopeId());
+            if (scopedBatch != null && !request.batchType().equals(scopedBatch.type())) {
+                throw new ApiException(HttpStatus.BAD_REQUEST, "SCHEDULE_BATCH_TYPE_MISMATCH",
+                        "The selected batch type does not match the selected batch.");
+            }
+        }
         String id = UUID.randomUUID().toString();
         reporting.insertSchedule(id, farm.id(), request.reportType(), request.scopeType(),
                 request.scopeId(), request.batchType(), request.frequency(), request.dueTime(),
