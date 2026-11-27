@@ -404,7 +404,7 @@ describe("MyReportsPage", () => {
 
     render(<MyReportsPage userId="worker-1" />);
     fireEvent.click(await screen.findByRole("button", { name: "View" }));
-    expect(await screen.findByText(/CHANGES REQUESTED/)).toBeInTheDocument();
+    expect(await screen.findByText(/changes requested/i)).toBeInTheDocument();
     expect(screen.getByText("Please verify the morning count.")).toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText("Number of birds"), { target: { value: "3" } });
