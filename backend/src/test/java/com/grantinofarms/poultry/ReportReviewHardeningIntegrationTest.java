@@ -200,6 +200,39 @@ class ReportReviewHardeningIntegrationTest {
     }
 
     @Test
+    void oneMergeKeyCannotBeClaimedByTwoDifferentSubmissions() throws Exception {
+        LocalDate date = LocalDate.now(ZoneId.of("Africa/Lagos"));
+        Map<String, Object> firstSubmission = submitExpense(date, "First keyed merge", 125000);
+        Map<String, Object> secondSubmission = submitExpense(date, "Second keyed merge", 126000);
+        String firstId = String.valueOf(firstSubmission.get("id"));
+        String secondId = String.valueOf(secondSubmission.get("id"));
+
+        String managerId = createManager();
+        CurrentUserContext.set(managerId, "MANAGER");
+        reviews.decide(firstId, "APPROVED", null);
+        reviews.decide(secondId, "APPROVED", null);
+
+        String sharedKey = "cross-submission-merge-key-006";
+        merges.merge(firstId, sharedKey);
+        assertThatThrownBy(() -> merges.merge(secondId, sharedKey))
+                .isInstanceOf(Exception.class)
+                .hasMessageContaining("already been used for another report merge");
+
+        assertThat(jdbc.queryForObject(
+                "SELECT lifecycle_status FROM report_submissions WHERE id = ?",
+                String.class, secondId)).isEqualTo("APPROVED");
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM expenses WHERE farm_id = ? AND description = 'First keyed merge'",
+                Integer.class, farmId)).isEqualTo(1);
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM expenses WHERE farm_id = ? AND description = 'Second keyed merge'",
+                Integer.class, farmId)).isZero();
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM report_submission_links WHERE submission_id = ?",
+                Integer.class, secondId)).isZero();
+    }
+
+    @Test
     void failureAtFinalAuditWriteRollsBackOfficialRecordLinkAndMergedState() throws Exception {
         LocalDate date = LocalDate.now(ZoneId.of("Africa/Lagos"));
         String description = "Final audit rollback expense";
