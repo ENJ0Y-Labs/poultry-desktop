@@ -301,7 +301,22 @@ export default function ReviewCentrePage({ currentUser }) {
                 {selected.reportType !== "WEIGHT_RECORD" && <p className="muted">Post-merge correction is not yet available for this report type. Its official record remains unchanged.</p>}
                 {weightCorrectionAlreadyApplied && <p className="muted">Earlier corrections are preserved in the provenance history. The form targets the latest effective replacement, not the original row.</p>}
               </section>}
-              <section className="review-history"><h4>Decision and activity history</h4>{(selected.decisions || []).map(item => <article key={item.id}><strong>{label(item.decision)} · version {item.version}</strong><p>{item.reason || "No reason supplied"}</p><small>{item.managerName} · {item.createdAt}</small></article>)}{(selected.history || []).map(item => <p key={item.id}><strong>{label(item.event)}</strong> · {item.occurredAt}</p>)}</section>
+              <section className="review-history"><h4>Decision and activity history</h4>
+                {(selected.decisions || []).map(item => <article key={item.id}><strong>{label(item.decision)} · version {item.version}</strong><p>{item.reason || "No reason supplied"}</p><small>{item.managerName} · {item.createdAt}</small></article>)}
+                {(selected.history || []).map(item => {
+                  const isCorrection = item.event === "POST_MERGE_CORRECTED";
+                  const details = isCorrection && item.details && typeof item.details === "object" ? item.details : {};
+                  return <article key={item.id}>
+                    <strong>{label(item.event)} · version {item.version}</strong>
+                    {isCorrection && <>
+                      <p><strong>Original record:</strong> {details.originalRecordId || "Unavailable"}</p>
+                      <p><strong>Replacement record:</strong> {details.replacementRecordId || "Unavailable"}</p>
+                      <p><strong>Correction reason:</strong> {details.reason || "No reason recorded"}</p>
+                    </>}
+                    <small>{item.actorId ? "Actor " + item.actorId + " · " : ""}{item.occurredAt}</small>
+                  </article>;
+                })}
+              </section>
             </>}
           </section>
         </div>
