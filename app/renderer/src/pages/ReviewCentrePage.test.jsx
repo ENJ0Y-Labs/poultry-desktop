@@ -21,6 +21,7 @@ vi.mock("../services/api.js", () => ({
     comment: vi.fn().mockResolvedValue(fixtures.detail),
     decide: vi.fn().mockResolvedValue({ ...fixtures.detail, lifecycleStatus: "APPROVED", status: "APPROVED" }),
     correctWeight: vi.fn(),
+    merge: vi.fn(),
   },
 }));
 
@@ -30,6 +31,7 @@ describe("ReviewCentrePage", () => {
     reportReviewApi.queue.mockResolvedValue([fixtures.detail]);
     reportReviewApi.managers.mockResolvedValue([{ id: "manager-1", username: "manager", fullName: "Manager One" }]);
     reportReviewApi.get.mockResolvedValue(fixtures.detail);
+    reportReviewApi.merge.mockReset();
   });
 
   it("allows a manager to inspect and approve another user's exact submitted version", async () => {
@@ -39,6 +41,32 @@ describe("ReviewCentrePage", () => {
     fireEvent.click(screen.getByRole("button", { name: "Approve version" }));
     await waitFor(() => expect(reportReviewApi.decide).toHaveBeenCalledWith("submission-1", "APPROVED", null));
     expect(await screen.findByText(/Official farm records remain unchanged/)).toBeInTheDocument();
+  });
+
+  it("reuses the same merge key after an interrupted host response", async () => {
+    const approved = {
+      ...fixtures.detail,
+      lifecycleStatus: "APPROVED",
+      status: "APPROVED",
+      submittedVersion: 3,
+      currentVersion: 3,
+    };
+    reportReviewApi.queue.mockResolvedValue([approved]);
+    reportReviewApi.get.mockResolvedValue(approved);
+    reportReviewApi.merge
+      .mockRejectedValueOnce(new TypeError("Network connection was interrupted"))
+      .mockResolvedValueOnce({ ...approved, lifecycleStatus: "MERGED", status: "MERGED" });
+
+    render(<ReviewCentrePage currentUser={{ id: "manager-1", role: "MANAGER" }} />);
+    fireEvent.click(await screen.findByRole("button", { name: /Mortality report/ }));
+    fireEvent.click(await screen.findByRole("button", { name: "Merge approved report" }));
+    await waitFor(() => expect(reportReviewApi.merge).toHaveBeenCalledTimes(1));
+    expect(await screen.findByText(/Network connection was interrupted/)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Merge approved report" }));
+    await waitFor(() => expect(reportReviewApi.merge).toHaveBeenCalledTimes(2));
+    expect(reportReviewApi.merge.mock.calls[0][1]).toBe("merge-submission-1-3");
+    expect(reportReviewApi.merge.mock.calls[1][1]).toBe("merge-submission-1-3");
   });
 
   it("prevents a manager from deciding on their own submission", async () => {
