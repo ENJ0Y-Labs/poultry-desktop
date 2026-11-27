@@ -202,6 +202,7 @@ export class BackendManager {
             env: {
               ...env,
               SERVER_ADDRESS: this.bindAddress,
+              POULTRY_LAN_ENABLED: String(this.bindAddress !== "127.0.0.1"),
               SERVER_PORT: String(this.port),
               DATABASE_PATH: this.databasePath,
               LOG_FILE: this.logFilePath,
@@ -273,6 +274,10 @@ export class BackendManager {
     }
 
     throw new Error(`The local backend did not prove its identity on port ${this.port}. Another application may be using that port, the database may be unavailable, or a migration may have failed. Check ${this.logFilePath} for Spring Boot errors and ${this.processLogFilePath} for process startup output.`);
+  }
+
+  get baseUrl() {
+    return `http://${this.bindAddress}:${this.port}`;
   }
 
   get lanStatus() {
