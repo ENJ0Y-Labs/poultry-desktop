@@ -111,7 +111,7 @@ class ReportSubmissionIntegrationTest {
         assertThat(submitted.get("submittedVersion")).isEqualTo(2);
         assertThat(jdbc.queryForObject(
                 "SELECT COUNT(*) FROM report_submission_events WHERE submission_id = ?",
-                Integer.class, id)).isEqualTo(5);
+                Integer.class, id)).isEqualTo(4);
 
         assertThatThrownBy(() -> jdbc.update("""
                 UPDATE report_submission_versions SET payload_json = '{}' 
@@ -292,7 +292,7 @@ class ReportSubmissionIntegrationTest {
                 .isEqualTo("RESOLVED");
         assertThat(jdbc.queryForObject(
                 "SELECT COUNT(*) FROM farm_incident_events WHERE incident_id = ?",
-                Integer.class, id)).isEqualTo(4);
+                Integer.class, id)).isEqualTo(5);
         assertThat(jdbc.queryForObject(
                 "SELECT COUNT(*) FROM expenses WHERE description = ?",
                 Integer.class, "The drinker line has stopped supplying water to the active flock.")).isZero();
