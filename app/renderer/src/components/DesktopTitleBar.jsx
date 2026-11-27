@@ -14,12 +14,12 @@ const farmDestinations = [
   ["Settings", "#settings/farm"],
 ];
 
-export default function DesktopTitleBar({ onNavigate, onQuickActions, onToggleSidebar, onToggleAttention, onShortcuts, onTutorials, sidebarCollapsed, attentionCollapsed }) {
+export default function DesktopTitleBar({ onNavigate, onQuickActions, onToggleSidebar, onToggleAttention, onShortcuts, onTutorials, sidebarCollapsed, attentionCollapsed, userRole = "MANAGER" }) {
   const [openMenu, setOpenMenu] = useState("");
   const rootRef = useRef(null);
   const menuRef = useRef(null);
 
-  const menus = [
+  const managerMenus = [
     { label: "File", items: [
       { label: "New record", action: onQuickActions, shortcut: "Ctrl+K" },
       { label: "Import / Export", action: () => onNavigate("#import-export/overview") },
@@ -52,6 +52,29 @@ export default function DesktopTitleBar({ onNavigate, onQuickActions, onToggleSi
       { label: "Keyboard shortcuts", action: onShortcuts },
     ] },
   ];
+  const restrictedMenus = [
+    { label: "File", items: [
+      { label: "Quit Pomas", action: () => window.poultryDesktop?.quit?.() },
+    ] },
+    { label: "Edit", items: [
+      { label: "Undo", command: "undo", shortcut: "Ctrl+Z" },
+      { label: "Redo", command: "redo", shortcut: "Ctrl+Y" },
+      { separator: true },
+      { label: "Cut", command: "cut", shortcut: "Ctrl+X" },
+      { label: "Copy", command: "copy", shortcut: "Ctrl+C" },
+      { label: "Paste", command: "paste", shortcut: "Ctrl+V" },
+      { label: "Select all", command: "selectAll", shortcut: "Ctrl+A" },
+    ] },
+    { label: "View", items: [
+      { label: sidebarCollapsed ? "Expand navigation" : "Collapse navigation", action: onToggleSidebar },
+      { label: "Keyboard shortcuts", action: onShortcuts },
+    ] },
+    { label: "Help", items: [
+      { label: "Tutorials & Help", action: onTutorials },
+      { label: "Keyboard shortcuts", action: onShortcuts },
+    ] },
+  ];
+  const menus = userRole === "WORKER" ? restrictedMenus : managerMenus;
 
   useEffect(() => {
     if (!openMenu) return undefined;

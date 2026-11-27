@@ -153,6 +153,46 @@ async function request(path, options = {}) {
   return body.data;
 }
 
+
+async function uploadRequest(path, formData) {
+  const apiBase = await getApiBase();
+  let response;
+  try {
+    response = await fetch(apiBase + path, {
+      method: "POST", body: formData, credentials: "include",
+      headers: { "X-Requested-With": "XMLHttpRequest" },
+      signal: AbortSignal.timeout(120000),
+    });
+  } catch {
+    signalBackendUnavailable();
+    throw new ApiError("BACKEND_UNAVAILABLE", "The local backend is not responding.", 503);
+  }
+  const body = await response.json().catch(() => ({}));
+  if (!response.ok) throw new ApiError(body?.error?.code || "REQUEST_FAILED",
+    body?.error?.message || "Upload failed.", response.status, body?.error?.details);
+  window.dispatchEvent(new CustomEvent("pomas:data-mutated", { detail: { path, method: "POST" } }));
+  return body.data;
+}
+
+async function downloadRequest(path) {
+  const apiBase = await getApiBase();
+  let response;
+  try {
+    response = await fetch(apiBase + path, {
+      credentials: "include", headers: { "X-Requested-With": "XMLHttpRequest" },
+      signal: AbortSignal.timeout(120000),
+    });
+  } catch {
+    signalBackendUnavailable();
+    throw new ApiError("BACKEND_UNAVAILABLE", "The local backend is not responding.", 503);
+  }
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({}));
+    throw new ApiError(body?.error?.code || "REQUEST_FAILED", body?.error?.message || "Download failed.", response.status);
+  }
+  return response.blob();
+}
+
 export const farmApi = {
   get: () => request("/farm"),
   create: (data) => request("/farm", { method: "POST", body: JSON.stringify(data) }),
@@ -398,4 +438,101 @@ export const csvImportApi = {
   importFeedRecords: (module, records) => request("/imports/csv/feed", { method: "POST", body: JSON.stringify({ module, records }) }),
   previewProductionRecords: (module, records) => request("/imports/csv/production/preview", { method: "POST", body: JSON.stringify({ module, records }) }),
   importProductionRecords: (module, records) => request("/imports/csv/production", { method: "POST", body: JSON.stringify({ module, records }) }),
+};
+
+export const reportSubmissionApi = {
+  create: (data, idempotencyKey) => request("/submissions", {
+    method: "POST", headers: { "Idempotency-Key": idempotencyKey }, body: JSON.stringify(data),
+  }),
+  save: (id, data) => request("/submissions/" + encodeURIComponent(id), {
+    method: "PUT", body: JSON.stringify(data),
+  }),
+  submit: (id) => request("/submissions/" + encodeURIComponent(id) + "/submit", { method: "POST" }),
+  mine: () => request("/submissions"),
+  references: () => request("/submissions/references"),
+  get: (id) => request("/submissions/" + encodeURIComponent(id)),
+  comment: (id, body) => request("/review/submissions/" + encodeURIComponent(id) + "/comments", {
+    method: "POST", body: JSON.stringify({ body }),
+  }),
+};
+
+
+
+export const reportReviewApi = {
+  queue: (filters = {}) => {
+    const params = new URLSearchParams();
+    Object.entries(filters).forEach(([key, value]) => { if (value) params.set(key, value); });
+    const query = params.toString();
+    return request("/review/queue" + (query ? "?" + query : ""));
+  },
+  managers: () => request("/review/managers"),
+  get: (id) => request("/review/submissions/" + encodeURIComponent(id)),
+  assign: (id, managerId) => request("/review/submissions/" + encodeURIComponent(id) + "/assign", {
+    method: "POST", body: JSON.stringify({ managerId }),
+  }),
+  comment: (id, body) => request("/review/submissions/" + encodeURIComponent(id) + "/comments", {
+    method: "POST", body: JSON.stringify({ body }),
+  }),
+  decide: (id, decision, reason) => request("/review/submissions/" + encodeURIComponent(id) + "/decision", {
+    method: "POST", body: JSON.stringify({ decision, reason }),
+  }),
+  overrideWarning: (id, checkId, reason) => request("/review/submissions/" + encodeURIComponent(id)
+    + "/checks/" + encodeURIComponent(checkId) + "/override", {
+      method: "POST", body: JSON.stringify({ reason }),
+    }),
+  merge: (id, operationKey) => request("/review/submissions/" + encodeURIComponent(id) + "/merge", {
+    method: "POST", headers: { "Idempotency-Key": operationKey },
+  }),
+  notifications: () => request("/review/notifications"),
+  markNotificationRead: id => request("/review/notifications/" + encodeURIComponent(id) + "/read", { method: "PATCH" }),
+};
+
+export const adminUserApi = {
+  list: () => request("/admin/users"),
+  create: (data) => request("/admin/users", { method: "POST", body: JSON.stringify(data) }),
+  changeRole: (id, role) => request("/admin/users/" + encodeURIComponent(id) + "/role", {
+    method: "PATCH", body: JSON.stringify({ role }),
+  }),
+  changeStatus: (id, status) => request("/admin/users/" + encodeURIComponent(id) + "/status", {
+    method: "PATCH", body: JSON.stringify({ status }),
+  }),
+  resetPassword: (id, password) => request("/admin/users/" + encodeURIComponent(id) + "/password-reset", {
+    method: "POST", body: JSON.stringify({ password }),
+  }),
+};
+
+
+export const incidentApi = {
+  list: () => request("/incidents"),
+  create: payload => request("/incidents", { method: "POST", body: JSON.stringify(payload) }),
+  acknowledge: id => request("/incidents/" + encodeURIComponent(id) + "/acknowledge", { method: "POST" }),
+  resolve: (id, notes) => request("/incidents/" + encodeURIComponent(id) + "/resolve", {
+    method: "POST", body: JSON.stringify({ notes }),
+  }),
+};
+
+export const reportAttachmentApi = {
+  upload: (submissionId, file) => {
+    const form = new FormData();
+    form.append("file", file);
+    return uploadRequest("/submissions/" + encodeURIComponent(submissionId) + "/attachments", form);
+  },
+  download: (submissionId, attachmentId) => downloadRequest(
+    "/submissions/" + encodeURIComponent(submissionId) + "/attachments/" + encodeURIComponent(attachmentId),
+  ),
+};
+
+
+export const reportingConfigApi = {
+  schedules: () => request("/review/reporting/schedules"),
+  createSchedule: payload => request("/review/reporting/schedules", { method: "POST", body: JSON.stringify(payload) }),
+  setScheduleEnabled: (id, enabled) => request("/review/reporting/schedules/" + encodeURIComponent(id) + "/enabled", {
+    method: "PATCH", body: JSON.stringify({ enabled }),
+  }),
+  thresholds: () => request("/review/reporting/thresholds"),
+  createThreshold: payload => request("/review/reporting/thresholds", { method: "POST", body: JSON.stringify(payload) }),
+  setThresholdEnabled: (id, enabled) => request("/review/reporting/thresholds/" + encodeURIComponent(id) + "/enabled", {
+    method: "PATCH", body: JSON.stringify({ enabled }),
+  }),
+  missing: () => request("/review/reporting/missing"),
 };

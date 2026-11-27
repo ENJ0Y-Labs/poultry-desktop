@@ -188,15 +188,39 @@ Session-token hashes and session state used by authentication. Session lookups r
 
 ### `report_submissions`
 
-Farm-scoped report draft and lifecycle header. Stores author, report type, status, current version, submitted version, and server timestamps. Authors can access only their own submissions until the Manager review endpoints are introduced.
+Farm-scoped report draft and lifecycle header. Stores author, report type, legacy and workflow lifecycle status, current/submitted/decision versions, assignment, event date, late reason, idempotency key and request hash, merge operation key, and server timestamps. Repository methods scope author access; Manager review queries are farm-wide and role-guarded.
 
 ### `report_submission_versions`
 
-Append-only report payload snapshots. Each save creates a new version; database triggers reject UPDATE and DELETE. Submission records point to the exact submitted version.
+Append-only report payload snapshots. Each save creates a new version containing report type, title, JSON payload, author, and server timestamp; database triggers reject UPDATE and DELETE. Submission and decision records point to exact versions.
 
 ### `report_submission_events`
 
 Append-only actor-attributed submission lifecycle history with optional version reference, structured details, and server timestamp. Database triggers reject UPDATE and DELETE.
+
+### report_submission_comments
+
+Append-only comments associated with a submission and version. Worker/Administrator access is author-scoped; Managers can comment across the farm.
+
+### report_submission_assignments
+
+Append-only reviewer assignment and reassignment history. Assignment does not grant permissions beyond the Manager role.
+
+### report_submission_decisions
+
+Immutable whole-report decisions bound to a specific version. Multiple historical decisions may exist for a version if a later merge recheck returns it to review; only the current valid lifecycle transition can proceed.
+
+### report_submission_check_runs and report_submission_checks
+
+Each submission or pre-merge validation pass has an immutable check-run record and immutable individual Passed/Warning/Blocked checks. Only the latest check run for the submitted version governs approval/merge.
+
+### report_submission_warning_overrides
+
+Append-only Manager authorizations for individual overrideable warnings. Each record stores the exact check/version, Manager, reason, and timestamp. Duplicate overrides are constrained.
+
+### report_submission_links
+
+Links a successfully merged submission version to the official domain records created by the existing farm services. These links are written in the same transaction as the official records and final MERGED state.
 
 ### `application_settings`
 
@@ -252,7 +276,7 @@ farm
 
 ## Migration history
 
-The repository contains forward-only migrations through V35, including independent Turkey support, population confidence/adjustments, feed opening balances, multi-type feed applicability, idempotent batch creation, operational roles, and report submission history.
+The repository contains forward-only migrations through V37, including independent Turkey support, population confidence/adjustments, feed opening balances, multi-type feed applicability, idempotent batch creation, operational roles, report version history, review workflow, immutable checks, and merge provenance.
 
 Broad progression:
 
@@ -288,6 +312,8 @@ Broad progression:
 - V30: feed brand and packaging metadata
 - V33: brand-aware feed product identity, preserving existing feed type IDs and linked history\n- V34: idempotent batch creation and audited cancellation lifecycle
 - V35: operational roles and immutable report submission versions/history
+- V36: review comments, assignments, decisions, check runs/results, warning overrides, submission idempotency, merge operation keys, and official-record provenance
+- V37: emergency incidents/events, Manager notifications, configurable report schedules/thresholds, and version-bound BLOB evidence attachments
 - V31: append-only feed opening balances
 - V32: normalized multi-type feed applicability
 
