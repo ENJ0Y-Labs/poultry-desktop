@@ -119,7 +119,7 @@ describe("MyReportsPage", () => {
     expect(JSON.parse(localStorage.getItem("pomas:report-submission-drafts:worker-1"))[0].serverId).toBe("submission-1");
   });
 
-  it("submits only after the worker explicitly chooses Submit for review", async () => {
+  it("lets a Worker submit from the phone browser through the existing review workflow", async () => {
     reportSubmissionApi.create.mockResolvedValue(fixtures.draft);
     reportSubmissionApi.submit.mockResolvedValue({
       ...fixtures.draft,
@@ -129,6 +129,7 @@ describe("MyReportsPage", () => {
     });
 
     render(<MyReportsPage userId="worker-1" />);
+    expect(screen.getByText(/submit reports from this phone while connected to the farm computer on the same trusted Wi-Fi/i)).toBeInTheDocument();
     await screen.findByText(/No reports yet/);
     fillMortalityForm();
     fireEvent.click(screen.getByRole("button", { name: "Submit for review" }));
