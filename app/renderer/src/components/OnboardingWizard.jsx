@@ -127,7 +127,7 @@ export default function OnboardingWizard({ account, farmForm, setFarmForm, onSav
               <div className="onboarding-fields">
                 <label>First name<input autoFocus value={progress.firstName} onChange={e => update("firstName", e.target.value)} placeholder="First name" /></label>
                 <label>Family name<input value={progress.familyName} onChange={e => update("familyName", e.target.value)} placeholder="Family name" /></label>
-                <label>Email address<input value={account?.email || ""} readOnly placeholder="Not provided" /><small>Managed through your Pomas account.</small></label>
+                <label><span>Email address</span><input value={account?.email || ""} readOnly placeholder="Not provided" /></label><small>Managed through your Pomas account.</small>
               </div>
               <button className="onboarding-primary" onClick={saveProfileAndContinue} disabled={saving}>{saving ? "SAVING PROFILE…" : "NEXT"} <span>→</span></button>
             </>}
