@@ -486,6 +486,10 @@ export default function MyReportsPage({ userId = "" }) {
       setError("Evidence uploads require a connection to the farm computer. Keep the original file until upload is confirmed.");
       return;
     }
+    if (selected && !editableStatuses.includes(selected.lifecycleStatus || selected.status)) {
+      setError("Evidence can only be attached while editing a draft or a report returned for changes. Submitted versions are locked.");
+      return;
+    }
     setSaving(true);
     setError("");
     setNotice("");
@@ -624,12 +628,12 @@ export default function MyReportsPage({ userId = "" }) {
                   id="report-evidence-file"
                   type="file"
                   accept=".jpg,.jpeg,.png,.pdf,.txt,image/jpeg,image/png,application/pdf,text/plain"
-                  disabled={saving || backendAvailable !== true}
+                  disabled={saving || backendAvailable !== true || Boolean(selected && !editableStatuses.includes(selected.lifecycleStatus || selected.status))}
                   onChange={event => setEvidenceFile(event.target.files?.[0] || null)}
                 />
                 <p className="muted">JPEG, PNG, PDF or UTF-8 text. Maximum 5 MB per file and 10 files per report version. Evidence is uploaded to the farm database, not kept in an offline draft.</p>
                 {evidenceFile && <p className="muted">Selected: {evidenceFile.name} · {Math.ceil(evidenceFile.size / 1024)} KB</p>}
-                <button type="button" className="secondary-button" onClick={uploadEvidence} disabled={saving || !evidenceFile || backendAvailable !== true}>
+                <button type="button" className="secondary-button" onClick={uploadEvidence} disabled={saving || !evidenceFile || backendAvailable !== true || Boolean(selected && !editableStatuses.includes(selected.lifecycleStatus || selected.status))}>
                   {saving ? "Uploading…" : "Upload evidence"}
                 </button>
               </div>
