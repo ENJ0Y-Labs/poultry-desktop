@@ -92,6 +92,32 @@ describe("BackendManager", () => {
     expect(manager.databasePath).toMatch(/C:[\\/]project[\\/]data[\\/]poultry\.db$/);
   });
 
+  it("binds the Electron development backend to loopback", async () => {
+    const child = fakeChild();
+    spawnMock.mockReturnValue(child);
+    const appPath = mkdtempSync(join(tmpdir(), "pomas-electron-dev-"));
+
+    try {
+      const manager = new BackendManager({
+        userDataPath: appPath,
+        appPath,
+        isPackaged: false,
+        port: 19004,
+        resourcesPath,
+        spawnProcess: spawnMock,
+      });
+
+      await manager.start();
+
+      expect(spawnMock.mock.calls[0][2].env.SERVER_ADDRESS).toBe("127.0.0.1");
+      expect(spawnMock.mock.calls[0][2].env.SERVER_PORT).toBe("19004");
+      expect(globalThis.fetch).toHaveBeenCalledWith("http://127.0.0.1:19004/api/v1/health");
+      await manager.stop();
+    } finally {
+      rmSync(appPath, { recursive: true, force: true });
+    }
+  });
+
   it("uses the Electron application-data directory for the production database", () => {
     const manager = new BackendManager({
       userDataPath: "C:/Users/test/AppData/Roaming/Poultry Farm Manager",
