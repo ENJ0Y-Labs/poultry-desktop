@@ -153,7 +153,7 @@ describe("ReviewCentrePage", () => {
 
     render(<ReviewCentrePage currentUser={{ id: "manager-1", role: "MANAGER" }} />);
     fireEvent.click(await screen.findByRole("button", { name: /Mortality report/ }));
-    fireEvent.change(screen.getByLabelText(/Reason for returning or rejecting/), {
+    fireEvent.change(await screen.findByLabelText(/Reason for returning or rejecting/i), {
       target: { value: "Please verify the batch count against the morning register." },
     });
     fireEvent.click(screen.getByRole("button", { name: "Request changes" }));
@@ -164,7 +164,7 @@ describe("ReviewCentrePage", () => {
       "Please verify the batch count against the morning register.",
     ));
     expect(await screen.findByText("Report returned to its author for correction.")).toBeInTheDocument();
-    expect(screen.getByText(/CHANGES REQUESTED/)).toBeInTheDocument();
+    expect(screen.getByText(/changes requested/i)).toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText("Status"), { target: { value: "CHANGES_REQUESTED" } });
     await waitFor(() => expect(reportReviewApi.queue).toHaveBeenCalledWith({
