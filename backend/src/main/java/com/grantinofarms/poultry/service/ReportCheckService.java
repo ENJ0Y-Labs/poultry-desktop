@@ -74,13 +74,19 @@ public class ReportCheckService {
                     Map.of("role", actorRole == null ? "UNKNOWN" : actorRole)));
         }
 
+        JsonNode persistedPayload = submissions.findVersions(submissionId).stream()
+                .filter(row -> row.get("version") instanceof Number storedVersion
+                        && storedVersion.intValue() == version)
+                .map(row -> (JsonNode) row.get("payload"))
+                .findFirst().orElse(null);
         boolean versionIntegrity = submission != null
                 && reportType.equals(submission.get("reportType"))
                 && submission.get("currentVersion") instanceof Number current
                 && current.intValue() == version
                 && submission.get("submittedVersion") instanceof Number submitted
                 && submitted.intValue() == version
-                && payload != null && payload.isObject();
+                && payload != null && payload.isObject()
+                && persistedPayload != null && persistedPayload.equals(payload);
         if (versionIntegrity) {
             results.add(passed("REPORT_VERSION_INTEGRITY",
                     "The immutable submitted version, report type and payload match the review request."));
