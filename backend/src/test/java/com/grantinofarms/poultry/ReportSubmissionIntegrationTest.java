@@ -249,6 +249,9 @@ class ReportSubmissionIntegrationTest {
         Map<String, Object> merged = merges.merge(id, "expense-merge-key-001");
         assertThat(merged.get("lifecycleStatus")).isEqualTo("MERGED");
         assertThat((java.util.List<?>) merged.get("links")).hasSize(1);
+        assertThat(reviews.queue("MERGED", null, null))
+                .extracting(row -> row.get("id"))
+                .contains(id);
         assertThat(jdbc.queryForObject(
                 "SELECT COUNT(*) FROM expenses WHERE description = ?",
                 Integer.class, "Feed transport")).isEqualTo(1);

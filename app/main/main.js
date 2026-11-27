@@ -244,13 +244,14 @@ ipcMain.handle("backup:restore", async (_event, ...args) => {
       return { canceled: true };
     }
 
-    const temporary = database + ".restore-" + Date.now() + ".tmp";
+    const restoreToken = Date.now() + "-" + Math.random().toString(36).slice(2);
+    const temporary = database + ".restore-" + restoreToken + ".tmp";
+    const rollback = database + ".pre-restore-" + restoreToken + ".db";
     const wal = database + "-wal";
     const shm = database + "-shm";
 
-    // The backend owns SQLite and is still running here. Ask it to create a
-    // consistent VACUUM INTO snapshot before the process is stopped. A raw
-    // copy of the live database can miss committed WAL frames.
+    // The backend owns SQLite. Create and validate a consistent pre-restore
+    // snapshot before stopping it; never raw-copy a live WAL database.
     const safetyResponse = await fetch(
       "http://127.0.0.1:" + backendManager.port + "/api/v1/backup",
       {
@@ -261,31 +262,50 @@ ipcMain.handle("backup:restore", async (_event, ...args) => {
     );
     const safetyBody = await safetyResponse.json().catch(() => ({}));
     if (!safetyResponse.ok || !safetyBody?.data?.path) {
+      rmSync(temporary, { force: true });
       throw new Error(safetyBody?.error?.message || "The pre-restore safety backup could not be created.");
     }
     const safety = safetyBody.data.path;
-    // Validate the safety snapshot before any destructive operation. A backup
-    // that exists but cannot be opened is not a recovery plan.
     await validateBackup(safety);
     log("restore_safety_backup_created", { filename: backupFilename(safety) });
 
-    await backendManager.stop();
-    await waitForBackendExit();
-
-    let replacementStarted = false;
+    // Stage and validate the exact bytes that will be installed while the current
+    // backend is still available to inspect the SQLite file.
     try {
       copyFileSync(backup, temporary);
-      replacementStarted = true;
-      rmSync(database, { force: true });
+      await validateBackup(temporary);
+    } catch (error) {
+      rmSync(temporary, { force: true });
+      throw error;
+    }
+
+    try {
+      await backendManager.stop();
+      await waitForBackendExit();
+    } catch (error) {
+      rmSync(temporary, { force: true });
+      throw error;
+    }
+
+    let originalMoved = false;
+    let replacementPublished = false;
+    try {
+      // Keep the original database recoverable until the replacement has passed
+      // backend startup and schema/readiness checks.
+      renameSync(database, rollback);
+      originalMoved = true;
       rmSync(wal, { force: true });
       rmSync(shm, { force: true });
       renameSync(temporary, database);
+      replacementPublished = true;
 
       await backendManager.start();
       log("restore_completed", {
         filename: backupFilename(backup),
         schemaVersion: validation.schemaVersion
       });
+      try { rmSync(rollback, { force: true }); }
+      catch { log("restore_rollback_cleanup_deferred", { filename: backupFilename(rollback) }); }
       return {
         canceled: false,
         restored: true,
@@ -299,19 +319,34 @@ ipcMain.handle("backup:restore", async (_event, ...args) => {
       });
 
       rmSync(temporary, { force: true });
-      if (replacementStarted) {
-        // Never let journal files from the failed replacement attach to the
-        // recovered database. SQLite can recreate these files on restart.
+      if (replacementPublished) {
         rmSync(database, { force: true });
         rmSync(wal, { force: true });
         rmSync(shm, { force: true });
+      }
+      if (originalMoved) {
+        // Same-volume rename restores the exact stopped database file without
+        // another copy operation. The validated VACUUM snapshot remains the
+        // fallback if the rollback file cannot be recovered.
+        try {
+          renameSync(rollback, database);
+        } catch (rollbackError) {
+          log("restore_rollback_rename_failed", {
+            error: rollbackError instanceof Error ? rollbackError.message : String(rollbackError)
+          });
+          if (!existsSync(safety)) {
+            throw new Error("The pre-restore safety backup is missing; automatic recovery is impossible.");
+          }
+          copyFileSync(safety, database);
+        }
+      } else if (replacementPublished) {
         if (!existsSync(safety)) {
           throw new Error("The pre-restore safety backup is missing; automatic recovery is impossible.");
         }
         copyFileSync(safety, database);
-        // The safety snapshot was validated before shutdown. Start the backend
-        // below so its normal startup/schema checks validate the recovered DB.
       }
+      rmSync(wal, { force: true });
+      rmSync(shm, { force: true });
 
       try {
         await backendManager.start();

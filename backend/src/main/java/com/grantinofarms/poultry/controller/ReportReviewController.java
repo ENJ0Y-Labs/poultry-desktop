@@ -13,13 +13,16 @@ public class ReportReviewController {
     private final ReportReviewService service;
     private final com.grantinofarms.poultry.service.ReportMergeService merges;
     private final com.grantinofarms.poultry.service.FarmIncidentService incidents;
+    private final com.grantinofarms.poultry.service.ReportCorrectionService corrections;
 
     public ReportReviewController(ReportReviewService service,
                                   com.grantinofarms.poultry.service.ReportMergeService merges,
-                                  com.grantinofarms.poultry.service.FarmIncidentService incidents) {
+                                  com.grantinofarms.poultry.service.FarmIncidentService incidents,
+                                  com.grantinofarms.poultry.service.ReportCorrectionService corrections) {
         this.service = service;
         this.merges = merges;
         this.incidents = incidents;
+        this.corrections = corrections;
     }
 
     @GetMapping("/notifications")
@@ -72,6 +75,12 @@ public class ReportReviewController {
     public Map<String, Object> merge(@PathVariable String id,
             @RequestHeader(value = "Idempotency-Key", required = false) String operationKey) {
         return Map.of("ok", true, "data", merges.merge(id, operationKey));
+    }
+
+    @PostMapping("/submissions/{id}/corrections/weight")
+    public Map<String, Object> correctWeight(@PathVariable String id,
+            @jakarta.validation.Valid @RequestBody com.grantinofarms.poultry.dto.WeightRecordCorrectionRequest request) {
+        return Map.of("ok", true, "data", corrections.correctWeight(id, request));
     }
 
     @PostMapping("/submissions/{id}/decision")

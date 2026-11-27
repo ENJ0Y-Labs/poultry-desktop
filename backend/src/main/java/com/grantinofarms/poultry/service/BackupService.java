@@ -40,6 +40,7 @@ public class BackupService {
     }
 
     public synchronized Map<String,Object> create(String directory){
+        Path temporary = null;
         try{
             if (database == null) {
                 log.warn("backup_unavailable reason=in_memory_database");
@@ -59,12 +60,32 @@ public class BackupService {
                     target = dir.resolve(timestampedBase + "-" + suffix++ + ".db");
                 }
             }
-            String escaped=target.toString().replace("'","''");
+
+            // Build beside the destination so the final publish can be an atomic rename.
+            // A failed VACUUM or validation must never leave a plausible-looking .db file.
+            temporary = dir.resolve(target.getFileName() + ".tmp-" + UUID.randomUUID());
+            String escaped=temporary.toString().replace("'","''");
             log.info("backup_creation_started filename={}", target.getFileName());
             jdbc.execute("VACUUM INTO '"+escaped+"'");
+
+            Map<String,Object> validation = validate(temporary.toString());
+            try {
+                Files.move(temporary, target, StandardCopyOption.ATOMIC_MOVE);
+            } catch (AtomicMoveNotSupportedException ex) {
+                Files.move(temporary, target);
+            }
+            temporary = null;
             prune(dir);
-            log.info("backup_created filename={} retentionLimit=30", target.getFileName());
-            return Map.of("path",target.toString(),"filename",target.getFileName().toString());
+            long sizeBytes = Files.size(target);
+            log.info("backup_created filename={} schemaVersion={} sizeBytes={} retentionLimit=30",
+                    target.getFileName(), validation.get("schemaVersion"), sizeBytes);
+            Map<String,Object> result = new LinkedHashMap<>();
+            result.put("path", target.toString());
+            result.put("filename", target.getFileName().toString());
+            result.put("schemaVersion", validation.get("schemaVersion"));
+            result.put("sizeBytes", sizeBytes);
+            result.put("valid", true);
+            return result;
         } catch (ApiException e) {
             throw e;
         } catch (AccessDeniedException e) {
@@ -98,6 +119,13 @@ public class BackupService {
         } catch (Exception e) {
             log.error("backup_creation_failed", e);
             throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR,"BACKUP_FAILED","The database backup could not be created.");
+        } finally {
+            if (temporary != null) {
+                try { Files.deleteIfExists(temporary); }
+                catch (Exception cleanupError) {
+                    log.warn("backup_temporary_cleanup_failed filename={}", temporary.getFileName());
+                }
+            }
         }
     }
 

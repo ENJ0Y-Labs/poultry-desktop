@@ -77,7 +77,7 @@ Report author endpoints:
 - `POST /api/v1/review/submissions/{id}/comments`: author may comment only on their own submission.
 
 Manager review endpoints:
-- `GET /api/v1/review/queue`
+- `GET /api/v1/review/queue` (Managers may pass `?status=MERGED` to reopen merged submissions for provenance inspection and supported corrections)
 - `GET /api/v1/review/managers`
 - `GET /api/v1/review/submissions/{id}`
 - `POST /api/v1/review/submissions/{id}/assign`
@@ -85,6 +85,7 @@ Manager review endpoints:
 - `POST /api/v1/review/submissions/{id}/checks/{checkId}/override`
 - `POST /api/v1/review/submissions/{id}/decision`
 - `POST /api/v1/review/submissions/{id}/merge` (requires a unique `Idempotency-Key`)
+- `POST /api/v1/review/submissions/{id}/corrections/weight` (Manager-only; corrects a merged weight report using a required reason and replacement measurement)
 
 Submission checks produce PASSED, WARNING or BLOCKED results. Warnings explicitly marked overrideable require a separate Manager override with a reason. Blocked reports cannot be approved. Approval applies to the exact submitted version and does not itself update official records.
 

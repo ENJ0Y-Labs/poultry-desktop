@@ -483,6 +483,9 @@ export const reportReviewApi = {
   merge: (id, operationKey) => request("/review/submissions/" + encodeURIComponent(id) + "/merge", {
     method: "POST", headers: { "Idempotency-Key": operationKey },
   }),
+  correctWeight: (id, payload) => request("/review/submissions/" + encodeURIComponent(id) + "/corrections/weight", {
+    method: "POST", body: JSON.stringify(payload),
+  }),
   notifications: () => request("/review/notifications"),
   markNotificationRead: id => request("/review/notifications/" + encodeURIComponent(id) + "/read", { method: "PATCH" }),
 };
@@ -522,6 +525,7 @@ export const reportAttachmentApi = {
     form.append("file", file);
     return uploadRequest("/submissions/" + encodeURIComponent(submissionId) + "/attachments", form);
   },
+  list: submissionId => request("/submissions/" + encodeURIComponent(submissionId) + "/attachments"),
   download: (submissionId, attachmentId) => downloadRequest(
     "/submissions/" + encodeURIComponent(submissionId) + "/attachments/" + encodeURIComponent(attachmentId),
   ),

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { reportAttachmentApi, reportReviewApi } from "../services/api.js";
 
-const statuses = ["SUBMITTED", "PENDING_REVIEW", "FLAGGED", "BLOCKED", "APPROVED"];
+const statuses = ["SUBMITTED", "PENDING_REVIEW", "FLAGGED", "BLOCKED", "APPROVED", "MERGED"];
 
 function label(value) {
   return String(value || "").replaceAll("_", " ").toLowerCase().replace(/\b\w/g, letter => letter.toUpperCase());
@@ -17,6 +17,10 @@ export default function ReviewCentrePage({ currentUser }) {
   const [comment, setComment] = useState("");
   const [reason, setReason] = useState("");
   const [overrideReasons, setOverrideReasons] = useState({});
+  const [correctionReason, setCorrectionReason] = useState("");
+  const [correctionSampleQuantity, setCorrectionSampleQuantity] = useState("");
+  const [correctionTotalWeightKg, setCorrectionTotalWeightKg] = useState("");
+  const [correctionNotes, setCorrectionNotes] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -129,6 +133,47 @@ export default function ReviewCentrePage({ currentUser }) {
     finally { setSaving(false); }
   }
 
+  async function correctMergedWeight(event) {
+    event.preventDefault();
+    if (!selected || !correctionReason.trim() || !correctionSampleQuantity || !correctionTotalWeightKg) {
+      setError("Provide a correction reason, sample quantity and total sample weight.");
+      return;
+    }
+    const version = selected.versions?.find(item => item.version === (selected.submittedVersion || selected.currentVersion));
+    const originalPayload = version?.payload || {};
+    const recordDate = originalPayload.recordDate || originalPayload.eventDate;
+    if (!recordDate) {
+      setError("The original report has no usable measurement date. The correction was not submitted.");
+      return;
+    }
+    setSaving(true);
+    setError("");
+    setNotice("");
+    try {
+      await reportReviewApi.correctWeight(selected.id, {
+        reason: correctionReason.trim(),
+        replacement: {
+          recordDate,
+          sampleQuantity: Number(correctionSampleQuantity),
+          totalWeightKg: correctionTotalWeightKg,
+          notes: correctionNotes.trim() || null,
+        },
+      });
+      const updated = await reportReviewApi.get(selected.id);
+      setSelected(updated);
+      setCorrectionReason("");
+      setCorrectionSampleQuantity("");
+      setCorrectionTotalWeightKg("");
+      setCorrectionNotes("");
+      setNotice("The original weight record was preserved and reversed. A validated replacement and correction provenance were recorded atomically.");
+      await refreshQueue();
+    } catch (err) {
+      setError(err.message || "The post-merge correction failed. The original official record was not partially changed.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
   async function decide(decision) {
     if (!selected) return;
     if (decision !== "APPROVED" && !reason.trim()) {
@@ -156,6 +201,9 @@ export default function ReviewCentrePage({ currentUser }) {
   const decisionAllowed = selected
     && !ownSubmission
     && ["SUBMITTED", "PENDING_REVIEW", "FLAGGED", "BLOCKED"].includes(selected.lifecycleStatus || selected.status);
+  const selectedVersion = selected?.submittedVersion || selected?.currentVersion;
+  const selectedPayload = selected?.versions?.find(item => item.version === selectedVersion)?.payload || {};
+  const weightCorrectionAlreadyApplied = (selected?.history || []).some(item => item.event === "POST_MERGE_CORRECTED");
 
   return (
     <div className="review-centre-page">
@@ -182,7 +230,7 @@ export default function ReviewCentrePage({ currentUser }) {
         </div>
         <div className="review-layout">
           <section className="review-queue">
-            <h3>Waiting for review <span className="muted">{queue.length}</span></h3>
+            <h3>{status === "MERGED" ? "Merged reports" : "Waiting for review"} <span className="muted">{queue.length}</span></h3>
             {loading ? <p className="muted">Loading review queue…</p> : queue.length === 0
               ? <p className="muted">No reports match these filters.</p>
               : queue.map(row => <button type="button" className={selected?.id === row.id ? "review-queue-item selected" : "review-queue-item"} key={row.id} onClick={() => openSubmission(row)}>
@@ -235,8 +283,23 @@ export default function ReviewCentrePage({ currentUser }) {
                 <button type="button" disabled={saving} onClick={mergeApproved}>{saving ? "Merging…" : "Merge approved report"}</button>
               </section>}
               {((selected.lifecycleStatus || selected.status) === "MERGED") && <section className="review-merge">
-                <h4>Official records created</h4>
+                <h4>Official records and correction history</h4>
                 {(selected.links || []).map(link => <article key={link.id}><strong>{label(link.recordType)}</strong><span>{link.recordId}</span><small>Version {link.version} · {link.createdAt}</small></article>)}
+                {selected.reportType === "WEIGHT_RECORD" && (selected.links || []).filter(link => link.recordType === "WEIGHT_RECORD").length >= 1 && <form className="review-correction-form" onSubmit={correctMergedWeight}>
+                  <h4>Correct latest effective weight record</h4>
+                  <p className="muted">Each correction preserves the previous row and creates a replacement through the existing production service. The next correction targets the latest effective replacement. Corrections are rejected when later measurements depend on the record. The original measurement date is retained: {selectedPayload.recordDate || selectedPayload.eventDate || "Unavailable"}.</p>
+                  <label htmlFor="weight-correction-reason">Correction reason</label>
+                  <textarea id="weight-correction-reason" rows={2} maxLength={500} value={correctionReason} onChange={event => setCorrectionReason(event.target.value)} required />
+                  <label htmlFor="weight-correction-sample">Corrected birds sampled</label>
+                  <input id="weight-correction-sample" type="number" min="1" step="1" value={correctionSampleQuantity} onChange={event => setCorrectionSampleQuantity(event.target.value)} required />
+                  <label htmlFor="weight-correction-total">Corrected total sample weight (kg)</label>
+                  <input id="weight-correction-total" type="number" min="0.001" step="0.001" value={correctionTotalWeightKg} onChange={event => setCorrectionTotalWeightKg(event.target.value)} required />
+                  <label htmlFor="weight-correction-notes">Replacement notes</label>
+                  <textarea id="weight-correction-notes" rows={2} maxLength={1000} value={correctionNotes} onChange={event => setCorrectionNotes(event.target.value)} />
+                  <button type="submit" disabled={saving || !correctionReason.trim() || !correctionSampleQuantity || !correctionTotalWeightKg}>Record correction</button>
+                </form>}
+                {selected.reportType !== "WEIGHT_RECORD" && <p className="muted">Post-merge correction is not yet available for this report type. Its official record remains unchanged.</p>}
+                {weightCorrectionAlreadyApplied && <p className="muted">Earlier corrections are preserved in the provenance history. The form targets the latest effective replacement, not the original row.</p>}
               </section>}
               <section className="review-history"><h4>Decision and activity history</h4>{(selected.decisions || []).map(item => <article key={item.id}><strong>{label(item.decision)} · version {item.version}</strong><p>{item.reason || "No reason supplied"}</p><small>{item.managerName} · {item.createdAt}</small></article>)}{(selected.history || []).map(item => <p key={item.id}><strong>{label(item.event)}</strong> · {item.occurredAt}</p>)}</section>
             </>}

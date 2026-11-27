@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { reportSubmissionApi } from "../services/api.js";
+import { reportAttachmentApi, reportSubmissionApi } from "../services/api.js";
 import { parseNairaToKobo } from "../utils/moneyInput.js";
 
 const reportDefinitions = {
@@ -252,6 +252,8 @@ export default function MyReportsPage({ userId = "" }) {
   const [editing, setEditing] = useState(null);
   const [selected, setSelected] = useState(null);
   const [comment, setComment] = useState("");
+  const [evidenceFile, setEvidenceFile] = useState(null);
+  const [attachments, setAttachments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [backendAvailable, setBackendAvailable] = useState(null);
   const [saving, setSaving] = useState(false);
@@ -316,6 +318,8 @@ export default function MyReportsPage({ userId = "" }) {
     setTitle("");
     setFields(emptyFields("MORTALITY"));
     setNotice("");
+    setEvidenceFile(null);
+    setAttachments([]);
   }
 
   function buildDraft() {
@@ -398,6 +402,7 @@ export default function MyReportsPage({ userId = "" }) {
     try {
       const detail = await syncDraft(local);
       setSelected(detail);
+      setAttachments(await reportAttachmentApi.list(detail.id));
       await refresh();
       setNotice("Draft saved on this device and to the farm computer. It has not been submitted.");
     } catch (err) {
@@ -413,6 +418,7 @@ export default function MyReportsPage({ userId = "" }) {
     try {
       const detail = await reportSubmissionApi.get(report.id);
       setSelected(detail);
+      setAttachments(await reportAttachmentApi.list(report.id));
       const status = detail.lifecycleStatus || detail.status;
       if (editableStatuses.includes(status)) {
         const shadow = localDrafts.find(item => item.serverId === detail.id);
@@ -461,6 +467,7 @@ export default function MyReportsPage({ userId = "" }) {
       persistLocal(localDrafts.filter(item => item.id !== local.id));
       setSelected(submitted);
       resetForm();
+      setAttachments(await reportAttachmentApi.list(detail.id));
       await refresh();
       setNotice("Report submitted. The submitted version is locked for review. Retrying will not create another report.");
     } catch (err) {
@@ -468,6 +475,57 @@ export default function MyReportsPage({ userId = "" }) {
       setNotice("Your latest draft is saved on this device. It has not been silently submitted.");
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function uploadEvidence() {
+    if (!evidenceFile) {
+      setError("Choose a file before uploading evidence.");
+      return;
+    }
+    if (backendAvailable !== true) {
+      setError("Evidence uploads require a connection to the farm computer. Keep the original file until upload is confirmed.");
+      return;
+    }
+    if (selected && !editableStatuses.includes(selected.lifecycleStatus || selected.status)) {
+      setError("Evidence can only be attached while editing a draft or a report returned for changes. Submitted versions are locked.");
+      return;
+    }
+    setSaving(true);
+    setError("");
+    setNotice("");
+    try {
+      const local = saveLocalCopy();
+      if (!local) throw new Error("The report draft could not be saved on this device.");
+      const detail = await syncDraft(local);
+      await reportAttachmentApi.upload(detail.id, evidenceFile);
+      const [updated, rows] = await Promise.all([
+        reportSubmissionApi.get(detail.id),
+        reportAttachmentApi.list(detail.id),
+      ]);
+      setSelected(updated);
+      setAttachments(rows);
+      setEvidenceFile(null);
+      setNotice("Evidence uploaded and linked to the current immutable report version. Keep the original file until you have verified the attachment.");
+      await refresh();
+    } catch (err) {
+      setError(err.message || "Evidence could not be uploaded. The report draft remains available.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function downloadEvidence(attachment) {
+    try {
+      const blob = await reportAttachmentApi.download(selected.id, attachment.id);
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = attachment.fileName;
+      anchor.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      setError(err.message || "Evidence download failed.");
     }
   }
 
@@ -565,6 +623,21 @@ export default function MyReportsPage({ userId = "" }) {
                 </label>
               </div>
               <p className="muted report-draft-hint">Save draft stores a recovery copy on this device and syncs a server draft when connected. It never updates official farm ledgers or submits the report.</p>
+              <div className="report-evidence-upload">
+                <label htmlFor="report-evidence-file">Supporting evidence</label>
+                <input
+                  id="report-evidence-file"
+                  type="file"
+                  accept=".jpg,.jpeg,.png,.pdf,.txt,image/jpeg,image/png,application/pdf,text/plain"
+                  disabled={saving || backendAvailable !== true || Boolean(selected && !editableStatuses.includes(selected.lifecycleStatus || selected.status))}
+                  onChange={event => setEvidenceFile(event.target.files?.[0] || null)}
+                />
+                <p className="muted">JPEG, PNG, PDF or UTF-8 text. Maximum 5 MB per file and 10 files per report version. Evidence is uploaded to the farm database, not kept in an offline draft.</p>
+                {evidenceFile && <p className="muted">Selected: {evidenceFile.name} · {Math.ceil(evidenceFile.size / 1024)} KB</p>}
+                <button type="button" className="secondary-button" onClick={uploadEvidence} disabled={saving || !evidenceFile || backendAvailable !== true || Boolean(selected && !editableStatuses.includes(selected.lifecycleStatus || selected.status))}>
+                  {saving ? "Uploading…" : "Upload evidence"}
+                </button>
+              </div>
               <div className="inline-form">
                 <button type="button" className="secondary-button" onClick={saveDraft} disabled={saving}>{saving ? "Saving…" : "Save draft"}</button>
                 <button type="submit" disabled={saving}>{saving ? "Working…" : "Submit for review"}</button>
@@ -598,6 +671,16 @@ export default function MyReportsPage({ userId = "" }) {
         {selected && <section className="report-detail">
           <div className="section-head"><div><p className="eyebrow">REPORT DETAIL</p><h3>{selected.title}</h3><p className="muted">Reference {selected.id} · {statusLabel(selected)} · submitted version {selected.submittedVersion || "Not submitted"} · current version {selected.currentVersion}</p></div><button type="button" className="text-button" onClick={() => setSelected(null)}>Close</button></div>
           <div className="report-history">
+            <section className="report-evidence">
+              <h4>Evidence attachments</h4>
+              {attachments.length === 0
+                ? <p className="muted">No evidence is attached to the selected version.</p>
+                : attachments.map(attachment => <article key={attachment.id}>
+                  <strong>{attachment.fileName}</strong>
+                  <span>{Math.ceil(attachment.fileSize / 1024)} KB · {attachment.mimeType} · SHA-256 {attachment.sha256}</span>
+                  <button type="button" className="secondary-button" onClick={() => downloadEvidence(attachment)}>Download evidence</button>
+                </article>)}
+            </section>
             {(selected.links || []).length > 0 && <><h4>Official farm records</h4>{selected.links.map(link => <div key={link.id}><strong>{link.recordType.replaceAll("_", " ")}</strong><span>{link.recordId}</span></div>)}</>}
             {(selected.checks || []).length > 0 && <section className="report-checks">
               <h4>Submission checks</h4>
