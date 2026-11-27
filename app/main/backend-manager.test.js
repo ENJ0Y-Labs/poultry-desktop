@@ -1,7 +1,7 @@
 import { EventEmitter } from "node:events";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const { spawnMock } = vi.hoisted(() => ({ spawnMock: vi.fn() }));
@@ -94,11 +94,11 @@ describe("BackendManager", () => {
 
   it("keeps direct Spring Boot and browser-only development defaults on loopback", () => {
     const backendProperties = readFileSync(
-      new URL("../../backend/src/main/resources/application.properties", import.meta.url),
+      resolve(process.cwd(), "backend/src/main/resources/application.properties"),
       "utf8"
     );
     const browserBackendLauncher = readFileSync(
-      new URL("../../scripts/run-backend-dev.mjs", import.meta.url),
+      resolve(process.cwd(), "scripts/run-backend-dev.mjs"),
       "utf8"
     );
 
