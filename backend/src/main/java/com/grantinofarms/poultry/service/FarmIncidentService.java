@@ -135,15 +135,40 @@ public class FarmIncidentService {
         return detail(requireIncident(id));
     }
 
+    @Transactional
+    public Map<String, Object> escalate(String id, String notes) {
+        RoleAuthorization.requireManager();
+        Map<String, Object> incident = requireIncident(id);
+        String reason = notes == null ? "" : notes.trim();
+        if (reason.isBlank() || reason.length() > 2000) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "ESCALATION_NOTES_REQUIRED",
+                    "Enter escalation notes of 1 to 2,000 characters.");
+        }
+        if ("RESOLVED".equals(incident.get("status"))) {
+            throw new ApiException(HttpStatus.CONFLICT, "INCIDENT_ALREADY_RESOLVED",
+                    "A resolved incident cannot be escalated.");
+        }
+        String now = Instant.now().toString();
+        incidents.appendEvent(UUID.randomUUID().toString(), id, CurrentUserContext.get(),
+                "INCIDENT_ESCALATED", json(Map.of("reason", reason)), now);
+        incidents.notifyManagers(String.valueOf(incident.get("farmId")), id,
+                String.valueOf(incident.get("severity")), "ESCALATED: " + incident.get("title"),
+                reason, now);
+        audit.append(String.valueOf(incident.get("farmId")), "INCIDENT_ESCALATE", "FARM_INCIDENT",
+                id, "Manager escalated emergency incident", null,
+                json(Map.of("reason", reason)), now);
+        return detail(requireIncident(id));
+    }
+
     @Transactional(readOnly = true)
     public List<Map<String, Object>> notifications() {
-        RoleAuthorization.requireManager();
+        RoleAuthorization.requireReportSubmitter();
         return incidents.notifications(CurrentUserContext.get());
     }
 
     @Transactional
     public void markNotificationRead(String id) {
-        RoleAuthorization.requireManager();
+        RoleAuthorization.requireReportSubmitter();
         incidents.markNotificationRead(id, CurrentUserContext.get(), Instant.now().toString());
     }
 
