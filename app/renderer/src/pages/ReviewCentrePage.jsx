@@ -218,7 +218,6 @@ export default function ReviewCentrePage({ currentUser }) {
           <label>Status
             <select value={status} onChange={event => setStatus(event.target.value)}>
               <option value="">All pending reviews</option>
-              <option value="MERGED">Merged reports</option>
               {statuses.map(value => <option key={value} value={value}>{label(value)}</option>)}
             </select>
           </label>
