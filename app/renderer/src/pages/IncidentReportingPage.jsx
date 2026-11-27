@@ -38,6 +38,7 @@ export default function IncidentReportingPage({ currentUser }) {
   const [incidentForm, setIncidentForm] = useState(emptyIncident);
   const [scheduleForm, setScheduleForm] = useState(emptySchedule);
   const [resolutionNotes, setResolutionNotes] = useState({});
+  const [escalationNotes, setEscalationNotes] = useState({});
   const [activeTab, setActiveTab] = useState("incidents");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -110,11 +111,12 @@ export default function IncidentReportingPage({ currentUser }) {
   }
 
   async function escalate(id) {
-    const notes = window.prompt("Why does this incident need renewed Manager attention?");
-    if (!notes?.trim()) return;
+    const notes = (escalationNotes[id] || "").trim();
+    if (!notes) { setError("Add an escalation reason before notifying Managers again."); return; }
     setSaving(true); setError("");
     try {
-      await incidentApi.escalate(id, notes.trim());
+      await incidentApi.escalate(id, notes);
+      setEscalationNotes(current => ({ ...current, [id]: "" }));
       setNotice("Escalation sent to Managers and added to the incident history.");
       await refresh();
     } catch (err) { setError(err.message || "Incident could not be escalated."); }
@@ -211,7 +213,7 @@ export default function IncidentReportingPage({ currentUser }) {
                 <td>{item.eventAt}</td>
                 {manager && <td>{item.status !== "RESOLVED" && <div className="stacked-actions">
                   {item.status === "OPEN" && <button type="button" className="secondary-button" disabled={saving} onClick={() => acknowledge(item.id)}>Acknowledge</button>}
-                  <button type="button" className="secondary-button" disabled={saving} onClick={() => escalate(item.id)}>Escalate</button>
+                  <div className="inline-form"><input aria-label={"Escalation reason for " + item.title} value={escalationNotes[item.id] || ""} onChange={event => setEscalationNotes(current => ({ ...current, [item.id]: event.target.value }))} placeholder="Escalation reason" maxLength={2000} /><button type="button" className="secondary-button" disabled={saving} onClick={() => escalate(item.id)}>Escalate</button></div>
                   <div className="inline-form"><input aria-label={"Resolution notes for " + item.title} value={resolutionNotes[item.id] || ""} onChange={event => setResolutionNotes(current => ({ ...current, [item.id]: event.target.value }))} placeholder="Resolution notes" maxLength={2000} /><button type="button" disabled={saving} onClick={() => resolve(item.id)}>Resolve</button></div>
                 </div>}</td>}
               </tr>)}</tbody>
