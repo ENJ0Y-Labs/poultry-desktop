@@ -396,8 +396,9 @@ class ReportSubmissionIntegrationTest {
                 .extracting(row -> row.get("id"))
                 .doesNotContain(schedule.get("id"));
 
-        jdbc.update("UPDATE reporting_schedules SET created_at = ? WHERE id = ?",
-                Instant.now().minusSeconds(172800).toString(), schedule.get("id"));
+        String priorScheduleTime = Instant.now().minusSeconds(172800).toString();
+        jdbc.update("UPDATE reporting_schedules SET created_at = ?, updated_at = ? WHERE id = ?",
+                priorScheduleTime, priorScheduleTime, schedule.get("id"));
         assertThat(reportingConfiguration.missingReports())
                 .extracting(row -> row.get("id"))
                 .contains(schedule.get("id"));
