@@ -88,6 +88,17 @@ public class BroilerProductionRepository {
                 """, id, farmId, batchId, weightId, reason, actorId, now);
     }
 
+    public void insertWeightCorrection(String id, String farmId, String batchId, String originalId,
+                                       String replacementId, String reason, String actorId, String now) {
+        jdbc.update("""
+                INSERT INTO transaction_reversals
+                    (id,farm_id,batch_id,original_type,original_id,operation_type,
+                     replacement_type,replacement_id,reason,actor_user_id,occurred_at)
+                VALUES (?, ?, ?, 'WEIGHT_RECORD', ?, 'CORRECT',
+                        'WEIGHT_RECORD', ?, ?, ?, ?)
+                """, id, farmId, batchId, originalId, replacementId, reason, actorId, now);
+    }
+
     public List<WeightRecordResponse> findWeights(String batchId, LocalDate asOf) {
         return jdbc.query("""
                 SELECT w.id, w.batch_id, w.record_date, w.sample_quantity, w.total_weight_grams, w.notes
