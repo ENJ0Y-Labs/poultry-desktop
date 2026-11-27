@@ -131,13 +131,13 @@ public class ReportSubmissionRepository {
                 WHERE (? IS NULL OR s.lifecycle_status = ?)
                   AND (? IS NULL OR s.report_type = ?)
                   AND (? IS NULL OR s.author_user_id = ?)
-                  AND s.lifecycle_status NOT IN ('DRAFT','CHANGES_REQUESTED','MERGED','REJECTED')
+                  AND (? = 'MERGED' OR s.lifecycle_status NOT IN ('DRAFT','CHANGES_REQUESTED','MERGED','REJECTED'))
                 ORDER BY CASE s.lifecycle_status
                     WHEN 'BLOCKED' THEN 0 WHEN 'FLAGGED' THEN 1
                     WHEN 'SUBMITTED' THEN 2 WHEN 'PENDING_REVIEW' THEN 3 ELSE 4 END,
                     s.submitted_at, s.id
                 """, (rs, n) -> header(rs), lifecycleStatus, lifecycleStatus,
-                reportType, reportType, authorId, authorId);
+                reportType, reportType, authorId, authorId, lifecycleStatus);
     }
 
     public List<Map<String, Object>> findVersions(String id) {
