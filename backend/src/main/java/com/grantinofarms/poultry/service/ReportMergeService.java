@@ -50,14 +50,14 @@ public class ReportMergeService {
                 .map(row -> (JsonNode) row.get("payload"))
                 .findFirst().orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND,
                         "SUBMISSION_VERSION_NOT_FOUND", "The approved report version was not found."));
-        String recheckStatus = checks.run(id, version, String.valueOf(header.get("farmId")),
-                String.valueOf(header.get("reportType")), payload);
-        if (!"PENDING_REVIEW".equals(recheckStatus)) {
-            mergeStatus.returnToReview(id, version, recheckStatus);
-            throw new ApiException(HttpStatus.CONFLICT, "MERGE_RECHECK_FAILED",
-                    "The latest farm data changed the validation result. The report has been returned to review.");
-        }
         try {
+            String recheckStatus = checks.run(id, version, String.valueOf(header.get("farmId")),
+                    String.valueOf(header.get("reportType")), payload);
+            if (!"PENDING_REVIEW".equals(recheckStatus)) {
+                mergeStatus.returnToReview(id, version, recheckStatus);
+                throw new ApiException(HttpStatus.CONFLICT, "MERGE_RECHECK_FAILED",
+                        "The latest farm data changed the validation result. The report has been returned to review.");
+            }
             return mergeTransaction.merge(id, operationKey);
         } catch (org.springframework.dao.DuplicateKeyException exception) {
             throw new ApiException(HttpStatus.CONFLICT, "MERGE_KEY_ALREADY_USED",
