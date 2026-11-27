@@ -43,7 +43,7 @@ function LanAccessSettings({ userRole }) {
   }, [selected]);
 
   useEffect(() => {
-    if (userRole === "MANAGER") void refresh();
+    if (["MANAGER", "ADMINISTRATOR"].includes(userRole)) void refresh();
   }, [refresh, userRole]);
 
   async function enable() {
@@ -77,8 +77,8 @@ function LanAccessSettings({ userRole }) {
     }
   }
 
-  if (userRole !== "MANAGER") {
-    return <PageSection page="settings" tab="network"><section className="card full"><h2>Network access</h2><p className="muted">Only an authenticated Manager can change network access from the Pomas desktop host.</p></section></PageSection>;
+  if (!["MANAGER", "ADMINISTRATOR"].includes(userRole)) {
+    return <PageSection page="settings" tab="network"><section className="card full"><h2>Network access</h2><p className="muted">Only an authenticated Manager or Administrator can change network access from the Pomas desktop host.</p></section></PageSection>;
   }
 
   if (!window.poultryDesktop?.getLanAccessInfo) {
