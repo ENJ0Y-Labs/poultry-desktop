@@ -164,6 +164,52 @@ class ReportReviewHardeningIntegrationTest {
         }
     }
 
+    @Test
+    void workerCannotAccessManagerReviewActions() {
+        CurrentUserContext.set(workerId, "WORKER");
+        assertThatThrownBy(() -> reviews.queue(null, null, null))
+                .isInstanceOf(Exception.class);
+        assertThatThrownBy(() -> reviews.decide("not-a-submission", "APPROVED", null))
+                .isInstanceOf(Exception.class);
+    }
+
+    @Test
+    void changedOfficialDataIsRecheckedAndBlocksAnOutdatedApprovalFromMerging() throws Exception {
+        LocalDate date = LocalDate.now(ZoneId.of("Africa/Lagos"));
+        String description = "Expense inserted after approval";
+        Map<String, Object> submitted = submitExpense(date, description, 77500);
+        String submissionId = String.valueOf(submitted.get("id"));
+        assertThat(submitted.get("lifecycleStatus")).isEqualTo("PENDING_REVIEW");
+
+        String managerId = createManager();
+        CurrentUserContext.set(managerId, "MANAGER");
+        reviews.decide(submissionId, "APPROVED", null);
+        assertThat(reviews.get(submissionId).get("lifecycleStatus")).isEqualTo("APPROVED");
+
+        jdbc.update("""
+                INSERT INTO expenses
+                    (id, farm_id, batch_id, category, amount_minor, occurred_date,
+                     reference_type, reference_id, description, created_at)
+                VALUES (?, ?, NULL, 'OTHER', 77500, ?, NULL, NULL, ?, ?)
+                """, UUID.randomUUID().toString(), farmId, date.toString(),
+                description, Instant.now().toString());
+
+        assertThatThrownBy(() -> merges.merge(submissionId, "stale-review-key-001"))
+                .isInstanceOf(Exception.class);
+
+        Map<String, Object> returnedToReview = reviews.get(submissionId);
+        assertThat(returnedToReview.get("lifecycleStatus")).isEqualTo("FLAGGED");
+        @SuppressWarnings("unchecked")
+        var checks = (java.util.List<Map<String, Object>>) returnedToReview.get("checks");
+        assertThat(checks).anyMatch(check ->
+                "OFFICIAL_EXPENSE_DUPLICATE".equals(check.get("code"))
+                        && "WARNING".equals(check.get("outcome")));
+        assertThat(checks).anyMatch(check ->
+                "CURRENT_DATA_REVALIDATION".equals(check.get("code"))
+                        && "PASSED".equals(check.get("outcome")));
+        assertThat(returnedToReview.get("links")).isEqualTo(java.util.List.of());
+    }
+
     private Map<String, Object> submitExpense(LocalDate date, String description, long amountMinor) throws Exception {
         String eventTime = LocalTime.now(ZoneId.of("Africa/Lagos"))
                 .format(DateTimeFormatter.ofPattern("HH:mm"));
