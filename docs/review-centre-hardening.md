@@ -22,6 +22,9 @@ ReportReviewHardeningIntegrationTest covers:
 4. Invalid expense data is BLOCKED while permission and immutable-version integrity checks are recorded as PASSED.
 5. A Worker cannot call Manager-only queue or decision actions.
 6. An official duplicate inserted after approval is detected by the pre-merge recheck, returns the submission to FLAGGED, and creates no provenance link.
+7. A completed merge accepts a retry only when the original Idempotency-Key is reused; a different key is rejected without a second official write.
+8. Two concurrent merge attempts using different keys can produce only one official record and one provenance link.
+9. A forced failure at the final audit write rolls back the official record, provenance link, MERGED event, merge key and lifecycle transition.
 
 ## Atomic merge guarantees
 
@@ -35,27 +38,6 @@ A report merge is a single Spring-managed database transaction. The official dom
 - Any failure after the official write, including provenance, lifecycle, workflow-event or audit failure, must roll back the complete transaction. A failed merge must leave the submission APPROVED, with no merge key, no provenance link and no official side effect.
 
 Regression tests in `ReportReviewHardeningIntegrationTest` cover same-key retries, different-key rejection, simultaneous competing merge attempts, and a forced failure at the final audit write after the official record, provenance link, and MERGED event have been written.
-
-## Verification commands
-
-Run from the repository root:
-
-```bash
-cd backend
-mvn test -Dtest=ReportReviewHardeningIntegrationTest
-mvn test
-```
-
-Then run the frontend regression checks because the review workflow is cross-layer:
-
-```bash
-npm test -- --run
-npm run lint
-npm run build
-```
-
-Use the exact scripts in the root package descriptor if they differ. Do not claim manual desktop acceptance unless tested against a disposable database.
-
 
 Run from the repository root:
 
