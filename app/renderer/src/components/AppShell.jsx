@@ -29,6 +29,7 @@ const groups = [
     { label: "Production", target: "production", icon: "eggs", shortcut: "Ctrl+6" },
     { label: "Sales & Money", target: "sales-money", icon: "sales", shortcut: "Ctrl+7" },
     { label: "Reports", target: "reports", icon: "reports", shortcut: "Ctrl+8" },
+    { label: "Alerts & Reporting", target: "incidents", icon: "health" },
     { label: "My Reports", target: "my-reports", icon: "reports" },
     { label: "Review Centre", target: "review-centre", icon: "health" },
     { label: "User Management", target: "user-management", icon: "customers" },
@@ -37,7 +38,7 @@ const groups = [
   ]},
 ];
 
-const validPages = ["dashboard", "flocks", "daily-work", "feed-stock", "health", "production", "sales-money", "reports", "my-reports", "review-centre", "user-management", "import-export", "settings"];
+const validPages = ["dashboard", "flocks", "daily-work", "feed-stock", "health", "production", "sales-money", "reports", "my-reports", "review-centre", "incidents", "user-management", "import-export", "settings"];
 const validStartPages = ["dashboard", "flocks", "daily-work", "feed-stock", "health", "production", "sales-money", "reports", "settings"];
 const legacyRoutes = {
   houses: "flocks", batches: "flocks", "batch-dashboard": "flocks",
@@ -49,7 +50,7 @@ const legacyRoutes = {
 function allowedPagesForRole(role) {
   if (role === "MANAGER") return validPages;
   if (role === "ADMINISTRATOR") return validPages.filter(page => page !== "review-centre");
-  return ["my-reports"];
+  return ["my-reports", "incidents"];
 }
 function resolvePage(hash, startPage = "dashboard") {
   const candidate = String(hash || "").replace(/^#\/?/, "").split("/")[0];
@@ -99,6 +100,7 @@ const pageTabs = {
   ],
   "my-reports": [{ id: "overview", label: "My submissions" }],
   "review-centre": [{ id: "overview", label: "Review queue" }],
+  incidents: [{ id: "overview", label: "Emergency & reporting" }],
   "user-management": [{ id: "overview", label: "User accounts" }],
   settings: [
     { id: "farm", label: "Farm profile" },
@@ -109,7 +111,7 @@ const pageTabs = {
   ],
 };
 const defaultTabs = {
-  dashboard: "overview", "my-reports": "overview", "review-centre": "overview", "user-management": "overview", flocks: "batch-dashboard", "daily-work": "daily-record",
+  dashboard: "overview", "my-reports": "overview", "review-centre": "overview", incidents: "overview", "user-management": "overview", flocks: "batch-dashboard", "daily-work": "daily-record",
   health: "health-record", "feed-stock": "feed", production: "eggs",
   "sales-money": "sales", reports: "farm-report", "import-export": "overview", settings: "farm",
 };
