@@ -103,3 +103,4 @@ public class ReportCorrectionService {
         return value == null ? "" : value.replace("\\", "\\\\").replace("\"", "\\\"")
                 .replace("\n", " ").replace("\r", " ");
 }
+}
