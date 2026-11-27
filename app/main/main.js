@@ -133,7 +133,7 @@ ipcMain.handle("lan-access:enable", async (event, selection, ...args) => {
 
 ipcMain.handle("lan-access:disable", async (event, ...args) => {
   if (args.length !== 0) throw new Error("Invalid IPC message.");
-  const token = await requireManagerSession(event);
+  const sessionCookie = await requireManagerSession(event);
   const confirmation = await dialog.showMessageBox(mainWindow, {
     type: "warning",
     buttons: ["Disable LAN access", "Cancel"],
@@ -146,7 +146,7 @@ ipcMain.handle("lan-access:disable", async (event, ...args) => {
   if (confirmation.response !== 0) return { canceled: true };
   lanAccessPublished = false;
   await backendManager.disableLanAccess();
-  await moveDesktopSessionCookie(backendManager.baseUrl, token, false);
+  await moveDesktopSessionCookie(backendManager.baseUrl, sessionCookie, false);
   await loadLocalDesktopRenderer();
   return backendManager.lanStatus;
 });
