@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+// eslint-disable-next-line no-unused-vars
 import IncidentReportingPage from "./IncidentReportingPage.jsx";
 
 const api = vi.hoisted(() => ({
