@@ -35,7 +35,9 @@ describe("IncidentReportingPage", () => {
   it("lets a Worker submit an emergency alert without normal report approval", async () => {
     render(<IncidentReportingPage currentUser={{ id: "worker-1", role: "WORKER" }} />);
 
-    fireEvent.change(await screen.findByLabelText("Title"), { target: { value: "Water line stopped" } });
+    fireEvent.change(await screen.findByLabelText("Incident category"), { target: { value: "WATER_FAILURE" } });
+    fireEvent.change(screen.getByLabelText("Severity"), { target: { value: "CRITICAL" } });
+    fireEvent.change(screen.getByLabelText("Title"), { target: { value: "Water line stopped" } });
     fireEvent.change(screen.getByLabelText("What happened?"), {
       target: { value: "No water is reaching the drinkers in the active house." },
     });
@@ -43,7 +45,7 @@ describe("IncidentReportingPage", () => {
 
     await waitFor(() => expect(api.incidentApi.create).toHaveBeenCalledWith(expect.objectContaining({
       title: "Water line stopped",
-      severity: "MEDIUM",
+      severity: "CRITICAL",
       description: "No water is reaching the drinkers in the active house.",
     })));
     expect(await screen.findByText(/Managers have been notified/)).toBeTruthy();
@@ -59,6 +61,8 @@ describe("IncidentReportingPage", () => {
 
     fireEvent.click(await screen.findByRole("button", { name: /Schedules & missing reports/ }));
     fireEvent.change(screen.getByLabelText("Report type"), { target: { value: "DAILY_OPERATIONS" } });
+    fireEvent.change(screen.getByLabelText("Frequency"), { target: { value: "DAILY" } });
+    fireEvent.change(screen.getByLabelText("Grace period (minutes)"), { target: { value: "0" } });
     fireEvent.change(screen.getByLabelText("Due time (farm local)"), { target: { value: "17:30" } });
     fireEvent.click(screen.getByRole("button", { name: "Save schedule" }));
 
