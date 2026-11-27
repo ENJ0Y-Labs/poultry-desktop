@@ -151,7 +151,7 @@ Electron uses:
 - a local-content CSP
 - restricted navigation
 
-Authentication uses the `poultry_session` cookie with `HttpOnly`, `Secure`, `Path=/`, and `SameSite=None` attributes so the packaged `file://` renderer and browser-only development workflow can make credentialed requests to the local API. Login omits browser-side expiry; the server-side session expires after 12 hours. Logout invalidates the server session and clears the cookie with `Max-Age=0`. See [Session cookie policy](session-cookie-policy.md) for the exact contract and required runtime verification. Passwords are stored as PBKDF2-HMAC-SHA256 hashes with random salts.
+Authentication uses the host-only `poultry_session` cookie with `HttpOnly` and `Path=/`. Exact same-origin browser requests use `SameSite=Lax` (and `Secure` on HTTPS); packaged Electron's opaque `file://` origin and the separate-origin browser-development workflow retain `SameSite=None; Secure`. Login omits browser-side expiry; the server-side session expires after 12 hours. Logout invalidates the server session and clears the matching cookie scope with `Max-Age=0`. See [Session cookie policy](session-cookie-policy.md) for the exact contract and required runtime verification. Passwords are stored as PBKDF2-HMAC-SHA256 hashes with random salts.
 
 The backend rejects unauthenticated production application requests except for the bootstrap/login/health paths required for startup and first-time account setup.
 
