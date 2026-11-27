@@ -49,6 +49,25 @@ if (existsSync(java) && statSync(java).isFile()) {
   missing.push("bundled Java runtime executable: " + java);
 }
 
+const backendJarPath = join("backend", "target", "poultry-backend.jar");
+if (existsSync(backendJarPath) && statSync(backendJarPath).isFile()) {
+  const entries = execFileSync("jar", ["tf", backendJarPath], { encoding: "utf8" }).split(/\r?\n/);
+  const requiredBrowserEntries = [
+    "BOOT-INF/classes/static/index.html",
+    "BOOT-INF/classes/static/theme-init.js"
+  ];
+  const missingBrowserEntries = requiredBrowserEntries.filter(entry => !entries.includes(entry));
+  if (missingBrowserEntries.length) {
+    console.error("Packaged backend is missing production browser assets:");
+    for (const entry of missingBrowserEntries) console.error("- " + entry);
+    process.exit(1);
+  }
+  if (!entries.some(entry => entry.startsWith("BOOT-INF/classes/static/assets/") && entry.endsWith(".js"))) {
+    console.error("Packaged backend is missing the production renderer JavaScript bundle.");
+    process.exit(1);
+  }
+}
+
 if (missing.length) {
   console.error("Production package inputs are incomplete:");
   for (const item of missing) console.error("- " + item);
