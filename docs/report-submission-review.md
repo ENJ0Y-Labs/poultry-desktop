@@ -149,3 +149,13 @@ npm test -- --run app/renderer/src/pages/IncidentReportingPage.test.jsx
 Then run the complete backend and frontend test suites, lint, and production build. Manually verify Worker, Administrator, and Manager access with separate accounts on a disposable database. Configure at least one schedule explicitly, omit its report, and confirm it appears as MISSING without creating a zero-valued farm record. Submit an emergency as a Worker, confirm Manager notification, acknowledge and escalate it, and verify no official farm ledger changed. Submit a normal report and verify Manager and author notifications for submission and decision events.
 
 Evidence attachments, post-merge corrections, backup/restore hardening, and full end-to-end acceptance remain in later phases; this increment does not mark Issue #287 complete.
+
+## Worker phone submission (Issue #316)
+
+- Workers can create, save, and explicitly submit supported reports from the production same-origin browser workspace on a phone connected to the host PC's trusted private Wi-Fi.
+- Use the existing My Reports form, draft recovery storage, `POST /submissions`, and `POST /submissions/{id}/submit` contracts. Do not add a mobile-only endpoint or bypass the submission workflow.
+- The phone must reach the host over the LAN before a report can be submitted. Offline drafts remain local and recoverable; they are not submitted until the host is reachable.
+- Keep the create and submit idempotency keys stable across retries. A lost response is an unknown outcome and must be reconciled against the server submission before local cleanup; never ask the Worker to create a second report to recover.
+- The backend remains responsible for Worker identity, farm scope, payload validation, duplicate checks, late-report rules, and lifecycle transitions. A successful submission enters Manager Review and does not write an official farm ledger.
+- On phone widths, make Save draft and Submit for review full-width, touch-sized actions. Preserve the same form semantics and explicit submit action.
+- Verify the Worker can submit a valid report over the LAN, receives backend validation for invalid data, and sees the resulting submission status. Interrupt the response after the server commit and retry with the same operation key to confirm exactly one submission event and no duplicate.
