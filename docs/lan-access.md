@@ -20,7 +20,7 @@ Node's portable network-interface API does not report adapter operational state 
 - [x] Phase 5 foundation: desktop IPC verifies a live MANAGER session, requires native confirmation, supports interface selection and enable/disable, transfers the desktop session cookie across the host switch, and displays the verified URL.
 - [ ] Phase 6: complete automated lifecycle/HTTP/browser-session and disposable-database regression tests, run CI, and perform Windows manual acceptance.
 
-Do not enable a LAN listener until all six phases are complete. Phase 1 alone intentionally does not expose the backend to the network.
+The listener is wired only after the network, lifecycle, browser-delivery, request-security, and host-control foundations are present. Do not merge or use this feature on a production farm until Phase 6 automated checks and disposable-Windows acceptance are complete.
 
 
 ## Runtime flow
