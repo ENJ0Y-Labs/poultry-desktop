@@ -179,7 +179,7 @@ The top-level page components live under `app/renderer/src/pages/`. Shared form 
 
 ## LAN access
 
-- Settings → Network access is visible to the authenticated MANAGER role in the desktop host. It lists validated private IPv4 interfaces and displays the real URL only after the host has verified the served production browser workspace.
+- Settings → Network access is visible to authenticated MANAGER and ADMINISTRATOR roles in the desktop host. It lists validated private IPv4 interfaces and displays the real URL only after the host has verified the served production browser workspace.
 - The enable/disable action is performed by Electron main, which rechecks the live Manager session and asks for native confirmation. Browser-only LAN clients cannot change the host listener.
 - The desktop window switches to the same-origin browser workspace while LAN mode is enabled and returns to its local renderer when disabled. Other devices access the same-origin app and API through the displayed URL.
 - LAN access is disabled by default. See `docs/lan-access.md` for the security boundary and Windows acceptance steps.
