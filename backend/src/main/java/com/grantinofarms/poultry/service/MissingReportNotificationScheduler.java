@@ -35,32 +35,37 @@ public class MissingReportNotificationScheduler {
             for (Map<String, Object> schedule : reporting.schedules(farm.id())) {
                 if (!Boolean.TRUE.equals(schedule.get("enabled"))) continue;
                 boolean weekly = "WEEKLY".equals(schedule.get("frequency"));
-                LocalDate dueDate = now.toLocalDate();
+                LocalDate latestDate = now.toLocalDate();
+                LocalTime dueTime = LocalTime.parse(String.valueOf(schedule.get("dueTime")));
                 if (weekly) {
                     int day = ((Number) schedule.get("dayOfWeek")).intValue();
-                    dueDate = dueDate.minusDays(Math.floorMod(now.getDayOfWeek().getValue() - day, 7));
+                    latestDate = latestDate.minusDays(Math.floorMod(now.getDayOfWeek().getValue() - day, 7));
                 }
-                LocalTime dueTime = LocalTime.parse(String.valueOf(schedule.get("dueTime")));
-                LocalDateTime dueAt = LocalDateTime.of(dueDate, dueTime);
                 long grace = ((Number) schedule.get("graceMinutes")).longValue();
-                if (now.isBefore(dueAt.plusMinutes(grace))) {
-                    dueDate = dueDate.minusDays(weekly ? 7 : 1);
-                    dueAt = LocalDateTime.of(dueDate, dueTime);
+                LocalDateTime latestDue = LocalDateTime.of(latestDate, dueTime);
+                if (!now.isAfter(latestDue.plusMinutes(grace))) {
+                    latestDate = latestDate.minusDays(weekly ? 7 : 1);
                 }
-                if (now.isBefore(dueAt.plusMinutes(grace))) continue;
-                LocalDateTime windowEnd = dueAt.plusDays(weekly ? 7 : 1);
                 String scopeType = String.valueOf(schedule.get("scopeType"));
                 String scopeId = (String) schedule.get("scopeId");
                 String batchType = (String) schedule.get("batchType");
-                if (reporting.hasSubmissionInWindow(farm.id(), String.valueOf(schedule.get("reportType")),
-                        scopeType, scopeId, batchType, dueAt.atZone(zone).toInstant().toString(),
-                        windowEnd.atZone(zone).toInstant().toString())) continue;
                 String scheduleId = String.valueOf(schedule.get("id"));
-                String notificationId = scheduleId + ":" + dueAt;
-                reporting.notifyMissingReportManagers(farm.id(), notificationId,
-                        "Missing " + schedule.get("reportType") + " report",
-                        "The configured reporting window is overdue. No report was submitted; this is not a zero-activity record.",
-                        Instant.now().toString());
+                int periods = weekly ? 8 : 30;
+                for (int period = 0; period < periods; period++) {
+                    LocalDate dueDate = latestDate.minusDays((long) period * (weekly ? 7 : 1));
+                    LocalDateTime dueAt = LocalDateTime.of(dueDate, dueTime);
+                    LocalDateTime graceUntil = dueAt.plusMinutes(grace);
+                    if (!now.isAfter(graceUntil)) continue;
+                    LocalDateTime windowEnd = dueAt.plusDays(weekly ? 7 : 1);
+                    if (reporting.hasSubmissionInWindow(farm.id(), String.valueOf(schedule.get("reportType")),
+                            scopeType, scopeId, batchType, dueAt.atZone(zone).toInstant().toString(),
+                            windowEnd.atZone(zone).toInstant().toString())) continue;
+                    String notificationId = scheduleId + ":" + dueAt;
+                    reporting.notifyMissingReportManagers(farm.id(), notificationId,
+                            "Missing " + schedule.get("reportType") + " report",
+                            "The configured reporting window is overdue. No report was submitted; this is not a zero-activity record.",
+                            Instant.now().toString());
+                }
             }
         } catch (Exception exception) {
             log.warn("Could not evaluate overdue report schedules: {}", exception.getMessage());
