@@ -477,6 +477,44 @@ class ReportReviewHardeningIntegrationTest {
         return submissions.submit(String.valueOf(created.get("id")));
     }
 
+    @Test
+    void approvalDoesNotWriteOfficialRecordsAndExplicitMergeWritesOnceWithFullProvenance() throws Exception {
+        LocalDate date = LocalDate.now(ZoneId.of("Africa/Lagos"));
+        String description = "Approval versus merge boundary " + UUID.randomUUID();
+        Map<String, Object> submitted = submitExpense(date, description, 246800);
+        String submissionId = String.valueOf(submitted.get("id"));
+
+        assertThat(submitted.get("lifecycleStatus")).isEqualTo("PENDING_REVIEW");
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM expenses WHERE farm_id = ? AND description = ?", Integer.class, farmId, description)).isZero();
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM report_submission_links WHERE submission_id = ?", Integer.class, submissionId)).isZero();
+
+        String managerId = createManager();
+        CurrentUserContext.set(managerId, "MANAGER");
+        Map<String, Object> approved = reviews.decide(submissionId, "APPROVED", null);
+        assertThat(approved.get("lifecycleStatus")).isEqualTo("APPROVED");
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM expenses WHERE farm_id = ? AND description = ?", Integer.class, farmId, description)).isZero();
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM report_submission_links WHERE submission_id = ?", Integer.class, submissionId)).isZero();
+        assertThat(jdbc.queryForObject("SELECT merge_operation_key FROM report_submissions WHERE id = ?", String.class, submissionId)).isNull();
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM audit_logs WHERE farm_id = ? AND entity_type = 'REPORT_SUBMISSION' AND entity_id = ? AND action = 'MERGE'", Integer.class, farmId, submissionId)).isZero();
+
+        String operationKey = "approval-boundary-merge-001";
+        Map<String, Object> merged = merges.merge(submissionId, operationKey);
+        assertThat(merged.get("lifecycleStatus")).isEqualTo("MERGED");
+        assertThat(merged.get("mergeOperationKey")).isEqualTo(operationKey);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM expenses WHERE farm_id = ? AND description = ?", Integer.class, farmId, description)).isEqualTo(1);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM report_submission_links WHERE submission_id = ? AND version_number = 1 AND official_record_type = 'EXPENSE'", Integer.class, submissionId)).isEqualTo(1);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM report_submission_events WHERE submission_id = ? AND event_type = 'MERGED'", Integer.class, submissionId)).isEqualTo(1);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM audit_logs WHERE farm_id = ? AND entity_type = 'REPORT_SUBMISSION' AND entity_id = ? AND action = 'MERGE'", Integer.class, farmId, submissionId)).isEqualTo(1);
+
+        Map<String, Object> retried = merges.merge(submissionId, operationKey);
+        assertThat(retried.get("lifecycleStatus")).isEqualTo("MERGED");
+        assertThat(retried.get("links")).isEqualTo(merged.get("links"));
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM expenses WHERE farm_id = ? AND description = ?", Integer.class, farmId, description)).isEqualTo(1);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM report_submission_links WHERE submission_id = ?", Integer.class, submissionId)).isEqualTo(1);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM report_submission_events WHERE submission_id = ? AND event_type = 'MERGED'", Integer.class, submissionId)).isEqualTo(1);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM audit_logs WHERE farm_id = ? AND entity_type = 'REPORT_SUBMISSION' AND entity_id = ? AND action = 'MERGE'", Integer.class, farmId, submissionId)).isEqualTo(1);
+    }
+
     private String createManager() {
         String id = UUID.randomUUID().toString();
         users.insertWithRole(id, "review-manager-" + id.substring(0, 8),
