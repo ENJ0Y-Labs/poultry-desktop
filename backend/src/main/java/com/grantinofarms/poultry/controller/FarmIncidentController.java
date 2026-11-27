@@ -35,5 +35,11 @@ public class FarmIncidentController {
         return Map.of("ok", true, "data", incidents.resolve(id, request.notes()));
     }
 
+    @PostMapping("/{id}/escalate")
+    public Map<String, Object> escalate(@PathVariable String id, @Valid @RequestBody EscalateRequest request) {
+        return Map.of("ok", true, "data", incidents.escalate(id, request.notes()));
+    }
+
     public record ResolveRequest(@NotBlank @Size(max = 2000) String notes) {}
+    public record EscalateRequest(@NotBlank @Size(max = 2000) String notes) {}
 }
