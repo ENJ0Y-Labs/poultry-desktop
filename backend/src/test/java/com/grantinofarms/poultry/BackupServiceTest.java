@@ -178,4 +178,94 @@ class BackupServiceTest {
                 .hasMessage("The selected file is not a valid Poultry Farm Manager database.");
     }
 
+
+    @Test
+    void backupPreservesReviewHistoryIncidentsAndEvidenceForRestore() throws Exception {
+        Path database = tempDir.resolve("poultry.db");
+        BackupService service = service(database);
+        var jdbc = new JdbcTemplate(dataSources.get(dataSources.size() - 1));
+
+        jdbc.execute("CREATE TABLE report_submissions (id TEXT PRIMARY KEY, status TEXT NOT NULL)");
+        jdbc.execute("CREATE TABLE report_submission_versions (submission_id TEXT NOT NULL, version_number INTEGER NOT NULL, payload_json TEXT NOT NULL, PRIMARY KEY (submission_id, version_number))");
+        jdbc.execute("CREATE TABLE report_submission_comments (id TEXT PRIMARY KEY, submission_id TEXT NOT NULL, version_number INTEGER NOT NULL, comment TEXT NOT NULL)");
+        jdbc.execute("CREATE TABLE report_submission_checks (id TEXT PRIMARY KEY, submission_id TEXT NOT NULL, version_number INTEGER NOT NULL, outcome TEXT NOT NULL)");
+        jdbc.execute("CREATE TABLE report_submission_events (id TEXT PRIMARY KEY, submission_id TEXT NOT NULL, event_type TEXT NOT NULL)");
+        jdbc.execute("CREATE TABLE report_submission_attachments (id TEXT PRIMARY KEY, submission_id TEXT NOT NULL, version_number INTEGER NOT NULL, file_name TEXT NOT NULL, mime_type TEXT NOT NULL, file_size INTEGER NOT NULL, sha256 TEXT NOT NULL, file_content BLOB NOT NULL)");
+        jdbc.execute("CREATE TABLE farm_incidents (id TEXT PRIMARY KEY, status TEXT NOT NULL)");
+        jdbc.execute("CREATE TABLE farm_incident_events (id TEXT PRIMARY KEY, incident_id TEXT NOT NULL, event_type TEXT NOT NULL)");
+        jdbc.execute("CREATE TABLE incident_attachments (id TEXT PRIMARY KEY, incident_id TEXT NOT NULL, file_name TEXT NOT NULL, mime_type TEXT NOT NULL, file_size INTEGER NOT NULL, sha256 TEXT NOT NULL, file_content BLOB NOT NULL)");
+        jdbc.execute("CREATE TABLE audit_logs (id TEXT PRIMARY KEY, occurred_at TEXT NOT NULL, action TEXT NOT NULL, entity_type TEXT NOT NULL, entity_id TEXT NOT NULL, reason TEXT)");
+
+        byte[] reportEvidence = new byte[] { 0, 1, 2, 3, 10, 13, (byte) 0xff };
+        byte[] incidentEvidence = new byte[] { 80, 75, 3, 4, 0, 0, 1, 2 };
+        jdbc.update("INSERT INTO report_submissions(id, status) VALUES (?, ?)", "submission-1", "MERGED");
+        jdbc.update("INSERT INTO report_submission_versions(submission_id, version_number, payload_json) VALUES (?, ?, ?)",
+                "submission-1", 2, "{\"eventDate\":\"2026-11-27\",\"quantity\":12}");
+        jdbc.update("INSERT INTO report_submission_comments(id, submission_id, version_number, comment) VALUES (?, ?, ?, ?)",
+                "comment-1", "submission-1", 2, "Verified against source record");
+        jdbc.update("INSERT INTO report_submission_checks(id, submission_id, version_number, outcome) VALUES (?, ?, ?, ?)",
+                "check-1", "submission-1", 2, "PASSED");
+        jdbc.update("INSERT INTO report_submission_events(id, submission_id, event_type) VALUES (?, ?, ?)",
+                "event-1", "submission-1", "MERGED");
+        jdbc.update("INSERT INTO report_submission_attachments(id, submission_id, version_number, file_name, mime_type, file_size, sha256, file_content) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                "report-file-1", "submission-1", 2, "receipt.png", "image/png",
+                reportEvidence.length, "report-sha256", reportEvidence);
+        jdbc.update("INSERT INTO farm_incidents(id, status) VALUES (?, ?)", "incident-1", "RESOLVED");
+        jdbc.update("INSERT INTO audit_logs(id, occurred_at, action, entity_type, entity_id, reason) VALUES (?, ?, ?, ?, ?, ?)",
+                "audit-1", "2026-11-27T10:00:00Z", "MERGE", "REPORT_SUBMISSION", "submission-1", "Manager approved report");
+        jdbc.update("INSERT INTO farm_incident_events(id, incident_id, event_type) VALUES (?, ?, ?)",
+                "incident-event-1", "incident-1", "RESOLVED");
+        jdbc.update("INSERT INTO incident_attachments(id, incident_id, file_name, mime_type, file_size, sha256, file_content) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                "incident-file-1", "incident-1", "incident.pdf", "application/pdf",
+                incidentEvidence.length, "incident-sha256", incidentEvidence);
+
+        var result = service.create(tempDir.toString());
+        Path backup = Path.of(result.get("path").toString());
+        assertThat(service.validate(backup.toString()).get("valid")).isEqualTo(true);
+
+        // Reopen a disposable copy of the snapshot as the restored database.
+        Path restored = tempDir.resolve("restored-poultry.db");
+        Files.copy(backup, restored);
+        var restoredDataSource = new SingleConnectionDataSource("jdbc:sqlite:" + restored, true);
+        dataSources.add(restoredDataSource);
+        var restoredJdbc = new JdbcTemplate(restoredDataSource);
+
+        assertThat(restoredJdbc.queryForObject(
+                "SELECT status FROM report_submissions WHERE id = 'submission-1'", String.class))
+                .isEqualTo("MERGED");
+        assertThat(restoredJdbc.queryForObject(
+                "SELECT comment FROM report_submission_comments WHERE id = 'comment-1'", String.class))
+                .isEqualTo("Verified against source record");
+        assertThat(restoredJdbc.queryForObject(
+                "SELECT outcome FROM report_submission_checks WHERE id = 'check-1'", String.class))
+                .isEqualTo("PASSED");
+        assertThat(restoredJdbc.queryForObject(
+                "SELECT event_type FROM report_submission_events WHERE id = 'event-1'", String.class))
+                .isEqualTo("MERGED");
+        assertThat(restoredJdbc.queryForObject(
+                "SELECT reason FROM audit_logs WHERE id = 'audit-1'", String.class))
+                .isEqualTo("Manager approved report");
+        assertThat(restoredJdbc.queryForObject(
+                "SELECT status FROM farm_incidents WHERE id = 'incident-1'", String.class))
+                .isEqualTo("RESOLVED");
+        assertThat(restoredJdbc.queryForObject(
+                "SELECT event_type FROM farm_incident_events WHERE id = 'incident-event-1'", String.class))
+                .isEqualTo("RESOLVED");
+        assertThat(restoredJdbc.queryForObject(
+                "SELECT file_name FROM report_submission_attachments WHERE id = 'report-file-1'", String.class))
+                .isEqualTo("receipt.png");
+        assertThat(restoredJdbc.queryForObject(
+                "SELECT file_content FROM report_submission_attachments WHERE id = 'report-file-1'", byte[].class))
+                .containsExactly(reportEvidence);
+        assertThat(restoredJdbc.queryForObject(
+                "SELECT file_name FROM incident_attachments WHERE id = 'incident-file-1'", String.class))
+                .isEqualTo("incident.pdf");
+        assertThat(restoredJdbc.queryForObject(
+                "SELECT file_content FROM incident_attachments WHERE id = 'incident-file-1'", byte[].class))
+                .containsExactly(incidentEvidence);
+        assertThat(restoredJdbc.queryForObject(
+                "SELECT name FROM farm_data WHERE name = 'Grantino Farms'", String.class))
+                .isEqualTo("Grantino Farms");
+    }
+
 }
