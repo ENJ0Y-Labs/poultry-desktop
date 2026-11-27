@@ -132,7 +132,7 @@ Electron
   -> open React window
 ```
 
-The window is not opened until the backend is healthy and its health response proves it is the process launched by this Electron instance. Packaged startup retries with a newly selected port if the backend exits before readiness. The renderer obtains the selected API base URL through the `backend:base-url` IPC handler; its packaged Content Security Policy restricts API connections to loopback.
+The window is not opened until the backend is healthy and its health response proves it is the process launched by this Electron instance. Packaged startup retries with a newly selected port if the backend exits before readiness. Both packaged and development Electron launches explicitly bind Spring Boot to `127.0.0.1`. The renderer obtains the selected API base URL through the `backend:base-url` IPC handler; its packaged Content Security Policy restricts API connections to loopback. The browser-only development launcher also sets the same loopback bind address.
 
 ## Shutdown
 
@@ -140,7 +140,7 @@ Electron requests backend shutdown before application exit. Spring Boot uses gra
 
 ## Security boundary
 
-Production Spring Boot binds to `127.0.0.1`.
+Every default local launch of Spring Boot binds to `127.0.0.1`, including packaged Electron, Electron development, and the browser-only development workflow. LAN access is not enabled by an environment default or by starting the backend; a future opt-in LAN mode must explicitly replace this bind address only after the authenticated host-side enable action.
 
 Electron uses:
 
