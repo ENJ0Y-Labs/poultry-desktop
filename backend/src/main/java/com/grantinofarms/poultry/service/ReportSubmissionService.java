@@ -143,6 +143,11 @@ public class ReportSubmissionService {
         notifications.notifyUser(String.valueOf(header.get("farmId")), actorId, "REPORT_SUBMITTED",
                 "REPORT_SUBMISSION", id, "Your report was submitted",
                 "Your " + header.get("reportType") + " report was received. Automated checks completed with status " + nextStatus + ".", now);
+        if (!"PENDING_REVIEW".equals(nextStatus)) {
+            notifications.notifyUser(String.valueOf(header.get("farmId")), actorId, "REPORT_CHECK_ALERT",
+                    "REPORT_SUBMISSION", id, "Your report needs attention",
+                    "Automated checks flagged this report. Open My Reports to review the findings and next steps.", now);
+        }
         return getOwned(id, actorId);
     }
 
