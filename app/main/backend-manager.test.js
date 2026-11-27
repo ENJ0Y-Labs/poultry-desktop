@@ -333,4 +333,28 @@ describe("BackendManager", () => {
     }
   });
 
+  it("recovers loopback if the selected adapter disappears during the restart", async () => {
+    const appPath = mkdtempSync(join(tmpdir(), "pomas-lan-disappears-"));
+    const available = { WiFi: [{ address: "192.168.10.25", netmask: "255.255.255.0", family: "IPv4", internal: false }] };
+    let discoveryCount = 0;
+    spawnMock.mockImplementation(() => fakeChild());
+    const manager = new BackendManager({
+      userDataPath: appPath, appPath, isPackaged: false, port: 19047, resourcesPath,
+      spawnProcess: spawnMock,
+      networkInterfacesProvider: () => (++discoveryCount === 1 ? available : {})
+    });
+    try {
+      await manager.start();
+      await expect(manager.enableLanAccess({ interfaceName: "WiFi", address: "192.168.10.25" }))
+        .rejects.toThrow(/localhost-only mode/i);
+      expect(manager.bindAddress).toBe("127.0.0.1");
+      expect(manager.process).not.toBeNull();
+      expect(manager.lanStatus).toMatchObject({ enabled: false, url: null });
+      expect(spawnMock.mock.calls.at(-1)[2].env.SERVER_ADDRESS).toBe("127.0.0.1");
+      await manager.stop();
+    } finally {
+      rmSync(appPath, { recursive: true, force: true });
+    }
+  });
+
 });
