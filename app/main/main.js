@@ -30,7 +30,97 @@ ipcMain.handle("app:quit", async (event, ...args) => {
 ipcMain.handle("backend:base-url", async (_event, ...args) => {
   if (args.length !== 0) throw new Error("Invalid IPC message.");
   if (!backendManager?.port) throw new Error("The local backend is not ready.");
-  return "http://127.0.0.1:" + backendManager.port;
+  return backendManager.baseUrl;
+});
+
+
+async function requireManagerSession(event) {
+  if (event.sender !== mainWindow?.webContents || !backendManager?.process) {
+    throw new Error("This desktop action is not available from this window.");
+  }
+  const baseUrl = backendManager.baseUrl;
+  const cookies = await mainWindow.webContents.session.cookies.get({
+    url: baseUrl,
+    name: "poultry_session"
+  });
+  const sessionCookie = cookies.find(cookie => cookie.name === "poultry_session");
+  if (!sessionCookie?.value) throw new Error("Sign in with a Manager account before changing LAN access.");
+  const response = await fetch(baseUrl + "/api/v1/auth/me", {
+    headers: { Cookie: "poultry_session=" + sessionCookie.value }
+  });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok || payload?.data?.role !== "MANAGER") {
+    throw new Error("Only an authenticated Manager can change LAN access.");
+  }
+  return sessionCookie.value;
+}
+
+async function moveDesktopSessionCookie(url, token, lanMode) {
+  await mainWindow.webContents.session.cookies.set({
+    url,
+    name: "poultry_session",
+    value: token,
+    path: "/",
+    httpOnly: true,
+    secure: !lanMode,
+    sameSite: lanMode ? "lax" : "no_restriction"
+  });
+}
+
+ipcMain.handle("lan-access:info", async (event, ...args) => {
+  if (args.length !== 0) throw new Error("Invalid IPC message.");
+  await requireManagerSession(event);
+  return Object.freeze({
+    interfaces: backendManager.getLanInterfaces(),
+    status: backendManager.lanStatus
+  });
+});
+
+ipcMain.handle("lan-access:enable", async (event, selection, ...args) => {
+  if (args.length !== 0 || !selection || typeof selection !== "object"
+      || typeof selection.interfaceName !== "string" || typeof selection.address !== "string") {
+    throw new Error("Invalid LAN interface selection.");
+  }
+  const token = await requireManagerSession(event);
+  const confirmation = await dialog.showMessageBox(mainWindow, {
+    type: "warning",
+    buttons: ["Enable LAN access", "Cancel"],
+    defaultId: 1,
+    cancelId: 1,
+    title: "Enable network access",
+    message: "Allow other devices on this private network to access Pomas?",
+    detail: "Anyone on the selected network who can reach this computer will see the Pomas sign-in page. Only enable this on a trusted private network."
+  });
+  if (confirmation.response !== 0) return { canceled: true };
+  const status = await backendManager.enableLanAccess(selection);
+  try {
+    await moveDesktopSessionCookie(status.url, token, true);
+    await mainWindow.loadURL(status.url);
+    return status;
+  } catch (error) {
+    await backendManager.disableLanAccess();
+    await mainWindow.loadFile(join(__dirname, "../renderer/index.html"));
+    throw new Error("LAN access was rolled back because the browser workspace could not be opened. " + error.message);
+  }
+});
+
+ipcMain.handle("lan-access:disable", async (event, ...args) => {
+  if (args.length !== 0) throw new Error("Invalid IPC message.");
+  const token = await requireManagerSession(event);
+  const confirmation = await dialog.showMessageBox(mainWindow, {
+    type: "warning",
+    buttons: ["Disable LAN access", "Cancel"],
+    defaultId: 1,
+    cancelId: 1,
+    title: "Disable network access",
+    message: "Stop access from other devices?",
+    detail: "Pomas will return to localhost-only mode. Other devices will be disconnected."
+  });
+  if (confirmation.response !== 0) return { canceled: true };
+  await backendManager.disableLanAccess();
+  await moveDesktopSessionCookie(backendManager.baseUrl, token, false);
+  await mainWindow.loadFile(join(__dirname, "../renderer/index.html"));
+  return backendManager.lanStatus;
 });
 
 const DRAFT_IDS = new Set([
@@ -165,7 +255,7 @@ function friendlyFileError(error, fallback) {
 }
 
 async function validateBackup(file) {
-  const response = await fetch("http://127.0.0.1:" + backendManager.port + "/api/v1/backup/validate", {
+  const response = await fetch(backendManager.baseUrl + "/api/v1/backup/validate", {
     method: "POST",
     headers: { "Content-Type": "application/json", "X-Requested-With": "XMLHttpRequest" },
     body: JSON.stringify({ file })
@@ -216,7 +306,7 @@ ipcMain.handle("backup:restore", async (_event, ...args) => {
 
     const validation = await validateBackup(backup);
     const currentHealthResponse = await fetch(
-      "http://127.0.0.1:" + backendManager.port + "/api/v1/health"
+      backendManager.baseUrl + "/api/v1/health"
     );
     const currentHealth = await currentHealthResponse.json().catch(() => ({}));
     if (!currentHealthResponse.ok || currentHealth.schema !== "VALID") {
@@ -253,7 +343,7 @@ ipcMain.handle("backup:restore", async (_event, ...args) => {
     // The backend owns SQLite. Create and validate a consistent pre-restore
     // snapshot before stopping it; never raw-copy a live WAL database.
     const safetyResponse = await fetch(
-      "http://127.0.0.1:" + backendManager.port + "/api/v1/backup",
+      backendManager.baseUrl + "/api/v1/backup",
       {
         method: "POST",
         headers: { "Content-Type": "application/json", "X-Requested-With": "XMLHttpRequest" },
@@ -427,7 +517,7 @@ async function createWindow() {
   mainWindow.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
   mainWindow.webContents.on("will-navigate", (event, url) => {
     const rendererFile = pathToFileURL(join(__dirname, "../renderer/index.html")).href;
-    let allowed = url === rendererFile;
+    let allowed = url === rendererFile;\n    if (backendManager?.lanStatus?.url) {\n      try { allowed = allowed || new URL(url).origin === new URL(backendManager.lanStatus.url).origin; }\n      catch { allowed = false; }\n    }
     if (process.env.ELECTRON_RENDERER_URL) {
       try {
         allowed = allowed || new URL(url).origin === new URL(process.env.ELECTRON_RENDERER_URL).origin;
