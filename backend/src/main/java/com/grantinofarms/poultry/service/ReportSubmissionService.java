@@ -140,6 +140,9 @@ public class ReportSubmissionService {
         notifications.notifyManagers(String.valueOf(header.get("farmId")), notificationType,
                 "REPORT_SUBMISSION", id, notificationTitle,
                 "A " + header.get("reportType") + " report was submitted and its checks completed with status " + nextStatus + ".", now);
+        notifications.notifyUser(String.valueOf(header.get("farmId")), actorId, "REPORT_SUBMITTED",
+                "REPORT_SUBMISSION", id, "Your report was submitted",
+                "Your " + header.get("reportType") + " report was received. Automated checks completed with status " + nextStatus + ".", now);
         return getOwned(id, actorId);
     }
 
