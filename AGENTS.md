@@ -1582,3 +1582,14 @@ review the error.
 - Backup creation must use SQLite `VACUUM INTO` to a unique temporary file in the destination directory, validate SQLite integrity, foreign keys, and Pomas/Flyway schema compatibility, then atomically publish the final `.db` file. Remove failed temporary snapshots; never expose a partial final backup.
 - Restore must validate the selected backup and the staged copy before stopping Spring Boot, create and validate a pre-restore `VACUUM INTO` safety snapshot while the backend owns SQLite, stop the backend, and use same-volume rename for replacement/rollback. Remove stale `-wal` / `-shm` files before opening a replacement or recovered database. Keep the validated safety snapshot as fallback. Never raw-copy a live database.
 - Verify backup creation and restore recovery with disposable databases, including WAL-visible data, invalid/corrupt files, failed startup after replacement, rollback restoration, and Windows open-file behavior. Never run destructive restore tests against real farm data.
+
+
+## Security, regression, and mock-data acceptance testing
+
+- Keep HTTP security acceptance tests at the Spring MVC boundary with `poultry.auth-required=true`. Test anonymous access, CSRF request markers, role boundaries, session revocation/role refresh, and the explicit credentialed CORS origin allow-list.
+- Renderer route visibility is not an authorization boundary. Every new role-sensitive endpoint needs positive and negative HTTP tests for the relevant roles.
+- Synthetic acceptance fixtures must use isolated in-memory or uniquely created temporary databases and disposable Spring contexts. Never seed mock data into `data/poultry.db`, AppData, backup folders, or any real farm database.
+- Cross-module mock-data scenarios should reconcile persisted operational records against dashboard/report totals, including bird population, feed stock, egg inventory/sales, revenue, and expenses where included.
+- CI must run frontend lint/tests/build, backend compile/tests/verify, and Windows installer packaging. CI results do not replace the manual disposable-Windows restore and desktop acceptance checklist in `docs/security-regression-acceptance.md`.
+- Do not claim manual acceptance steps have passed unless an operator has run them and recorded the environment, version, schema, date, and outcome.
+- See `docs/security-regression-acceptance.md`.
