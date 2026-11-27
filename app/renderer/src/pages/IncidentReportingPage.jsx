@@ -204,13 +204,19 @@ export default function IncidentReportingPage({ currentUser }) {
           <section className="user-list-section">
             <h3>{manager ? "Farm incident queue" : "My emergency alerts"}</h3>
             {loading ? <p className="muted">Loading incidents…</p> : incidents.length === 0 ? <p className="muted">No emergency incidents have been reported.</p> : <div className="table-wrap"><table className="data-table">
-              <thead><tr><th>Incident</th><th>Reported by</th><th>Severity</th><th>Status</th><th>Observed</th>{manager && <th>Response</th>}</tr></thead>
+              <thead><tr><th>Incident</th><th>Reported by</th><th>Severity</th><th>Status</th><th>Observed</th><th>History</th>{manager && <th>Response</th>}</tr></thead>
               <tbody>{incidents.map(item => <tr key={item.id}>
                 <td><strong>{item.title}</strong><small>{label(item.incidentType)} · {item.description}</small></td>
                 <td>{item.reporterName || item.reporterUsername || "You"}</td>
                 <td><span className={"status-pill " + (item.severity === "CRITICAL" || item.severity === "HIGH" ? "status-suspended" : "")}>{item.severity}</span></td>
                 <td>{label(item.status)}</td>
                 <td>{item.eventAt}</td>
+                <td><details><summary>View history ({item.history?.length || 0})</summary>
+                  {item.history?.length ? <ul>{item.history.map(event => <li key={event.id}>
+                    <strong>{label(event.event)}</strong> · {event.actorName || event.actorId} · {event.createdAt}
+                    {event.details && <small>{event.details}</small>}
+                  </li>)}</ul> : <p className="muted">No response events recorded yet.</p>}
+                </details></td>
                 {manager && <td>{item.status !== "RESOLVED" && <div className="stacked-actions">
                   {item.status === "OPEN" && <button type="button" className="secondary-button" disabled={saving} onClick={() => acknowledge(item.id)}>Acknowledge</button>}
                   <div className="inline-form"><input aria-label={"Escalation reason for " + item.title} value={escalationNotes[item.id] || ""} onChange={event => setEscalationNotes(current => ({ ...current, [item.id]: event.target.value }))} placeholder="Escalation reason" maxLength={2000} /><button type="button" className="secondary-button" disabled={saving} onClick={() => escalate(item.id)}>Escalate</button></div>
@@ -228,10 +234,12 @@ export default function IncidentReportingPage({ currentUser }) {
             <form className="form-grid" onSubmit={createSchedule}>
               <label>Report type<select value={scheduleForm.reportType} onChange={event => setScheduleForm(current => ({ ...current, reportType: event.target.value }))} required><option value="">Choose report type</option>{reportTypes.map(value => <option key={value} value={value}>{label(value)}</option>)}</select></label>
               <label>Scope<select value={scheduleForm.scopeType} onChange={event => setScheduleForm(current => ({ ...current, scopeType: event.target.value, scopeId: "" }))}><option value="FARM">Whole farm</option><option value="HOUSE">House / pen</option><option value="BATCH">Batch / flock</option></select></label>
-              {scheduleForm.scopeType !== "FARM" && <label>Scope record ID<input value={scheduleForm.scopeId} onChange={event => setScheduleForm(current => ({ ...current, scopeId: event.target.value }))} required placeholder="Paste the house or batch ID" /></label>}
+              {scheduleForm.scopeType !== "FARM" && {scheduleForm.scopeType === "BATCH"
+                ? <label>Batch / flock<select value={scheduleForm.scopeId} onChange={event => setScheduleForm(current => ({ ...current, scopeId: event.target.value }))} required><option value="">Choose batch</option>{(references.batches || []).map(batch => <option key={batch.id} value={batch.id}>{batch.code} · {batch.type}</option>)}</select></label>
+                : <label>House / pen record ID<input value={scheduleForm.scopeId} onChange={event => setScheduleForm(current => ({ ...current, scopeId: event.target.value }))} required placeholder="Enter the house record ID" /></label>}}
               <label>Applies to batch type (optional)<select value={scheduleForm.batchType} onChange={event => setScheduleForm(current => ({ ...current, batchType: event.target.value }))}><option value="">All types</option><option value="LAYER">Layer</option><option value="BROILER">Broiler</option><option value="TURKEY">Turkey</option></select></label>
               <label>Frequency<select value={scheduleForm.frequency} onChange={event => setScheduleForm(current => ({ ...current, frequency: event.target.value, dayOfWeek: "" }))}><option value="">Choose frequency</option><option value="DAILY">Daily</option><option value="WEEKLY">Weekly</option></select></label>
-              {scheduleForm.frequency === "WEEKLY" && <label>Day of week<select value={scheduleForm.dayOfWeek} onChange={event => setScheduleForm(current => ({ ...current, dayOfWeek: event.target.value }))}><option value="">Choose day</option><option value="1">Monday</option><option value="2">Tuesday</option><option value="3">Wednesday</option><option value="4">Thursday</option><option value="5">Friday</option><option value="6">Saturday</option><option value="7">Sunday</option></select></label>}
+              {scheduleForm.frequency === "WEEKLY" && <label>Day of week<select required value={scheduleForm.dayOfWeek} onChange={event => setScheduleForm(current => ({ ...current, dayOfWeek: event.target.value }))}><option value="">Choose day</option><option value="1">Monday</option><option value="2">Tuesday</option><option value="3">Wednesday</option><option value="4">Thursday</option><option value="5">Friday</option><option value="6">Saturday</option><option value="7">Sunday</option></select></label>}
               <label>Due time (farm local)<input type="time" value={scheduleForm.dueTime} onChange={event => setScheduleForm(current => ({ ...current, dueTime: event.target.value }))} required /></label>
               <label>Grace period (minutes)<input type="number" min="0" max="1440" value={scheduleForm.graceMinutes} onChange={event => setScheduleForm(current => ({ ...current, graceMinutes: event.target.value }))} required /></label>
               <div className="form-actions"><button type="submit" disabled={saving}>{saving ? "Saving…" : "Save schedule"}</button></div>
