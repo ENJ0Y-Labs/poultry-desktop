@@ -39,6 +39,14 @@ class WeightRecordUndoIntegrationTest {
    assertThatThrownBy(()->production.correctWeight(b.id(),original.id(),new WeightRecordRequest(
      LocalDate.of(2026,1,8),12,new BigDecimal("14.400"),"Again"),"Duplicate correction"))
      .hasMessage("This weight record has already been corrected or voided.");
+
+   var correctedAgain=production.correctWeight(b.id(),replacementId,new WeightRecordRequest(
+     LocalDate.of(2026,1,8),13,new BigDecimal("15.600"),"Second corrected measurement"),"Second transcription correction");
+   String secondReplacementId=String.valueOf(correctedAgain.get("replacementId"));
+   assertThat(production.isWeightReversed(replacementId)).isTrue();
+   assertThat(production.weights(b.id(),LocalDate.of(2026,1,8)))
+     .extracting(WeightRecordResponse::id).containsExactly(secondReplacementId);
+   assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM transaction_reversals WHERE original_type='WEIGHT_RECORD' AND operation_type='CORRECT' AND batch_id=?",Integer.class,b.id())).isEqualTo(2);
   } finally { CurrentUserContext.clear(); }
  }
 
