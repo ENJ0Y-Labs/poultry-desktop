@@ -27,6 +27,13 @@ public class AuthFilter extends OncePerRequestFilter {
     }
 
     @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        // CORS preflight is a read-only protocol negotiation request. Let Spring MVC
+        // apply the explicit origin/method/header allow-list before auth is evaluated.
+        return "OPTIONS".equalsIgnoreCase(request.getMethod());
+    }
+
+    @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
         String method = request.getMethod();
