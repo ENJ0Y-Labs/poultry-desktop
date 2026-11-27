@@ -134,9 +134,74 @@ describe("MyReportsPage", () => {
     fireEvent.click(screen.getByRole("button", { name: "Submit for review" }));
 
     await waitFor(() => expect(reportSubmissionApi.create).toHaveBeenCalledTimes(1));
-    await waitFor(() => expect(reportSubmissionApi.submit).toHaveBeenCalledWith("submission-1"));
+    await waitFor(() => expect(reportSubmissionApi.submit).toHaveBeenCalledWith("submission-1", expect.any(String)));
     expect(await screen.findByText(/Report submitted/)).toBeInTheDocument();
     expect(localStorage.getItem("pomas:report-submission-drafts:worker-1")).toBe("[]");
+  });
+
+  it("reconciles an interrupted submit response using the persisted operation key", async () => {
+    reportSubmissionApi.create.mockResolvedValue(fixtures.draft);
+    reportSubmissionApi.get.mockResolvedValue(fixtures.draft);
+    reportSubmissionApi.submit.mockRejectedValueOnce(new TypeError("Network connection was interrupted"));
+
+    render(<MyReportsPage userId="worker-1" />);
+    await screen.findByText(/No reports yet/);
+    fillMortalityForm();
+    fireEvent.click(screen.getByRole("button", { name: "Submit for review" }));
+
+    await waitFor(() => expect(reportSubmissionApi.submit).toHaveBeenCalledTimes(1));
+    expect(await screen.findByText(/submission result is not confirmed/i)).toBeInTheDocument();
+    const saved = JSON.parse(localStorage.getItem("pomas:report-submission-drafts:worker-1"))[0];
+    expect(saved).toMatchObject({
+      serverId: "submission-1",
+      submissionPending: true,
+      submitIdempotencyKey: expect.any(String),
+    });
+
+    reportSubmissionApi.get.mockResolvedValue({
+      ...fixtures.draft,
+      lifecycleStatus: "SUBMITTED",
+      status: "PENDING_REVIEW",
+      submittedVersion: 1,
+      submitOperationKey: saved.submitIdempotencyKey,
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Retry / check submission" }));
+
+    await waitFor(() => expect(reportSubmissionApi.get).toHaveBeenCalledTimes(1));
+    expect(reportSubmissionApi.submit).toHaveBeenCalledTimes(1);
+    expect(await screen.findByText(/Report submitted/)).toBeInTheDocument();
+    expect(localStorage.getItem("pomas:report-submission-drafts:worker-1")).toBe("[]");
+  });
+
+  it("cleans up an interrupted submission after restart when the server confirms its key", async () => {
+    localStorage.setItem("pomas:report-submission-drafts:worker-1", JSON.stringify([{
+      id: "local-pending-1",
+      serverId: "submission-1",
+      idempotencyKey: "create-retry-key",
+      submitIdempotencyKey: "submit-retry-key-0001",
+      submissionPending: true,
+      posted: false,
+      reportType: "MORTALITY",
+      title: "Recovered mortality report",
+      fields: { eventDate: "2026-11-26", eventTime: "08:00", batchId: "batch-1", quantity: "2" },
+      updatedAt: "2026-11-26T08:00:00Z",
+    }]));
+    reportSubmissionApi.mine.mockResolvedValue([{
+      id: "submission-1",
+      title: "Recovered mortality report",
+      reportType: "MORTALITY",
+      lifecycleStatus: "SUBMITTED",
+      status: "PENDING_REVIEW",
+      currentVersion: 1,
+      submittedVersion: 1,
+      submitOperationKey: "submit-retry-key-0001",
+    }]);
+
+    render(<MyReportsPage userId="worker-1" />);
+    await screen.findByRole("button", { name: "View" });
+    await waitFor(() => expect(localStorage.getItem("pomas:report-submission-drafts:worker-1")).toBe("[]"));
+    expect(reportSubmissionApi.submit).not.toHaveBeenCalled();
+    expect(reportSubmissionApi.get).not.toHaveBeenCalled();
   });
 
   it("keeps a local recovery copy and does not attempt server sync while offline", async () => {
@@ -175,7 +240,7 @@ describe("MyReportsPage", () => {
 
     render(<MyReportsPage userId="worker-1" />);
     expect(await screen.findByText("Offline recovery copy")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Open" }));
+    fireEvent.click(screen.getByRole("button", { name: "Open / reconcile" }));
     expect(screen.getByLabelText("Report title")).toHaveValue("Recovered mortality report");
     expect(screen.getByLabelText("Number of birds")).toHaveValue(4);
     expect(screen.getByLabelText("Time of event")).toHaveValue("08:00");

@@ -124,6 +124,39 @@ class ReportSubmissionIntegrationTest {
 
 
     @Test
+    void submissionRetryWithTheSameOperationKeyReturnsTheOriginalSubmission() throws Exception {
+        Map<String, Object> created = submissions.createDraft(new ReportSubmissionRequest(
+                "MORTALITY", "Retry-safe mortality", mapper.readTree("{\"batchId\":\"batch-1\",\"quantity\":1}")));
+        String id = String.valueOf(created.get("id"));
+
+        Map<String, Object> first = submissions.submit(id, "submit-retry-key-0001");
+        int auditEventsBeforeRetry = jdbc.queryForObject(
+                "SELECT COUNT(*) FROM audit_logs WHERE entity_type = 'REPORT_SUBMISSION' AND entity_id = ? AND action = 'SUBMIT'",
+                Integer.class, id);
+        int notificationsBeforeRetry = jdbc.queryForObject(
+                "SELECT COUNT(*) FROM manager_notifications WHERE entity_type = 'REPORT_SUBMISSION' AND entity_id = ?",
+                Integer.class, id);
+
+        Map<String, Object> retry = submissions.submit(id, "submit-retry-key-0001");
+
+        assertThat(first.get("id")).isEqualTo(retry.get("id"));
+        assertThat(first.get("submittedVersion")).isEqualTo(retry.get("submittedVersion"));
+        assertThat(retry.get("submitOperationKey")).isEqualTo("submit-retry-key-0001");
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM report_submission_events WHERE submission_id = ? AND event_type = 'SUBMITTED'",
+                Integer.class, id)).isEqualTo(1);
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM audit_logs WHERE entity_type = 'REPORT_SUBMISSION' AND entity_id = ? AND action = 'SUBMIT'",
+                Integer.class, id)).isEqualTo(auditEventsBeforeRetry);
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM manager_notifications WHERE entity_type = 'REPORT_SUBMISSION' AND entity_id = ?",
+                Integer.class, id)).isEqualTo(notificationsBeforeRetry);
+        assertThatThrownBy(() -> submissions.submit(id, "different-submit-key-0002"))
+                .isInstanceOf(ApiException.class)
+                .hasMessageContaining("different operation key");
+    }
+
+    @Test
     void reportCreationIsIdempotentOnlyForTheSameRequestContent() throws Exception {
         var original = new ReportSubmissionRequest("MORTALITY", "Morning mortality",
                 mapper.readTree("{\"batchId\":\"batch-1\",\"quantity\":1}"));
