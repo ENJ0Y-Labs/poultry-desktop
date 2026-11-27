@@ -107,7 +107,7 @@ const pageTabs = {
     { id: "farm-defaults", label: "Farm defaults" },
     { id: "application", label: "App, appearance & account" },
     { id: "backup", label: "Backup & restore" },
-    { id: "pricing", label: "Pricing" },
+    { id: "pricing", label: "Pricing" },\n    { id: "network", label: "Network access" },
   ],
 };
 const defaultTabs = {
