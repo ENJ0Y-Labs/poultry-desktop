@@ -103,7 +103,7 @@ describe("BackendManager", () => {
     );
 
     expect(backendProperties).toContain("server.address=127.0.0.1");
-    expect(browserBackendLauncher).toMatch(/SERVER_ADDRESS:\s*"127\\.0\\.0\\.1"/);
+    expect(browserBackendLauncher).toContain('SERVER_ADDRESS: "127.0.0.1"');
   });
 
   it("binds the Electron development backend to loopback", async () => {
