@@ -26,6 +26,7 @@ describe("AppShell", () => {
     );
 
     const navigation = screen.getByRole("navigation", { name: "Main navigation" });
+    expect(screen.queryByRole("navigation", { name: "Worker navigation" })).not.toBeInTheDocument();
     for (const label of [
       "Dashboard", "Flocks", "Daily Work", "Feed & Stock", "Health",
       "Production", "Sales & Money", "Reports", "Alerts & Reporting", "Import / Export", "Settings",
