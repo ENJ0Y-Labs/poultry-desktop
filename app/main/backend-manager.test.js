@@ -275,4 +275,86 @@ describe("BackendManager", () => {
     await expect(manager.waitForHealth({ child, timeoutMs: 1, intervalMs: 0 }))
       .rejects.toThrow(/did not prove its identity.*database may be unavailable.*migration may have failed/i);
   });
+  it("enables LAN only on a freshly validated private interface and publishes its healthy URL", async () => {
+    const appPath = mkdtempSync(join(tmpdir(), "pomas-lan-lifecycle-"));
+    const interfaces = { WiFi: [{ address: "192.168.10.25", netmask: "255.255.255.0", family: "IPv4", internal: false }] };
+    spawnMock.mockImplementation(() => fakeChild());
+    const manager = new BackendManager({
+      userDataPath: appPath, appPath, isPackaged: false, port: 19044, resourcesPath,
+      spawnProcess: spawnMock, networkInterfacesProvider: () => interfaces
+    });
+    try {
+      await manager.start();
+      expect(manager.lanStatus).toMatchObject({ enabled: false, url: null });
+      const status = await manager.enableLanAccess({ interfaceName: "WiFi", address: "192.168.10.25" });
+      expect(spawnMock.mock.calls.at(-1)[2].env.SERVER_ADDRESS).toBe("192.168.10.25");
+      expect(globalThis.fetch).toHaveBeenLastCalledWith("http://192.168.10.25:19044/api/v1/health");
+      expect(status).toMatchObject({ enabled: true, address: "192.168.10.25", url: "http://192.168.10.25:19044" });
+      expect(manager.databasePath).toMatch(/data[\\/]poultry\.db$/);
+      await manager.stop();
+    } finally {
+      rmSync(appPath, { recursive: true, force: true });
+    }
+  });
+
+  it("rejects unavailable interface selections without starting a network listener", async () => {
+    const appPath = mkdtempSync(join(tmpdir(), "pomas-lan-invalid-"));
+    const manager = new BackendManager({
+      userDataPath: appPath, appPath, isPackaged: false, port: 19045, resourcesPath,
+      spawnProcess: spawnMock, networkInterfacesProvider: () => ({ WiFi: [] })
+    });
+    await expect(manager.enableLanAccess({ interfaceName: "WiFi", address: "0.0.0.0" }))
+      .rejects.toThrow(/no longer available/i);
+    expect(spawnMock).not.toHaveBeenCalled();
+    expect(manager.bindAddress).toBe("127.0.0.1");
+    rmSync(appPath, { recursive: true, force: true });
+  });
+
+  it("serializes concurrent enable and disable transitions", async () => {
+    const appPath = mkdtempSync(join(tmpdir(), "pomas-lan-serialized-"));
+    const interfaces = { WiFi: [{ address: "192.168.10.25", netmask: "255.255.255.0", family: "IPv4", internal: false }] };
+    spawnMock.mockImplementation(() => fakeChild());
+    const manager = new BackendManager({
+      userDataPath: appPath, appPath, isPackaged: false, port: 19046, resourcesPath,
+      spawnProcess: spawnMock, networkInterfacesProvider: () => interfaces
+    });
+    try {
+      await manager.start();
+      const enabling = manager.enableLanAccess({ interfaceName: "WiFi", address: "192.168.10.25" });
+      const disabling = manager.disableLanAccess();
+      await enabling;
+      const finalStatus = await disabling;
+      expect(finalStatus.enabled).toBe(false);
+      expect(manager.bindAddress).toBe("127.0.0.1");
+      expect(spawnMock.mock.calls.at(-1)[2].env.SERVER_ADDRESS).toBe("127.0.0.1");
+      await manager.stop();
+    } finally {
+      rmSync(appPath, { recursive: true, force: true });
+    }
+  });
+
+  it("recovers loopback if the selected adapter disappears during the restart", async () => {
+    const appPath = mkdtempSync(join(tmpdir(), "pomas-lan-disappears-"));
+    const available = { WiFi: [{ address: "192.168.10.25", netmask: "255.255.255.0", family: "IPv4", internal: false }] };
+    let discoveryCount = 0;
+    spawnMock.mockImplementation(() => fakeChild());
+    const manager = new BackendManager({
+      userDataPath: appPath, appPath, isPackaged: false, port: 19047, resourcesPath,
+      spawnProcess: spawnMock,
+      networkInterfacesProvider: () => (++discoveryCount === 1 ? available : {})
+    });
+    try {
+      await manager.start();
+      await expect(manager.enableLanAccess({ interfaceName: "WiFi", address: "192.168.10.25" }))
+        .rejects.toThrow(/localhost-only mode/i);
+      expect(manager.bindAddress).toBe("127.0.0.1");
+      expect(manager.process).not.toBeNull();
+      expect(manager.lanStatus).toMatchObject({ enabled: false, url: null });
+      expect(spawnMock.mock.calls.at(-1)[2].env.SERVER_ADDRESS).toBe("127.0.0.1");
+      await manager.stop();
+    } finally {
+      rmSync(appPath, { recursive: true, force: true });
+    }
+  });
+
 });

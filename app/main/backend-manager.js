@@ -3,6 +3,8 @@ import { randomUUID } from "node:crypto";
 import { createServer } from "node:net";
 import { appendFileSync, existsSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
+import { networkInterfaces } from "node:os";
+import { discoverPrivateIPv4Interfaces, validatePrivateIPv4Interface } from "./network-interface.js";
 
 const DEFAULT_DEV_PORT = 18942;
 const STARTUP_TIMEOUT_MS = 30_000;
@@ -10,11 +12,11 @@ const HEALTH_INTERVAL_MS = 250;
 const STOP_TIMEOUT_MS = 5_000;
 const PACKAGED_PORT_ATTEMPTS = 3;
 
-async function findAvailablePort() {
+async function findAvailablePort(listenAddress = "127.0.0.1") {
   const server = createServer();
   await new Promise((resolve, reject) => {
     server.once("error", reject);
-    server.listen(0, "127.0.0.1", resolve);
+    server.listen(0, listenAddress, resolve);
   });
 
   const address = server.address();
@@ -36,6 +38,9 @@ export class BackendManager {
     port,
     resourcesPath = process.resourcesPath,
     spawnProcess = spawn,
+    networkInterfacesProvider = networkInterfaces,
+    startupTimeoutMs = STARTUP_TIMEOUT_MS,
+    healthIntervalMs = HEALTH_INTERVAL_MS,
   } = {}) {
     this.userDataPath = userDataPath;
     this.appPath = appPath;
@@ -43,6 +48,13 @@ export class BackendManager {
     this.explicitPort = Number(port) > 0;
     this.resourcesPath = resourcesPath;
     this.spawnProcess = spawnProcess;
+    this.networkInterfacesProvider = networkInterfacesProvider;
+    this.startupTimeoutMs = startupTimeoutMs;
+    this.healthIntervalMs = healthIntervalMs;
+    this.bindAddress = "127.0.0.1";
+    this.lanSelection = null;
+    this.healthy = false;
+    this.transitionQueue = Promise.resolve();
     this.process = null;
     this.port = Number(port ?? ((!isPackaged && process.env.POULTRY_BACKEND_PORT) || (isPackaged ? 0 : DEFAULT_DEV_PORT)));
     this.instanceId = null;
@@ -96,7 +108,7 @@ export class BackendManager {
 
   get backendArguments() {
     return [
-      "127.0.0.1",
+      this.bindAddress,
       this.port,
       this.databasePath,
       this.isPackaged ? "prod" : "dev",
@@ -140,7 +152,7 @@ export class BackendManager {
     let lastStartupError;
 
     for (let attempt = 1; attempt <= attempts; attempt += 1) {
-      if (this.isPackaged && !(attempt === 1 && this.explicitPort)) this.port = await findAvailablePort();
+      if (this.isPackaged && !(attempt === 1 && this.explicitPort)) this.port = await findAvailablePort(this.bindAddress);
       this.instanceId = randomUUID();
 
       try {
@@ -189,7 +201,7 @@ export class BackendManager {
             shell: isWin,
             env: {
               ...env,
-              SERVER_ADDRESS: "127.0.0.1",
+              SERVER_ADDRESS: this.bindAddress,
               SERVER_PORT: String(this.port),
               DATABASE_PATH: this.databasePath,
               LOG_FILE: this.logFilePath,
@@ -226,7 +238,8 @@ export class BackendManager {
     });
 
     try {
-      await this.waitForHealth({ child, instanceId: this.instanceId });
+      await this.waitForHealth({ child, instanceId: this.instanceId, timeoutMs: this.startupTimeoutMs, intervalMs: this.healthIntervalMs });
+      this.healthy = true;
       this.writeLog(`Backend health check passed for instance ${this.instanceId} on port ${this.port}.`);
     } catch (error) {
       this.writeLog(`Backend startup failed: ${error.stack || error.message || error}`);
@@ -249,7 +262,7 @@ export class BackendManager {
       }
 
       try {
-        const response = await fetch(`http://127.0.0.1:${this.port}/api/v1/health`);
+        const response = await fetch(`http://${this.bindAddress}:${this.port}/api/v1/health`);
         const body = response.ok ? await response.json().catch(() => null) : null;
         if (body?.instanceId === instanceId && body?.status === "UP") return true;
       } catch {
@@ -262,8 +275,76 @@ export class BackendManager {
     throw new Error(`The local backend did not prove its identity on port ${this.port}. Another application may be using that port, the database may be unavailable, or a migration may have failed. Check ${this.logFilePath} for Spring Boot errors and ${this.processLogFilePath} for process startup output.`);
   }
 
+  get lanStatus() {
+    const enabled = this.bindAddress !== "127.0.0.1" && Boolean(this.process) && this.healthy;
+    return Object.freeze({
+      enabled,
+      interfaceName: enabled ? this.lanSelection?.interfaceName || null : null,
+      address: enabled ? this.bindAddress : null,
+      url: enabled ? `http://${this.bindAddress}:${this.port}` : null
+    });
+  }
+
+  getLanInterfaces() {
+    return discoverPrivateIPv4Interfaces(this.networkInterfacesProvider());
+  }
+
+  serializeNetworkTransition(operation) {
+    const next = this.transitionQueue.then(operation, operation);
+    this.transitionQueue = next.catch(() => undefined);
+    return next;
+  }
+
+  enableLanAccess(selection) {
+    const requested = { interfaceName: selection?.interfaceName, address: selection?.address };
+    return this.serializeNetworkTransition(async () => {
+      const selected = validatePrivateIPv4Interface(requested, this.networkInterfacesProvider());
+      if (this.process && this.healthy && this.bindAddress === selected.address
+          && this.lanSelection?.interfaceName === selected.interfaceName) return this.lanStatus;
+      const databasePath = this.databasePath;
+      await this.stop();
+      try {
+        // Revalidate after the old listener has stopped and immediately before the new bind.
+        const currentSelection = validatePrivateIPv4Interface(requested, this.networkInterfacesProvider());
+        this.bindAddress = currentSelection.address;
+        this.lanSelection = currentSelection;
+        await this.start();
+        if (this.databasePath !== databasePath || !this.lanStatus.enabled) {
+          throw new Error("The LAN backend did not become healthy on the selected interface.");
+        }
+        this.writeLog(`LAN access enabled on ${currentSelection.interfaceName} (${currentSelection.address}):${this.port}.`);
+        return this.lanStatus;
+      } catch (error) {
+        await this.stop();
+        this.bindAddress = "127.0.0.1";
+        this.lanSelection = null;
+        try {
+          await this.start();
+        } catch (recoveryError) {
+          this.writeLog(`LAN startup failed and loopback recovery also failed: ${recoveryError.message}`);
+          throw new AggregateError([error, recoveryError], "LAN access failed and the local backend could not be recovered. Restart Pomas; farm data was not changed.");
+        }
+        this.writeLog("LAN startup failed; backend recovered on loopback.");
+        throw new Error(`LAN access could not be enabled. Pomas has returned to localhost-only mode. ${error.message}`);
+      }
+    });
+  }
+
+  disableLanAccess() {
+    return this.serializeNetworkTransition(async () => {
+      if (this.bindAddress === "127.0.0.1") return this.lanStatus;
+      await this.stop();
+      this.bindAddress = "127.0.0.1";
+      this.lanSelection = null;
+      await this.start();
+      this.writeLog("LAN access disabled; backend is healthy on loopback.");
+      return this.lanStatus;
+    });
+  }
+
   async stop() {
     const child = this.process;
+    this.healthy = false;
     if (!child) return;
     this.process = null;
     this.lastError = null;
