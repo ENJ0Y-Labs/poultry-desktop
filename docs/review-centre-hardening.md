@@ -24,7 +24,9 @@ ReportReviewHardeningIntegrationTest covers:
 6. An official duplicate inserted after approval is detected by the pre-merge recheck, returns the submission to FLAGGED, and creates no provenance link.
 7. A completed merge accepts a retry only when the original Idempotency-Key is reused; a different key is rejected without a second official write.
 8. Two concurrent merge attempts using different keys can produce only one official record and one provenance link.
-9. A forced failure at the final audit write rolls back the official record, provenance link, MERGED event, merge key and lifecycle transition.
+9. One merge key cannot be claimed by two different submissions; the second submission remains APPROVED and creates no official record.
+10. A forced failure at the final audit write rolls back the official record, provenance link, MERGED event, merge key and lifecycle transition.
+
 
 ## Atomic merge guarantees
 
