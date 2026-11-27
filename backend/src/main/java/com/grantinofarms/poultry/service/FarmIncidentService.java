@@ -32,16 +32,18 @@ public class FarmIncidentService {
     private final HouseRepository houses;
     private final AuditRepository audit;
     private final ObjectMapper mapper;
+    private final WorkflowNotificationService notifications;
 
     public FarmIncidentService(FarmIncidentRepository incidents, FarmRepository farms,
                                BatchRepository batches, HouseRepository houses,
-                               AuditRepository audit, ObjectMapper mapper) {
+                               AuditRepository audit, ObjectMapper mapper, WorkflowNotificationService notifications) {
         this.incidents = incidents;
         this.farms = farms;
         this.batches = batches;
         this.houses = houses;
         this.audit = audit;
         this.mapper = mapper;
+        this.notifications = notifications;
     }
 
     @Transactional
@@ -110,6 +112,9 @@ public class FarmIncidentService {
                 "INCIDENT_ACKNOWLEDGED", "{}", now);
         audit.append(String.valueOf(incident.get("farmId")), "INCIDENT_ACKNOWLEDGE", "FARM_INCIDENT",
                 id, "Manager acknowledged emergency incident", null, "{}", now);
+        notifications.notifyUser(String.valueOf(incident.get("farmId")), String.valueOf(incident.get("reportedBy")),
+                "INCIDENT_ACKNOWLEDGED", "FARM_INCIDENT", id, "Your emergency alert was acknowledged",
+                "A Manager acknowledged your incident and is reviewing the response.", now);
         return detail(requireIncident(id));
     }
 
@@ -132,6 +137,9 @@ public class FarmIncidentService {
         audit.append(String.valueOf(incident.get("farmId")), "INCIDENT_RESOLVE", "FARM_INCIDENT",
                 id, "Manager resolved emergency incident", null,
                 json(Map.of("resolutionNotes", reason)), now);
+        notifications.notifyUser(String.valueOf(incident.get("farmId")), String.valueOf(incident.get("reportedBy")),
+                "INCIDENT_RESOLVED", "FARM_INCIDENT", id, "Your emergency alert was resolved",
+                "A Manager marked the incident resolved. " + reason, now);
         return detail(requireIncident(id));
     }
 
@@ -157,6 +165,9 @@ public class FarmIncidentService {
         audit.append(String.valueOf(incident.get("farmId")), "INCIDENT_ESCALATE", "FARM_INCIDENT",
                 id, "Manager escalated emergency incident", null,
                 json(Map.of("reason", reason)), now);
+        notifications.notifyUser(String.valueOf(incident.get("farmId")), String.valueOf(incident.get("reportedBy")),
+                "INCIDENT_ESCALATED", "FARM_INCIDENT", id, "Your emergency alert was escalated",
+                "A Manager escalated the incident for further attention. " + reason, now);
         return detail(requireIncident(id));
     }
 
