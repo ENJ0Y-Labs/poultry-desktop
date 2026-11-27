@@ -4,7 +4,7 @@
 
 Pomas remains bound to `127.0.0.1` unless a Manager explicitly enables LAN access from the authenticated desktop host. LAN mode must bind to one selected RFC1918 IPv4 address only. Never bind to `0.0.0.0`, `::`, a public address, a loopback address, or an address that is no longer assigned to the selected adapter.
 
-The URL shown by the host is not published until the selected-address listener passes the backend identity health check. Disabling LAN access hides the URL and returns the backend to loopback. A failed transition must fail closed and must not change the SQLite database path or contents.
+The URL shown by the host is not published until the selected-address listener passes the backend identity health check and Electron confirms that the production browser workspace is served correctly. Disabling LAN access hides the URL and returns the backend to loopback. A failed transition must fail closed and must not change the SQLite database path or contents.
 
 ## Phase 1: network discovery
 
