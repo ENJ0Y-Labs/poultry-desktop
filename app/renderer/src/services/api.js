@@ -68,8 +68,14 @@ async function getApiBase() {
     );
   }
 
-  // Browser-only development mode: use configured URL or default dev port.
-  const configured = configuredApiBase || "http://127.0.0.1:18942";
+  // Production browser mode is served by Spring Boot from the same origin as its API.
+  // Only the Vite development workflow uses the explicit loopback backend URL.
+  const browserHost = window.location.hostname;
+  const isBrowserDevelopment = ["localhost", "127.0.0.1"].includes(browserHost)
+    && ["5173", "4173"].includes(window.location.port);
+  const configured = configuredApiBase || (isBrowserDevelopment
+    ? "http://127.0.0.1:18942"
+    : window.location.origin);
   const normalized = configured.replace(/\/+$/, "");
   return normalized.endsWith("/api/v1") ? normalized : normalized + "/api/v1";
 }
