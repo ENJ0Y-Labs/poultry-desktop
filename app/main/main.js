@@ -61,14 +61,15 @@ async function requireManagerSession(event) {
   if (!response.ok || payload?.data?.role !== "MANAGER") {
     throw new Error("Only an authenticated Manager can change LAN access.");
   }
-  return sessionCookie.value;
+  return { value: sessionCookie.value, expirationDate: sessionCookie.expirationDate };
 }
 
-async function moveDesktopSessionCookie(url, token, lanMode) {
+async function moveDesktopSessionCookie(url, sessionCookie, lanMode) {
   await mainWindow.webContents.session.cookies.set({
     url,
     name: "poultry_session",
-    value: token,
+    value: sessionCookie.value,
+    ...(Number.isFinite(sessionCookie.expirationDate) ? { expirationDate: sessionCookie.expirationDate } : {}),
     path: "/",
     httpOnly: true,
     secure: !lanMode,
@@ -90,7 +91,7 @@ ipcMain.handle("lan-access:enable", async (event, selection, ...args) => {
       || typeof selection.interfaceName !== "string" || typeof selection.address !== "string") {
     throw new Error("Invalid LAN interface selection.");
   }
-  const token = await requireManagerSession(event);
+  const sessionCookie = await requireManagerSession(event);
   const confirmation = await dialog.showMessageBox(mainWindow, {
     type: "warning",
     buttons: ["Enable LAN access", "Cancel"],
@@ -117,14 +118,14 @@ ipcMain.handle("lan-access:enable", async (event, selection, ...args) => {
     if (!themeResponse.ok || !scriptResponse.ok) {
       throw new Error("The production browser JavaScript assets could not be loaded from the LAN listener.");
     }
-    await moveDesktopSessionCookie(status.url, token, true);
+    await moveDesktopSessionCookie(status.url, sessionCookie, true);
     await mainWindow.loadURL(status.url);
     lanAccessPublished = true;
     return status;
   } catch (error) {
     lanAccessPublished = false;
     await backendManager.disableLanAccess();
-    await moveDesktopSessionCookie(backendManager.baseUrl, token, false);
+    await moveDesktopSessionCookie(backendManager.baseUrl, sessionCookie, false);
     await loadLocalDesktopRenderer();
     throw new Error("LAN access was rolled back because the browser workspace could not be opened. " + error.message);
   }
