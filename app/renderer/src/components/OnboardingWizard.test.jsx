@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { useState } from "react";
+import { createElement, useState } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import OnboardingWizard from "./OnboardingWizard.jsx";
 
@@ -7,7 +7,7 @@ const initialFarmForm = { name: "", location: "", timezone: "Africa/Lagos", curr
 
 function Harness(props) {
   const [farmForm, setFarmForm] = useState(initialFarmForm);
-  return <OnboardingWizard {...props} farmForm={farmForm} setFarmForm={setFarmForm} />;
+  return createElement(OnboardingWizard, { ...props, farmForm, setFarmForm });
 }
 
 describe("OnboardingWizard", () => {
@@ -17,7 +17,7 @@ describe("OnboardingWizard", () => {
     const onSaveProfile = vi.fn().mockResolvedValue(true);
     const onCreateFarm = vi.fn().mockResolvedValue(true);
     const onComplete = vi.fn();
-    render(<Harness account={{ fullName: "Ada Farmer", email: "ada@example.com" }} onSaveProfile={onSaveProfile} onCreateFarm={onCreateFarm} onComplete={onComplete} saving={false} error="" />);
+    render(createElement(Harness, { account: { fullName: "Ada Farmer", email: "ada@example.com" }, onSaveProfile, onCreateFarm, onComplete, saving: false, error: "" }));
 
     expect(screen.getByRole("heading", { name: "Welcome to Pomas!" })).toBeInTheDocument();
     expect(screen.getByLabelText("First name")).toHaveValue("Ada");
@@ -61,7 +61,7 @@ describe("OnboardingWizard", () => {
       farmCreated: true,
       farmDraft: { name: "Saved Farm", location: "Port Harcourt", timezone: "Africa/Lagos", currency: "NGN" },
     }));
-    render(<Harness account={{ fullName: "Ada Farmer" }} onSaveProfile={vi.fn().mockResolvedValue(true)} onCreateFarm={vi.fn()} onComplete={vi.fn()} saving={false} error="" />);
+    render(createElement(Harness, { account: { fullName: "Ada Farmer" }, onSaveProfile: vi.fn().mockResolvedValue(true), onCreateFarm: vi.fn(), onComplete: vi.fn(), saving: false, error: "" }));
     expect(screen.getByRole("heading", { name: "What type of poultry do you manage?" })).toBeInTheDocument();
     expect(screen.getByLabelText("TURKEYS")).toBeChecked();
     expect(screen.getByRole("heading", { name: "Saved Farm" })).toBeInTheDocument();
