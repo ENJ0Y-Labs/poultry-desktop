@@ -466,6 +466,7 @@ export default function MyReportsPage({ userId = "" }) {
       persistLocal(localDrafts.filter(item => item.id !== local.id));
       setSelected(submitted);
       resetForm();
+      setAttachments(await reportAttachmentApi.list(detail.id));
       await refresh();
       setNotice("Report submitted. The submitted version is locked for review. Retrying will not create another report.");
     } catch (err) {
