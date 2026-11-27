@@ -92,6 +92,20 @@ describe("BackendManager", () => {
     expect(manager.databasePath).toMatch(/C:[\\/]project[\\/]data[\\/]poultry\.db$/);
   });
 
+  it("keeps direct Spring Boot and browser-only development defaults on loopback", () => {
+    const backendProperties = readFileSync(
+      new URL("../../backend/src/main/resources/application.properties", import.meta.url),
+      "utf8"
+    );
+    const browserBackendLauncher = readFileSync(
+      new URL("../../scripts/run-backend-dev.mjs", import.meta.url),
+      "utf8"
+    );
+
+    expect(backendProperties).toContain("server.address=127.0.0.1");
+    expect(browserBackendLauncher).toMatch(/SERVER_ADDRESS:\s*"127\\.0\\.0\\.1"/);
+  });
+
   it("binds the Electron development backend to loopback", async () => {
     const child = fakeChild();
     spawnMock.mockReturnValue(child);
