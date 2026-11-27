@@ -64,6 +64,7 @@ describe("OnboardingWizard", () => {
     render(createElement(Harness, { account: { fullName: "Ada Farmer" }, onSaveProfile: vi.fn().mockResolvedValue(true), onCreateFarm: vi.fn(), onComplete: vi.fn(), saving: false, error: "" }));
     expect(screen.getByRole("heading", { name: "What type of poultry do you manage?" })).toBeInTheDocument();
     expect(screen.getByLabelText("TURKEYS")).toBeChecked();
+    fireEvent.click(screen.getByRole("button", { name: "BACK" }));
     expect(screen.getByRole("heading", { name: "Saved Farm" })).toBeInTheDocument();
   });
 });
