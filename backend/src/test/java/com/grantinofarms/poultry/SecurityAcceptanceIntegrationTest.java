@@ -116,6 +116,98 @@ class SecurityAcceptanceIntegrationTest {
     }
 
     @Test
+    void preventsWorkersFromReadingOrMutatingAnotherWorkersSubmissionAndManagerOrAdminActions() throws Exception {
+        mvc.perform(post("/api/v1/submissions")
+                        .cookie(workerCookie)
+                        .header("X-Requested-With", "XMLHttpRequest")
+                        .header("Idempotency-Key", "worker-a-report-key-001")
+                        .contentType("application/json")
+                        .content("""
+                                {
+                                  "reportType":"MORTALITY",
+                                  "title":"Private Worker A report",
+                                  "payload":{"batchId":"batch-a","quantity":1}
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.id").isNotEmpty());
+
+        String submissionId = com.jayway.jsonpath.JsonPath.read(
+                mvc.perform(get("/api/v1/submissions").cookie(workerCookie))
+                        .andExpect(status().isOk())
+                        .andReturn().getResponse().getContentAsString(),
+                "$.data[0].id");
+
+        String otherWorkerId = UUID.randomUUID().toString();
+        String now = Instant.now().toString();
+        users.insertWithRole(otherWorkerId, "security-worker-b", "worker-b@example.test",
+                passwords.hash("Worker-B-password-123!"), "Security Worker B", "WORKER", now, null);
+        MockCookie otherWorkerCookie = cookieFor("security-worker-b", "Worker-B-password-123!", "worker-b-client");
+
+        mvc.perform(get("/api/v1/submissions/" + submissionId).cookie(otherWorkerCookie))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.error.code").value("SUBMISSION_NOT_FOUND"));
+
+        mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put(
+                        "/api/v1/submissions/" + submissionId)
+                        .cookie(otherWorkerCookie)
+                        .header("X-Requested-With", "XMLHttpRequest")
+                        .contentType("application/json")
+                        .content("""
+                                {"reportType":"MORTALITY","title":"Hijacked report","payload":{"quantity":999}}
+                                """))
+                .andExpect(status().isNotFound());
+
+        mvc.perform(post("/api/v1/submissions/" + submissionId + "/submit")
+                        .cookie(otherWorkerCookie)
+                        .header("X-Requested-With", "XMLHttpRequest")
+                        .header("Idempotency-Key", "worker-b-submit-key-001"))
+                .andExpect(status().isNotFound());
+
+        mvc.perform(get("/api/v1/submissions/" + submissionId + "/attachments").cookie(otherWorkerCookie))
+                .andExpect(status().isNotFound());
+
+        mvc.perform(post("/api/v1/review/submissions/" + submissionId + "/comments")
+                        .cookie(otherWorkerCookie)
+                        .header("X-Requested-With", "XMLHttpRequest")
+                        .contentType("application/json")
+                        .content("""
+                                {"body":"Unauthorized access attempt"}
+                                """))
+                .andExpect(status().isNotFound());
+
+        mvc.perform(get("/api/v1/review/submissions/" + submissionId).cookie(otherWorkerCookie))
+                .andExpect(status().isForbidden());
+
+        mvc.perform(get("/api/v1/review/managers").cookie(otherWorkerCookie))
+                .andExpect(status().isForbidden());
+        mvc.perform(get("/api/v1/admin/users").cookie(otherWorkerCookie))
+                .andExpect(status().isForbidden());
+
+        mvc.perform(post("/api/v1/review/submissions/" + submissionId + "/assign")
+                        .cookie(otherWorkerCookie)
+                        .header("X-Requested-With", "XMLHttpRequest")
+                        .contentType("application/json")
+                        .content("{\"managerId\":\"" + managerId + "\"}"))
+                .andExpect(status().isForbidden());
+
+        mvc.perform(post("/api/v1/review/submissions/" + submissionId + "/decision")
+                        .cookie(otherWorkerCookie)
+                        .header("X-Requested-With", "XMLHttpRequest")
+                        .contentType("application/json")
+                        .content("""
+                                {"decision":"APPROVED"}
+                                """))
+                .andExpect(status().isForbidden());
+
+        mvc.perform(post("/api/v1/review/submissions/" + submissionId + "/merge")
+                        .cookie(otherWorkerCookie)
+                        .header("X-Requested-With", "XMLHttpRequest")
+                        .header("Idempotency-Key", "worker-b-merge-key-001"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
     void resolvesRoleChangesAndSuspensionAgainstTheDatabaseOnEveryRequest() throws Exception {
         mvc.perform(get("/api/v1/review/queue").cookie(workerCookie))
                 .andExpect(status().isForbidden());
