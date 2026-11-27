@@ -117,3 +117,34 @@ See [Review Centre hardening](review-centre-hardening.md) for the focused regres
 Emergency incidents are stored separately from farm ledgers. Reporting schedules and mortality thresholds are configurable but start unset; the application does not invent defaults. Missing reports are explicitly labelled missing, never interpreted as zero activity. Configured mortality thresholds can create Manager notifications and review warnings, but do not automatically change official records.
 
 Evidence files are stored as validated SQLite BLOBs, associated with an immutable submission version. Supported formats are JPEG, PNG, PDF, and UTF-8 text, with a 5 MB per-file limit and 10 files per version. Because the bytes are stored in the same database, ordinary database backups include the evidence without a separate filesystem path.
+
+## Phase 6: emergency alerts, schedules, missing reports, and notifications
+
+The emergency and reporting workspace is available from **Alerts & Reporting** for all operational roles.
+
+- Any authenticated Worker, Administrator, or Manager can submit an emergency incident. Workers and Administrators see their own incidents; Managers see the farm-wide queue.
+- Managers can acknowledge incidents, escalate them with a required reason, and resolve them with required resolution notes. These actions append incident events and audit history. Escalation sends a renewed Manager notification.
+- Emergency incidents remain separate from official records. A linked operational change must still be submitted as a normal report and follow the review/merge workflow.
+- Managers can create daily or weekly reporting schedules by report type and farm, house, or batch scope, set local due times and grace periods, and pause/re-enable schedules. Schedules start unset; the application does not provide invented deadlines.
+- Missing-report tracking evaluates only enabled schedules and displays overdue periods as **MISSING**. The explanatory copy explicitly distinguishes missing from zero activity. The tracker does not create daily records or other official ledger entries.
+- The notification inbox is recipient-scoped. It includes emergency incidents, escalations, configured mortality threshold alerts, overdue schedules, report submissions requiring review, assignments, discussion updates, and review decisions. Users can mark their own notifications as read.
+- Notification persistence remains local in the existing SQLite `manager_notifications` table. Repeated events refresh the matching notification and return it to unread state; no cloud push, email, or SMS service is introduced.
+
+### Phase 6 verification
+
+Backend focused regression:
+
+```bash
+cd backend
+mvn test -Dtest=ReportSubmissionIntegrationTest
+```
+
+Frontend focused regression:
+
+```bash
+npm test -- --run app/renderer/src/pages/IncidentReportingPage.test.jsx
+```
+
+Then run the complete backend and frontend test suites, lint, and production build. Manually verify Worker, Administrator, and Manager access with separate accounts on a disposable database. Configure at least one schedule explicitly, omit its report, and confirm it appears as MISSING without creating a zero-valued farm record. Submit an emergency as a Worker, confirm Manager notification, acknowledge and escalate it, and verify no official farm ledger changed. Submit a normal report and verify Manager and author notifications for submission and decision events.
+
+Evidence attachments, post-merge corrections, backup/restore hardening, and full end-to-end acceptance remain in later phases; this increment does not mark Issue #287 complete.
