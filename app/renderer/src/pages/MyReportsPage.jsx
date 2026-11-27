@@ -290,7 +290,7 @@ export default function MyReportsPage({ userId = "" }) {
     }
   }
 
-  function reconcilePendingDrafts(serverRows) {
+  const reconcilePendingDrafts = useCallback(serverRows => {
     const stored = readLocalArray(storageKey);
     const serverById = new Map(serverRows.map(report => [report.id, report]));
     const confirmedIds = new Set(stored.filter(draft => {
@@ -323,7 +323,7 @@ export default function MyReportsPage({ userId = "" }) {
       setLocalDrafts(posted);
       setNotice("A submitted report was confirmed after reconnecting. Its local copy is marked as submitted and can be discarded safely.");
     }
-  }
+  }, [storageKey]);
 
   const persistReferences = useCallback(next => {
     setReferences(next);
@@ -349,7 +349,7 @@ export default function MyReportsPage({ userId = "" }) {
       setNotice("Farm lists could not be refreshed. Cached batch and feed references remain available.");
     }
     setLoading(false);
-  }, [persistReferences]);
+  }, [persistReferences, reconcilePendingDrafts]);
 
   useEffect(() => { refresh(); }, [refresh]);
 

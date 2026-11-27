@@ -240,7 +240,7 @@ describe("MyReportsPage", () => {
 
     render(<MyReportsPage userId="worker-1" />);
     expect(await screen.findByText("Offline recovery copy")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Open" }));
+    fireEvent.click(screen.getByRole("button", { name: "Open / reconcile" }));
     expect(screen.getByLabelText("Report title")).toHaveValue("Recovered mortality report");
     expect(screen.getByLabelText("Number of birds")).toHaveValue(4);
     expect(screen.getByLabelText("Time of event")).toHaveValue("08:00");
