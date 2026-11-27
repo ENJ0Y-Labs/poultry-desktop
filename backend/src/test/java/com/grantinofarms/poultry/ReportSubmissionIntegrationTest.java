@@ -16,6 +16,7 @@ import com.grantinofarms.poultry.service.ReportMergeService;
 import com.grantinofarms.poultry.service.FarmIncidentService;
 import com.grantinofarms.poultry.service.ReportAttachmentService;
 import com.grantinofarms.poultry.service.ReportingConfigurationService;
+import com.grantinofarms.poultry.service.MissingReportNotificationScheduler;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -51,6 +52,7 @@ class ReportSubmissionIntegrationTest {
     @Autowired FarmIncidentService farmIncidents;
     @Autowired ReportAttachmentService attachments;
     @Autowired ReportingConfigurationService reportingConfiguration;
+    @Autowired MissingReportNotificationScheduler missingReportScheduler;
     @Autowired AdminUserService adminUsers;
     @Autowired AuthService auth;
     @Autowired PasswordHasher passwordHasher;
@@ -279,16 +281,73 @@ class ReportSubmissionIntegrationTest {
         CurrentUserContext.set(managerId, "MANAGER");
         assertThat(farmIncidents.notifications()).hasSize(1);
         assertThat(farmIncidents.acknowledge(id).get("status")).isEqualTo("ACKNOWLEDGED");
+        assertThat(farmIncidents.escalate(id, "The repair is delayed and the flock remains at risk.").get("status"))
+                .isEqualTo("ACKNOWLEDGED");
+        assertThat(farmIncidents.escalate(id, "The replacement pump has not arrived; keep the flock under observation.").get("status"))
+                .isEqualTo("ACKNOWLEDGED");
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM manager_notifications WHERE recipient_user_id = ? AND entity_id = ?",
+                Integer.class, managerId, id)).isEqualTo(2);
         assertThat(farmIncidents.resolve(id, "Water pump restored and the line pressure verified.").get("status"))
                 .isEqualTo("RESOLVED");
         assertThat(jdbc.queryForObject(
                 "SELECT COUNT(*) FROM farm_incident_events WHERE incident_id = ?",
-                Integer.class, id)).isEqualTo(3);
+                Integer.class, id)).isEqualTo(5);
         assertThat(jdbc.queryForObject(
                 "SELECT COUNT(*) FROM expenses WHERE description = ?",
                 Integer.class, "The drinker line has stopped supplying water to the active flock.")).isZero();
+
+        CurrentUserContext.set(workerId, "WORKER");
+        var reporterNotifications = farmIncidents.notifications();
+        assertThat(reporterNotifications).extracting(row -> row.get("type"))
+                .contains("INCIDENT_ACKNOWLEDGED", "INCIDENT_ESCALATED", "INCIDENT_RESOLVED");
     }
 
+
+
+    @Test
+    void reportSubmissionAndReviewDecisionsNotifyTheRelevantUsers() throws Exception {
+        String managerId = UUID.randomUUID().toString();
+        String now = Instant.now().toString();
+        users.insertWithRole(managerId, "workflow-manager-" + managerId.substring(0, 6),
+                null, "test-password-hash", "Workflow Manager", "MANAGER", now, null);
+        java.time.ZoneId zone = java.time.ZoneId.of("Africa/Lagos");
+        String eventDate = java.time.LocalDate.now(zone).toString();
+        String eventTime = java.time.LocalTime.now(zone).format(java.time.format.DateTimeFormatter.ofPattern("HH:mm"));
+        String payload = """
+                {"occurredDate":"%s","eventDate":"%s","eventTime":"%s","description":"Notification test expense","amountMinor":1200,"category":"OTHER"}
+                """.formatted(eventDate, eventDate, eventTime);
+        Map<String, Object> created = submissions.createDraft(new ReportSubmissionRequest(
+                "EXPENSE", "Notification test expense", mapper.readTree(payload)));
+        String submissionId = String.valueOf(created.get("id"));
+        Map<String, Object> submitted = submissions.submit(submissionId);
+        assertThat(submitted.get("lifecycleStatus")).isEqualTo("PENDING_REVIEW");
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM manager_notifications WHERE recipient_user_id = ? AND entity_id = ? AND notification_type = 'REPORT_REVIEW_NEEDED'",
+                Integer.class, managerId, submissionId)).isEqualTo(1);
+
+        CurrentUserContext.set(managerId, "MANAGER");
+        reviews.decide(submissionId, "APPROVED", null);
+        CurrentUserContext.set(workerId, "WORKER");
+        var workerNotifications = farmIncidents.notifications();
+        assertThat(workerNotifications).extracting(notification -> notification.get("type"))
+                .contains("REPORT_SUBMITTED", "REPORT_APPROVED");
+        Map<String, Object> approval = workerNotifications.stream()
+                .filter(notification -> "REPORT_APPROVED".equals(notification.get("type")))
+                .findFirst().orElseThrow();
+        farmIncidents.markNotificationRead(String.valueOf(approval.get("id")));
+        assertThat(jdbc.queryForObject(
+                "SELECT read_at FROM manager_notifications WHERE id = ?",
+                String.class, approval.get("id"))).isNotBlank();
+
+        String password = "worker-notification-password";
+        users.updatePassword(workerId, passwordHasher.hash(password), Instant.now().toString());
+        var session = auth.login(new com.grantinofarms.poultry.dto.LoginRequest(
+                "worker-" + workerId.substring(0, 8), password, false));
+        mockMvc.perform(get("/api/v1/review/notifications")
+                        .cookie(new Cookie(AuthService.COOKIE, session.token())))
+                .andExpect(status().isOk());
+    }
 
     @Test
     void evidenceIsVersionBoundImmutableAndIncludedInTheDatabaseBackup() throws Exception {
@@ -337,9 +396,22 @@ class ReportSubmissionIntegrationTest {
         assertThat(threshold.get("value")).isEqualTo(5.0);
         assertThat(reportingConfiguration.missingReports())
                 .extracting(row -> row.get("id"))
+                .doesNotContain(schedule.get("id"));
+
+        String priorScheduleTime = Instant.now().minusSeconds(172800).toString();
+        jdbc.update("UPDATE reporting_schedules SET created_at = ?, updated_at = ? WHERE id = ?",
+                priorScheduleTime, priorScheduleTime, schedule.get("id"));
+        assertThat(reportingConfiguration.missingReports())
+                .extracting(row -> row.get("id"))
                 .contains(schedule.get("id"));
+        missingReportScheduler.notifyOverdueSchedules();
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM manager_notifications WHERE notification_type = 'MISSING_REPORT' AND entity_id LIKE ?",
+                Integer.class, schedule.get("id") + ":%")).isGreaterThan(0);
 
         reportingConfiguration.setScheduleEnabled(String.valueOf(schedule.get("id")), false);
+        assertThat(reportingConfiguration.missingReports()).isEmpty();
+        reportingConfiguration.setScheduleEnabled(String.valueOf(schedule.get("id")), true);
         assertThat(reportingConfiguration.missingReports()).isEmpty();
     }
 

@@ -70,8 +70,15 @@ public class ReportingConfigurationService {
             throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_DUE_TIME", "Enter a valid local due time (HH:mm).");
         }
         validateScope(farm.id(), request.scopeType(), request.scopeId());
-        if (request.batchType() != null && !Set.of("LAYER","BROILER").contains(request.batchType())) {
+        if (request.batchType() != null && !Set.of("LAYER","BROILER","TURKEY").contains(request.batchType())) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_BATCH_TYPE", "Batch type is invalid.");
+        }
+        if ("BATCH".equals(request.scopeType()) && request.batchType() != null) {
+            var scopedBatch = batches.findById(request.scopeId());
+            if (scopedBatch != null && !request.batchType().equals(scopedBatch.type())) {
+                throw new ApiException(HttpStatus.BAD_REQUEST, "SCHEDULE_BATCH_TYPE_MISMATCH",
+                        "The selected batch type does not match the selected batch.");
+            }
         }
         String id = UUID.randomUUID().toString();
         reporting.insertSchedule(id, farm.id(), request.reportType(), request.scopeType(),
@@ -110,8 +117,8 @@ public class ReportingConfigurationService {
                     "Threshold unit must be " + expectedUnit + ".");
         }
         if ("BATCH_TYPE".equals(request.scopeType())) {
-            if (!Set.of("LAYER","BROILER").contains(request.batchType())) {
-                throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_BATCH_TYPE", "Choose LAYER or BROILER.");
+            if (!Set.of("LAYER","BROILER","TURKEY").contains(request.batchType())) {
+                throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_BATCH_TYPE", "Choose LAYER, BROILER, or TURKEY.");
             }
         } else validateScope(farm.id(), request.scopeType(), request.scopeId());
         String id = UUID.randomUUID().toString();
@@ -147,7 +154,7 @@ public class ReportingConfigurationService {
             }
             LocalDateTime latestDue = LocalDateTime.of(latestDate, dueTime);
             long grace = ((Number) schedule.get("graceMinutes")).longValue();
-            if (now.isBefore(latestDue.plusMinutes(grace))) {
+            if (!now.isAfter(latestDue.plusMinutes(grace))) {
                 latestDate = latestDate.minusDays(weekly ? 7 : 1);
             }
             String scopeType = String.valueOf(schedule.get("scopeType"));
@@ -158,11 +165,17 @@ public class ReportingConfigurationService {
                 LocalDate dueDate = latestDate.minusDays((long) period * (weekly ? 7 : 1));
                 LocalDateTime dueAt = LocalDateTime.of(dueDate, dueTime);
                 LocalDateTime graceUntil = dueAt.plusMinutes(grace);
-                LocalDateTime windowEnd = dueAt.plusDays(weekly ? 7 : 1);
+                LocalDateTime windowStart = dueDate.atStartOfDay();
+                LocalDateTime windowEnd = dueDate.plusDays(weekly ? 7 : 1).atStartOfDay();
                 if (!now.isAfter(graceUntil)) continue;
+                Instant scheduleCreatedAt = Instant.parse(String.valueOf(schedule.get("createdAt")));
+                Instant scheduleUpdatedAt = Instant.parse(String.valueOf(schedule.get("updatedAt")));
+                Instant effectiveFrom = scheduleUpdatedAt.isAfter(scheduleCreatedAt)
+                        ? scheduleUpdatedAt : scheduleCreatedAt;
+                if (dueAt.atZone(zone).toInstant().isBefore(effectiveFrom)) continue;
                 if (reporting.hasSubmissionInWindow(farm.id(), String.valueOf(schedule.get("reportType")),
                         scopeType, scopeId, batchType,
-                        dueAt.atZone(zone).toInstant().toString(), windowEnd.atZone(zone).toInstant().toString())) continue;
+                        windowStart.atZone(zone).toInstant().toString(), windowEnd.atZone(zone).toInstant().toString())) continue;
                 Map<String, Object> row = new LinkedHashMap<>(schedule);
                 row.put("dueAt", dueAt.atZone(zone).toInstant().toString());
                 row.put("graceUntil", graceUntil.atZone(zone).toInstant().toString());

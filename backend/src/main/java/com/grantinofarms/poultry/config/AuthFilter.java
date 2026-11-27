@@ -91,6 +91,8 @@ public class AuthFilter extends OncePerRequestFilter {
                 || (path.equals("/api/v1/account") || path.startsWith("/api/v1/account/"))
                 || path.equals("/api/v1/auth/me")
                 || path.equals("/api/v1/health")
+                || path.equals("/api/v1/review/notifications")
+                || path.startsWith("/api/v1/review/notifications/")
                 || path.matches("^/api/v1/review/submissions/[^/]+/comments$");
     }
 

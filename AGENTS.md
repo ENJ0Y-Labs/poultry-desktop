@@ -1558,3 +1558,16 @@ review the error.
 - Duplicate/conflict checks must use report-specific business identity. Never treat every record on the same date as a duplicate. Warnings must identify the conflicting official record and require explicit Manager authorization where marked overrideable.
 - Re-run the full validation set immediately before merge. If current farm data changes the result, return the submission to FLAGGED or BLOCKED and do not write official records.
 - Add regression tests for unauthorized review actions, invalid report payload/version integrity, duplicate official records, and data changing between approval and merge.
+
+## Emergency alerts, reporting schedules, and notifications
+
+- Emergency incidents are separate from operational ledgers. Creating, acknowledging, escalating, or resolving an incident must never write mortality, medication, inventory, financial, or production records.
+- Any authenticated WORKER, ADMINISTRATOR, or MANAGER may submit an incident. Workers and Administrators see only their own incidents; Managers may see the farm-wide incident queue and perform response actions.
+- Manager acknowledgement, escalation, and resolution require backend authorization and append-only incident history plus audit entries. Escalation must create a renewed Manager notification; it must not silently change incident severity or official records.
+- Reporting schedules and thresholds begin unset. Do not invent farm deadlines, frequencies, grace periods, or numeric thresholds. Use the active farm timezone for schedule evaluation and display.
+- Missing-report tracking is informational. A missing submission is not an explicit zero, no-activity statement, or unknown value, and must never synthesize an operational record.
+- Notifications are database-backed and recipient-scoped. A user may list or mark read only their own notifications. Relevant report submission, assignment, discussion, review decision, emergency, configured threshold, and overdue-schedule events notify their intended recipients.
+- Keep notification delivery local to SQLite. Do not add cloud push, email, SMS, telemetry, or internet dependencies without explicit approval.
+- The `manager_notifications` table is the existing durable notification store despite its legacy name; do not create a second notification ledger.
+- Keep the Alerts & Reporting page available to all roles for emergency submission. Only Managers may access farm-wide incidents, schedule configuration, missing-report views, and review notifications. Backend service authorization remains authoritative.
+- Verification: `cd backend && mvn test -Dtest=ReportSubmissionIntegrationTest`; `npm test -- --run app/renderer/src/pages/IncidentReportingPage.test.jsx`; then run the full backend and frontend suites plus lint/build.

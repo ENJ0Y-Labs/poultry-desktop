@@ -509,7 +509,12 @@ export const incidentApi = {
   resolve: (id, notes) => request("/incidents/" + encodeURIComponent(id) + "/resolve", {
     method: "POST", body: JSON.stringify({ notes }),
   }),
+  escalate: (id, notes) => request("/incidents/" + encodeURIComponent(id) + "/escalate", {
+    method: "POST", body: JSON.stringify({ notes }),
+  }),
 };
+
+
 
 export const reportAttachmentApi = {
   upload: (submissionId, file) => {

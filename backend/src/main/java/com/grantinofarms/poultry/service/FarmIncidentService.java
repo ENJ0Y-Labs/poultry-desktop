@@ -32,16 +32,18 @@ public class FarmIncidentService {
     private final HouseRepository houses;
     private final AuditRepository audit;
     private final ObjectMapper mapper;
+    private final WorkflowNotificationService notifications;
 
     public FarmIncidentService(FarmIncidentRepository incidents, FarmRepository farms,
                                BatchRepository batches, HouseRepository houses,
-                               AuditRepository audit, ObjectMapper mapper) {
+                               AuditRepository audit, ObjectMapper mapper, WorkflowNotificationService notifications) {
         this.incidents = incidents;
         this.farms = farms;
         this.batches = batches;
         this.houses = houses;
         this.audit = audit;
         this.mapper = mapper;
+        this.notifications = notifications;
     }
 
     @Transactional
@@ -110,6 +112,9 @@ public class FarmIncidentService {
                 "INCIDENT_ACKNOWLEDGED", "{}", now);
         audit.append(String.valueOf(incident.get("farmId")), "INCIDENT_ACKNOWLEDGE", "FARM_INCIDENT",
                 id, "Manager acknowledged emergency incident", null, "{}", now);
+        notifications.notifyUser(String.valueOf(incident.get("farmId")), String.valueOf(incident.get("reportedBy")),
+                "INCIDENT_ACKNOWLEDGED", "FARM_INCIDENT", id, "Your emergency alert was acknowledged",
+                "A Manager acknowledged your incident and is reviewing the response.", now);
         return detail(requireIncident(id));
     }
 
@@ -132,18 +137,49 @@ public class FarmIncidentService {
         audit.append(String.valueOf(incident.get("farmId")), "INCIDENT_RESOLVE", "FARM_INCIDENT",
                 id, "Manager resolved emergency incident", null,
                 json(Map.of("resolutionNotes", reason)), now);
+        notifications.notifyUser(String.valueOf(incident.get("farmId")), String.valueOf(incident.get("reportedBy")),
+                "INCIDENT_RESOLVED", "FARM_INCIDENT", id, "Your emergency alert was resolved",
+                "A Manager marked the incident resolved. " + reason, now);
+        return detail(requireIncident(id));
+    }
+
+    @Transactional
+    public Map<String, Object> escalate(String id, String notes) {
+        RoleAuthorization.requireManager();
+        Map<String, Object> incident = requireIncident(id);
+        String reason = notes == null ? "" : notes.trim();
+        if (reason.isBlank() || reason.length() > 2000) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "ESCALATION_NOTES_REQUIRED",
+                    "Enter escalation notes of 1 to 2,000 characters.");
+        }
+        if ("RESOLVED".equals(incident.get("status"))) {
+            throw new ApiException(HttpStatus.CONFLICT, "INCIDENT_ALREADY_RESOLVED",
+                    "A resolved incident cannot be escalated.");
+        }
+        String now = Instant.now().toString();
+        incidents.appendEvent(UUID.randomUUID().toString(), id, CurrentUserContext.get(),
+                "INCIDENT_ESCALATED", json(Map.of("reason", reason)), now);
+        incidents.notifyManagers(String.valueOf(incident.get("farmId")), id,
+                String.valueOf(incident.get("severity")), "ESCALATED: " + incident.get("title"),
+                reason, now);
+        audit.append(String.valueOf(incident.get("farmId")), "INCIDENT_ESCALATE", "FARM_INCIDENT",
+                id, "Manager escalated emergency incident", null,
+                json(Map.of("reason", reason)), now);
+        notifications.notifyUser(String.valueOf(incident.get("farmId")), String.valueOf(incident.get("reportedBy")),
+                "INCIDENT_ESCALATED", "FARM_INCIDENT", id, "Your emergency alert was escalated",
+                "A Manager escalated the incident for further attention. " + reason, now);
         return detail(requireIncident(id));
     }
 
     @Transactional(readOnly = true)
     public List<Map<String, Object>> notifications() {
-        RoleAuthorization.requireManager();
+        RoleAuthorization.requireReportSubmitter();
         return incidents.notifications(CurrentUserContext.get());
     }
 
     @Transactional
     public void markNotificationRead(String id) {
-        RoleAuthorization.requireManager();
+        RoleAuthorization.requireReportSubmitter();
         incidents.markNotificationRead(id, CurrentUserContext.get(), Instant.now().toString());
     }
 

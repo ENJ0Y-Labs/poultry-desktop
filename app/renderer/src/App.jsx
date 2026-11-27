@@ -42,6 +42,8 @@ import MyReportsPage from "./pages/MyReportsPage.jsx";
 // eslint-disable-next-line no-unused-vars
 import ReviewCentrePage from "./pages/ReviewCentrePage.jsx";
 // eslint-disable-next-line no-unused-vars
+import IncidentReportingPage from "./pages/IncidentReportingPage.jsx";
+// eslint-disable-next-line no-unused-vars
 import UserManagementPage from "./pages/UserManagementPage.jsx";
 // eslint-disable-next-line no-unused-vars
 import SettingsPage from "./pages/SettingsPage.jsx";
@@ -1922,6 +1924,7 @@ export default function App() {
         <PageSection page="reports"><ReportsPage /></PageSection>
         <PageSection page="my-reports"><MyReportsPage key={currentUser?.id || "anonymous"} userId={currentUser?.id || ""} /></PageSection>
         <PageSection page="review-centre"><ReviewCentrePage currentUser={currentUser} /></PageSection>
+        <PageSection page="incidents"><IncidentReportingPage currentUser={currentUser} farm={farm} /></PageSection>
         <PageSection page="user-management"><UserManagementPage currentUser={currentUser} /></PageSection>
         <PageSection page="settings"><SettingsPage /></PageSection>
         <PageSection page="import-export"><ImportExportPage /></PageSection>
