@@ -803,6 +803,14 @@ export default function MyReportsPage({ userId = "" }) {
                 <p>{check.explanation}</p>
               </article>)}
             </section>}
+            {(selected.decisions || []).length > 0 && <section className="report-decisions">
+              <h4>Manager decisions and feedback</h4>
+              {selected.decisions.map(item => <article key={item.id}>
+                <strong>{String(item.decision || "").replaceAll("_", " ")}</strong>
+                {item.reason && <p>{item.reason}</p>}
+                <small>{item.managerName || "Manager"} · version {item.version} · {item.createdAt}</small>
+              </article>)}
+            </section>}
             <h4>Version history</h4>
             {(selected.versions || []).map(version => (
               <details key={version.version}>
