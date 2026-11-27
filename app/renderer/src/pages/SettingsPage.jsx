@@ -107,7 +107,7 @@ function LanAccessSettings({ userRole }) {
                   })}
                 </select>
               </label>
-              <p className="muted">Only configured private IPv4 addresses are listed. The selected address is checked again immediately before the backend binds to it.</p>
+              <p className="muted">Only configured private IPv4 addresses are listed. The selected address is checked again immediately before the backend binds to it. Windows may ask you to allow Pomas through the firewall; allow it on Private networks only.</p>
               <button type="button" disabled={loading || !selected} onClick={enable}>{loading ? "Enabling..." : "Enable LAN access"}</button>
               {interfaces.length === 0 && <p className="muted">No usable private IPv4 interface was found. Connect this computer to a private Wi-Fi or Ethernet network first.</p>}
             </>
