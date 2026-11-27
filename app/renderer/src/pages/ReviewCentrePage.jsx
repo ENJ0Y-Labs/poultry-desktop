@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { reportAttachmentApi, reportReviewApi } from "../services/api.js";
 
-const statuses = ["SUBMITTED", "PENDING_REVIEW", "FLAGGED", "BLOCKED", "APPROVED", "MERGED"];
+const statuses = ["SUBMITTED", "PENDING_REVIEW", "FLAGGED", "BLOCKED", "CHANGES_REQUESTED", "APPROVED", "REJECTED", "MERGED"];
+const assignableStatuses = ["SUBMITTED", "PENDING_REVIEW", "FLAGGED", "BLOCKED"];
 
 function label(value) {
   return String(value || "").replaceAll("_", " ").toLowerCase().replace(/\b\w/g, letter => letter.toUpperCase());
@@ -204,6 +205,13 @@ export default function ReviewCentrePage({ currentUser }) {
   const selectedVersion = selected?.submittedVersion || selected?.currentVersion;
   const selectedPayload = selected?.versions?.find(item => item.version === selectedVersion)?.payload || {};
   const weightCorrectionAlreadyApplied = (selected?.history || []).some(item => item.event === "POST_MERGE_CORRECTED");
+  const selectedStatus = selected?.lifecycleStatus || selected?.status;
+  const assignmentAllowed = selected && !ownSubmission && assignableStatuses.includes(selectedStatus);
+  const queueHeading = status === "MERGED" ? "Merged reports"
+    : status === "CHANGES_REQUESTED" ? "Reports returned for changes"
+      : status === "REJECTED" ? "Rejected reports"
+        : status === "APPROVED" ? "Approved reports"
+          : "Waiting for review";
 
   return (
     <div className="review-centre-page">
@@ -230,7 +238,7 @@ export default function ReviewCentrePage({ currentUser }) {
         </div>
         <div className="review-layout">
           <section className="review-queue">
-            <h3>{status === "MERGED" ? "Merged reports" : "Waiting for review"} <span className="muted">{queue.length}</span></h3>
+            <h3>{queueHeading} <span className="muted">{queue.length}</span></h3>
             {loading ? <p className="muted">Loading review queue…</p> : queue.length === 0
               ? <p className="muted">No reports match these filters.</p>
               : queue.map(row => <button type="button" className={selected?.id === row.id ? "review-queue-item selected" : "review-queue-item"} key={row.id} onClick={() => openSubmission(row)}>
@@ -259,8 +267,9 @@ export default function ReviewCentrePage({ currentUser }) {
                   <option value="">Choose a Manager</option>
                   {managers.map(manager => <option key={manager.id} value={manager.id}>{manager.fullName} ({manager.username})</option>)}
                 </select>
-                <button type="submit" className="secondary-button" disabled={saving || !assignment}>Assign</button>
+                <button type="submit" className="secondary-button" disabled={saving || !assignment || !assignmentAllowed}>Assign</button>
               </form>
+                {!assignmentAllowed && <p className="muted">Reviewer assignment is available only while a report is awaiting review.</p>}
               </section>
               <section className="review-discussion"><h4>Discussion</h4>{(selected.comments || []).map(item => <article key={item.id}><strong>{item.authorName || "Farm user"}</strong><p>{item.body}</p><small>{item.createdAt}</small></article>)}
                 <form onSubmit={postComment}><label htmlFor="manager-comment">Add review comment</label><textarea id="manager-comment" rows={3} maxLength={4000} value={comment} onChange={event => setComment(event.target.value)} /><button type="submit" className="secondary-button" disabled={saving || !comment.trim()}>Add comment</button></form>
