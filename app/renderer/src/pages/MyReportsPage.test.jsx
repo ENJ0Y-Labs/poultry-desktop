@@ -253,6 +253,7 @@ describe("MyReportsPage", () => {
       payload: expect.objectContaining({ batchId: "batch-1", quantity: 2, reason: "Injury" }),
     })));
     expect(reportSubmissionApi.submit).not.toHaveBeenCalled();
+    expect(reportAttachmentApi.list).toHaveBeenCalledWith("submission-1");
   });
   it("uploads evidence to the current server draft version and shows the saved attachment", async () => {
     reportSubmissionApi.create.mockResolvedValue(fixtures.draft);
