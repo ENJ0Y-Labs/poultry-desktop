@@ -110,7 +110,7 @@ public class ReportingConfigurationService {
                     "Threshold unit must be " + expectedUnit + ".");
         }
         if ("BATCH_TYPE".equals(request.scopeType())) {
-            if (!Set.of("LAYER","BROILER").contains(request.batchType())) {
+            if (!Set.of("LAYER","BROILER","TURKEY").contains(request.batchType())) {
                 throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_BATCH_TYPE", "Choose LAYER, BROILER, or TURKEY.");
             }
         } else validateScope(farm.id(), request.scopeType(), request.scopeId());
@@ -147,7 +147,7 @@ public class ReportingConfigurationService {
             }
             LocalDateTime latestDue = LocalDateTime.of(latestDate, dueTime);
             long grace = ((Number) schedule.get("graceMinutes")).longValue();
-            if (now.isBefore(latestDue.plusMinutes(grace))) {
+            if (!now.isAfter(latestDue.plusMinutes(grace))) {
                 latestDate = latestDate.minusDays(weekly ? 7 : 1);
             }
             String scopeType = String.valueOf(schedule.get("scopeType"));
