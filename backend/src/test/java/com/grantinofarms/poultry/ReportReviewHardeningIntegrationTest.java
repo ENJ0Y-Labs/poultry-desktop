@@ -421,6 +421,47 @@ class ReportReviewHardeningIntegrationTest {
                         && Boolean.TRUE.equals(check.get("overrideable")));
     }
 
+    @Test
+    void distinctEventsForTheSameBatchAndDayAreNotDuplicateCandidates() throws Exception {
+        String batchId = UUID.randomUUID().toString();
+        LocalDate date = LocalDate.now(ZoneId.of("Africa/Lagos"));
+        String firstPayload = mapper.writeValueAsString(Map.of(
+                "batchId", batchId, "eventDate", date.toString(), "eventTime", "08:00",
+                "quantity", 3, "reason", "Morning inspection"
+        ));
+        String distinctPayload = mapper.writeValueAsString(Map.of(
+                "batchId", batchId, "eventDate", date.toString(), "eventTime", "14:00",
+                "quantity", 2, "reason", "Afternoon inspection"
+        ));
+
+        String firstId = insertSubmittedCandidate("MORTALITY", batchId, date, firstPayload);
+        String distinctId = insertSubmittedCandidate("MORTALITY", batchId, date, distinctPayload);
+
+        assertThat(submissionRepository.findPotentialDuplicates(
+                farmId, distinctId, "MORTALITY", batchId, date.toString(), distinctPayload))
+                .isEmpty();
+
+        String exactRepeatId = insertSubmittedCandidate("MORTALITY", batchId, date, firstPayload);
+        assertThat(submissionRepository.findPotentialDuplicates(
+                farmId, exactRepeatId, "MORTALITY", batchId, date.toString(), firstPayload))
+                .containsExactly(firstId);
+    }
+
+    private String insertSubmittedCandidate(String reportType, String batchId,
+                                            LocalDate date, String payloadJson) {
+        String id = UUID.randomUUID().toString();
+        String now = Instant.now().toString();
+        submissionRepository.insert(id, farmId, workerId, reportType, "Same-day event",
+                payloadJson, null, null, now);
+        jdbc.update("""
+                UPDATE report_submissions
+                SET lifecycle_status = 'PENDING_REVIEW', status = 'PENDING_REVIEW',
+                    submitted_version = 1, submitted_at = ?
+                WHERE id = ?
+                """, now, id);
+        return id;
+    }
+
     private Map<String, Object> submitExpense(LocalDate date, String description, long amountMinor) throws Exception {
         String eventTime = LocalTime.now(ZoneId.of("Africa/Lagos"))
                 .format(DateTimeFormatter.ofPattern("HH:mm"));
