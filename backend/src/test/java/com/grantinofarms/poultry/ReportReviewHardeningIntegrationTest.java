@@ -165,6 +165,24 @@ class ReportReviewHardeningIntegrationTest {
     }
 
     @Test
+    void invalidExpensePayloadIsBlockedByIntegrityValidation() throws Exception {
+        LocalDate date = LocalDate.now(ZoneId.of("Africa/Lagos"));
+        Map<String, Object> submitted = submitExpense(date, "Invalid negative expense", -500);
+        assertThat(submitted.get("lifecycleStatus")).isEqualTo("BLOCKED");
+        @SuppressWarnings("unchecked")
+        var checks = (java.util.List<Map<String, Object>>) submitted.get("checks");
+        assertThat(checks).anyMatch(check ->
+                "REPORT_PERMISSION_VALID".equals(check.get("code"))
+                        && "PASSED".equals(check.get("outcome")));
+        assertThat(checks).anyMatch(check ->
+                "REPORT_VERSION_INTEGRITY".equals(check.get("code"))
+                        && "PASSED".equals(check.get("outcome")));
+        assertThat(checks).anyMatch(check ->
+                "REPORT_DATA_VALIDATION".equals(check.get("code"))
+                        && "BLOCKED".equals(check.get("outcome")));
+    }
+
+    @Test
     void workerCannotAccessManagerReviewActions() {
         CurrentUserContext.set(workerId, "WORKER");
         assertThatThrownBy(() -> reviews.queue(null, null, null))
