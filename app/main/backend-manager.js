@@ -130,7 +130,8 @@ export class BackendManager {
     return [
       "-jar",
       this.jarPath,
-      `--server.address=${address}`,\n      `--poultry.lan.enabled=${this.bindAddress !== "127.0.0.1"}`,
+      `--server.address=${address}`,
+      `--poultry.lan.enabled=${this.bindAddress !== "127.0.0.1"}`,
       `--server.port=${port}`,
       `--poultry.database-path=${databasePath}`,
       `--spring.profiles.active=${profile}`,
