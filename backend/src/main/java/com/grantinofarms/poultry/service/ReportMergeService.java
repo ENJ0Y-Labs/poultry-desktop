@@ -60,19 +60,41 @@ public class ReportMergeService {
             }
             return mergeTransaction.merge(id, operationKey);
         } catch (org.springframework.dao.DuplicateKeyException exception) {
-            throw new ApiException(HttpStatus.CONFLICT, "MERGE_KEY_ALREADY_USED",
-                    "This Idempotency-Key has already been used for another report merge.");
+            throw mergeKeyAlreadyUsed();
         } catch (org.springframework.dao.TransientDataAccessException exception) {
             throw concurrencyConflict();
         } catch (org.springframework.dao.DataAccessException exception) {
+            if (isMergeOperationKeyConflict(exception)) throw mergeKeyAlreadyUsed();
             if (isSqliteLockConflict(exception)) throw concurrencyConflict();
             throw exception;
         }
     }
 
+    private ApiException mergeKeyAlreadyUsed() {
+        return new ApiException(HttpStatus.CONFLICT, "MERGE_KEY_ALREADY_USED",
+                "This Idempotency-Key has already been used for another report merge.");
+    }
+
     private ApiException concurrencyConflict() {
         return new ApiException(HttpStatus.CONFLICT, "MERGE_CONCURRENCY_CONFLICT",
                 "Another merge is committing a database change. Retry with the same Idempotency-Key.");
+    }
+
+    private boolean isMergeOperationKeyConflict(Throwable failure) {
+        for (Throwable current = failure; current != null; current = current.getCause()) {
+            if (current instanceof java.sql.SQLException sql
+                    && (sql.getErrorCode() & 0xff) == 19) {
+                String message = sql.getMessage();
+                if (message != null && message.contains("report_submissions.merge_operation_key")) {
+                    return true;
+                }
+            }
+            String message = current.getMessage();
+            if (message != null && message.contains("UNIQUE constraint failed: report_submissions.merge_operation_key")) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private boolean isSqliteLockConflict(Throwable failure) {
