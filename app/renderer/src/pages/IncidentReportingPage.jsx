@@ -13,29 +13,33 @@ const reportTypes = [
   "VACCINATION", "EGG_COLLECTION", "WEIGHT_RECORD", "FEED_USAGE", "EXPENSE", "BIRD_SALE", "EGG_SALE",
 ];
 const label = value => String(value || "").replaceAll("_", " ").toLowerCase().replace(/\b\w/g, char => char.toUpperCase());
-const localDateTime = () => {
-  const date = new Date();
-  const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
-  return local.toISOString().slice(0, 16);
+const localDateTime = timezone => {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
+    year: "numeric", month: "2-digit", day: "2-digit",
+    hour: "2-digit", minute: "2-digit", hourCycle: "h23",
+  }).formatToParts(new Date());
+  const values = Object.fromEntries(parts.filter(part => part.type !== "literal").map(part => [part.type, part.value]));
+  return values.year + "-" + values.month + "-" + values.day + "T" + values.hour + ":" + values.minute;
 };
 
-const emptyIncident = () => ({
+const emptyIncident = timezone => ({
   type: "", severity: "", title: "", description: "",
-  batchId: "", houseId: "", eventAt: localDateTime(),
+  batchId: "", houseId: "", eventAt: localDateTime(timezone),
 });
 const emptySchedule = () => ({
   reportType: "", scopeType: "FARM", scopeId: "", batchType: "",
   frequency: "", dueTime: "", dayOfWeek: "", graceMinutes: "",
 });
 
-export default function IncidentReportingPage({ currentUser }) {
+export default function IncidentReportingPage({ currentUser, farm }) {
   const manager = currentUser?.role === "MANAGER";
   const [incidents, setIncidents] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [schedules, setSchedules] = useState([]);
   const [missing, setMissing] = useState([]);
   const [references, setReferences] = useState({ batches: [] });
-  const [incidentForm, setIncidentForm] = useState(emptyIncident);
+  const [incidentForm, setIncidentForm] = useState(() => emptyIncident(farm?.timezone));
   const [scheduleForm, setScheduleForm] = useState(emptySchedule);
   const [resolutionNotes, setResolutionNotes] = useState({});
   const [escalationNotes, setEscalationNotes] = useState({});
@@ -99,7 +103,7 @@ export default function IncidentReportingPage({ currentUser }) {
         batchId: incidentForm.batchId || null,
         houseId: incidentForm.houseId || null,
       });
-      setIncidentForm(emptyIncident());
+      setIncidentForm(emptyIncident(farm?.timezone));
       setNotice("Emergency alert sent. Managers have been notified. This alert does not change official farm records.");
       await refresh();
     } catch (err) { setError(err.message || "Emergency alert could not be submitted."); }
@@ -213,7 +217,7 @@ export default function IncidentReportingPage({ currentUser }) {
               <label>Incident category<select required value={incidentForm.type} onChange={event => setIncidentForm(current => ({ ...current, type: event.target.value }))}><option value="">Choose category</option>{incidentTypes.map(([value, text]) => <option key={value} value={value}>{text}</option>)}</select></label>
               <label>Severity<select required value={incidentForm.severity} onChange={event => setIncidentForm(current => ({ ...current, severity: event.target.value }))}><option value="">Choose severity</option>{severities.map(value => <option key={value} value={value}>{label(value)}</option>)}</select></label>
               <label>Title<input value={incidentForm.title} onChange={event => setIncidentForm(current => ({ ...current, title: event.target.value }))} required maxLength={160} /></label>
-              <label>Observed at<input type="datetime-local" value={incidentForm.eventAt} onChange={event => setIncidentForm(current => ({ ...current, eventAt: event.target.value }))} required /></label>
+              <label>Observed at (farm local time)<input type="datetime-local" value={incidentForm.eventAt} onChange={event => setIncidentForm(current => ({ ...current, eventAt: event.target.value }))} required /></label>
               <label>Related batch (optional)<select value={incidentForm.batchId} onChange={event => setIncidentForm(current => ({ ...current, batchId: event.target.value }))}><option value="">Not batch-specific</option>{(references.batches || []).map(batch => <option key={batch.id} value={batch.id}>{batch.code} · {batch.type}</option>)}</select></label>
               <label>House ID (optional)<input value={incidentForm.houseId} onChange={event => setIncidentForm(current => ({ ...current, houseId: event.target.value }))} placeholder="House record ID" /></label>
               <label className="full-span">What happened?<textarea value={incidentForm.description} onChange={event => setIncidentForm(current => ({ ...current, description: event.target.value }))} required minLength={1} maxLength={4000} rows={4} /></label>
