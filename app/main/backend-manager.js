@@ -303,11 +303,11 @@ export class BackendManager {
           && this.lanSelection?.interfaceName === selected.interfaceName) return this.lanStatus;
       const databasePath = this.databasePath;
       await this.stop();
-      // Revalidate after the old listener has stopped and immediately before the new bind.
-      const currentSelection = validatePrivateIPv4Interface(requested, this.networkInterfacesProvider());
-      this.bindAddress = currentSelection.address;
-      this.lanSelection = currentSelection;
       try {
+        // Revalidate after the old listener has stopped and immediately before the new bind.
+        const currentSelection = validatePrivateIPv4Interface(requested, this.networkInterfacesProvider());
+        this.bindAddress = currentSelection.address;
+        this.lanSelection = currentSelection;
         await this.start();
         if (this.databasePath !== databasePath || !this.lanStatus.enabled) {
           throw new Error("The LAN backend did not become healthy on the selected interface.");
