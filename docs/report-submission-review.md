@@ -54,6 +54,8 @@ A later merge recheck can return an approved version to FLAGGED or BLOCKED. Deci
 Checks run when a report is submitted and again immediately before merge.
 
 Current checks include:
+- **Permission gate:** every submit, review, override, assignment and merge action is guarded by the authenticated role. Review and merge actions are Manager-only; authors cannot review, authorize warnings on, or merge their own submissions. Automated check runs also record that the actor has an allowed role and the submission belongs to the active farm.
+- **Version integrity gate:** every check run verifies that the report type, current version, submitted version and JSON payload match the exact immutable version being reviewed. A mismatched or missing version is blocked.
 - DTO/Bean Validation for the report type.
 - Required active batch reference and farm ownership.
 - Batch type compatibility for egg and broiler reports.
@@ -64,6 +66,9 @@ Current checks include:
 - Likely duplicate submission detection for the same report type, batch, and business date. The lookup uses the immutable submitted version and supports each report type's date field (eventDate, recordDate, usageDate, or occurredDate).
 - An official daily-record conflict check before a DAILY_OPERATIONS submission can be approved. It exposes the existing record ID and current notes because the daily operations adapter may update that day's existing record.
 - Exact official expense duplicate detection using farm, batch scope, business date, category, amount, and normalized description. Similar but non-identical expenses remain a Manager judgement rather than an automatic rejection.
+- **Stale-data gate:** the complete validation set is rerun immediately before merge against current farm, batch, feed, population and official-record data. A new duplicate/conflict or invalidated reference returns the approved submission to FLAGGED or BLOCKED instead of merging. The check run records `CURRENT_DATA_REVALIDATION` when this second validation pass has run.
+
+Permission checks are enforced at the service boundary and cannot be bypassed by calling the API directly. Permission and version-integrity checks are also retained in the submission's check history. A stale-data recheck does not silently authorize newly discovered warnings; the Manager must inspect and authorize them against the current check result.
 
 Outcomes:
 - **PASSED:** no issue detected.
