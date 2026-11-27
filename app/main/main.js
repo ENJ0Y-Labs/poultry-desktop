@@ -278,8 +278,13 @@ ipcMain.handle("backup:restore", async (_event, ...args) => {
       throw error;
     }
 
-    await backendManager.stop();
-    await waitForBackendExit();
+    try {
+      await backendManager.stop();
+      await waitForBackendExit();
+    } catch (error) {
+      rmSync(temporary, { force: true });
+      throw error;
+    }
 
     let originalMoved = false;
     let replacementPublished = false;
