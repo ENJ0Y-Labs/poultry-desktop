@@ -57,7 +57,10 @@ public class MissingReportNotificationScheduler {
                     LocalDateTime graceUntil = dueAt.plusMinutes(grace);
                     if (!now.isAfter(graceUntil)) continue;
                     Instant scheduleCreatedAt = Instant.parse(String.valueOf(schedule.get("createdAt")));
-                    if (dueAt.atZone(zone).toInstant().isBefore(scheduleCreatedAt)) continue;
+                    Instant scheduleUpdatedAt = Instant.parse(String.valueOf(schedule.get("updatedAt")));
+                    Instant effectiveFrom = scheduleUpdatedAt.isAfter(scheduleCreatedAt)
+                            ? scheduleUpdatedAt : scheduleCreatedAt;
+                    if (dueAt.atZone(zone).toInstant().isBefore(effectiveFrom)) continue;
                     LocalDateTime windowEnd = dueAt.plusDays(weekly ? 7 : 1);
                     if (reporting.hasSubmissionInWindow(farm.id(), String.valueOf(schedule.get("reportType")),
                             scopeType, scopeId, batchType, dueAt.atZone(zone).toInstant().toString(),
