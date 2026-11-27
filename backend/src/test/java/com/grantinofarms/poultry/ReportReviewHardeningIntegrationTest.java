@@ -390,6 +390,32 @@ class ReportReviewHardeningIntegrationTest {
         assertThat(returnedToReview.get("links")).isEqualTo(java.util.List.of());
     }
 
+    @Test
+    void differentExpensesOnTheSameBusinessDateAreNotFlaggedAsDuplicates() throws Exception {
+        LocalDate date = LocalDate.now(ZoneId.of("Africa/Lagos"));
+
+        Map<String, Object> first = submitExpense(date, "Morning feed delivery", 50000);
+        Map<String, Object> second = submitExpense(date, "Evening medicine purchase", 70000);
+
+        assertThat(first.get("lifecycleStatus")).isEqualTo("PENDING_REVIEW");
+        assertThat(second.get("lifecycleStatus")).isEqualTo("PENDING_REVIEW");
+
+        @SuppressWarnings("unchecked")
+        var checks = (java.util.List<Map<String, Object>>) second.get("checks");
+        assertThat(checks).noneMatch(check ->
+                "OFFICIAL_EXPENSE_DUPLICATE".equals(check.get("code")));
+
+        Map<String, Object> exactRepeat = submitExpense(date, "Morning feed delivery", 50000);
+        assertThat(exactRepeat.get("lifecycleStatus")).isEqualTo("FLAGGED");
+
+        @SuppressWarnings("unchecked")
+        var repeatChecks = (java.util.List<Map<String, Object>>) exactRepeat.get("checks");
+        assertThat(repeatChecks).anyMatch(check ->
+                "OFFICIAL_EXPENSE_DUPLICATE".equals(check.get("code"))
+                        && "WARNING".equals(check.get("outcome"))
+                        && Boolean.TRUE.equals(check.get("overrideable")));
+    }
+
     private Map<String, Object> submitExpense(LocalDate date, String description, long amountMinor) throws Exception {
         String eventTime = LocalTime.now(ZoneId.of("Africa/Lagos"))
                 .format(DateTimeFormatter.ofPattern("HH:mm"));
