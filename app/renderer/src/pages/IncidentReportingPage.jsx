@@ -12,7 +12,7 @@ const reportTypes = [
   "DAILY_OPERATIONS", "MORTALITY", "CULLING", "HEALTH_RECORD", "DRUG_TREATMENT",
   "VACCINATION", "EGG_COLLECTION", "WEIGHT_RECORD", "FEED_USAGE", "EXPENSE", "BIRD_SALE", "EGG_SALE",
 ];
-const label = value => String(value || "").replaceAll("_", " ").toLowerCase().replace(/\\b\\w/g, char => char.toUpperCase());
+const label = value => String(value || "").replaceAll("_", " ").toLowerCase().replace(/\b\w/g, char => char.toUpperCase());
 const localDateTime = () => {
   const date = new Date();
   const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
