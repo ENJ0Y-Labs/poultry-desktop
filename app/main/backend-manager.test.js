@@ -315,6 +315,30 @@ describe("BackendManager", () => {
     }
   });
 
+
+  it("preserves existing SQLite bytes across successful LAN enable and disable", async () => {
+    const appPath = mkdtempSync(join(tmpdir(), "pomas-lan-database-"));
+    const interfaces = { WiFi: [{ address: "192.168.10.25", netmask: "255.255.255.0", family: "IPv4", internal: false }] };
+    spawnMock.mockImplementation(() => fakeChild());
+    const manager = new BackendManager({
+      userDataPath: appPath, appPath, isPackaged: false, port: 19049, resourcesPath,
+      spawnProcess: spawnMock, networkInterfacesProvider: () => interfaces
+    });
+    const originalDatabase = Buffer.from("existing-pomas-sqlite-database-bytes");
+    mkdirSync(dirname(manager.databasePath), { recursive: true });
+    writeFileSync(manager.databasePath, originalDatabase);
+    try {
+      await manager.start();
+      await manager.enableLanAccess({ interfaceName: "WiFi", address: "192.168.10.25" });
+      await manager.disableLanAccess();
+      expect(readFileSync(manager.databasePath)).toEqual(originalDatabase);
+      expect(manager.bindAddress).toBe("127.0.0.1");
+      await manager.stop();
+    } finally {
+      rmSync(appPath, { recursive: true, force: true });
+    }
+  });
+
   it("rejects unavailable interface selections without starting a network listener", async () => {
     const appPath = mkdtempSync(join(tmpdir(), "pomas-lan-invalid-"));
     const manager = new BackendManager({
