@@ -57,6 +57,7 @@ class LanHostOriginSecurityTest {
 
     @Test
     void allowsUnauthenticatedBrowserShellAssetsButKeepsApiAuthenticationRequired() throws Exception {
+        auth.setup(new AuthSetupRequest("lan-shell@example.test", "Manager-password-123!", "LAN Shell Test"));
         mvc.perform(get("/assets/not-present.js").with(lanRequest())
                         .header("Host", "127.0.0.1"))
                 .andExpect(status().isNotFound());
@@ -100,6 +101,7 @@ class LanHostOriginSecurityTest {
 
     @Test
     void requiresExactSameOriginAndCsrfMarkerForWrites() throws Exception {
+        auth.setup(new AuthSetupRequest("lan-write@example.test", "Manager-password-123!", "LAN Write Test"));
         String body = """
                 {"name":"LAN test farm","location":"Test","timezone":"Africa/Lagos","currency":"NGN"}
                 """;
