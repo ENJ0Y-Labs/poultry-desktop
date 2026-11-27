@@ -26,6 +26,7 @@ describe("AppShell", () => {
     );
 
     const navigation = screen.getByRole("navigation", { name: "Main navigation" });
+    expect(screen.queryByRole("navigation", { name: "Worker navigation" })).not.toBeInTheDocument();
     for (const label of [
       "Dashboard", "Flocks", "Daily Work", "Feed & Stock", "Health",
       "Production", "Sales & Money", "Reports", "Alerts & Reporting", "Import / Export", "Settings",
@@ -55,6 +56,27 @@ describe("AppShell", () => {
     fireEvent.click(within(navigation).getByRole("button", { name: "Alerts & Reporting" }));
     await waitFor(() => expect(window.location.hash).toBe("#incidents/overview"));
     expect(screen.getByText("Emergency alerts")).toBeInTheDocument();
+  });
+
+  it("provides a compact phone navigation only to Worker browser sessions", () => {
+    const onSignOut = vi.fn();
+    render(
+      <AppShell userRole="WORKER" onSignOut={onSignOut} farm={{ name: "Grantino", location: "", currency: "NGN", timezone: "Africa/Lagos" }}>
+        <PageSection page="my-reports"><section>Worker reports</section></PageSection>
+        <PageSection page="incidents"><section>Worker alerts</section></PageSection>
+      </AppShell>
+    );
+
+    const mobileNavigation = screen.getByRole("navigation", { name: "Worker navigation" });
+    expect(within(mobileNavigation).getByRole("button", { name: "My Reports" })).toBeInTheDocument();
+    expect(within(mobileNavigation).getByRole("button", { name: "Alerts" })).toBeInTheDocument();
+    expect(within(mobileNavigation).getByRole("button", { name: "Sign out" })).toBeInTheDocument();
+    expect(within(mobileNavigation).queryByRole("button", { name: "Dashboard" })).not.toBeInTheDocument();
+
+    fireEvent.click(within(mobileNavigation).getByRole("button", { name: "Alerts" }));
+    expect(window.location.hash).toBe("#incidents/overview");
+    fireEvent.click(within(mobileNavigation).getByRole("button", { name: "Sign out" }));
+    expect(onSignOut).toHaveBeenCalledTimes(1);
   });
 
   it("shows account management to Administrators but keeps the review centre separate", () => {

@@ -13,6 +13,14 @@ describe("navigation theme tokens", () => {
     expect(stylesheet).not.toMatch(/@media\s*\(max-width:\s*620px\)\s*\{[^}]*\.sidebar/);
   });
 
+  it("limits phone layout overrides to Worker browser sessions", () => {
+    expect(stylesheet).toContain('body:has(.app-shell[data-role="WORKER"])');
+    expect(stylesheet).toContain('.app-shell[data-role="WORKER"] .worker-mobile-nav');
+    expect(stylesheet).toMatch(/\.worker-mobile-nav-item\s*\{[^}]*min-height:\s*48px;/s);
+    expect(stylesheet).toMatch(/\.app-shell\[data-role="WORKER"\] \.my-reports-page input,[\s\S]*?min-height:\s*44px;/);
+    expect(stylesheet).not.toMatch(/@media\s*\(max-width:\s*760px\)\s*\{[^}]*\.app-shell:not\(\[data-role="WORKER"\]\)/);
+  });
+
   it("defines light-theme values for every IDE shell surface and interaction token", () => {
     const lightTheme = stylesheet.match(/:root\[data-theme="light"\]\s*\{([^}]*)\}/g)?.join("\n") ?? "";
 

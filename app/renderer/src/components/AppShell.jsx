@@ -340,7 +340,7 @@ export default function AppShell({ farm, error, appInfo, onRetry, onQuickAction,
 
 
   return (
-    <div className={`app-shell${sidebarCollapsed ? " sidebar-collapsed" : ""}${attentionCollapsed ? " attention-collapsed" : ""}${attentionMobileOpen ? " attention-open" : ""}${customTitleBar ? " desktop-titlebar-enabled" : ""}`}>
+    <div data-role={userRole} className={`app-shell${sidebarCollapsed ? " sidebar-collapsed" : ""}${attentionCollapsed ? " attention-collapsed" : ""}${attentionMobileOpen ? " attention-open" : ""}${customTitleBar ? " desktop-titlebar-enabled" : ""}`}>
       <a
         className="skip-link"
         href="#main-content"
@@ -427,6 +427,27 @@ export default function AppShell({ farm, error, appInfo, onRetry, onQuickAction,
           </button>
         </div>
       </aside>
+
+      {userRole === "WORKER" && (
+        <nav className="worker-mobile-nav" aria-label="Worker navigation">
+          {visibleGroups.flatMap(group => group.items).map(item => (
+            <button
+              type="button"
+              className={active === item.target ? "worker-mobile-nav-item active" : "worker-mobile-nav-item"}
+              key={item.target}
+              onClick={() => navigate(item.target)}
+              aria-current={active === item.target ? "page" : undefined}
+            >
+              <Icon name={item.icon} />
+              <span>{item.label === "Alerts & Reporting" ? "Alerts" : item.label}</span>
+            </button>
+          ))}
+          <button type="button" className="worker-mobile-nav-item worker-mobile-sign-out" onClick={onSignOut}>
+            <span aria-hidden="true">↪</span>
+            <span>Sign out</span>
+          </button>
+        </nav>
+      )}
 
       <main className="app-main" id="main-content" tabIndex={-1} ref={mainContentRef} data-tour="main-content">
         <div className="shell">
