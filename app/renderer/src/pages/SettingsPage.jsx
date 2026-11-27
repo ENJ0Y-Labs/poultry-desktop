@@ -93,7 +93,7 @@ function LanAccessSettings({ userRole }) {
           {status.enabled ? (
             <>
               <p><strong>Network address:</strong> {status.address}</p>
-              <p><strong>Browser URL:</strong> <a href={status.url} target="_blank" rel="noreferrer">{status.url}</a></p>
+              <p><strong>Browser URL:</strong> <code>{status.url}</code></p>
               <p className="muted">Other devices on this network can open this address and sign in with their own Pomas account.</p>
               <button type="button" className="danger-button" disabled={loading} onClick={disable}>{loading ? "Disabling..." : "Disable LAN access"}</button>
             </>
