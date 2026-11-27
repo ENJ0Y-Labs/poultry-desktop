@@ -4,7 +4,7 @@ This document describes the implemented portion of Issue #287. The feature uses 
 
 ## Operational roles
 
-- **WORKER:** can create/save drafts, submit reports, view own submissions, checks, comments, decisions and merge references, and comment on own submissions. Cannot access farm-wide views, review queue, user administration, or direct ledger APIs.
+- **WORKER:** can create/save drafts, submit reports, view own submissions, checks, comments, Manager decisions and their reasons, and merge references, and comment on own submissions. Cannot access farm-wide views, review queue, user administration, or direct ledger APIs.
 - **ADMINISTRATOR:** retains the existing farm-owner operational workspace and manages user accounts/roles. Can submit and view own reports. Cannot inspect other users' submissions or use Manager review/decision/merge APIs.
 - **MANAGER:** can use farm operations, view farm-wide submissions, assign reviewers, comment, request changes, reject, approve, authorize overrideable warnings, and merge. Cannot manage user accounts or roles.
 
