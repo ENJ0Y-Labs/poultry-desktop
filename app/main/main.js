@@ -244,8 +244,9 @@ ipcMain.handle("backup:restore", async (_event, ...args) => {
       return { canceled: true };
     }
 
-    const temporary = database + ".restore-" + Date.now() + ".tmp";
-    const rollback = database + ".pre-restore-" + Date.now() + ".db";
+    const restoreToken = Date.now() + "-" + Math.random().toString(36).slice(2);
+    const temporary = database + ".restore-" + restoreToken + ".tmp";
+    const rollback = database + ".pre-restore-" + restoreToken + ".db";
     const wal = database + "-wal";
     const shm = database + "-shm";
 
