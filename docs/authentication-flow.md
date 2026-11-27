@@ -85,6 +85,7 @@ Manager review endpoints:
 - `POST /api/v1/review/submissions/{id}/checks/{checkId}/override`
 - `POST /api/v1/review/submissions/{id}/decision`
 - `POST /api/v1/review/submissions/{id}/merge` (requires a unique `Idempotency-Key`)
+- `POST /api/v1/review/submissions/{id}/corrections/weight` (Manager-only; corrects a merged weight report using a required reason and replacement measurement)
 
 Submission checks produce PASSED, WARNING or BLOCKED results. Warnings explicitly marked overrideable require a separate Manager override with a reason. Blocked reports cannot be approved. Approval applies to the exact submitted version and does not itself update official records.
 
