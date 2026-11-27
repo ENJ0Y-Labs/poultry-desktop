@@ -67,15 +67,18 @@ public class ReportCorrectionService {
                     "The original weight report has no batch reference.");
         }
 
-        List<Map<String, Object>> originalLinks = submissions.findLinks(submissionId).stream()
+        List<Map<String, Object>> effectiveLinks = submissions.findLinks(submissionId).stream()
                 .filter(link -> ((Number) link.get("version")).intValue() == version)
                 .filter(link -> "WEIGHT_RECORD".equals(link.get("recordType")))
+                .filter(link -> !broiler.isWeightReversed(String.valueOf(link.get("recordId"))))
                 .toList();
-        if (originalLinks.size() != 1) {
+        if (effectiveLinks.size() != 1) {
             throw new ApiException(HttpStatus.CONFLICT, "CORRECTION_PROVENANCE_INVALID",
-                    "The merged report does not have exactly one original weight record link.");
+                    "The merged report must resolve to exactly one effective weight record before correction.");
         }
-        String originalId = String.valueOf(originalLinks.get(0).get("recordId"));
+        // A prior replacement can itself be corrected. The latest un-reversed
+        // provenance link becomes the next original, forming an auditable chain.
+        String originalId = String.valueOf(effectiveLinks.get(0).get("recordId"));
         String reason = request == null ? null : request.reason();
         var replacement = request == null ? null : request.replacement();
         Map<String, Object> corrected = broiler.correctWeight(batchId, originalId, replacement, reason);
