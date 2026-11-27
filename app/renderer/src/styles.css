@@ -1787,6 +1787,17 @@ body { min-width: 1100px; }
     grid-template-columns: minmax(0, 1fr);
   }
 
+  .app-shell[data-role="WORKER"] .my-reports-page .report-composer .inline-form {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 9px;
+  }
+
+  .app-shell[data-role="WORKER"] .my-reports-page .report-composer .inline-form > button {
+    width: 100%;
+    min-height: 48px;
+  }
+
   .app-shell[data-role="WORKER"] .my-reports-page .table,
   .app-shell[data-role="WORKER"] .incident-reporting-page .table-wrap {
     max-width: 100%;
