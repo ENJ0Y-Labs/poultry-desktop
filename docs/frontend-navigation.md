@@ -183,3 +183,12 @@ The top-level page components live under `app/renderer/src/pages/`. Shared form 
 - The enable/disable action is performed by Electron main, which rechecks the live Manager session and asks for native confirmation. Browser-only LAN clients cannot change the host listener.
 - The desktop window switches to the same-origin browser workspace while LAN mode is enabled and returns to its local renderer when disabled. Other devices access the same-origin app and API through the displayed URL.
 - LAN access is disabled by default. See `docs/lan-access.md` for the security boundary and Windows acceptance steps.
+
+
+## Worker phone browser workspace (Issue #315)
+
+- The production same-origin browser workspace supports Worker sessions on phone viewports from 320px wide. The Electron desktop app retains its 1100×650 minimum and existing desktop navigation.
+- The Worker phone shell provides bottom navigation for My Reports, Alerts, and Sign out. Routes remain #my-reports/overview and #incidents/overview; browser refresh and history continue to use the existing hash router.
+- Worker phone styling is scoped by the authenticated role on the app shell. Manager and Administrator layouts are not converted to the phone shell.
+- Worker pages use single-column forms, touch-sized controls, safe-area-aware bottom navigation, and horizontally scrollable record tables. The layout does not change report payloads, draft persistence, attachment handling, incident APIs, or backend permissions.
+- Test at 320px, 360px, and 390px in light and dark themes. Confirm Worker route restrictions, direct links, refresh, back/forward, sign out, and no document-level horizontal overflow. Test Manager and Administrator at the supported desktop widths to ensure their shell remains unchanged.
