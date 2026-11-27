@@ -290,6 +290,39 @@ export default function MyReportsPage({ userId = "" }) {
     }
   }
 
+  function reconcilePendingDrafts(serverRows) {
+    const stored = readLocalArray(storageKey);
+    const serverById = new Map(serverRows.map(report => [report.id, report]));
+    const confirmedIds = new Set(stored.filter(draft => {
+      if (!draft.submissionPending || !draft.serverId) return false;
+      const report = serverById.get(draft.serverId);
+      return report
+        && report.submittedVersion != null
+        && report.submitOperationKey === draft.submitIdempotencyKey;
+    }).map(draft => draft.id));
+    if (confirmedIds.size === 0) return;
+
+    const posted = stored.map(draft => confirmedIds.has(draft.id)
+      ? { ...draft, posted: true, submissionPending: false }
+      : draft);
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(posted));
+      setLocalDrafts(posted);
+    } catch {
+      setLocalDrafts(stored);
+      return;
+    }
+
+    const cleaned = posted.filter(draft => !confirmedIds.has(draft.id));
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(cleaned));
+      setLocalDrafts(cleaned);
+    } catch {
+      setLocalDrafts(posted);
+      setNotice("A submitted report was confirmed after reconnecting. Its local copy is marked as submitted and can be discarded safely.");
+    }
+  }
+
   const persistReferences = useCallback(next => {
     setReferences(next);
     try { localStorage.setItem(referencesStorageKey, JSON.stringify(next)); } catch { /* cached references are optional */ }
@@ -304,6 +337,7 @@ export default function MyReportsPage({ userId = "" }) {
     if (reportsResult.status === "fulfilled") {
       setBackendAvailable(true);
       setServerReports(reportsResult.value);
+      reconcilePendingDrafts(reportsResult.value);
     } else {
       setBackendAvailable(false);
       setError(reportsResult.reason?.message || "Could not load your server submissions.");

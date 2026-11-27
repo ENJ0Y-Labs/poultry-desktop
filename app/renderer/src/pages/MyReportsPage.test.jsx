@@ -173,6 +173,37 @@ describe("MyReportsPage", () => {
     expect(localStorage.getItem("pomas:report-submission-drafts:worker-1")).toBe("[]");
   });
 
+  it("cleans up an interrupted submission after restart when the server confirms its key", async () => {
+    localStorage.setItem("pomas:report-submission-drafts:worker-1", JSON.stringify([{
+      id: "local-pending-1",
+      serverId: "submission-1",
+      idempotencyKey: "create-retry-key",
+      submitIdempotencyKey: "submit-retry-key-0001",
+      submissionPending: true,
+      posted: false,
+      reportType: "MORTALITY",
+      title: "Recovered mortality report",
+      fields: { eventDate: "2026-11-26", eventTime: "08:00", batchId: "batch-1", quantity: "2" },
+      updatedAt: "2026-11-26T08:00:00Z",
+    }]));
+    reportSubmissionApi.mine.mockResolvedValue([{
+      id: "submission-1",
+      title: "Recovered mortality report",
+      reportType: "MORTALITY",
+      lifecycleStatus: "SUBMITTED",
+      status: "PENDING_REVIEW",
+      currentVersion: 1,
+      submittedVersion: 1,
+      submitOperationKey: "submit-retry-key-0001",
+    }]);
+
+    render(<MyReportsPage userId="worker-1" />);
+    await screen.findByRole("button", { name: "View" });
+    await waitFor(() => expect(localStorage.getItem("pomas:report-submission-drafts:worker-1")).toBe("[]"));
+    expect(reportSubmissionApi.submit).not.toHaveBeenCalled();
+    expect(reportSubmissionApi.get).not.toHaveBeenCalled();
+  });
+
   it("keeps a local recovery copy and does not attempt server sync while offline", async () => {
     reportSubmissionApi.mine.mockRejectedValue(new Error("The local backend is not responding."));
 
