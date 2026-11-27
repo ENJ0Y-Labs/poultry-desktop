@@ -16,10 +16,13 @@ import java.util.Map;
 public class ReportReviewService {
     private final ReportSubmissionRepository submissions;
     private final AuditRepository audit;
+    private final WorkflowNotificationService notifications;
 
-    public ReportReviewService(ReportSubmissionRepository submissions, AuditRepository audit) {
+    public ReportReviewService(ReportSubmissionRepository submissions, AuditRepository audit,
+                              WorkflowNotificationService notifications) {
         this.submissions = submissions;
         this.audit = audit;
+        this.notifications = notifications;
     }
 
     @Transactional(readOnly = true)
@@ -63,6 +66,9 @@ public class ReportReviewService {
                 "{\"managerId\":\"" + managerId + "\"}", now);
         audit.append(String.valueOf(header.get("farmId")), "ASSIGN", "REPORT_SUBMISSION", id,
                 "Review assigned to Manager", null, "{\"managerId\":\"" + managerId + "\"}", now);
+        notifications.notifyUser(String.valueOf(header.get("farmId")), managerId, "REVIEW_ASSIGNED",
+                "REPORT_SUBMISSION", id, "Report assigned to you",
+                "A " + header.get("reportType") + " report is assigned to your review queue.", now);
         return detail(requireHeader(id));
     }
 
@@ -86,6 +92,15 @@ public class ReportReviewService {
         audit.append(String.valueOf(header.get("farmId")), "COMMENT", "REPORT_SUBMISSION", id,
                 "Report discussion comment added", null,
                 "{\"version\":" + version + "}", now);
+        if (manager) {
+            notifications.notifyUser(String.valueOf(header.get("farmId")), String.valueOf(header.get("authorId")),
+                    "REPORT_COMMENT", "REPORT_SUBMISSION", id, "Manager commented on your report",
+                    "A Manager added a comment to your report. Open My Reports to review it.", now);
+        } else {
+            notifications.notifyManagers(String.valueOf(header.get("farmId")), "REPORT_COMMENT",
+                    "REPORT_SUBMISSION", id, "Report discussion updated",
+                    "The report author added a comment to a submission awaiting review.", now);
+        }
         return detail(requireHeader(id));
     }
 
@@ -187,6 +202,14 @@ public class ReportReviewService {
         audit.append(String.valueOf(header.get("farmId")), normalized, "REPORT_SUBMISSION", id,
                 "Manager review decision", "{\"status\":\"" + status + "\"}",
                 "{\"status\":\"" + normalized + "\",\"version\":" + version + "}", now);
+        String decisionTitle = switch (normalized) {
+            case "APPROVED" -> "Your report was approved";
+            case "REJECTED" -> "Your report was rejected";
+            default -> "Your report needs changes";
+        };
+        notifications.notifyUser(String.valueOf(header.get("farmId")), String.valueOf(header.get("authorId")),
+                "REPORT_" + normalized, "REPORT_SUBMISSION", id, decisionTitle,
+                "A Manager reviewed version " + version + " of your report. Open My Reports for the decision and notes.", now);
         return detail(requireHeader(id));
     }
 
