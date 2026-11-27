@@ -18,7 +18,7 @@ describe("AppShell", () => {
     vi.unstubAllGlobals();
   });
 
-  it("renders all ten primary destinations", () => {
+  it("renders all primary destinations", () => {
     render(
       <AppShell farm={{ name: "Grantino", location: "Port Harcourt", currency: "NGN", timezone: "Africa/Lagos" }}>
         <section id="dashboard">Dashboard</section>
@@ -28,23 +28,25 @@ describe("AppShell", () => {
     const navigation = screen.getByRole("navigation", { name: "Main navigation" });
     for (const label of [
       "Dashboard", "Flocks", "Daily Work", "Feed & Stock", "Health",
-      "Production", "Sales & Money", "Reports", "Import / Export", "Settings",
+      "Production", "Sales & Money", "Reports", "Alerts & Reporting", "Import / Export", "Settings",
     ]) {
       expect(within(navigation).getByRole("button", { name: label })).toBeInTheDocument();
     }
   });
 
 
-  it("restricts the worker workspace to My Reports even when a farm route is requested", async () => {
+  it("restricts workers to My Reports and emergency reporting when a farm route is requested", async () => {
     window.location.hash = "#dashboard/overview";
     render(
       <AppShell userRole="WORKER" farm={{ name: "Grantino", location: "", currency: "NGN", timezone: "Africa/Lagos" }}>
         <PageSection page="my-reports"><section>Private submissions</section></PageSection>
+        <PageSection page="incidents"><section>Emergency alerts</section></PageSection>
         <PageSection page="dashboard"><section>Farm dashboard</section></PageSection>
       </AppShell>
     );
     const navigation = screen.getByRole("navigation", { name: "Main navigation" });
     expect(within(navigation).getByRole("button", { name: "My Reports" })).toBeInTheDocument();
+    expect(within(navigation).getByRole("button", { name: "Alerts & Reporting" })).toBeInTheDocument();
     expect(within(navigation).queryByRole("button", { name: "Dashboard" })).not.toBeInTheDocument();
     expect(within(navigation).queryByRole("button", { name: "Review Centre" })).not.toBeInTheDocument();
     expect(screen.getByText("Private submissions")).toBeInTheDocument();
