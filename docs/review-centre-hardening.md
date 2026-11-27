@@ -9,7 +9,7 @@ The review workflow remains based on immutable submitted versions and the existi
 - A DAILY_OPERATIONS report is flagged when an official daily record already exists for the same batch and business date. The check returns the existing record ID, notes, and timestamps so the Manager can inspect the record that the existing adapter may update.
 - An EXPENSE report is flagged when an official expense matches the same farm, nullable batch scope, business date, amount in minor units, category, and normalized description.
 - Other report types continue to use submission-level duplicate detection until their own domain-specific official-record identities and conflict semantics are implemented.
-- Submission-level duplicate detection reads the immutable submitted version and resolves the business date from eventDate, recordDate, usageDate, or occurredDate.
+- Submission-level duplicate detection reads the immutable submitted version and resolves the business date from eventDate, recordDate, usageDate, or occurredDate. A candidate requires the same report type, batch, date, and JSON-normalized payload; shared house/batch/date alone is not a duplicate.
 - Warnings remain warnings. They are not silently converted into rejection, and distinct legitimate same-day activity is not globally blocked.
 
 ## Regression coverage added
