@@ -263,9 +263,10 @@ describe("App", () => {
     expect(document.documentElement.dataset.theme).toBe("light");
     expect(localStorage.getItem("pomas:theme")).toBe("light");
     expect(screen.getByRole("heading", { name: "What's new" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Quick actions in one place" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Keyboard-first navigation" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "A cleaner dashboard" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Worker report submissions" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Manager Review Centre" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Emergency alerts and schedules" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Evidence and submission history" })).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Independent turkey management" })).not.toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "House and pen classification" })).not.toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Verified bird counts" })).not.toBeInTheDocument();
@@ -276,6 +277,27 @@ describe("App", () => {
     expect(screen.queryByLabelText("Full name")).not.toBeInTheDocument();
     expect(screen.queryByLabelText("Email (optional)")).not.toBeInTheDocument();
     expect(accountRequest).not.toHaveBeenCalled();
+  });
+
+  it("shows the packaged release version supplied by Electron on the sign-in landing page", async () => {
+    mockFarmApis();
+    vi.mocked(authApi.status).mockResolvedValue({ authenticated: false, setupRequired: false });
+    Object.defineProperty(window, "poultryDesktop", {
+      configurable: true,
+      value: {
+        getAppInfo: vi.fn().mockResolvedValue({
+          version: "1.1.0",
+          architecture: "x64",
+          isPackaged: true,
+        }),
+      },
+    });
+
+    render(<App />);
+
+    expect(await screen.findByText("POMAS v1.1.0")).toBeInTheDocument();
+    expect(screen.getAllByText("POMAS v1.1.0")).toHaveLength(2);
+    expect(screen.queryByText(/x64/)).not.toBeInTheDocument();
   });
 
   it.each(["farm-owner", "owner@example.com"])("submits the shared loginIdentifier contract for %s", async identifierValue => {
