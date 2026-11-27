@@ -1620,7 +1620,7 @@ review the error.
 - LAN access remains disabled by default. Discover only configured RFC1918 IPv4 unicast addresses; validate the exact interface/address pair again immediately before binding. Never bind to wildcard addresses or silently fall back to another interface.
 - Network transitions must be serialized. Publish a LAN URL only after the selected-address backend proves its process identity healthy. If LAN startup fails, stop that process and recover loopback-only mode; if recovery also fails, leave no LAN listener running and surface a fatal recovery error.
 - Backend restarts must preserve the exact existing SQLite database path and must never copy, recreate, migrate, or otherwise mutate farm data as part of changing the listener.
-- Do not expose LAN access controls until browser asset delivery, Host/Origin validation, CSRF/session protections, authenticated Manager authorization, and regression tests are implemented. See docs/lan-access.md.
+- LAN access controls are available only in the desktop host and only to a live MANAGER session. Keep the listener disabled by default, require native confirmation, and do not publish the URL until backend identity and production browser workspace checks pass. Do not call the feature production-ready until the complete automated suite and disposable-Windows manual acceptance are recorded. See docs/lan-access.md.
 
 
 ## Secure opt-in LAN access (Issue #314)
