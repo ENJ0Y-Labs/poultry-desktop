@@ -37,3 +37,12 @@ The following runtime checks are still required before declaring cross-context b
 4. Inspect actual `Set-Cookie` and request-cookie headers in each context. Record browser version and whether privacy settings block cookies.
 
 Do not claim these manual checks passed until they have been run. If a supported context rejects `Secure` cookies on the loopback API, fix the origin/transport arrangement or document a justified environment-specific policy; do not silently remove `Secure`.
+
+
+## Same-origin LAN browser transport (Issue #310)
+
+A production browser workspace served by the Pomas host uses the same scheme, hostname, and port as the REST API. For that exact same-origin request only, the session cookie uses `SameSite=Lax`. On an HTTP-only private LAN URL the cookie is not marked `Secure`, because browsers reject Secure cookies on ordinary LAN HTTP origins. It remains host-only, `HttpOnly`, and `Path=/`; no `Domain` attribute is added. If the same-origin host uses HTTPS, `Secure` remains enabled.
+
+The existing packaged Electron (`Origin: null`) and browser-development cross-origin flows retain the existing `SameSite=None; Secure` policy. An absent, opaque, malformed, or different origin is never classified as same-origin by this cookie helper.
+
+This is session-cookie compatibility groundwork only. It does not enable a LAN listener, serve production browser assets, or replace the required LAN Host/Origin and CSRF enforcement. Those controls must be implemented and tested before LAN access can be enabled. Plain HTTP LAN access is limited to a trusted private Wi-Fi network; it is not internet hosting and does not provide transport encryption.
