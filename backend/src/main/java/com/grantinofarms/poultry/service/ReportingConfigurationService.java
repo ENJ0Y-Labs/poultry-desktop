@@ -165,7 +165,8 @@ public class ReportingConfigurationService {
                 LocalDate dueDate = latestDate.minusDays((long) period * (weekly ? 7 : 1));
                 LocalDateTime dueAt = LocalDateTime.of(dueDate, dueTime);
                 LocalDateTime graceUntil = dueAt.plusMinutes(grace);
-                LocalDateTime windowEnd = dueAt.plusDays(weekly ? 7 : 1);
+                LocalDateTime windowStart = dueDate.atStartOfDay();
+                LocalDateTime windowEnd = dueDate.plusDays(weekly ? 7 : 1).atStartOfDay();
                 if (!now.isAfter(graceUntil)) continue;
                 Instant scheduleCreatedAt = Instant.parse(String.valueOf(schedule.get("createdAt")));
                 Instant scheduleUpdatedAt = Instant.parse(String.valueOf(schedule.get("updatedAt")));
@@ -174,7 +175,7 @@ public class ReportingConfigurationService {
                 if (dueAt.atZone(zone).toInstant().isBefore(effectiveFrom)) continue;
                 if (reporting.hasSubmissionInWindow(farm.id(), String.valueOf(schedule.get("reportType")),
                         scopeType, scopeId, batchType,
-                        dueAt.atZone(zone).toInstant().toString(), windowEnd.atZone(zone).toInstant().toString())) continue;
+                        windowStart.atZone(zone).toInstant().toString(), windowEnd.atZone(zone).toInstant().toString())) continue;
                 Map<String, Object> row = new LinkedHashMap<>(schedule);
                 row.put("dueAt", dueAt.atZone(zone).toInstant().toString());
                 row.put("graceUntil", graceUntil.atZone(zone).toInstant().toString());
