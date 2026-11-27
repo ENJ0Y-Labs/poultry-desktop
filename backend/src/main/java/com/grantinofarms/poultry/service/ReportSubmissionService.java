@@ -115,6 +115,7 @@ public class ReportSubmissionService {
     }
 
     @Transactional
+    @Transactional
     public Map<String, Object> submit(String id, String operationKey) {
         RoleAuthorization.requireReportSubmitter();
         if (operationKey == null || !operationKey.matches("[A-Za-z0-9._:-]{8,128}")) {
@@ -124,10 +125,12 @@ public class ReportSubmissionService {
         String actorId = CurrentUserContext.get();
         Map<String, Object> header = requireOwnedHeader(id, actorId);
         String status = String.valueOf(header.get("lifecycleStatus"));
-        if (header.get("submittedVersion") != null && !"CHANGES_REQUESTED".equals(status)) {
+        if (header.get("submittedVersion") != null) {
             if (operationKey.equals(header.get("submitOperationKey"))) return getOwned(id, actorId);
-            throw new ApiException(HttpStatus.CONFLICT, "SUBMISSION_ALREADY_SUBMITTED",
-                    "This report has already been submitted with a different operation key.");
+            if (!"CHANGES_REQUESTED".equals(status)) {
+                throw new ApiException(HttpStatus.CONFLICT, "SUBMISSION_ALREADY_SUBMITTED",
+                        "This report has already been submitted with a different operation key.");
+            }
         }
         if (!List.of("DRAFT", "CHANGES_REQUESTED", "BLOCKED").contains(status)) {
             throw new ApiException(HttpStatus.CONFLICT, "SUBMISSION_NOT_SUBMITTABLE",

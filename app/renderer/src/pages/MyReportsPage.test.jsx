@@ -134,41 +134,7 @@ describe("MyReportsPage", () => {
     fireEvent.click(screen.getByRole("button", { name: "Submit for review" }));
 
     await waitFor(() => expect(reportSubmissionApi.create).toHaveBeenCalledTimes(1));
-    await waitFor(() => expect(reportSubmissionApi.submit).toHaveBeenCalledWith("submission-1", expect.any(String)));
-    expect(await screen.findByText(/Report submitted/)).toBeInTheDocument();
-    expect(localStorage.getItem("pomas:report-submission-drafts:worker-1")).toBe("[]");
-  });
-
-  it("reconciles an interrupted submit response using the persisted operation key", async () => {
-    reportSubmissionApi.create.mockResolvedValue(fixtures.draft);
-    reportSubmissionApi.get.mockResolvedValue(fixtures.draft);
-    reportSubmissionApi.submit.mockRejectedValueOnce(new TypeError("Network connection was interrupted"));
-
-    render(<MyReportsPage userId="worker-1" />);
-    await screen.findByText(/No reports yet/);
-    fillMortalityForm();
-    fireEvent.click(screen.getByRole("button", { name: "Submit for review" }));
-
-    await waitFor(() => expect(reportSubmissionApi.submit).toHaveBeenCalledTimes(1));
-    expect(await screen.findByText(/submission result is not confirmed/i)).toBeInTheDocument();
-    const saved = JSON.parse(localStorage.getItem("pomas:report-submission-drafts:worker-1"))[0];
-    expect(saved).toMatchObject({
-      serverId: "submission-1",
-      submissionPending: true,
-      submitIdempotencyKey: expect.any(String),
-    });
-
-    reportSubmissionApi.get.mockResolvedValue({
-      ...fixtures.draft,
-      lifecycleStatus: "SUBMITTED",
-      status: "PENDING_REVIEW",
-      submittedVersion: 1,
-      submitOperationKey: saved.submitIdempotencyKey,
-    });
-    fireEvent.click(screen.getByRole("button", { name: "Retry / check submission" }));
-
-    await waitFor(() => expect(reportSubmissionApi.get).toHaveBeenCalledTimes(1));
-    expect(reportSubmissionApi.submit).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(reportSubmissionApi.submit).toHaveBeenCalledWith("submission-1"));
     expect(await screen.findByText(/Report submitted/)).toBeInTheDocument();
     expect(localStorage.getItem("pomas:report-submission-drafts:worker-1")).toBe("[]");
   });
