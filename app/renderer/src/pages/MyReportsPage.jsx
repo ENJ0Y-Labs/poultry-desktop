@@ -706,7 +706,7 @@ export default function MyReportsPage({ userId = "" }) {
     <div className="my-reports-page">
       <section className="card full">
         <div className="section-head">
-          <div><p className="eyebrow">WORKER WORKSPACE</p><h2>My submissions</h2><p className="muted">Create a report, keep a recoverable local draft, then submit it explicitly when the farm computer is available.</p></div>
+          <div><p className="eyebrow">WORKER WORKSPACE</p><h2>My submissions</h2><p className="muted">Create and submit reports from this phone while connected to the farm computer on the same trusted Wi-Fi. Drafts stay recoverable on this device; submitted reports enter Manager Review and do not update official farm records.</p></div>
           <button type="button" className="secondary-button" onClick={refresh} disabled={loading || saving}>Refresh</button>
         </div>
         {error && <p className="form-error" role="alert">{error}</p>}
