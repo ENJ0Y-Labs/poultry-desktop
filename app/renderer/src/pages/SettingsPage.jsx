@@ -16,6 +16,7 @@ import ToggleSwitch from "../components/ToggleSwitch.jsx";
 import ThemePreferenceSwitches from "../components/ThemePreferenceSwitches.jsx";
 
 
+// eslint-disable-next-line no-unused-vars -- JSX component usage is not detected by the core rule
 function LanAccessSettings({ userRole }) {
   const [interfaces, setInterfaces] = useState([]);
   const [selected, setSelected] = useState("");
