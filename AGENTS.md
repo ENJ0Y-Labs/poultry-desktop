@@ -210,7 +210,7 @@ The Import / Export screen supports versioned CSV imports for layer egg collecti
 
 ## Desktop renderer width
 
-- Pomas is a desktop-only Windows application with a supported minimum window size of 1100×650 CSS pixels. Keep the renderer canvas at least 1100px wide; do not introduce phone-style shell/navigation transformations below that width. Narrow browser viewports below 1100px are unsupported diagnostics, not a mobile-support target. See `docs/responsive-layout-audit.md`.
+- Pomas is a desktop-first Windows application. The Electron desktop window retains a supported minimum size of 1100×650 CSS pixels and must keep its renderer canvas at least 1100px wide. The production same-origin browser workspace additionally supports authenticated WORKER sessions on phones from 320px wide, using a dedicated Worker-only navigation and layout. Do not apply phone shell transformations to MANAGER or ADMINISTRATOR sessions, and do not expose farm-management pages to Workers. See `docs/responsive-layout-audit.md`.
 
 ## Toast notifications
 
@@ -1632,3 +1632,14 @@ review the error.
 - Before switching the desktop window or publishing the LAN URL, verify the served root is the built production React workspace. Move the HttpOnly session cookie between the loopback and selected private host in Electron main only; never expose the token to renderer JavaScript.
 - A LAN URL is reachable only after exact-address bind, backend identity health, and browser workspace verification. On any failed transition, stop LAN mode and recover loopback. Never use wildcard binds or change the SQLite path/data.
 - Plain HTTP LAN mode is for trusted private networks only. Do not add port-forwarding, public hosting, or automatic firewall changes. See `docs/lan-access.md`.
+
+
+## Worker mobile browser workspace (Issue #315)
+
+- The installed Windows Electron desktop remains desktop-first with a minimum 1100×650 window. Phone support applies only to the production same-origin browser workspace and authenticated WORKER role.
+- On phone widths (320px and above), Worker navigation exposes only My Reports, Alerts & Reporting, and Sign out. Preserve the existing hash routes and sign-out API; do not add a second router or a mobile-only authentication flow.
+- Workers remain restricted to their own submissions and incidents. A responsive layout is not an authorization boundary; backend role/farm-scope checks remain authoritative.
+- Do not show farm dashboard, operational ledgers, Review Centre, user administration, settings, or host network controls to Workers. Do not grant LAN clients permission to enable/disable the host listener.
+- Keep the bottom navigation above device safe-area insets, provide at least 44px form controls and 48px navigation targets, and keep wide records inside their own horizontally scrollable containers rather than causing page-level overflow.
+- Scope all narrow viewport overrides to .app-shell[data-role="WORKER"]. MANAGER and ADMINISTRATOR browser sessions retain the desktop canvas; Electron's minimum window size and desktop shell are unchanged.
+- Verify phone layouts at 320px, 360px, and 390px in both themes. Test direct deep links, refresh, back/forward navigation, login/logout, report drafts, attachment interactions, and incident submission using disposable accounts/data. Do not claim device acceptance from CSS tests alone.
