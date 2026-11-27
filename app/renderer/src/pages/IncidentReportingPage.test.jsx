@@ -71,7 +71,7 @@ describe("IncidentReportingPage", () => {
       graceMinutes: 0,
     })));
     expect(await screen.findByText("MISSING")).toBeTruthy();
-    expect(screen.getByText(/Missing is not a zero-activity report/)).toBeTruthy();
+    expect(screen.getByText(/missing report is not a zero-activity report/i)).toBeTruthy();
   });
 
   it("loads notifications for the signed-in user and marks them read", async () => {
