@@ -279,16 +279,58 @@ class ReportSubmissionIntegrationTest {
         CurrentUserContext.set(managerId, "MANAGER");
         assertThat(farmIncidents.notifications()).hasSize(1);
         assertThat(farmIncidents.acknowledge(id).get("status")).isEqualTo("ACKNOWLEDGED");
+        assertThat(farmIncidents.escalate(id, "The repair is delayed and the flock remains at risk.").get("status"))
+                .isEqualTo("ACKNOWLEDGED");
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM manager_notifications WHERE recipient_user_id = ? AND entity_id = ?",
+                Integer.class, managerId, id)).isEqualTo(2);
         assertThat(farmIncidents.resolve(id, "Water pump restored and the line pressure verified.").get("status"))
                 .isEqualTo("RESOLVED");
         assertThat(jdbc.queryForObject(
                 "SELECT COUNT(*) FROM farm_incident_events WHERE incident_id = ?",
-                Integer.class, id)).isEqualTo(3);
+                Integer.class, id)).isEqualTo(4);
         assertThat(jdbc.queryForObject(
                 "SELECT COUNT(*) FROM expenses WHERE description = ?",
                 Integer.class, "The drinker line has stopped supplying water to the active flock.")).isZero();
     }
 
+
+
+    @Test
+    void reportSubmissionAndReviewDecisionsNotifyTheRelevantUsers() throws Exception {
+        String managerId = UUID.randomUUID().toString();
+        String now = Instant.now().toString();
+        users.insertWithRole(managerId, "workflow-manager-" + managerId.substring(0, 6),
+                null, "test-password-hash", "Workflow Manager", "MANAGER", now, null);
+        java.time.ZoneId zone = java.time.ZoneId.of("Africa/Lagos");
+        String eventDate = java.time.LocalDate.now(zone).toString();
+        String eventTime = java.time.LocalTime.now(zone).format(java.time.format.DateTimeFormatter.ofPattern("HH:mm"));
+        Map<String, Object> created = submissions.createDraft(new ReportSubmissionRequest(
+                "EXPENSE", "Notification test expense", mapper.readTree(
+                "{\\"occurredDate\\":\\"" + eventDate + "\\",\\"eventDate\\":\\"" + eventDate
+                        + "\\",\\"eventTime\\":\\"" + eventTime
+                        + "\\",\\"description\\":\\"Notification test expense\\",\\"amountMinor\\":1200,\\"category\\":\\"OTHER\\"}")));
+        String submissionId = String.valueOf(created.get("id"));
+        Map<String, Object> submitted = submissions.submit(submissionId);
+        assertThat(submitted.get("lifecycleStatus")).isEqualTo("PENDING_REVIEW");
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM manager_notifications WHERE recipient_user_id = ? AND entity_id = ? AND notification_type = 'REPORT_REVIEW_NEEDED'",
+                Integer.class, managerId, submissionId)).isEqualTo(1);
+
+        CurrentUserContext.set(managerId, "MANAGER");
+        reviews.decide(submissionId, "APPROVED", null);
+        CurrentUserContext.set(workerId, "WORKER");
+        var workerNotifications = farmIncidents.notifications();
+        assertThat(workerNotifications).anySatisfy(notification ->
+                assertThat(notification.get("type")).isEqualTo("REPORT_APPROVED"));
+        Map<String, Object> approval = workerNotifications.stream()
+                .filter(notification -> "REPORT_APPROVED".equals(notification.get("type")))
+                .findFirst().orElseThrow();
+        farmIncidents.markNotificationRead(String.valueOf(approval.get("id")));
+        assertThat(jdbc.queryForObject(
+                "SELECT read_at FROM manager_notifications WHERE id = ?",
+                String.class, approval.get("id"))).isNotBlank();
+    }
 
     @Test
     void evidenceIsVersionBoundImmutableAndIncludedInTheDatabaseBackup() throws Exception {
