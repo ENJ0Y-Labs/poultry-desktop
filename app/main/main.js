@@ -113,6 +113,7 @@ ipcMain.handle("lan-access:enable", async (event, selection, ...args) => {
     return status;
   } catch (error) {
     await backendManager.disableLanAccess();
+    await moveDesktopSessionCookie(backendManager.baseUrl, token, false);
     await loadLocalDesktopRenderer();
     throw new Error("LAN access was rolled back because the browser workspace could not be opened. " + error.message);
   }
