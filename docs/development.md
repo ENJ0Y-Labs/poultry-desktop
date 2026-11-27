@@ -66,7 +66,7 @@ npm run dev:backend
 npm run dev:browser
 ```
 
-The browser workflow uses the local development database at `data/poultry.db` by default. The database path is supplied through `poultry.database-path`; the datasource URL must resolve from that property rather than a machine-specific absolute path. Spring Boot logs are written to `logs/backend.log`; Electron process output and startup diagnostics are written separately to `logs/backend-process.log`.
+The browser workflow uses the local development database at `data/poultry.db` by default. The database path is supplied through `poultry.database-path`; the datasource URL must resolve from that property rather than a machine-specific absolute path. Both the Electron development launcher and browser-only backend launcher explicitly bind Spring Boot to `127.0.0.1`; do not override this with a LAN or wildcard address during normal development. Spring Boot logs are written to `logs/backend.log`; Electron process output and startup diagnostics are written separately to `logs/backend-process.log`.
 
 The browser does not provide Electron-only native features such as choosing a backup folder through the desktop dialog. Test those features with the actual Electron runtime when its development launcher is available.
 
@@ -287,7 +287,7 @@ Do not put business calculations into React just because the formula looks short
 
 ## Security rules
 
-Production backend binds to localhost.
+The backend binds to `127.0.0.1` by default in both packaged and development workflows. LAN access is disabled unless a separate, explicit host-side opt-in mode is implemented.
 
 The renderer runs with:
 
