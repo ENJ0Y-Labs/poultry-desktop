@@ -14,7 +14,7 @@ Node's portable network-interface API does not report adapter operational state 
 
 ## Remaining implementation phases
 
-- [ ] Phase 2: serialized backend restart with exact bind address, identity health check, recovery to loopback on failure, and unchanged database path.
+- [x] Phase 2 foundation: serialized backend restart, exact validated bind address, identity health check, loopback recovery on LAN startup failure, and unchanged database path. Host controls and Windows runtime acceptance remain pending.
 - [ ] Phase 3: serve the production browser renderer from the same Spring Boot origin as the API.
 - [ ] Phase 4: enforce exact Host/Origin validation, explicit CORS, CSRF, and session-cookie protections for LAN requests.
 - [ ] Phase 5: authenticated Manager host controls, interface selection, status, and verified URL display.
