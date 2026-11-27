@@ -91,3 +91,14 @@ This is deliberately **not** a universal correction dispatcher. Mortality/cullin
 Evidence upload is available to report authors while a server draft is editable. Evidence remains attached to the immutable version and is stored as a SQLite BLOB, so the database snapshot includes the file bytes. The author UI displays and downloads evidence for the selected version; the Manager Review Centre retains its own evidence view.
 
 Official-record comparison for health, drugs, vaccination, egg, weight, feed, mortality/culling, and sales remains open. Each requires a report-specific identity definition and tests that distinguish true duplicates from legitimate repeated activity.
+
+
+## Issue #297: likely duplicates are warnings, not date-based rejection
+
+- A match on report type, batch, and business date is a **candidate**, not proof that two reports describe the same event. The check reads the immutable submitted version and reports the matching submission IDs so a Manager can inspect the candidate.
+- The candidate check is an overrideable WARNING and may move a submission to FLAGGED; it must never create a BLOCKED result solely because house/batch and date match.
+- Distinct legitimate events on the same day remain reviewable. Do not introduce a global unique key or a same-house/date rejection rule.
+- Official expense duplicates use a stronger business identity: farm, nullable batch scope, business date, integer-minor-unit amount, normalized category, and normalized description. Same-date expenses with different business facts are not exact duplicates.
+- Critical domain validation remains blocking. A Manager may authorize only overrideable warnings and must provide the existing reason.
+
+Regression coverage: ReportReviewHardeningIntegrationTest.differentExpensesOnTheSameBusinessDateAreNotFlaggedAsDuplicates proves that different expense facts on one date remain pending review while an exact repeat becomes an overrideable warning.
