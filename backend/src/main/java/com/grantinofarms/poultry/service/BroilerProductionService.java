@@ -147,10 +147,10 @@ public class BroilerProductionService {
         String farmId = repository.batchFarmId(batchId);
         String now = Instant.now().toString();
         String before = String.format(
-                "{\\"batchId\\":\\"%s\\",\\"recordDate\\":\\"%s\\",\\"sampleQuantity\\":%s,\\"totalWeightGrams\\":%s}",
+                "{\"batchId\":\"%s\",\"recordDate\":\"%s\",\"sampleQuantity\":%s,\"totalWeightGrams\":%s}",
                 batchId, originalDate, original.get("sample_quantity"), original.get("total_weight_grams"));
         String after = String.format(
-                "{\\"replacementId\\":\\"%s\\",\\"recordDate\\":\\"%s\\",\\"sampleQuantity\\":%d,\\"totalWeightKg\\":\\"%s\\"}",
+                "{\"replacementId\":\"%s\",\"recordDate\":\"%s\",\"sampleQuantity\":%d,\"totalWeightKg\":\"%s\"}",
                 created.id(), replacement.recordDate(), replacement.sampleQuantity(),
                 replacement.totalWeightKg().stripTrailingZeros().toPlainString());
         try {
