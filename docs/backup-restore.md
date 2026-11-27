@@ -6,7 +6,7 @@ Pomas uses SQLite locally. Backup and restore are designed around SQLite's consi
 
 The backend creates backups with SQLite `VACUUM INTO`.
 
-This is preferable to blindly copying a live SQLite file because the database may be using WAL mode.
+This is preferable to blindly copying a live SQLite file because the database may be using WAL mode. The snapshot is written to a unique temporary file beside the destination, checked with SQLite integrity and foreign-key validation plus Pomas/Flyway schema checks, then atomically renamed to its final `.db` name. A failed snapshot or validation is cleaned up and is never published as a normal backup. The API returns the schema version and final file size with the path and filename.
 
 The default filename pattern is:
 
@@ -69,23 +69,27 @@ Electron owns the destructive part of restore:
 ```
 select backup
     ↓
-backend validates backup
+backend validates selected backup
     ↓
 compare schema versions
     ↓
 operator confirmation
     ↓
-backend creates pre-restore safety snapshot with VACUUM INTO
+backend creates and validates pre-restore safety snapshot with VACUUM INTO
+    ↓
+stage selected backup beside live database
+    ↓
+validate staged copy
     ↓
 stop Spring Boot
     ↓
-copy selected backup to temporary file
+rename current database to rollback file
     ↓
-replace live database
+atomically publish staged database
     ↓
-start Spring Boot
+start Spring Boot and pass readiness/schema checks
     ↓
-health check
+remove temporary rollback file after successful startup
     ↓
 resume application
 ```
@@ -94,7 +98,7 @@ The safety snapshot is created while Spring Boot still owns the SQLite connectio
 
 ## Restore failure recovery
 
-If replacement has started and the restarted backend cannot become healthy, Electron attempts to restore the pre-restore safety database and starts the backend again.
+If replacement has started and the restarted backend cannot become healthy, Electron removes the failed replacement and first attempts a same-volume rename of the stopped original database back into place. The validated pre-restore VACUUM snapshot remains the fallback if that rename fails. Electron removes stale SQLite WAL/SHM files before recovery and starts the backend again.
 
 The restore flow also removes stale SQLite WAL/SHM files associated with the replaced database so old journal state cannot be mixed with the restored database.
 
