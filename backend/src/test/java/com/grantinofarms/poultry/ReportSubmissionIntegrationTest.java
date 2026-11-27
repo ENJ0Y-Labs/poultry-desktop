@@ -305,11 +305,11 @@ class ReportSubmissionIntegrationTest {
         java.time.ZoneId zone = java.time.ZoneId.of("Africa/Lagos");
         String eventDate = java.time.LocalDate.now(zone).toString();
         String eventTime = java.time.LocalTime.now(zone).format(java.time.format.DateTimeFormatter.ofPattern("HH:mm"));
+        String payload = """
+                {"occurredDate":"%s","eventDate":"%s","eventTime":"%s","description":"Notification test expense","amountMinor":1200,"category":"OTHER"}
+                """.formatted(eventDate, eventDate, eventTime);
         Map<String, Object> created = submissions.createDraft(new ReportSubmissionRequest(
-                "EXPENSE", "Notification test expense", mapper.readTree(
-                "{\\"occurredDate\\":\\"" + eventDate + "\\",\\"eventDate\\":\\"" + eventDate
-                        + "\\",\\"eventTime\\":\\"" + eventTime
-                        + "\\",\\"description\\":\\"Notification test expense\\",\\"amountMinor\\":1200,\\"category\\":\\"OTHER\\"}")));
+                "EXPENSE", "Notification test expense", mapper.readTree(payload)));
         String submissionId = String.valueOf(created.get("id"));
         Map<String, Object> submitted = submissions.submit(submissionId);
         assertThat(submitted.get("lifecycleStatus")).isEqualTo("PENDING_REVIEW");
