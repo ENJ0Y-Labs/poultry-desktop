@@ -532,7 +532,11 @@ async function createWindow() {
   mainWindow.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
   mainWindow.webContents.on("will-navigate", (event, url) => {
     const rendererFile = pathToFileURL(join(__dirname, "../renderer/index.html")).href;
-    let allowed = url === rendererFile;\n    if (backendManager?.lanStatus?.url) {\n      try { allowed = allowed || new URL(url).origin === new URL(backendManager.lanStatus.url).origin; }\n      catch { allowed = false; }\n    }
+    let allowed = url === rendererFile;
+    if (backendManager?.lanStatus?.url) {
+      try { allowed = allowed || new URL(url).origin === new URL(backendManager.lanStatus.url).origin; }
+      catch { allowed = false; }
+    }
     if (process.env.ELECTRON_RENDERER_URL) {
       try {
         allowed = allowed || new URL(url).origin === new URL(process.env.ELECTRON_RENDERER_URL).origin;
