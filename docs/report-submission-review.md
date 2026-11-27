@@ -107,7 +107,7 @@ The first Review Centre hardening increment adds official-record conflict checks
 The following are still not complete and must not be represented as complete:
 
 - Report-type-specific official-record comparison for health, vaccination, drug, egg, weight, feed, mortality/culling, and sales records. Each needs its own business identity and conflict semantics; same-day activity alone must not be treated as a duplicate.
-- Post-merge correction/reversal workflow linking the original submission, original official record, reversal, and replacement. Follow the transaction-specific reversal decision; do not implement a generic table-name-based correction endpoint.
+- Typed post-merge correction adapters beyond `WEIGHT_RECORD`. Weight corrections preserve the original official row, create a replacement through the existing production service, and link both records to the immutable source submission. Other transaction families remain blocked until their owning services can reverse and rebuild dependent ledgers atomically. Do not implement a generic table-name-based correction endpoint.
 - Full concurrency coverage for competing merge attempts and concurrent writes to the same domain records.
 - Failure-injection coverage for every report adapter and each write boundary, including audit, domain side effects, provenance, and merge completion.
 - Network interruption/retry status reconciliation, packaged Electron, backup/restore, and full end-to-end acceptance coverage.
