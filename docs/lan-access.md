@@ -2,7 +2,7 @@
 
 ## Security contract
 
-Pomas remains bound to `127.0.0.1` unless a Manager explicitly enables LAN access from the authenticated desktop host. LAN mode must bind to one selected RFC1918 IPv4 address only. Never bind to `0.0.0.0`, `::`, a public address, a loopback address, or an address that is no longer assigned to the selected adapter.
+Pomas remains bound to `127.0.0.1` unless an authenticated Manager or Administrator explicitly enables LAN access from the desktop host. LAN mode must bind to one selected RFC1918 IPv4 address only. Never bind to `0.0.0.0`, `::`, a public address, a loopback address, or an address that is no longer assigned to the selected adapter.
 
 The URL shown by the host is not published until the selected-address listener passes the backend identity health check and Electron confirms that the production browser workspace is served correctly. Disabling LAN access hides the URL and returns the backend to loopback. A failed transition must fail closed and must not change the SQLite database path or contents.
 
@@ -18,7 +18,7 @@ Node's portable network-interface API does not report adapter operational state 
 - [x] Phase 3: package the production renderer into the backend JAR as Spring static resources; the browser API client uses the current origin. The desktop host verifies the served HTML before switching the window or publishing the URL.
 - [x] Phase 4 foundation: LAN mode validates the exact bound Host and same-origin Origin, requires Origin plus the existing CSRF marker for writes, and removes the opaque null origin from CORS while LAN is enabled. Same-origin LAN session cookies remain HttpOnly, host-only, and SameSite=Lax; HTTP LAN cookies are not Secure.
 - [x] Phase 5 foundation: desktop IPC verifies a live MANAGER session, requires native confirmation, supports interface selection and enable/disable, transfers the desktop session cookie across the host switch, and displays the verified URL.
-- [ ] Phase 6: complete automated lifecycle/HTTP/browser-session and disposable-database regression tests, run CI, and perform Windows manual acceptance.
+- [x] Phase 6 automated coverage: lifecycle, interface loss, database-byte preservation, Host/Origin/CSRF, LAN login-cookie attributes, same-origin API routing, and packaged browser assets are covered by tests and CI.\n- [ ] Phase 6 manual acceptance: run the disposable-database Windows test with a second device on a trusted private network; verify login/read/write/logout, Host/Origin rejection, disable behavior, and database integrity.
 
 The listener is wired only after the network, lifecycle, browser-delivery, request-security, and host-control foundations are present. Do not merge or use this feature on a production farm until Phase 6 automated checks and disposable-Windows acceptance are complete.
 
