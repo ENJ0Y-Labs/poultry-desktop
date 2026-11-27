@@ -4,7 +4,7 @@ This document describes the implemented portion of Issue #287. The feature uses 
 
 ## Operational roles
 
-- **WORKER:** can create/save drafts, submit reports, view own submissions, checks, comments, decisions and merge references, and comment on own submissions. Cannot access farm-wide views, review queue, user administration, or direct ledger APIs.
+- **WORKER:** can create/save drafts, submit reports, view own submissions, checks, comments, Manager decisions and their reasons, and merge references, and comment on own submissions. Cannot access farm-wide views, review queue, user administration, or direct ledger APIs.
 - **ADMINISTRATOR:** retains the existing farm-owner operational workspace and manages user accounts/roles. Can submit and view own reports. Cannot inspect other users' submissions or use Manager review/decision/merge APIs.
 - **MANAGER:** can use farm operations, view farm-wide submissions, assign reviewers, comment, request changes, reject, approve, authorize overrideable warnings, and merge. Cannot manage user accounts or roles.
 
@@ -159,3 +159,23 @@ Evidence attachments, post-merge corrections, backup/restore hardening, and full
 - The backend remains responsible for Worker identity, farm scope, payload validation, duplicate checks, late-report rules, and lifecycle transitions. A successful submission enters Manager Review and does not write an official farm ledger.
 - On phone widths, make Save draft and Submit for review full-width, touch-sized actions. Preserve the same form semantics and explicit submit action.
 - Verify the Worker can submit a valid report over the LAN, receives backend validation for invalid data, and sees the resulting submission status. Interrupt the response after the server commit and retry with the same operation key to confirm exactly one submission event and no duplicate.
+
+
+## Manager browser Review Centre (Issue #318)
+
+The same-origin browser workspace exposes the existing Review Centre to authenticated MANAGER sessions at `#review-centre/overview`. The Manager uses the existing review APIs and local SQLite-backed workflow; there is no separate browser database or browser-only approval path.
+
+The queue can be filtered by report type and lifecycle status, including reports returned for changes, rejected, approved, and merged. Reviewer assignment is available only while a report is awaiting review. A Manager can inspect the immutable submitted version, evidence, automated checks, discussion, assignments, decisions, and activity history; request changes or reject only with a reason; authorize only explicitly overrideable warnings; and approve only another user's report.
+
+A request for changes returns the submission to its Worker author. The Worker can reopen the returned report, edit it as a new immutable version, and explicitly resubmit it. The Manager must review that resubmitted version; approval still does not write official records. A separate explicit merge revalidates the approved version and invokes the existing domain service in one transaction. The merge key is stable for the submission/version so a retry after a lost response cannot create a second official record.
+
+### Issue #318 verification
+
+Focused frontend regressions:
+
+```bash
+npm test -- --run app/renderer/src/pages/ReviewCentrePage.test.jsx
+npm test -- --run app/renderer/src/components/AppShell.test.jsx
+```
+
+Also run the full frontend suite, lint, production browser build, and backend Maven tests. With disposable Worker and Manager accounts, verify the complete browser round-trip: Worker submits; Manager requests changes with a reason; Worker edits and resubmits; Manager reviews the new version, approves it, and explicitly merges it; the resulting official record links back to the submission/version. Confirm approval alone does not change official records, self-review remains blocked, and Workers/Administrators cannot access the Review Centre. Browser automation does not replace the live same-origin LAN acceptance check.

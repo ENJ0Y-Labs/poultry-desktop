@@ -349,5 +349,76 @@ describe("MyReportsPage", () => {
     expect(reportAttachmentApi.list).toHaveBeenCalledWith("submission-1");
   });
 
+  it("lets a Worker edit and resubmit a report returned by the Manager as a new version", async () => {
+    const returned = {
+      ...fixtures.draft,
+      lifecycleStatus: "CHANGES_REQUESTED",
+      status: "CHANGES_REQUESTED",
+      currentVersion: 1,
+      submittedVersion: 1,
+      versions: [{
+        ...fixtures.draft.versions[0],
+        payload: {
+          eventDate: "2026-11-26",
+          batchId: "batch-1",
+          quantity: 2,
+          reason: "",
+          notes: "",
+        },
+      }],
+      decisions: [{
+        id: "decision-1",
+        version: 1,
+        decision: "CHANGES_REQUESTED",
+        reason: "Please verify the morning count.",
+      }],
+    };
+    const resubmitted = {
+      ...returned,
+      lifecycleStatus: "SUBMITTED",
+      status: "PENDING_REVIEW",
+      currentVersion: 2,
+      submittedVersion: 2,
+      submitOperationKey: "worker-resubmit-key",
+    };
+    reportSubmissionApi.mine.mockResolvedValue([{
+      id: "submission-1",
+      title: "Morning mortality",
+      reportType: "MORTALITY",
+      lifecycleStatus: "CHANGES_REQUESTED",
+      status: "CHANGES_REQUESTED",
+      currentVersion: 1,
+      submittedVersion: 1,
+    }]);
+    reportSubmissionApi.get.mockResolvedValue(returned);
+    reportSubmissionApi.save.mockResolvedValue({
+      ...returned,
+      currentVersion: 2,
+      versions: [...returned.versions, {
+        version: 2,
+        title: "Morning mortality",
+        payload: { eventDate: "2026-11-26", batchId: "batch-1", quantity: 3, reason: "", notes: "" },
+      }],
+    });
+    reportSubmissionApi.submit.mockResolvedValue(resubmitted);
+
+    render(<MyReportsPage userId="worker-1" />);
+    fireEvent.click(await screen.findByRole("button", { name: "View" }));
+    expect(await screen.findByText(/changes requested/i)).toBeInTheDocument();
+    expect(screen.getByText("Please verify the morning count.")).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText("Number of birds"), { target: { value: "3" } });
+    fireEvent.click(screen.getByRole("button", { name: "Submit for review" }));
+
+    await waitFor(() => expect(reportSubmissionApi.save).toHaveBeenCalledWith("submission-1", expect.objectContaining({
+      reportType: "MORTALITY",
+      payload: expect.objectContaining({ batchId: "batch-1", quantity: 3 }),
+    })));
+    await waitFor(() => expect(reportSubmissionApi.submit).toHaveBeenCalledWith("submission-1", expect.any(String)));
+    expect(await screen.findByText(/Report submitted/)).toBeInTheDocument();
+    expect(reportSubmissionApi.save.mock.invocationCallOrder[0]).toBeLessThan(
+      reportSubmissionApi.submit.mock.invocationCallOrder[0],
+    );
+  });
 
 });

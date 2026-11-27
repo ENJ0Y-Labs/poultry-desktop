@@ -141,5 +141,54 @@ describe("ReviewCentrePage", () => {
     expect(screen.getByText("Corrected follow-up calibration")).toBeInTheDocument();
   });
 
+  it("lets a Manager request changes with a reason and find the returned report", async () => {
+    const returned = {
+      ...fixtures.detail,
+      lifecycleStatus: "CHANGES_REQUESTED",
+      status: "CHANGES_REQUESTED",
+    };
+    reportReviewApi.decide.mockResolvedValue(returned);
+    reportReviewApi.get.mockResolvedValue(fixtures.detail);
+    reportReviewApi.queue.mockResolvedValue([fixtures.detail]);
+
+    render(<ReviewCentrePage currentUser={{ id: "manager-1", role: "MANAGER" }} />);
+    fireEvent.click(await screen.findByRole("button", { name: /Mortality report/ }));
+    fireEvent.change(await screen.findByLabelText(/Reason for returning or rejecting/i), {
+      target: { value: "Please verify the batch count against the morning register." },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Request changes" }));
+
+    await waitFor(() => expect(reportReviewApi.decide).toHaveBeenCalledWith(
+      "submission-1",
+      "CHANGES_REQUESTED",
+      "Please verify the batch count against the morning register.",
+    ));
+    expect(await screen.findByText("Report returned to its author for correction.")).toBeInTheDocument();
+    expect(screen.getByText(/changes requested/i)).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText("Status"), { target: { value: "CHANGES_REQUESTED" } });
+    await waitFor(() => expect(reportReviewApi.queue).toHaveBeenCalledWith({
+      status: "CHANGES_REQUESTED",
+      reportType: "",
+    }));
+    expect(screen.getByRole("heading", { name: /Reports returned for changes/ })).toBeInTheDocument();
+  });
+
+  it("does not offer reviewer assignment after a report leaves the review queue", async () => {
+    const approved = {
+      ...fixtures.detail,
+      lifecycleStatus: "APPROVED",
+      status: "APPROVED",
+      assignedManagerId: "manager-1",
+    };
+    reportReviewApi.queue.mockResolvedValue([approved]);
+    reportReviewApi.get.mockResolvedValue(approved);
+
+    render(<ReviewCentrePage currentUser={{ id: "manager-1", role: "MANAGER" }} />);
+    fireEvent.click(await screen.findByRole("button", { name: /Mortality report/ }));
+
+    expect(await screen.findByText(/Reviewer assignment is available only while a report is awaiting review/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Assign" })).toBeDisabled();
+  });
 
 });

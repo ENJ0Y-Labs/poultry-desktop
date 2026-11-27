@@ -350,4 +350,20 @@ describe("AppShell", () => {
       .toHaveTextContent("POMAS v1.0.4");
   });
 
+
+  it("gives Managers a browser route to Review Centre while keeping it out of Administrator navigation", async () => {
+    window.location.hash = "#review-centre/overview";
+    render(
+      <AppShell userRole="MANAGER" farm={{ name: "Grantino", location: "", currency: "NGN", timezone: "Africa/Lagos" }}>
+        <PageSection page="review-centre"><section>Manager review queue</section></PageSection>
+        <PageSection page="dashboard"><section>Farm dashboard</section></PageSection>
+      </AppShell>
+    );
+
+    const navigation = screen.getByRole("navigation", { name: "Main navigation" });
+    expect(within(navigation).getByRole("button", { name: "Review Centre" })).toBeInTheDocument();
+    expect(screen.getByText("Manager review queue")).toBeInTheDocument();
+    expect(window.location.hash).toBe("#review-centre/overview");
+  });
+
 });
