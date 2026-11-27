@@ -1604,3 +1604,12 @@ review the error.
 - Mark a confirmed submitted local draft as `posted: true` before attempting cleanup. Posted recovery copies are non-editable and non-submittable; cleanup only removes the local copy and never touches the server submission or official ledger.
 - Use a deterministic merge Idempotency-Key based on submission ID and approved version. A retry after timeout/restart must reuse that exact key; the backend remains authoritative for idempotency and transaction rollback.
 - Test offline draft retention, interrupted submit response followed by same-key reconciliation, one SUBMITTED event per key, and interrupted merge response followed by same-key retry. Verify runtime restart behavior only against a disposable database.
+
+
+## Existing farm records, calculations, and offline operation (Issue #302)
+
+- Preserve the existing SQLite farm database and the pinned packaged user-data directory `%APPDATA%/Poultry Farm Manager` across upgrades and product branding changes. Never silently initialize a replacement empty farm when an existing database is present.
+- Keep existing domain services and persisted source records authoritative for population, feed FIFO costing, production, sales, expenses, dashboard totals, and reports. Review workflows must not create a parallel operational ledger or duplicate calculations.
+- Normal farm operation must remain local-first and usable without internet access. Do not introduce remote runtime dependencies, CDN assets, telemetry, cloud APIs, or internet-only authentication into the normal operation path without explicit approval.
+- Run the isolated `MockFarmAcceptanceIntegrationTest` and full backend/frontend/build gates for changes touching existing farm workflows. Its fixture must remain isolated from real farm data.
+- A CI pass does not prove Windows upgrade continuity or offline desktop behaviour. Follow `docs/issue-302-existing-farm-regression.md` on a disposable Windows profile before release; record the actual app/schema versions and outcome.
