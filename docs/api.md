@@ -6,7 +6,7 @@ The Spring Boot API is served under:
 http://127.0.0.1:18942/api/v1
 ```
 
-Production binds to localhost only.
+The default backend configuration binds to `127.0.0.1` (localhost) only in packaged and development workflows. Do not use `0.0.0.0` or a LAN interface for normal operation.
 
 Controllers return successful responses in this shape:
 
