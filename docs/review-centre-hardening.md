@@ -76,8 +76,18 @@ Use the exact scripts in the root and backend package descriptors if they differ
 
 Do not run failure injection against a live farm database.
 
-## Explicitly not covered
+## Post-merge correction increment
 
-This increment does not implement transaction-specific post-merge correction/reversal. That work must link the original submission and official record to a typed reversal and, when correcting rather than voiding, a separate replacement. Feed FIFO, bird population/cost, egg inventory, drug-generated expenses, and common sales effects require their owning domain services to reverse and rebuild atomically. A generic SQL/table-name dispatcher is prohibited.
+The first typed post-merge correction adapter now supports merged `WEIGHT_RECORD` submissions:
+
+- The Manager-only correction endpoint resolves the original official weight record from the immutable submission/version provenance link.
+- The original measurement date is retained. The corrected sample quantity, total sample weight and notes are validated through the existing Broiler/Turkey production service.
+- The replacement weight row, append-only `transaction_reversals` row (`CORRECT` with replacement reference), report provenance link, submission event and audit event share one transaction.
+- The original weight row is preserved and excluded from effective growth calculations after correction.
+- Only the latest effective measurement can be corrected. A later measurement must be corrected first. A second correction of the same original is rejected.
+
+This is deliberately **not** a universal correction dispatcher. Mortality/culling, bird sales/transfers, feed purchases/usages, egg collections/sales, expenses and drug-generated expenses remain unsupported by the post-merge correction UI until their owning domain services can reverse all dependent ledgers and rebuild history atomically. Those report types must return a clear conflict; they must never be rewritten or balanced with generic SQL.
+
+Evidence upload is available to report authors while a server draft is editable. Evidence remains attached to the immutable version and is stored as a SQLite BLOB, so the database snapshot includes the file bytes. The author UI displays and downloads evidence for the selected version; the Manager Review Centre retains its own evidence view.
 
 Official-record comparison for health, drugs, vaccination, egg, weight, feed, mortality/culling, and sales remains open. Each requires a report-specific identity definition and tests that distinguish true duplicates from legitimate repeated activity.
