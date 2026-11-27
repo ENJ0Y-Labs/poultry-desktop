@@ -509,6 +509,23 @@ export const incidentApi = {
   resolve: (id, notes) => request("/incidents/" + encodeURIComponent(id) + "/resolve", {
     method: "POST", body: JSON.stringify({ notes }),
   }),
+  escalate: (id, notes) => request("/incidents/" + encodeURIComponent(id) + "/escalate", {
+    method: "POST", body: JSON.stringify({ notes }),
+  }),
+};
+
+export const reportingConfigApi = {
+  schedules: () => request("/review/reporting/schedules"),
+  createSchedule: payload => request("/review/reporting/schedules", { method: "POST", body: JSON.stringify(payload) }),
+  setScheduleEnabled: (id, enabled) => request("/review/reporting/schedules/" + encodeURIComponent(id) + "/enabled", {
+    method: "PATCH", body: JSON.stringify({ enabled }),
+  }),
+  missing: () => request("/review/reporting/missing"),
+  thresholds: () => request("/review/reporting/thresholds"),
+  createThreshold: payload => request("/review/reporting/thresholds", { method: "POST", body: JSON.stringify(payload) }),
+  setThresholdEnabled: (id, enabled) => request("/review/reporting/thresholds/" + encodeURIComponent(id) + "/enabled", {
+    method: "PATCH", body: JSON.stringify({ enabled }),
+  }),
 };
 
 export const reportAttachmentApi = {
