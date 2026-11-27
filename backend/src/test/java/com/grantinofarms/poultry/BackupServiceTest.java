@@ -194,6 +194,7 @@ class BackupServiceTest {
         jdbc.execute("CREATE TABLE farm_incidents (id TEXT PRIMARY KEY, status TEXT NOT NULL)");
         jdbc.execute("CREATE TABLE farm_incident_events (id TEXT PRIMARY KEY, incident_id TEXT NOT NULL, event_type TEXT NOT NULL)");
         jdbc.execute("CREATE TABLE incident_attachments (id TEXT PRIMARY KEY, incident_id TEXT NOT NULL, file_name TEXT NOT NULL, mime_type TEXT NOT NULL, file_size INTEGER NOT NULL, sha256 TEXT NOT NULL, file_content BLOB NOT NULL)");
+        jdbc.execute("CREATE TABLE audit_logs (id TEXT PRIMARY KEY, occurred_at TEXT NOT NULL, action TEXT NOT NULL, entity_type TEXT NOT NULL, entity_id TEXT NOT NULL, reason TEXT)");
 
         byte[] reportEvidence = new byte[] { 0, 1, 2, 3, 10, 13, (byte) 0xff };
         byte[] incidentEvidence = new byte[] { 80, 75, 3, 4, 0, 0, 1, 2 };
@@ -210,6 +211,8 @@ class BackupServiceTest {
                 "report-file-1", "submission-1", 2, "receipt.png", "image/png",
                 reportEvidence.length, "report-sha256", reportEvidence);
         jdbc.update("INSERT INTO farm_incidents(id, status) VALUES (?, ?)", "incident-1", "RESOLVED");
+        jdbc.update("INSERT INTO audit_logs(id, occurred_at, action, entity_type, entity_id, reason) VALUES (?, ?, ?, ?, ?, ?)",
+                "audit-1", "2026-11-27T10:00:00Z", "MERGE", "REPORT_SUBMISSION", "submission-1", "Manager approved report");
         jdbc.update("INSERT INTO farm_incident_events(id, incident_id, event_type) VALUES (?, ?, ?)",
                 "incident-event-1", "incident-1", "RESOLVED");
         jdbc.update("INSERT INTO incident_attachments(id, incident_id, file_name, mime_type, file_size, sha256, file_content) VALUES (?, ?, ?, ?, ?, ?, ?)",
@@ -239,6 +242,9 @@ class BackupServiceTest {
         assertThat(restoredJdbc.queryForObject(
                 "SELECT event_type FROM report_submission_events WHERE id = 'event-1'", String.class))
                 .isEqualTo("MERGED");
+        assertThat(restoredJdbc.queryForObject(
+                "SELECT reason FROM audit_logs WHERE id = 'audit-1'", String.class))
+                .isEqualTo("Manager approved report");
         assertThat(restoredJdbc.queryForObject(
                 "SELECT status FROM farm_incidents WHERE id = 'incident-1'", String.class))
                 .isEqualTo("RESOLVED");
