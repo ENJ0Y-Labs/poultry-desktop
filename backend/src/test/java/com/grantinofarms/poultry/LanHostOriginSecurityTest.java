@@ -111,6 +111,13 @@ class LanHostOriginSecurityTest {
                         .content(body))
                 .andExpect(status().isForbidden());
 
+        mvc.perform(post("/api/v1/farm").with(lanRequest())
+                        .header("Host", "127.0.0.1")
+                        .header("Origin", "http://127.0.0.1")
+                        .contentType("application/json")
+                        .content(body))
+                .andExpect(status().isForbidden());
+
         mvc.perform(post("/api/v1/farm")
                         .header("Host", "127.0.0.1")
                         .header("Origin", "http://attacker.example")
