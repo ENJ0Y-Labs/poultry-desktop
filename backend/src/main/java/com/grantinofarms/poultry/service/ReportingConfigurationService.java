@@ -160,6 +160,8 @@ public class ReportingConfigurationService {
                 LocalDateTime graceUntil = dueAt.plusMinutes(grace);
                 LocalDateTime windowEnd = dueAt.plusDays(weekly ? 7 : 1);
                 if (!now.isAfter(graceUntil)) continue;
+                Instant scheduleCreatedAt = Instant.parse(String.valueOf(schedule.get("createdAt")));
+                if (dueAt.atZone(zone).toInstant().isBefore(scheduleCreatedAt)) continue;
                 if (reporting.hasSubmissionInWindow(farm.id(), String.valueOf(schedule.get("reportType")),
                         scopeType, scopeId, batchType,
                         dueAt.atZone(zone).toInstant().toString(), windowEnd.atZone(zone).toInstant().toString())) continue;
