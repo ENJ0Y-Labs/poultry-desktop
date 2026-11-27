@@ -35,10 +35,12 @@ public class WorkflowNotificationService {
     private void insert(String farmId, String recipientId, String type, String entityType,
                         String entityId, String title, String message, String now) {
         jdbc.update("""
-                INSERT OR IGNORE INTO manager_notifications
+                INSERT INTO manager_notifications
                     (id, farm_id, recipient_user_id, notification_type, entity_type, entity_id,
                      title, message, created_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(recipient_user_id, notification_type, entity_id, title)
+                DO UPDATE SET message = excluded.message, created_at = excluded.created_at, read_at = NULL
                 """, UUID.randomUUID().toString(), farmId, recipientId, type,
                 entityType, entityId, title, message, now);
     }
