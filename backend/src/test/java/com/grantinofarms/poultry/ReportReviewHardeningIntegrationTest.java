@@ -393,19 +393,24 @@ class ReportReviewHardeningIntegrationTest {
     @Test
     void differentExpensesOnTheSameBusinessDateAreNotFlaggedAsDuplicates() throws Exception {
         LocalDate date = LocalDate.now(ZoneId.of("Africa/Lagos"));
+        String existingDescription = "Morning feed delivery";
+        jdbc.update("""
+                INSERT INTO expenses
+                    (id, farm_id, batch_id, category, amount_minor, occurred_date,
+                     reference_type, reference_id, description, created_at)
+                VALUES (?, ?, NULL, 'OTHER', 50000, ?, NULL, NULL, ?, ?)
+                """, UUID.randomUUID().toString(), farmId, date.toString(),
+                existingDescription, Instant.now().toString());
 
-        Map<String, Object> first = submitExpense(date, "Morning feed delivery", 50000);
-        Map<String, Object> second = submitExpense(date, "Evening medicine purchase", 70000);
-
-        assertThat(first.get("lifecycleStatus")).isEqualTo("PENDING_REVIEW");
-        assertThat(second.get("lifecycleStatus")).isEqualTo("PENDING_REVIEW");
+        Map<String, Object> distinctExpense = submitExpense(date, "Evening medicine purchase", 70000);
+        assertThat(distinctExpense.get("lifecycleStatus")).isEqualTo("PENDING_REVIEW");
 
         @SuppressWarnings("unchecked")
-        var checks = (java.util.List<Map<String, Object>>) second.get("checks");
-        assertThat(checks).noneMatch(check ->
+        var distinctChecks = (java.util.List<Map<String, Object>>) distinctExpense.get("checks");
+        assertThat(distinctChecks).noneMatch(check ->
                 "OFFICIAL_EXPENSE_DUPLICATE".equals(check.get("code")));
 
-        Map<String, Object> exactRepeat = submitExpense(date, "Morning feed delivery", 50000);
+        Map<String, Object> exactRepeat = submitExpense(date, existingDescription, 50000);
         assertThat(exactRepeat.get("lifecycleStatus")).isEqualTo("FLAGGED");
 
         @SuppressWarnings("unchecked")
