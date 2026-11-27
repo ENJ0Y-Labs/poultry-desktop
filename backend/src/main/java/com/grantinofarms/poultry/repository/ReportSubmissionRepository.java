@@ -54,7 +54,8 @@ public class ReportSubmissionRepository {
         return jdbc.update("""
                 UPDATE report_submissions
                 SET report_type = ?, title = ?, current_version = ?, status = 'DRAFT',
-                    lifecycle_status = 'DRAFT', updated_at = ?
+                    lifecycle_status = 'DRAFT', submit_operation_key = NULL, submitted_version = NULL,
+                    submitted_at = NULL, decision_version = NULL, updated_at = ?
                 WHERE id = ? AND author_user_id = ?
                   AND lifecycle_status IN ('DRAFT','CHANGES_REQUESTED','BLOCKED')
                   AND current_version = ?
@@ -70,15 +71,15 @@ public class ReportSubmissionRepository {
                 """, id, version, actorId, event, detailsJson, now);
     }
 
-    public int submit(String id, String actorId, int version, String now) {
+    public int submit(String id, String actorId, int version, String operationKey, String now) {
         return jdbc.update("""
                 UPDATE report_submissions
                 SET status = 'PENDING_REVIEW', lifecycle_status = 'SUBMITTED',
-                    submitted_version = ?, submitted_at = ?, updated_at = ?
+                    submit_operation_key = ?, submitted_version = ?, submitted_at = ?, updated_at = ?
                 WHERE id = ? AND author_user_id = ?
                   AND lifecycle_status IN ('DRAFT','CHANGES_REQUESTED','BLOCKED')
                   AND current_version = ?
-                """, version, now, now, id, actorId, version);
+                """, operationKey, version, now, now, id, actorId, version);
     }
 
     public Map<String, Object> findByIdempotencyKey(String farmId, String authorId, String key) {
@@ -87,7 +88,7 @@ public class ReportSubmissionRepository {
                 SELECT id, farm_id, author_user_id, report_type, title, status, lifecycle_status,
                        current_version, submitted_version, created_at, updated_at, submitted_at,
                        assigned_manager_user_id, scope_type, scope_id, event_date, late_reason,
-                       decision_version, merged_at, merge_operation_key, idempotency_payload_hash
+                       decision_version, merged_at, merge_operation_key, submit_operation_key, idempotency_payload_hash
                 FROM report_submissions
                 WHERE farm_id = ? AND author_user_id = ? AND idempotency_key = ?
                 """, rs -> {
@@ -103,7 +104,7 @@ public class ReportSubmissionRepository {
                 SELECT s.id, s.farm_id, s.author_user_id, s.report_type, s.title, s.status, s.lifecycle_status,
                        s.current_version, s.submitted_version, s.created_at, s.updated_at, s.submitted_at,
                        s.assigned_manager_user_id, s.scope_type, s.scope_id, s.event_date, s.late_reason,
-                       s.decision_version, s.merged_at, s.merge_operation_key, u.username AS author_username,
+                       s.decision_version, s.merged_at, s.merge_operation_key, s.submit_operation_key, u.username AS author_username,
                        u.full_name AS author_full_name
                 FROM report_submissions s JOIN users u ON u.id = s.author_user_id WHERE s.id = ?
                 """, rs -> rs.next() ? header(rs) : null, id);
@@ -114,8 +115,8 @@ public class ReportSubmissionRepository {
                 SELECT id, farm_id, author_user_id, report_type, title, status, lifecycle_status,
                        current_version, submitted_version, created_at, updated_at, submitted_at,
                        assigned_manager_user_id, scope_type, scope_id, event_date, late_reason,
-                       decision_version, merged_at, merge_operation_key
-                FROM report_submissions WHERE author_user_id = ?
+                       decision_version, merged_at, merge_operation_key, submit_operation_key
+                 FROM report_submissions WHERE author_user_id = ?
                 ORDER BY updated_at DESC, id
                 """, (rs, n) -> header(rs), actorId);
     }
@@ -125,7 +126,7 @@ public class ReportSubmissionRepository {
                 SELECT s.id, s.farm_id, s.author_user_id, s.report_type, s.title, s.status,
                        s.lifecycle_status, s.current_version, s.submitted_version, s.created_at,
                        s.updated_at, s.submitted_at, s.assigned_manager_user_id, s.scope_type,
-                       s.scope_id, s.event_date, s.late_reason, s.decision_version, s.merged_at, s.merge_operation_key,
+                       s.scope_id, s.event_date, s.late_reason, s.decision_version, s.merged_at, s.merge_operation_key, s.submit_operation_key,
                        u.username AS author_username, u.full_name AS author_full_name
                 FROM report_submissions s JOIN users u ON u.id = s.author_user_id
                 WHERE (? IS NULL OR s.lifecycle_status = ?)
@@ -573,6 +574,7 @@ public class ReportSubmissionRepository {
         row.put("decisionVersion", rs.getObject("decision_version"));
         row.put("mergedAt", rs.getString("merged_at"));
         row.put("mergeOperationKey", rs.getString("merge_operation_key"));
+        row.put("submitOperationKey", rs.getString("submit_operation_key"));
         try {
             row.put("authorUsername", rs.getString("author_username"));
             row.put("authorFullName", rs.getString("author_full_name"));

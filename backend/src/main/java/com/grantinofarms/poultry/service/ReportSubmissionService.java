@@ -111,12 +111,29 @@ public class ReportSubmissionService {
 
     @Transactional
     public Map<String, Object> submit(String id) {
+        return submit(id, UUID.randomUUID().toString());
+    }
+
+    @Transactional
+    public Map<String, Object> submit(String id, String operationKey) {
         RoleAuthorization.requireReportSubmitter();
+        if (operationKey == null || !operationKey.matches("[A-Za-z0-9._:-]{8,128}")) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "IDEMPOTENCY_KEY_REQUIRED",
+                    "A valid Idempotency-Key header is required for submission.");
+        }
         String actorId = CurrentUserContext.get();
         Map<String, Object> header = requireOwnedHeader(id, actorId);
+        String status = String.valueOf(header.get("lifecycleStatus"));
+        if (!List.of("DRAFT", "CHANGES_REQUESTED", "BLOCKED").contains(status)) {
+            if (operationKey.equals(header.get("submitOperationKey"))) return getOwned(id, actorId);
+            throw new ApiException(HttpStatus.CONFLICT, "SUBMISSION_ALREADY_SUBMITTED",
+                    "This report has already been submitted with a different operation key.");
+        }
         int version = ((Number) header.get("currentVersion")).intValue();
         String now = Instant.now().toString();
-        if (submissions.submit(id, actorId, version, now) != 1) {
+        if (submissions.submit(id, actorId, version, operationKey, now) != 1) {
+            Map<String, Object> current = requireOwnedHeader(id, actorId);
+            if (operationKey.equals(current.get("submitOperationKey"))) return getOwned(id, actorId);
             throw new ApiException(HttpStatus.CONFLICT, "SUBMISSION_NOT_SUBMITTABLE",
                     "Only the current draft version can be submitted.");
         }

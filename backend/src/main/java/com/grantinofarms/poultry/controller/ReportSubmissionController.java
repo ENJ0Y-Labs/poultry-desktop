@@ -69,8 +69,9 @@ public class ReportSubmissionController {
     }
 
     @PostMapping("/{id}/submit")
-    public Map<String, Object> submit(@PathVariable String id) {
-        return Map.of("ok", true, "data", service.submit(id));
+    public Map<String, Object> submit(@PathVariable String id,
+            @RequestHeader(value = "Idempotency-Key", required = false) String operationKey) {
+        return Map.of("ok", true, "data", service.submit(id, operationKey));
     }
 
     @GetMapping
