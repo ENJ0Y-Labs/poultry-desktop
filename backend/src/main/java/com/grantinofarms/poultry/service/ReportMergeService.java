@@ -62,6 +62,9 @@ public class ReportMergeService {
         } catch (org.springframework.dao.DuplicateKeyException exception) {
             throw new ApiException(HttpStatus.CONFLICT, "MERGE_KEY_ALREADY_USED",
                     "This Idempotency-Key has already been used for another report merge.");
+        } catch (org.springframework.dao.TransientDataAccessException exception) {
+            throw new ApiException(HttpStatus.CONFLICT, "MERGE_CONCURRENCY_CONFLICT",
+                    "Another merge is committing a database change. Retry with the same Idempotency-Key.");
         }
     }
 }
