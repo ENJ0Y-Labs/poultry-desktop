@@ -46,13 +46,13 @@ jobs:
           cache: maven
 
       - name: Backend compile
-        run: bash ./mvnw -f backend/pom.xml compile
+        run: mvn -B -f backend/pom.xml compile
 
       - name: Backend tests
-        run: bash ./mvnw -f backend/pom.xml test
+        run: mvn -B -f backend/pom.xml test
 
       - name: Backend verification
-        run: bash ./mvnw -f backend/pom.xml verify
+        run: mvn -B -f backend/pom.xml verify
 
   electron:
     name: Electron build
@@ -76,10 +76,15 @@ jobs:
         run: npm ci
 
       - name: Package backend
-        run: .\\mvnw.cmd -f backend\\pom.xml package -DskipTests
+        run: mvn -B -f backend/pom.xml package -DskipTests
 
       - name: Build and package Electron application
-        run: npm run package
+        run: |
+          npm run package:runtime
+          npm run build
+          npm run package:verify
+          npx electron-builder --publish never
+          npm run installer:verify
 
       - name: Verify Windows installer
         run: npm run installer:verify
