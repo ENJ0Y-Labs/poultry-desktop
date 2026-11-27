@@ -2,7 +2,7 @@
 
 ## Decision
 
-Pomas is a **desktop-only Windows application**. The supported minimum window size is **1100×650 CSS pixels**. The normal initial window is **1366×768**. The Electron shell already enforces `minWidth: 1100` and `minHeight: 650`; the renderer previously contradicted that contract by switching to a phone-like navigation layout below 700px while also declaring a 1100px minimum body width.
+Pomas is a **desktop-first Windows application** with a scoped phone-browser experience for authenticated Workers. The Electron shell still enforces a minimum window size of **1100×650 CSS pixels** and normally opens at **1366×768**. The production same-origin browser workspace supports Worker sessions from **320px** wide; this does not change the desktop shell or make Manager/Administrator farm operations phone-supported.
 
 The narrow-screen CSS did not prove phone support. It produced two competing layout models, depending on which media rule won. The fix removes the mobile-shell transformations and keeps the desktop canvas consistent with the Electron minimum. No hamburger menu was added because no actual navigation failure at a supported width has been reproduced.
 
@@ -18,7 +18,7 @@ The narrow-screen CSS did not prove phone support. It produced two competing lay
 | 1366×768 | **Default target** | Full desktop layout with the collapsible sidebar, dashboard, forms, and tables. |
 | 1920×1080 | **Supported desktop** | Content remains aligned and readable without stretching tables or cards beyond their useful width. |
 
-A 360px browser viewport is not a supported layout width. The supported-width acceptance criterion is no unintended page-level overflow at 1100×650 and larger. At unsupported narrow widths, horizontal scrolling is intentional and is not a mobile-support claim.
+A 360px browser viewport is supported for the Worker browser workspace only. Manager and Administrator browser sessions remain desktop-canvas layouts below 1100px; horizontal scrolling there is intentional and is not a mobile-support claim.
 
 ## Source findings and changes
 
@@ -75,3 +75,30 @@ The source change has been made, but **browser emulation and packaged Electron r
 The browser route/overflow check covers the local Vite renderer, not packaged Electron. No unsupported-width or packaged-window result is implied. A CSS source review is not a substitute for running the renderer.
 
 The browser screenshot surface is fixed at approximately 1100×650 in this environment. Playwright can report and lay out a larger virtual viewport, but screenshots from that page still show the fixed-size surface; do not treat those images as visual verification at the requested larger size. The full-page screenshot helper also reset its capture width to approximately 1089px. Larger-size visual claims at 1366×768 and 1920×1080 therefore require a browser or Electron window that can actually render and capture those dimensions.
+
+
+## Worker browser phone scope (Issue #315)
+
+The narrow-screen exception is deliberately role-scoped:
+
+| Viewport | Worker browser | Manager / Administrator browser | Electron desktop |
+| --- | --- | --- | --- |
+| 320×640 | Supported | Unsupported diagnostic canvas | Not supported |
+| 360×800 | Supported | Unsupported diagnostic canvas | Not supported |
+| 390×844 | Supported | Unsupported diagnostic canvas | Not supported |
+| 1100×650 and above | Supported | Supported desktop canvas | Supported (minimum 1100×650) |
+
+Worker phone layout uses a compact bottom navigation for My Reports, Alerts, and Sign out. Forms become single-column with touch-sized controls; long record tables scroll inside their own containers. The phone layout does not grant additional permissions or expose operational pages. Manager and Administrator sessions retain the desktop shell, and Electron's minimum window size is unchanged.
+
+### Required phone acceptance
+
+1. Open the verified LAN URL on a phone connected to the same trusted private Wi-Fi and sign in with a disposable WORKER account.
+2. Confirm My Reports and Alerts load, and that only My Reports, Alerts, and Sign out appear in the phone navigation.
+3. Open the direct #my-reports/overview and #incidents/overview routes, refresh each page, and test browser back/forward.
+4. Inspect report forms, draft list/detail, evidence controls, incident form, and long history content at 320px, 360px, and 390px in light and dark themes.
+5. Confirm inputs are usable without zooming, the bottom navigation respects the device safe area, and no document-level horizontal overflow occurs.
+6. Confirm the Worker cannot reach farm operations, Manager Review Centre, user management, settings, or host network controls by changing the hash or calling protected APIs.
+7. Sign out and verify the session is cleared. Repeat at desktop width and confirm the Worker role remains restricted.
+8. Sign in as Manager and Administrator on a desktop-width browser and confirm their existing desktop workspace is unchanged.
+
+Automated renderer tests cover role-scoped navigation and CSS contracts. They do not replace phone browser acceptance. Do not mark the phone/device check complete until it is actually run against the packaged LAN host.
