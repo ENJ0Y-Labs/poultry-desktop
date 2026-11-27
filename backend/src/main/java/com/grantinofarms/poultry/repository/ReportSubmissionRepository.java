@@ -214,11 +214,17 @@ public class ReportSubmissionRepository {
                 SELECT s.id
                 FROM report_submissions s
                 JOIN report_submission_versions v
-                  ON v.submission_id = s.id AND v.version_number = s.current_version
+                  ON v.submission_id = s.id
+                 AND v.version_number = COALESCE(s.submitted_version, s.current_version)
                 WHERE s.farm_id = ? AND s.id <> ? AND s.report_type = ?
                   AND s.lifecycle_status NOT IN ('DRAFT','REJECTED')
                   AND json_extract(v.payload_json, '$.batchId') = ?
-                  AND json_extract(v.payload_json, '$.eventDate') = ?
+                  AND COALESCE(
+                        json_extract(v.payload_json, '$.eventDate'),
+                        json_extract(v.payload_json, '$.recordDate'),
+                        json_extract(v.payload_json, '$.usageDate'),
+                        json_extract(v.payload_json, '$.occurredDate')
+                      ) = ?
                 ORDER BY s.submitted_at DESC
                 LIMIT 5
                 """, String.class, farmId, excludingId, reportType, batchId, eventDate);
