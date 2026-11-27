@@ -332,6 +332,14 @@ class ReportSubmissionIntegrationTest {
         assertThat(jdbc.queryForObject(
                 "SELECT read_at FROM manager_notifications WHERE id = ?",
                 String.class, approval.get("id"))).isNotBlank();
+
+        String password = "worker-notification-password";
+        users.updatePassword(workerId, passwordHasher.hash(password), Instant.now().toString());
+        var session = auth.login(new com.grantinofarms.poultry.dto.LoginRequest(
+                "worker-" + workerId.substring(0, 8), password, false));
+        mockMvc.perform(get("/api/v1/review/notifications")
+                        .cookie(new Cookie(AuthService.COOKIE, session.token())))
+                .andExpect(status().isOk());
     }
 
     @Test
