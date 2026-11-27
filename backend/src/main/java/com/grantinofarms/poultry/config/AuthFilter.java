@@ -65,9 +65,10 @@ public class AuthFilter extends OncePerRequestFilter {
         }
 
         String path = request.getRequestURI();
-        boolean browserAsset = lanEnabled && !path.startsWith("/api/");
+        boolean apiRequest = path.equals("/api") || path.startsWith("/api/");
+        boolean browserAsset = lanEnabled && !apiRequest;
         boolean publicEndpoint = path.startsWith("/api/v1/auth/") || path.equals("/api/v1/health");
-        boolean needsFilterSession = !publicEndpoint || path.equals("/api/v1/auth/me");
+        boolean needsFilterSession = apiRequest && (!publicEndpoint || path.equals("/api/v1/auth/me"));
         String rawSessionToken = token(request);
         Map<String, Object> user = needsFilterSession ? auth.current(rawSessionToken) : null;
         if (user != null) {
