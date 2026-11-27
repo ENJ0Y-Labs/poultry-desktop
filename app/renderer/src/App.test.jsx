@@ -389,8 +389,10 @@ describe("App", () => {
     render(<App />);
     await screen.findByRole("heading", { name: "Welcome to Pomas!" });
     fireEvent.click(screen.getByRole("button", { name: /next/i }));
+    await screen.findByRole("heading", { name: "Quick question, we appreciate it." });
     fireEvent.click(screen.getByLabelText("FARM MANAGER"));
     fireEvent.click(screen.getByRole("button", { name: /next/i }));
+    await screen.findByRole("heading", { name: "How did you hear about Pomas?" });
     fireEvent.click(screen.getByLabelText("WhatsApp"));
     fireEvent.click(screen.getByRole("button", { name: /next/i }));
     await screen.findByRole("heading", { name: "Howdy, Farm!" });
@@ -412,8 +414,10 @@ describe("App", () => {
     render(<App />);
     await screen.findByRole("heading", { name: "Welcome to Pomas!" });
     fireEvent.click(screen.getByRole("button", { name: /next/i }));
+    await screen.findByRole("heading", { name: "Quick question, we appreciate it." });
     fireEvent.click(screen.getByLabelText("FARM MANAGER"));
     fireEvent.click(screen.getByRole("button", { name: /next/i }));
+    await screen.findByRole("heading", { name: "How did you hear about Pomas?" });
     fireEvent.click(screen.getByLabelText("WhatsApp"));
     fireEvent.click(screen.getByRole("button", { name: /next/i }));
     await screen.findByRole("heading", { name: "Howdy, Farm!" });
