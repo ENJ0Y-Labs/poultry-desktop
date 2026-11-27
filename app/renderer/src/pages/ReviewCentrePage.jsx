@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { reportAttachmentApi, reportReviewApi } from "../services/api.js";
 
-const statuses = ["SUBMITTED", "PENDING_REVIEW", "FLAGGED", "BLOCKED", "APPROVED"];
+const statuses = ["SUBMITTED", "PENDING_REVIEW", "FLAGGED", "BLOCKED", "APPROVED", "MERGED"];
 
 function label(value) {
   return String(value || "").replaceAll("_", " ").toLowerCase().replace(/\b\w/g, letter => letter.toUpperCase());
@@ -218,6 +218,7 @@ export default function ReviewCentrePage({ currentUser }) {
           <label>Status
             <select value={status} onChange={event => setStatus(event.target.value)}>
               <option value="">All pending reviews</option>
+              <option value="MERGED">Merged reports</option>
               {statuses.map(value => <option key={value} value={value}>{label(value)}</option>)}
             </select>
           </label>
@@ -230,7 +231,7 @@ export default function ReviewCentrePage({ currentUser }) {
         </div>
         <div className="review-layout">
           <section className="review-queue">
-            <h3>Waiting for review <span className="muted">{queue.length}</span></h3>
+            <h3>{status === "MERGED" ? "Merged reports" : "Waiting for review"} <span className="muted">{queue.length}</span></h3>
             {loading ? <p className="muted">Loading review queue…</p> : queue.length === 0
               ? <p className="muted">No reports match these filters.</p>
               : queue.map(row => <button type="button" className={selected?.id === row.id ? "review-queue-item selected" : "review-queue-item"} key={row.id} onClick={() => openSubmission(row)}>
