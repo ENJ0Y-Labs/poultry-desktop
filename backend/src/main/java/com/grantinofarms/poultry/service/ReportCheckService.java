@@ -9,6 +9,7 @@ import com.grantinofarms.poultry.repository.BatchRepository;
 import com.grantinofarms.poultry.repository.FarmRepository;
 import com.grantinofarms.poultry.repository.FeedRepository;
 import com.grantinofarms.poultry.repository.ReportSubmissionRepository;
+import com.grantinofarms.poultry.repository.ReportConflictRepository;
 import com.grantinofarms.poultry.repository.ReportingConfigurationRepository;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
@@ -36,11 +37,13 @@ public class ReportCheckService {
     private final ObjectMapper mapper;
     private final Validator validator;
     private final ReportingConfigurationRepository reporting;
+    private final ReportConflictRepository conflicts;
 
     public ReportCheckService(ReportSubmissionRepository submissions, BatchRepository batches,
                               FeedRepository feeds, FarmRepository farms, BirdPopulationService population,
                               ObjectMapper mapper, Validator validator,
-                              ReportingConfigurationRepository reporting) {
+                              ReportingConfigurationRepository reporting,
+                              ReportConflictRepository conflicts) {
         this.submissions = submissions;
         this.batches = batches;
         this.feeds = feeds;
@@ -49,6 +52,7 @@ public class ReportCheckService {
         this.mapper = mapper;
         this.validator = validator;
         this.reporting = reporting;
+        this.conflicts = conflicts;
     }
 
     @Transactional
@@ -68,7 +72,7 @@ public class ReportCheckService {
         }
 
         String batchId = text(payload, "batchId");
-        LocalDate eventDate = parseDate(text(payload, "eventDate"));
+        LocalDate eventDate = parseDate(firstText(payload, "eventDate", "recordDate", "usageDate", "occurredDate"));
         var farm = farms.findActive();
         String timezone = farm == null ? "UTC" : farm.timezone();
         BatchResponse batch = null;
@@ -162,8 +166,33 @@ public class ReportCheckService {
                     reportType, batchId, eventDate.toString());
             if (!duplicates.isEmpty()) {
                 results.add(warning("POSSIBLE_DUPLICATE",
-                        "A report of the same type already exists for this batch and date. A Manager must inspect both records.",
-                        true, Map.of("possibleSubmissionIds", duplicates)));
+                        "Another submission of this report type exists for the same batch and business date. Compare both versions before merging.",
+                        true, Map.of("possibleSubmissionIds", duplicates, "batchId", batchId,
+                                "eventDate", eventDate.toString(), "reportType", reportType)));
+            }
+        }
+
+        if (eventDate != null && batch != null && "DAILY_OPERATIONS".equals(reportType)) {
+            Map<String, Object> existing = conflicts.findDailyRecord(batchId, eventDate.toString());
+            if (existing != null) {
+                results.add(warning("OFFICIAL_DAILY_RECORD_CONFLICT",
+                        "An official daily record already exists for this batch and date. Merging may update its notes or water entries; inspect the current record first.",
+                        true, existing));
+            }
+        }
+
+        if (eventDate != null && "EXPENSE".equals(reportType)) {
+            JsonNode amount = payload.get("amountMinor");
+            String category = text(payload, "category");
+            String description = text(payload, "description");
+            if (amount != null && amount.canConvertToLong() && category != null && description != null) {
+                List<Map<String, Object>> duplicates = conflicts.findExactExpenseDuplicates(
+                        farmId, batchId, eventDate.toString(), amount.asLong(), category, description);
+                if (!duplicates.isEmpty()) {
+                    results.add(warning("OFFICIAL_EXPENSE_DUPLICATE",
+                            "An official expense with the same date, batch, category, amount and description already exists. Verify the receipt or source document before merging.",
+                            true, Map.of("possibleOfficialRecords", duplicates)));
+                }
             }
         }
 
@@ -261,6 +290,14 @@ public class ReportCheckService {
         if (value == null || value.isNull()) return null;
         String text = value.asText();
         return text.isBlank() ? null : text.trim();
+    }
+
+    private String firstText(JsonNode payload, String... fields) {
+        for (String field : fields) {
+            String value = text(payload, field);
+            if (value != null) return value;
+        }
+        return null;
     }
 
     private LocalDate parseDate(String value) {
