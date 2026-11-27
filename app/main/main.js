@@ -106,8 +106,16 @@ ipcMain.handle("lan-access:enable", async (event, selection, ...args) => {
     const browserResponse = await fetch(status.url + "/", { redirect: "manual" });
     const browserHtml = browserResponse.ok && (browserResponse.headers.get("content-type") || "").includes("text/html")
       ? await browserResponse.text() : "";
-    if (!browserHtml.includes('<div id="root">') || !browserHtml.includes("theme-init.js")) {
+    const scriptAsset = browserHtml.match(/<script[^>]+src=["']([^"']+\\.js)["']/i)?.[1];
+    if (!browserHtml.includes('<div id="root">') || !browserHtml.includes("theme-init.js") || !scriptAsset) {
       throw new Error("The production browser workspace is missing or incomplete. Build the renderer before enabling LAN access.");
+    }
+    const [themeResponse, scriptResponse] = await Promise.all([
+      fetch(new URL("/theme-init.js", status.url), { redirect: "manual" }),
+      fetch(new URL(scriptAsset, status.url), { redirect: "manual" })
+    ]);
+    if (!themeResponse.ok || !scriptResponse.ok) {
+      throw new Error("The production browser JavaScript assets could not be loaded from the LAN listener.");
     }
     await moveDesktopSessionCookie(status.url, token, true);
     await mainWindow.loadURL(status.url);
