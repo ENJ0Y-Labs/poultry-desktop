@@ -522,6 +522,7 @@ export const reportAttachmentApi = {
     form.append("file", file);
     return uploadRequest("/submissions/" + encodeURIComponent(submissionId) + "/attachments", form);
   },
+  list: submissionId => request("/submissions/" + encodeURIComponent(submissionId) + "/attachments"),
   download: (submissionId, attachmentId) => downloadRequest(
     "/submissions/" + encodeURIComponent(submissionId) + "/attachments/" + encodeURIComponent(attachmentId),
   ),
