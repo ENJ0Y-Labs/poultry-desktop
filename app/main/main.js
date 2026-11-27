@@ -14,6 +14,7 @@ if (app.isPackaged) {
 
 let mainWindow;
 let backendManager;
+let lanAccessPublished = false;
 let shutdownInProgress = false;
 
 ipcMain.handle("app:info", async (_event, ...args) => {
@@ -79,8 +80,8 @@ ipcMain.handle("lan-access:info", async (event, ...args) => {
   if (args.length !== 0) throw new Error("Invalid IPC message.");
   await requireManagerSession(event);
   return Object.freeze({
-    interfaces: backendManager.getLanInterfaces(),
-    status: backendManager.lanStatus
+    interfaces: backendManager.getLanInterfaces().map(({ interfaceName, address, netmask }) => ({ interfaceName, address, netmask })),
+    status: lanAccessPublished ? backendManager.lanStatus : { enabled: false, interfaceName: null, address: null, url: null }
   });
 });
 
@@ -110,8 +111,10 @@ ipcMain.handle("lan-access:enable", async (event, selection, ...args) => {
     }
     await moveDesktopSessionCookie(status.url, token, true);
     await mainWindow.loadURL(status.url);
+    lanAccessPublished = true;
     return status;
   } catch (error) {
+    lanAccessPublished = false;
     await backendManager.disableLanAccess();
     await moveDesktopSessionCookie(backendManager.baseUrl, token, false);
     await loadLocalDesktopRenderer();
@@ -132,6 +135,7 @@ ipcMain.handle("lan-access:disable", async (event, ...args) => {
     detail: "Pomas will return to localhost-only mode. Other devices will be disconnected."
   });
   if (confirmation.response !== 0) return { canceled: true };
+  lanAccessPublished = false;
   await backendManager.disableLanAccess();
   await moveDesktopSessionCookie(backendManager.baseUrl, token, false);
   await loadLocalDesktopRenderer();
