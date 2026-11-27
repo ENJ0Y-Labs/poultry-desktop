@@ -309,7 +309,9 @@ export default function MyReportsPage({ userId = "" }) {
       localStorage.setItem(storageKey, JSON.stringify(posted));
       setLocalDrafts(posted);
     } catch {
-      setLocalDrafts(stored);
+      // Keep the in-memory posted guard even if storage is temporarily unavailable.
+      // The persisted pending key remains safe to reconcile after the next restart.
+      setLocalDrafts(posted);
       return;
     }
 
@@ -764,12 +766,15 @@ export default function MyReportsPage({ userId = "" }) {
                       <span className={report.localOnly ? "status-pill status-local" : "status-pill"}>{report.localOnly ? (report.posted ? "Submitted · cleanup pending" : report.submissionPending ? "Submission outcome unknown" : report.syncedPreviously ? "Offline recovery copy" : "Local draft") : statusLabel(report)}</span>
                     </div>
                     <p className="muted">{reportDefinitions[report.reportType]?.label || report.reportType} · {report.updatedAt || report.createdAt || "Not saved"}</p>
-                    {report.localCopy && <p className="muted">A local recovery copy is available on this device.</p>}
+                    {report.localCopy && <p className="muted">{report.localCopy.posted
+                      ? "This local recovery copy is confirmed submitted. Discarding it will not delete the server report."
+                      : "A local recovery copy is available on this device."}</p>}
                     <div className="inline-form">
                       {report.localOnly
                         ? !report.posted && <button type="button" className="secondary-button" onClick={() => openLocalDraft(report)}>Open / reconcile</button>
                         : <button type="button" className="secondary-button" onClick={() => openServerReport(report)}>View</button>}
                       {report.localOnly && (report.posted || !report.submissionPending) && <button type="button" className="text-button" onClick={() => removeLocalDraft(report.id)}>Discard local copy</button>}
+                      {report.localCopy?.posted && <button type="button" className="text-button" onClick={() => removeLocalDraft(report.localCopy.id)}>Discard local copy</button>}
                     </div>
                   </article>
                 ))}
