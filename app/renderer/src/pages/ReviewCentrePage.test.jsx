@@ -20,6 +20,7 @@ vi.mock("../services/api.js", () => ({
     assign: vi.fn().mockResolvedValue({ ...fixtures.detail, assignedManagerId: "manager-1" }),
     comment: vi.fn().mockResolvedValue(fixtures.detail),
     decide: vi.fn().mockResolvedValue({ ...fixtures.detail, lifecycleStatus: "APPROVED", status: "APPROVED" }),
+    correctWeight: vi.fn(),
   },
 }));
 
@@ -49,4 +50,53 @@ describe("ReviewCentrePage", () => {
     expect(await screen.findByText(/cannot approve or reject it/)).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Approve version" })).not.toBeInTheDocument();
   });
+  it("reopens merged reports and records a typed weight correction", async () => {
+    const merged = {
+      ...fixtures.detail,
+      title: "Weight report",
+      reportType: "WEIGHT_RECORD",
+      lifecycleStatus: "MERGED",
+      status: "MERGED",
+      versions: [{ version: 1, payload: {
+        batchId: "broiler-batch-1", eventDate: "2026-11-20",
+        sampleQuantity: 10, totalWeightKg: "20.000",
+      } }],
+      links: [{ id: "link-1", version: 1, recordType: "WEIGHT_RECORD", recordId: "weight-1" }],
+      history: [],
+    };
+    const corrected = {
+      ...merged,
+      links: [...merged.links, { id: "link-2", version: 1, recordType: "WEIGHT_RECORD", recordId: "weight-2" }],
+      history: [{ id: "event-1", event: "POST_MERGE_CORRECTED", details: {
+        originalRecordId: "weight-1", replacementRecordId: "weight-2",
+      } }],
+    };
+    reportReviewApi.queue.mockResolvedValue([merged]);
+    reportReviewApi.get.mockResolvedValueOnce(merged).mockResolvedValueOnce(corrected);
+    reportReviewApi.correctWeight.mockResolvedValue({ status: "CORRECTED" });
+
+    render(<ReviewCentrePage currentUser={{ id: "manager-1", role: "MANAGER" }} />);
+    fireEvent.change(await screen.findByLabelText("Status"), { target: { value: "MERGED" } });
+    await waitFor(() => expect(reportReviewApi.queue).toHaveBeenCalledWith({ status: "MERGED", reportType: "" }));
+    fireEvent.click(await screen.findByRole("button", { name: /Weight report/ }));
+    expect(await screen.findByText("Correct merged weight record")).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText("Correction reason"), { target: { value: "Incorrect sample count" } });
+    fireEvent.change(screen.getByLabelText("Corrected birds sampled"), { target: { value: "12" } });
+    fireEvent.change(screen.getByLabelText("Corrected total sample weight (kg)"), { target: { value: "24.000" } });
+    fireEvent.click(screen.getByRole("button", { name: "Record correction" }));
+
+    await waitFor(() => expect(reportReviewApi.correctWeight).toHaveBeenCalledWith("submission-1", {
+      reason: "Incorrect sample count",
+      replacement: {
+        recordDate: "2026-11-20",
+        sampleQuantity: 12,
+        totalWeightKg: "24.000",
+        notes: null,
+      },
+    }));
+    expect(await screen.findByText(/original weight record was preserved and reversed/)).toBeInTheDocument();
+  });
+
+
 });
