@@ -43,7 +43,7 @@ async function loadLocalDesktopRenderer() {
   }
 }
 
-async function requireManagerSession(event) {
+async function requireLanAccessSession(event) {
   if (event.sender !== mainWindow?.webContents || !backendManager?.process) {
     throw new Error("This desktop action is not available from this window.");
   }
@@ -79,7 +79,7 @@ async function moveDesktopSessionCookie(url, sessionCookie, lanMode) {
 
 ipcMain.handle("lan-access:info", async (event, ...args) => {
   if (args.length !== 0) throw new Error("Invalid IPC message.");
-  await requireManagerSession(event);
+  await requireLanAccessSession(event);
   return Object.freeze({
     interfaces: backendManager.getLanInterfaces().map(({ interfaceName, address, netmask }) => ({ interfaceName, address, netmask })),
     status: lanAccessPublished ? backendManager.lanStatus : { enabled: false, interfaceName: null, address: null, url: null }
@@ -91,7 +91,7 @@ ipcMain.handle("lan-access:enable", async (event, selection, ...args) => {
       || typeof selection.interfaceName !== "string" || typeof selection.address !== "string") {
     throw new Error("Invalid LAN interface selection.");
   }
-  const sessionCookie = await requireManagerSession(event);
+  const sessionCookie = await requireLanAccessSession(event);
   const confirmation = await dialog.showMessageBox(mainWindow, {
     type: "warning",
     buttons: ["Enable LAN access", "Cancel"],
@@ -133,7 +133,7 @@ ipcMain.handle("lan-access:enable", async (event, selection, ...args) => {
 
 ipcMain.handle("lan-access:disable", async (event, ...args) => {
   if (args.length !== 0) throw new Error("Invalid IPC message.");
-  const sessionCookie = await requireManagerSession(event);
+  const sessionCookie = await requireLanAccessSession(event);
   const confirmation = await dialog.showMessageBox(mainWindow, {
     type: "warning",
     buttons: ["Disable LAN access", "Cancel"],
