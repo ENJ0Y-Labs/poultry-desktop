@@ -150,3 +150,10 @@ For a production farm:
 6. Do not edit backup database files manually.
 
 A backup that has never been restored is a hypothesis, not a backup.
+
+
+## Workflow and evidence recovery coverage
+
+Report submissions, immutable versions, review comments/checks/events, emergency incidents, incident history, audit records, and evidence attachments are persisted in the same SQLite database as farm operations. Both report and incident evidence bytes are stored in BLOB columns. A successful SQLite `VACUUM INTO` snapshot therefore captures the complete workflow and its evidence in the same consistent database image; no separate attachment directory is required.
+
+The backend backup regression test seeds representative submitted/merged history, review metadata, incident history, farm data, and binary report/incident evidence. It creates and validates a backup, copies that backup to a disposable restored database path, then verifies the records and exact evidence bytes are present. This protects the database snapshot contract. It does not replace the Electron restore orchestration drill below, which must still verify backend shutdown, atomic replacement, readiness, and rollback after an injected startup failure.
