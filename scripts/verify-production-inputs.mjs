@@ -51,7 +51,10 @@ if (existsSync(java) && statSync(java).isFile()) {
 
 const backendJarPath = join("backend", "target", "poultry-backend.jar");
 if (existsSync(backendJarPath) && statSync(backendJarPath).isFile()) {
-  const jarExecutable = process.env.JAVA_HOME\n    ? join(process.env.JAVA_HOME, "bin", process.platform === "win32" ? "jar.exe" : "jar")\n    : "jar";\n  const entries = execFileSync(jarExecutable, ["tf", backendJarPath], { encoding: "utf8" }).split(/\r?\n/);
+  const jarExecutable = process.env.JAVA_HOME
+    ? join(process.env.JAVA_HOME, "bin", process.platform === "win32" ? "jar.exe" : "jar")
+    : "jar";
+  const entries = execFileSync(jarExecutable, ["tf", backendJarPath], { encoding: "utf8" }).split(/\r?\n/);
   const requiredBrowserEntries = [
     "BOOT-INF/classes/static/index.html",
     "BOOT-INF/classes/static/theme-init.js"
