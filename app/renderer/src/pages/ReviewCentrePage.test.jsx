@@ -72,7 +72,7 @@ describe("ReviewCentrePage", () => {
       } }],
     };
     reportReviewApi.queue.mockResolvedValue([merged]);
-    reportReviewApi.get.mockResolvedValueOnce(merged).mockResolvedValueOnce(corrected).mockResolvedValue(corrected);
+    reportReviewApi.get.mockResolvedValueOnce(merged).mockResolvedValueOnce(merged).mockResolvedValue(corrected);
     reportReviewApi.correctWeight.mockResolvedValue({ status: "CORRECTED" });
 
     render(<ReviewCentrePage currentUser={{ id: "manager-1", role: "MANAGER" }} />);
