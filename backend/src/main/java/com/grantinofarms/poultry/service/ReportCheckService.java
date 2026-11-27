@@ -63,7 +63,7 @@ public class ReportCheckService {
         String actorId = CurrentUserContext.get();
         String actorRole = CurrentUserContext.getRole();
         boolean permittedActor = actorId != null && !actorId.isBlank()
-                && Set.of("WORKER", "ADMINISTRATOR", "MANAGER").contains(actorRole)
+                && actorRole != null && Set.of("WORKER", "ADMINISTRATOR", "MANAGER").contains(actorRole)
                 && submission != null && farmId.equals(submission.get("farmId"));
         if (permittedActor) {
             results.add(passed("REPORT_PERMISSION_VALID",
