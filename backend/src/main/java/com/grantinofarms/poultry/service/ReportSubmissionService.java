@@ -115,7 +115,6 @@ public class ReportSubmissionService {
     }
 
     @Transactional
-    @Transactional
     public Map<String, Object> submit(String id, String operationKey) {
         RoleAuthorization.requireReportSubmitter();
         if (operationKey == null || !operationKey.matches("[A-Za-z0-9._:-]{8,128}")) {
