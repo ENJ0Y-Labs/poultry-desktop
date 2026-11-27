@@ -104,6 +104,10 @@ public class BroilerProductionService {
 
     /** Correct the latest effective measurement without rewriting its original facts. */
     @Transactional
+    public boolean isWeightReversed(String weightId) {
+        return repository.isWeightReversed(weightId);
+    }
+
     public java.util.Map<String, Object> correctWeight(String batchId, String weightId,
                                                         WeightRecordRequest replacement, String suppliedReason) {
         String actorId = CurrentUserContext.get();
