@@ -249,11 +249,6 @@ ipcMain.handle("backup:restore", async (_event, ...args) => {
     const wal = database + "-wal";
     const shm = database + "-shm";
 
-    // Stage and validate the exact bytes that will be installed while the current
-    // backend is still available to inspect the SQLite file.
-    copyFileSync(backup, temporary);
-    await validateBackup(temporary);
-
     // The backend owns SQLite. Create and validate a consistent pre-restore
     // snapshot before stopping it; never raw-copy a live WAL database.
     const safetyResponse = await fetch(
@@ -272,6 +267,16 @@ ipcMain.handle("backup:restore", async (_event, ...args) => {
     const safety = safetyBody.data.path;
     await validateBackup(safety);
     log("restore_safety_backup_created", { filename: backupFilename(safety) });
+
+    // Stage and validate the exact bytes that will be installed while the current
+    // backend is still available to inspect the SQLite file.
+    try {
+      copyFileSync(backup, temporary);
+      await validateBackup(temporary);
+    } catch (error) {
+      rmSync(temporary, { force: true });
+      throw error;
+    }
 
     await backendManager.stop();
     await waitForBackendExit();
