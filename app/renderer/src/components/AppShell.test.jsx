@@ -52,6 +52,9 @@ describe("AppShell", () => {
     expect(screen.getByText("Private submissions")).toBeInTheDocument();
     expect(screen.queryByText("Farm dashboard")).not.toBeInTheDocument();
     await waitFor(() => expect(window.location.hash).toBe("#my-reports/overview"));
+    fireEvent.click(within(navigation).getByRole("button", { name: "Alerts & Reporting" }));
+    await waitFor(() => expect(window.location.hash).toBe("#incidents/overview"));
+    expect(screen.getByText("Emergency alerts")).toBeInTheDocument();
   });
 
   it("shows account management to Administrators but keeps the review centre separate", () => {
