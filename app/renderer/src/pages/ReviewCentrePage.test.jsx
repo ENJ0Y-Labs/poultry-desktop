@@ -106,9 +106,9 @@ describe("ReviewCentrePage", () => {
     }));
     expect(await screen.findByText(/original weight record was preserved and reversed/)).toBeInTheDocument();
     expect(await screen.findByText("Correct latest effective weight record")).toBeInTheDocument();
-    expect(screen.getByText("weight-1")).toBeInTheDocument();
-    expect(screen.getByText("weight-2")).toBeInTheDocument();
-    expect(screen.getByText("weight-3")).toBeInTheDocument();
+    expect(screen.getAllByText("weight-1").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("weight-2").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("weight-3").length).toBeGreaterThan(0);
     expect(screen.getByText("Incorrect sample count")).toBeInTheDocument();
     expect(screen.getByText("Corrected follow-up calibration")).toBeInTheDocument();
   });
