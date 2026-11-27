@@ -1515,3 +1515,15 @@ actions that require confirmation or a reason. Do not rely on browser-native
 business validation and persistence in the existing API/backend layers, and
 keep the dialog open when a destructive request fails so the operator can
 review the error.
+
+
+## Review Centre hardening
+
+- Automated report checks must compare a proposal with the relevant official records before approval/merge. Define identity per report type; never use a global same-date duplicate rule because multiple legitimate events may occur on one day.
+- Current official-record conflict checks cover an existing daily record for the same batch/date and an exact expense match across farm, batch scope, business date, amount in integer minor units, category, and normalized description. Other report types remain explicitly incomplete until their domain-specific identity and conflict rules are implemented.
+- Submission-level duplicate checks must inspect the immutable submitted version, not a mutable current draft, and resolve the report's business date from its supported date field.
+- Warnings remain reviewable warnings. Do not bypass a warning without the existing explicit Manager override and reason. Critical domain validation and transaction failures are never overrideable.
+- Every merge adapter, official domain write, provenance link, lifecycle transition, workflow event, and audit write must remain in one transaction. Add failure-injection tests after each write boundary; a failed merge must leave no official side effect and must not remain MERGED.
+- Version-checked transitions must be compare-and-set operations. Add concurrent tests proving that competing decisions/merges cannot both win for the same version.
+- Post-merge corrections must use the approved transaction-specific reversal-plus-replacement design. Never add a generic table-name/SQL dispatcher or mutate the original official record in place.
+- See `docs/report-submission-review.md`, `docs/review-centre-hardening.md`, and `docs/decisions/2026-10-26-auditable-transaction-corrections.md`.
