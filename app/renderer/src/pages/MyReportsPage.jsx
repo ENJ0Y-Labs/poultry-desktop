@@ -402,6 +402,7 @@ export default function MyReportsPage({ userId = "" }) {
     try {
       const detail = await syncDraft(local);
       setSelected(detail);
+      setAttachments(await reportAttachmentApi.list(detail.id));
       await refresh();
       setNotice("Draft saved on this device and to the farm computer. It has not been submitted.");
     } catch (err) {
