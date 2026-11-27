@@ -16,6 +16,7 @@ import com.grantinofarms.poultry.service.ReportMergeService;
 import com.grantinofarms.poultry.service.FarmIncidentService;
 import com.grantinofarms.poultry.service.ReportAttachmentService;
 import com.grantinofarms.poultry.service.ReportingConfigurationService;
+import com.grantinofarms.poultry.service.MissingReportNotificationScheduler;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -51,6 +52,7 @@ class ReportSubmissionIntegrationTest {
     @Autowired FarmIncidentService farmIncidents;
     @Autowired ReportAttachmentService attachments;
     @Autowired ReportingConfigurationService reportingConfiguration;
+    @Autowired MissingReportNotificationScheduler missingReportScheduler;
     @Autowired AdminUserService adminUsers;
     @Autowired AuthService auth;
     @Autowired PasswordHasher passwordHasher;
@@ -379,7 +381,17 @@ class ReportSubmissionIntegrationTest {
         assertThat(threshold.get("value")).isEqualTo(5.0);
         assertThat(reportingConfiguration.missingReports())
                 .extracting(row -> row.get("id"))
+                .doesNotContain(schedule.get("id"));
+
+        jdbc.update("UPDATE reporting_schedules SET created_at = ? WHERE id = ?",
+                Instant.now().minusSeconds(86400).toString(), schedule.get("id"));
+        assertThat(reportingConfiguration.missingReports())
+                .extracting(row -> row.get("id"))
                 .contains(schedule.get("id"));
+        missingReportScheduler.notifyOverdueSchedules();
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM manager_notifications WHERE notification_type = 'MISSING_REPORT' AND entity_id LIKE ?",
+                Integer.class, schedule.get("id") + ":%")).isGreaterThan(0);
 
         reportingConfiguration.setScheduleEnabled(String.valueOf(schedule.get("id")), false);
         assertThat(reportingConfiguration.missingReports()).isEmpty();
