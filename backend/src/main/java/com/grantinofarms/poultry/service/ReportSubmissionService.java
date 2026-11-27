@@ -24,14 +24,17 @@ public class ReportSubmissionService {
     private final AuditRepository audit;
     private final ObjectMapper mapper;
     private final ReportCheckService checks;
+    private final WorkflowNotificationService notifications;
 
     public ReportSubmissionService(ReportSubmissionRepository submissions, FarmRepository farms,
-                                   AuditRepository audit, ObjectMapper mapper, ReportCheckService checks) {
+                                   AuditRepository audit, ObjectMapper mapper, ReportCheckService checks,
+                                   WorkflowNotificationService notifications) {
         this.submissions = submissions;
         this.farms = farms;
         this.audit = audit;
         this.mapper = mapper;
         this.checks = checks;
+        this.notifications = notifications;
     }
 
     @Transactional
@@ -131,6 +134,12 @@ public class ReportSubmissionService {
         audit.append((String) header.get("farmId"), "SUBMIT", "REPORT_SUBMISSION", id,
                 "Report submitted and automated checks completed", null,
                 "{\"lifecycleStatus\":\"" + nextStatus + "\",\"version\":" + version + "}", now);
+        String notificationType = "PENDING_REVIEW".equals(nextStatus) ? "REPORT_REVIEW_NEEDED" : "REPORT_CHECK_ALERT";
+        String notificationTitle = "PENDING_REVIEW".equals(nextStatus)
+                ? "Report awaiting Manager review" : "Report requires Manager attention";
+        notifications.notifyManagers(String.valueOf(header.get("farmId")), notificationType,
+                "REPORT_SUBMISSION", id, notificationTitle,
+                "A " + header.get("reportType") + " report was submitted and its checks completed with status " + nextStatus + ".", now);
         return getOwned(id, actorId);
     }
 
