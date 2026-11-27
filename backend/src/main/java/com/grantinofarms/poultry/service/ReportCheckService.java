@@ -203,7 +203,7 @@ public class ReportCheckService {
                     reportType, batchId, eventDate.toString());
             if (!duplicates.isEmpty()) {
                 results.add(warning("POSSIBLE_DUPLICATE",
-                        "Another submission of this report type exists for the same batch and business date. Compare both versions before merging.",
+                        "A submission of this report type already exists for the same batch and business date. This is only a possible match, not proof of duplication: separate legitimate events can occur on the same day. Compare the submitted version details before deciding whether this report should proceed.",
                         true, Map.of("possibleSubmissionIds", duplicates, "batchId", batchId,
                                 "eventDate", eventDate.toString(), "reportType", reportType)));
             }

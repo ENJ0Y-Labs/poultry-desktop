@@ -390,6 +390,37 @@ class ReportReviewHardeningIntegrationTest {
         assertThat(returnedToReview.get("links")).isEqualTo(java.util.List.of());
     }
 
+    @Test
+    void differentExpensesOnTheSameBusinessDateAreNotFlaggedAsDuplicates() throws Exception {
+        LocalDate date = LocalDate.now(ZoneId.of("Africa/Lagos"));
+        String existingDescription = "Morning feed delivery";
+        jdbc.update("""
+                INSERT INTO expenses
+                    (id, farm_id, batch_id, category, amount_minor, occurred_date,
+                     reference_type, reference_id, description, created_at)
+                VALUES (?, ?, NULL, 'OTHER', 50000, ?, NULL, NULL, ?, ?)
+                """, UUID.randomUUID().toString(), farmId, date.toString(),
+                existingDescription, Instant.now().toString());
+
+        Map<String, Object> distinctExpense = submitExpense(date, "Evening medicine purchase", 70000);
+        assertThat(distinctExpense.get("lifecycleStatus")).isEqualTo("PENDING_REVIEW");
+
+        @SuppressWarnings("unchecked")
+        var distinctChecks = (java.util.List<Map<String, Object>>) distinctExpense.get("checks");
+        assertThat(distinctChecks).noneMatch(check ->
+                "OFFICIAL_EXPENSE_DUPLICATE".equals(check.get("code")));
+
+        Map<String, Object> exactRepeat = submitExpense(date, existingDescription, 50000);
+        assertThat(exactRepeat.get("lifecycleStatus")).isEqualTo("FLAGGED");
+
+        @SuppressWarnings("unchecked")
+        var repeatChecks = (java.util.List<Map<String, Object>>) exactRepeat.get("checks");
+        assertThat(repeatChecks).anyMatch(check ->
+                "OFFICIAL_EXPENSE_DUPLICATE".equals(check.get("code"))
+                        && "WARNING".equals(check.get("outcome"))
+                        && Boolean.TRUE.equals(check.get("overrideable")));
+    }
+
     private Map<String, Object> submitExpense(LocalDate date, String description, long amountMinor) throws Exception {
         String eventTime = LocalTime.now(ZoneId.of("Africa/Lagos"))
                 .format(DateTimeFormatter.ofPattern("HH:mm"));
