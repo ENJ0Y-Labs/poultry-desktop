@@ -1613,3 +1613,11 @@ review the error.
 - Normal farm operation must remain local-first and usable without internet access. Do not introduce remote runtime dependencies, CDN assets, telemetry, cloud APIs, or internet-only authentication into the normal operation path without explicit approval.
 - Run the isolated `MockFarmAcceptanceIntegrationTest` and full backend/frontend/build gates for changes touching existing farm workflows. Its fixture must remain isolated from real farm data.
 - A CI pass does not prove Windows upgrade continuity or offline desktop behaviour. Follow `docs/issue-302-existing-farm-regression.md` on a disposable Windows profile before release; record the actual app/schema versions and outcome.
+
+
+## Opt-in LAN access (Issue #314)
+
+- LAN access remains disabled by default. Discover only configured RFC1918 IPv4 unicast addresses; validate the exact interface/address pair again immediately before binding. Never bind to wildcard addresses or silently fall back to another interface.
+- Network transitions must be serialized. Publish a LAN URL only after the selected-address backend proves its process identity healthy. If LAN startup fails, stop that process and recover loopback-only mode; if recovery also fails, leave no LAN listener running and surface a fatal recovery error.
+- Backend restarts must preserve the exact existing SQLite database path and must never copy, recreate, migrate, or otherwise mutate farm data as part of changing the listener.
+- Do not expose LAN access controls until browser asset delivery, Host/Origin validation, CSRF/session protections, authenticated Manager authorization, and regression tests are implemented. See docs/lan-access.md.
