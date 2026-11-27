@@ -1,6 +1,6 @@
 # Database schema
 
-SQLite schema changes are managed by Flyway. Migrations are forward-only and currently run through V35.
+SQLite schema changes are managed by Flyway. Migrations are forward-only and currently run through V37.
 
 ## Design rules
 
