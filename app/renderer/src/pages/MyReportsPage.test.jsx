@@ -167,7 +167,7 @@ describe("MyReportsPage", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: "Retry / check submission" }));
 
-    await waitFor(() => expect(reportSubmissionApi.get).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(reportSubmissionApi.get).toHaveBeenCalledTimes(1));
     expect(reportSubmissionApi.submit).toHaveBeenCalledTimes(1);
     expect(await screen.findByText(/Report submitted/)).toBeInTheDocument();
     expect(localStorage.getItem("pomas:report-submission-drafts:worker-1")).toBe("[]");

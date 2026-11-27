@@ -265,12 +265,7 @@ export default function MyReportsPage({ userId = "" }) {
     const knownServerIds = new Set(serverReports.map(report => report.id));
     const localOnly = localDrafts
       .filter(item => !item.serverId || !knownServerIds.has(item.serverId))
-      .map(item => ({
-        ...item,
-        localOnly: true,
-        syncedPreviously: Boolean(item.serverId),
-        status: item.posted ? "SUBMITTED" : item.submissionPending ? "SUBMISSION_PENDING" : "LOCAL_DRAFT",
-      }));
+      .map(item => ({ ...item, localOnly: true, syncedPreviously: Boolean(item.serverId), status: "LOCAL_DRAFT" }));
     const serverItems = serverReports.map(report => ({
       ...report,
       localCopy: localDrafts.find(item => item.serverId === report.id) || null,
@@ -332,9 +327,6 @@ export default function MyReportsPage({ userId = "" }) {
       id: editing?.id || makeId(),
       serverId: editing?.serverId || null,
       idempotencyKey: editing?.idempotencyKey || makeId(),
-      submitIdempotencyKey: editing?.submitIdempotencyKey || makeId(),
-      submissionPending: Boolean(editing?.submissionPending),
-      posted: Boolean(editing?.posted),
       reportType,
       title: title.trim(),
       fields: { ...fields },
@@ -353,10 +345,6 @@ export default function MyReportsPage({ userId = "" }) {
   }
 
   function openLocalDraft(draft) {
-    if (draft.posted) {
-      setError("This report was already submitted. Discarding this local recovery copy will not delete the server submission.");
-      return;
-    }
     setEditing(draft);
     setReportType(draft.reportType);
     setTitle(draft.title || "");
@@ -458,39 +446,6 @@ export default function MyReportsPage({ userId = "" }) {
     }
   }
 
-  async function finishSubmittedReport(draft, submitted) {
-    const current = readLocalArray(storageKey);
-    const postedDraft = {
-      ...draft,
-      serverId: submitted.id,
-      posted: true,
-      submissionPending: false,
-      submittedVersion: submitted.submittedVersion,
-      updatedAt: new Date().toISOString(),
-    };
-    const marked = [...current.filter(item => item.id !== draft.id), postedDraft];
-    const postedStateSaved = persistLocal(marked);
-
-    setSelected(submitted);
-    resetForm();
-    if (postedStateSaved) {
-      const cleanupSucceeded = persistLocal(readLocalArray(storageKey).filter(item => item.id !== draft.id));
-      if (!cleanupSucceeded) {
-        setNotice("Report submitted successfully. Its local recovery copy is marked as submitted and cannot be submitted again. Use Discard local copy to clean it up.");
-      }
-    } else {
-      setNotice("Report submitted successfully. The local recovery marker could not be updated, so the existing pending marker was kept. Do not submit this report again.");
-    }
-
-    try {
-      setAttachments(await reportAttachmentApi.list(submitted.id));
-    } catch {
-      setNotice("Report submitted successfully. Evidence details could not refresh while the host was unavailable; the submitted report remains saved.");
-    }
-    await refresh();
-    setNotice(currentNotice => currentNotice || "Report submitted. The submitted version is locked for review.");
-  }
-
   async function submitReport(event) {
     event.preventDefault();
     setSaving(true);
@@ -501,52 +456,23 @@ export default function MyReportsPage({ userId = "" }) {
       setSaving(false);
       return;
     }
-    if (local.posted) {
-      setError("This report is already submitted and cannot be submitted again.");
-      setSaving(false);
-      return;
-    }
     try {
-      if (local.serverId) {
-        const current = await reportSubmissionApi.get(local.serverId);
-        const currentStatus = current.lifecycleStatus || current.status;
-        if (!editableStatuses.includes(currentStatus)) {
-          if (current.submitOperationKey === local.submitIdempotencyKey) {
-            await finishSubmittedReport(local, current);
-            return;
-          }
-          setSelected(current);
-          throw new Error("This report has already moved out of draft under a different submission attempt. Your local copy has been kept.");
-        }
-      }
-
       const detail = await syncDraft(local);
       const status = detail.lifecycleStatus || detail.status;
       if (!editableStatuses.includes(status)) {
-        if (detail.submitOperationKey === local.submitIdempotencyKey) {
-          await finishSubmittedReport({ ...local, serverId: detail.id }, detail);
-          return;
-        }
         setSelected(detail);
-        throw new Error("This report has already been submitted under a different operation key. Your local copy has been kept.");
+        throw new Error("This report has already been submitted or moved out of draft. Its saved version was not changed.");
       }
-
-      const pending = { ...local, serverId: detail.id, baseVersion: detail.currentVersion, submissionPending: true };
-      const currentDrafts = readLocalArray(storageKey);
-      if (!persistLocal([...currentDrafts.filter(item => item.id !== pending.id), pending])) {
-        throw new Error("The submission safety marker could not be saved on this device. The report was not submitted.");
-      }
-      setEditing(pending);
-      const submitted = await reportSubmissionApi.submit(detail.id, local.submitIdempotencyKey);
-      await finishSubmittedReport(pending, submitted);
+      const submitted = await reportSubmissionApi.submit(detail.id);
+      persistLocal(localDrafts.filter(item => item.id !== local.id));
+      setSelected(submitted);
+      resetForm();
+      setAttachments(await reportAttachmentApi.list(detail.id));
+      await refresh();
+      setNotice("Report submitted. The submitted version is locked for review. Retrying will not create another report.");
     } catch (err) {
-      const pending = readLocalArray(storageKey).find(item => item.id === local.id);
-      if (pending?.submissionPending) {
-        setNotice("The host connection was interrupted and the submission result is not confirmed. Your draft and its original retry key are safe on this device. Reconnect and submit again to reconcile; the server will not create a second submission.");
-      } else {
-        setNotice("Your latest draft is saved on this device. It has not been submitted.");
-      }
       setError(err.message || "The report could not be submitted. Your local recovery copy has been kept.");
+      setNotice("Your latest draft is saved on this device. It has not been silently submitted.");
     } finally {
       setSaving(false);
     }
@@ -713,8 +639,8 @@ export default function MyReportsPage({ userId = "" }) {
                 </button>
               </div>
               <div className="inline-form">
-                <button type="button" className="secondary-button" onClick={saveDraft} disabled={saving || Boolean(editing?.submissionPending || editing?.posted)}>{saving ? "Saving…" : "Save draft"}</button>
-                <button type="submit" disabled={saving || Boolean(editing?.posted)}>{saving ? "Working…" : editing?.submissionPending ? "Retry / check submission" : "Submit for review"}</button>
+                <button type="button" className="secondary-button" onClick={saveDraft} disabled={saving}>{saving ? "Saving…" : "Save draft"}</button>
+                <button type="submit" disabled={saving}>{saving ? "Working…" : "Submit for review"}</button>
               </div>
             </form>
           </section>
@@ -727,15 +653,15 @@ export default function MyReportsPage({ userId = "" }) {
                   <article className="report-submission-item" key={report.id}>
                     <div className="report-submission-item-heading">
                       <strong>{report.title || "Untitled draft"}</strong>
-                      <span className={report.localOnly ? "status-pill status-local" : "status-pill"}>{report.localOnly ? (report.posted ? "Submitted · cleanup pending" : report.submissionPending ? "Submission outcome unknown" : report.syncedPreviously ? "Offline recovery copy" : "Local draft") : statusLabel(report)}</span>
+                      <span className={report.localOnly ? "status-pill status-local" : "status-pill"}>{report.localOnly ? (report.syncedPreviously ? "Offline recovery copy" : "Local draft") : statusLabel(report)}</span>
                     </div>
                     <p className="muted">{reportDefinitions[report.reportType]?.label || report.reportType} · {report.updatedAt || report.createdAt || "Not saved"}</p>
                     {report.localCopy && <p className="muted">A local recovery copy is available on this device.</p>}
                     <div className="inline-form">
                       {report.localOnly
-                        ? !report.posted && <button type="button" className="secondary-button" onClick={() => openLocalDraft(report)}>Open / reconcile</button>
+                        ? <button type="button" className="secondary-button" onClick={() => openLocalDraft(report)}>Open</button>
                         : <button type="button" className="secondary-button" onClick={() => openServerReport(report)}>View</button>}
-                      {report.localOnly && (report.posted || !report.submissionPending) && <button type="button" className="text-button" onClick={() => removeLocalDraft(report.id)}>Discard local copy</button>}
+                      {report.localOnly && <button type="button" className="text-button" onClick={() => removeLocalDraft(report.id)}>Discard local copy</button>}
                     </div>
                   </article>
                 ))}

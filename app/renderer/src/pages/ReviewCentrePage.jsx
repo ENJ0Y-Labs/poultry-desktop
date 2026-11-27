@@ -123,8 +123,8 @@ export default function ReviewCentrePage({ currentUser }) {
     setError("");
     setNotice("");
     try {
-      // One stable key per approved submission version. A timeout/restart can safely retry it.
-      const operationKey = "merge-" + selected.id + "-" + (selected.submittedVersion || selected.currentVersion);
+      const operationKey = globalThis.crypto?.randomUUID?.()
+        || "merge-" + Date.now() + "-" + Math.random().toString(36).slice(2);
       const updated = await reportReviewApi.merge(selected.id, operationKey);
       setSelected(updated);
       setNotice("Approved report merged into official farm records. Provenance links have been saved.");
