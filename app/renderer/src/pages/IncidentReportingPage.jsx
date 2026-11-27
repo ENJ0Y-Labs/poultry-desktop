@@ -20,12 +20,12 @@ const localDateTime = () => {
 };
 
 const emptyIncident = () => ({
-  type: "OTHER", severity: "MEDIUM", title: "", description: "",
+  type: "", severity: "", title: "", description: "",
   batchId: "", houseId: "", eventAt: localDateTime(),
 });
 const emptySchedule = () => ({
   reportType: "", scopeType: "FARM", scopeId: "", batchType: "",
-  frequency: "DAILY", dueTime: "", dayOfWeek: "", graceMinutes: "0",
+  frequency: "", dueTime: "", dayOfWeek: "", graceMinutes: "",
 });
 
 export default function IncidentReportingPage({ currentUser }) {
@@ -191,8 +191,8 @@ export default function IncidentReportingPage({ currentUser }) {
             <h3>Submit emergency alert</h3>
             <p className="muted">Use this for urgent risks such as suspected disease, unusual mortality, water/feed failure, fire, flooding, or security incidents. Do not wait for the normal report review process.</p>
             <form className="form-grid" onSubmit={submitIncident}>
-              <label>Incident category<select value={incidentForm.type} onChange={event => setIncidentForm(current => ({ ...current, type: event.target.value }))}>{incidentTypes.map(([value, text]) => <option key={value} value={value}>{text}</option>)}</select></label>
-              <label>Severity<select value={incidentForm.severity} onChange={event => setIncidentForm(current => ({ ...current, severity: event.target.value }))}>{severities.map(value => <option key={value} value={value}>{label(value)}</option>)}</select></label>
+              <label>Incident category<select required value={incidentForm.type} onChange={event => setIncidentForm(current => ({ ...current, type: event.target.value }))}>{incidentTypes.map(([value, text]) => <option key={value} value={value}>{text}</option>)}</select></label>
+              <label>Severity<select required value={incidentForm.severity} onChange={event => setIncidentForm(current => ({ ...current, severity: event.target.value }))}>{severities.map(value => <option key={value} value={value}>{label(value)}</option>)}</select></label>
               <label>Title<input value={incidentForm.title} onChange={event => setIncidentForm(current => ({ ...current, title: event.target.value }))} required maxLength={160} /></label>
               <label>Observed at<input type="datetime-local" value={incidentForm.eventAt} onChange={event => setIncidentForm(current => ({ ...current, eventAt: event.target.value }))} required /></label>
               <label>Related batch (optional)<select value={incidentForm.batchId} onChange={event => setIncidentForm(current => ({ ...current, batchId: event.target.value }))}><option value="">Not batch-specific</option>{(references.batches || []).map(batch => <option key={batch.id} value={batch.id}>{batch.code} · {batch.type}</option>)}</select></label>
@@ -230,8 +230,8 @@ export default function IncidentReportingPage({ currentUser }) {
               <label>Scope<select value={scheduleForm.scopeType} onChange={event => setScheduleForm(current => ({ ...current, scopeType: event.target.value, scopeId: "" }))}><option value="FARM">Whole farm</option><option value="HOUSE">House / pen</option><option value="BATCH">Batch / flock</option></select></label>
               {scheduleForm.scopeType !== "FARM" && <label>Scope record ID<input value={scheduleForm.scopeId} onChange={event => setScheduleForm(current => ({ ...current, scopeId: event.target.value }))} required placeholder="Paste the house or batch ID" /></label>}
               <label>Applies to batch type (optional)<select value={scheduleForm.batchType} onChange={event => setScheduleForm(current => ({ ...current, batchType: event.target.value }))}><option value="">All types</option><option value="LAYER">Layer</option><option value="BROILER">Broiler</option><option value="TURKEY">Turkey</option></select></label>
-              <label>Frequency<select value={scheduleForm.frequency} onChange={event => setScheduleForm(current => ({ ...current, frequency: event.target.value, dayOfWeek: event.target.value === "WEEKLY" ? "1" : "" }))}><option value="DAILY">Daily</option><option value="WEEKLY">Weekly</option></select></label>
-              {scheduleForm.frequency === "WEEKLY" && <label>Day of week<select value={scheduleForm.dayOfWeek} onChange={event => setScheduleForm(current => ({ ...current, dayOfWeek: event.target.value }))}><option value="1">Monday</option><option value="2">Tuesday</option><option value="3">Wednesday</option><option value="4">Thursday</option><option value="5">Friday</option><option value="6">Saturday</option><option value="7">Sunday</option></select></label>}
+              <label>Frequency<select value={scheduleForm.frequency} onChange={event => setScheduleForm(current => ({ ...current, frequency: event.target.value, dayOfWeek: "" }))}><option value="">Choose frequency</option><option value="DAILY">Daily</option><option value="WEEKLY">Weekly</option></select></label>
+              {scheduleForm.frequency === "WEEKLY" && <label>Day of week<select value={scheduleForm.dayOfWeek} onChange={event => setScheduleForm(current => ({ ...current, dayOfWeek: event.target.value }))}><option value="">Choose day</option><option value="1">Monday</option><option value="2">Tuesday</option><option value="3">Wednesday</option><option value="4">Thursday</option><option value="5">Friday</option><option value="6">Saturday</option><option value="7">Sunday</option></select></label>}
               <label>Due time (farm local)<input type="time" value={scheduleForm.dueTime} onChange={event => setScheduleForm(current => ({ ...current, dueTime: event.target.value }))} required /></label>
               <label>Grace period (minutes)<input type="number" min="0" max="1440" value={scheduleForm.graceMinutes} onChange={event => setScheduleForm(current => ({ ...current, graceMinutes: event.target.value }))} required /></label>
               <div className="form-actions"><button type="submit" disabled={saving}>{saving ? "Saving…" : "Save schedule"}</button></div>
