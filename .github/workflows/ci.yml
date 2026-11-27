@@ -79,7 +79,12 @@ jobs:
         run: mvn -B -f backend/pom.xml package -DskipTests
 
       - name: Build and package Electron application
-        run: npm run package
+        run: |
+          npm run package:runtime
+          npm run build
+          npm run package:verify
+          npx electron-builder --publish never
+          npm run installer:verify
 
       - name: Verify Windows installer
         run: npm run installer:verify
