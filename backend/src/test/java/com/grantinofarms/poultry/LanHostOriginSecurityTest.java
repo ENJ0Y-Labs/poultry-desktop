@@ -48,6 +48,18 @@ class LanHostOriginSecurityTest {
                 .andExpect(status().isForbidden());
     }
 
+
+    @Test
+    void allowsUnauthenticatedBrowserShellAssetsButKeepsApiAuthenticationRequired() throws Exception {
+        mvc.perform(get("/assets/not-present.js").with(lanRequest())
+                        .header("Host", "127.0.0.1"))
+                .andExpect(status().isNotFound());
+
+        mvc.perform(get("/api/v1/farm").with(lanRequest())
+                        .header("Host", "127.0.0.1"))
+                .andExpect(status().isUnauthorized());
+    }
+
     @Test
     void rejectsOpaqueAndCrossOriginBrowserRequests() throws Exception {
         mvc.perform(get("/api/v1/health").with(lanRequest())
