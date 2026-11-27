@@ -4,15 +4,15 @@
 
 Pomas is a **desktop-first Windows application** with a scoped phone-browser experience for authenticated Workers. The Electron shell still enforces a minimum window size of **1100×650 CSS pixels** and normally opens at **1366×768**. The production same-origin browser workspace supports Worker sessions from **320px** wide; this does not change the desktop shell or make Manager/Administrator farm operations phone-supported.
 
-The narrow-screen CSS did not prove phone support. It produced two competing layout models, depending on which media rule won. The fix removes the mobile-shell transformations and keeps the desktop canvas consistent with the Electron minimum. No hamburger menu was added because no actual navigation failure at a supported width has been reproduced.
+The previous narrow-screen CSS did not establish a supported phone workflow and conflicted with the Electron minimum. The desktop shell remains unchanged; this issue adds a separate, role-scoped browser layout for Workers only. The sign-in screen is also allowed to fit a phone viewport so a Worker can authenticate before the role-specific shell is rendered.
 
 ## Supported dimensions
 
 | Viewport/window | Status | Expected behavior |
 | --- | --- | --- |
-| 360×800 | Unsupported diagnostic viewport | Desktop canvas remains at least 1100px wide; horizontal viewport scrolling is expected. Do not claim mobile usability. |
-| 390×844 | Unsupported diagnostic viewport | Same as 360px; use only to inspect clipping/regressions in the visible portion. |
-| 768×1024 (tablet portrait width) | Unsupported diagnostic viewport | Desktop canvas remains at least 1100px wide; horizontal viewport scrolling is expected. |
+| 360×800 | Supported for Worker browser only | Manager/Administrator remain desktop-canvas diagnostics; horizontal scrolling is expected. |
+| 390×844 | Supported for Worker browser only | Manager/Administrator remain desktop-canvas diagnostics; horizontal scrolling is expected. |
+| 768×1024 (tablet portrait width) | Worker layout uses desktop breakpoint | Manager/Administrator remain desktop-canvas diagnostics; horizontal scrolling is expected. |
 | 1024×768 | Unsupported | Electron cannot be resized this narrow. Browser rendering is diagnostic only. |
 | 1100×650 | **Supported minimum** | All primary areas remain reachable; dashboard and forms fit the available content area; wide tables scroll inside their table container rather than expanding the page. |
 | 1366×768 | **Default target** | Full desktop layout with the collapsible sidebar, dashboard, forms, and tables. |
