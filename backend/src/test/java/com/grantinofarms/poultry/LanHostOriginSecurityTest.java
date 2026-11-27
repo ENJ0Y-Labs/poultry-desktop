@@ -1,5 +1,7 @@
 package com.grantinofarms.poultry;
 
+import com.grantinofarms.poultry.dto.AuthSetupRequest;
+import com.grantinofarms.poultry.service.AuthService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -11,6 +13,9 @@ import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.not;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest(properties = {
@@ -24,6 +29,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 class LanHostOriginSecurityTest {
     @Autowired MockMvc mvc;
+    @Autowired AuthService auth;
 
     private RequestPostProcessor lanRequest() {
         return request -> {
@@ -71,6 +77,25 @@ class LanHostOriginSecurityTest {
                         .header("Host", "127.0.0.1")
                         .header("Origin", "http://attacker.example"))
                 .andExpect(status().isForbidden());
+    }
+
+
+    @Test
+    void sameOriginLanLoginUsesHostOnlyLaxCookieWithoutSecureOnHttp() throws Exception {
+        auth.setup(new AuthSetupRequest("lan-manager@example.test", "Manager-password-123!", "LAN Manager"));
+
+        mvc.perform(post("/api/v1/auth/login").with(lanRequest())
+                        .header("Host", "127.0.0.1")
+                        .header("Origin", "http://127.0.0.1")
+                        .header("X-Requested-With", "XMLHttpRequest")
+                        .contentType("application/json")
+                        .content("""
+                                {"loginIdentifier":"lan-manager","password":"Manager-password-123!"}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Set-Cookie", containsString("HttpOnly")))
+                .andExpect(header().string("Set-Cookie", containsString("SameSite=Lax")))
+                .andExpect(header().string("Set-Cookie", not(containsString("Secure"))));
     }
 
     @Test
