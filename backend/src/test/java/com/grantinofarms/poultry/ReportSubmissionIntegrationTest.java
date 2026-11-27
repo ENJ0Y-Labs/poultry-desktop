@@ -294,6 +294,11 @@ class ReportSubmissionIntegrationTest {
         assertThat(jdbc.queryForObject(
                 "SELECT COUNT(*) FROM expenses WHERE description = ?",
                 Integer.class, "The drinker line has stopped supplying water to the active flock.")).isZero();
+
+        CurrentUserContext.set(workerId, "WORKER");
+        var reporterNotifications = farmIncidents.notifications();
+        assertThat(reporterNotifications).extracting(row -> row.get("type"))
+                .contains("INCIDENT_ACKNOWLEDGED", "INCIDENT_ESCALATED", "INCIDENT_RESOLVED");
     }
 
 
@@ -323,8 +328,8 @@ class ReportSubmissionIntegrationTest {
         reviews.decide(submissionId, "APPROVED", null);
         CurrentUserContext.set(workerId, "WORKER");
         var workerNotifications = farmIncidents.notifications();
-        assertThat(workerNotifications).anySatisfy(notification ->
-                assertThat(notification.get("type")).isEqualTo("REPORT_APPROVED"));
+        assertThat(workerNotifications).extracting(notification -> notification.get("type"))
+                .contains("REPORT_SUBMITTED", "REPORT_APPROVED");
         Map<String, Object> approval = workerNotifications.stream()
                 .filter(notification -> "REPORT_APPROVED".equals(notification.get("type")))
                 .findFirst().orElseThrow();
