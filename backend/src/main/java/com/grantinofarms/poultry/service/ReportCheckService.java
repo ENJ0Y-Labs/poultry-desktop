@@ -59,6 +59,37 @@ public class ReportCheckService {
     public String run(String submissionId, int version, String farmId, String reportType, JsonNode payload) {
         String now = Instant.now().toString();
         List<CheckResult> results = new ArrayList<>();
+        Map<String, Object> submission = submissions.findHeader(submissionId);
+        String actorId = CurrentUserContext.get();
+        String actorRole = CurrentUserContext.getRole();
+        boolean permittedActor = actorId != null && !actorId.isBlank()
+                && Set.of("WORKER", "ADMINISTRATOR", "MANAGER").contains(actorRole)
+                && submission != null && farmId.equals(submission.get("farmId"));
+        if (permittedActor) {
+            results.add(passed("REPORT_PERMISSION_VALID",
+                    "The authenticated actor has a permitted role and the submission belongs to the active farm."));
+        } else {
+            results.add(blocked("REPORT_PERMISSION_INVALID",
+                    "The report could not be checked under an authorized farm account.",
+                    Map.of("role", actorRole == null ? "UNKNOWN" : actorRole)));
+        }
+
+        boolean versionIntegrity = submission != null
+                && reportType.equals(submission.get("reportType"))
+                && submission.get("currentVersion") instanceof Number current
+                && current.intValue() == version
+                && submission.get("submittedVersion") instanceof Number submitted
+                && submitted.intValue() == version
+                && payload != null && payload.isObject();
+        if (versionIntegrity) {
+            results.add(passed("REPORT_VERSION_INTEGRITY",
+                    "The immutable submitted version, report type and payload match the review request."));
+        } else {
+            results.add(blocked("REPORT_VERSION_INTEGRITY",
+                    "The submitted version or report payload no longer matches the version being checked.",
+                    Map.of("requestedVersion", version, "reportType", reportType)));
+        }
+
         Class<?> dtoType = dtoType(reportType);
         if (dtoType == null) {
             results.add(blocked("UNSUPPORTED_REPORT_TYPE", "This report type is not supported for official records.", Map.of("reportType", reportType)));
@@ -194,6 +225,11 @@ public class ReportCheckService {
                             true, Map.of("possibleOfficialRecords", duplicates)));
                 }
             }
+        }
+
+        if (!submissions.findChecks(submissionId, version).isEmpty()) {
+            results.add(passed("CURRENT_DATA_REVALIDATION",
+                    "The submitted version was checked again against current farm, batch, feed, population and official-record data."));
         }
 
         String outcome = results.stream().anyMatch(result -> "BLOCKED".equals(result.outcome())) ? "BLOCKED"
