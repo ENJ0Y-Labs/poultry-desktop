@@ -71,6 +71,25 @@ export default function IncidentReportingPage({ currentUser }) {
 
   useEffect(() => { refresh(); }, [refresh]);
 
+  useEffect(() => {
+    const interval = window.setInterval(async () => {
+      try {
+        const notificationRows = await reportReviewApi.notifications();
+        setNotifications(notificationRows);
+        if (manager) {
+          const [scheduleRows, missingRows] = await Promise.all([
+            reportingConfigApi.schedules(), reportingConfigApi.missing(),
+          ]);
+          setSchedules(scheduleRows);
+          setMissing(missingRows);
+        }
+      } catch {
+        // Keep the last successfully loaded notification and schedule state visible during a brief disconnect.
+      }
+    }, 30000);
+    return () => window.clearInterval(interval);
+  }, [manager]);
+
   async function submitIncident(event) {
     event.preventDefault();
     setSaving(true); setError(""); setNotice("");
