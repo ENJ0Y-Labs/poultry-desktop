@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { incidentApi, notificationApi, reportSubmissionApi, reportingConfigApi } from "../services/api.js";
+import { incidentApi, reportReviewApi, reportSubmissionApi, reportingConfigApi } from "../services/api.js";
 
 const incidentTypes = [
   ["SUSPECTED_DISEASE", "Suspected disease"], ["UNUSUAL_MORTALITY", "Unusual mortality"],
@@ -49,7 +49,7 @@ export default function IncidentReportingPage({ currentUser }) {
     setError("");
     try {
       const [incidentRows, notificationRows, referenceRows] = await Promise.all([
-        incidentApi.list(), notificationApi.list(), reportSubmissionApi.references(),
+        incidentApi.list(), reportReviewApi.notifications(), reportSubmissionApi.references(),
       ]);
       setIncidents(incidentRows);
       setNotifications(notificationRows);
@@ -151,7 +151,7 @@ export default function IncidentReportingPage({ currentUser }) {
 
   async function markRead(notification) {
     try {
-      await notificationApi.markRead(notification.id);
+      await reportReviewApi.markNotificationRead(notification.id);
       setNotifications(rows => rows.map(row => row.id === notification.id ? { ...row, readAt: new Date().toISOString() } : row));
     } catch (err) { setError(err.message || "Notification could not be marked as read."); }
   }
