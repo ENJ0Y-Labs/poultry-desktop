@@ -54,6 +54,9 @@ class ReportReviewHardeningIntegrationTest {
         String now = Instant.now().toString();
         farmId = UUID.randomUUID().toString();
         workerId = UUID.randomUUID().toString();
+        // The shared in-memory database survives between test methods. Ensure this test's
+        // newly-created farm is the one selected by FarmRepository.findActive().
+        jdbc.update("UPDATE farms SET status = 'ARCHIVED' WHERE status = 'ACTIVE'");
         farms.insert(farmId, "Review Hardening Farm", "Port Harcourt", "Africa/Lagos", "NGN", now);
         categories.insert(UUID.randomUUID().toString(), farmId, "FEED", now);
         categories.insert(UUID.randomUUID().toString(), farmId, "DRUGS", now);
