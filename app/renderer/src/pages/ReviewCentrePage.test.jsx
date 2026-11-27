@@ -148,7 +148,7 @@ describe("ReviewCentrePage", () => {
       status: "CHANGES_REQUESTED",
     };
     reportReviewApi.decide.mockResolvedValue(returned);
-    reportReviewApi.get.mockResolvedValue(returned);
+    reportReviewApi.get.mockResolvedValueOnce(fixtures.detail).mockResolvedValue(returned);
     reportReviewApi.queue.mockResolvedValue([fixtures.detail]);
 
     render(<ReviewCentrePage currentUser={{ id: "manager-1", role: "MANAGER" }} />);
