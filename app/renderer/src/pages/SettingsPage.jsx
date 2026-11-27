@@ -166,6 +166,7 @@ export default function SettingsPage({ userRole }) {
           <label>Working/latest margin %<input readOnly value={pricingSettings.workingMarginPercent ?? ""}/><small>Updated from actual sale results.</small></label>
           <button disabled={saving}>Save pricing target</button>
         </ValidatedForm></section></PageSection>
-      <LanAccessSettings userRole={userRole} />\n    </PageTemplate>
+      <LanAccessSettings userRole={userRole} />
+    </PageTemplate>
   );
 }
