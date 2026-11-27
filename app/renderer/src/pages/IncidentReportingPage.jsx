@@ -161,7 +161,7 @@ export default function IncidentReportingPage({ currentUser }) {
       setActiveTab("incidents");
       window.location.hash = "#incidents/overview";
     } else if (notification.entityType === "REPORT_SUBMISSION") {
-      window.location.hash = "#review-centre/overview";
+      window.location.hash = manager ? "#review-centre/overview" : "#my-reports/overview";
     }
     if (!notification.readAt) markRead(notification);
   }
