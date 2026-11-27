@@ -22,8 +22,24 @@ ReportReviewHardeningIntegrationTest covers:
 4. Invalid expense data is BLOCKED while permission and immutable-version integrity checks are recorded as PASSED.
 5. A Worker cannot call Manager-only queue or decision actions.
 6. An official duplicate inserted after approval is detected by the pre-merge recheck, returns the submission to FLAGGED, and creates no provenance link.
+7. A completed merge accepts a retry only when the original Idempotency-Key is reused; a different key is rejected without a second official write.
+8. Two concurrent merge attempts using different keys can produce only one official record and one provenance link.
+9. One merge key cannot be claimed by two different submissions; the second submission remains APPROVED and creates no official record.
+10. A forced failure at the final audit write rolls back the official record, provenance link, MERGED event, merge key and lifecycle transition.
 
-## Verification commands
+
+## Atomic merge guarantees
+
+A report merge is a single Spring-managed database transaction. The official domain adapter write, `report_submission_links` provenance row, transition to MERGED, MERGED workflow event, and audit log must commit together or roll back together.
+
+- `merge_operation_key` is the idempotency key for the complete merge. A retry after commit with the same key returns the existing merged result and does not call an official domain adapter again.
+- A retry for an already-merged submission with a different key is rejected with `MERGE_IDEMPOTENCY_KEY_MISMATCH`. It must never be treated as a fresh successful merge.
+- The database's unique index on `merge_operation_key` prevents one operation key from being claimed by two submissions. Reuse across submissions returns a conflict.
+- `beginMerge` is a compare-and-set update constrained by submission ID, current/submitted/decision version, and APPROVED lifecycle state. Only one transaction can claim the approved version.
+- A competing request that encounters a transient database lock receives `MERGE_CONCURRENCY_CONFLICT` and must retry with the same key. A request that observes a completed merge succeeds only when its key matches the committed key.
+- Any failure after the official write, including provenance, lifecycle, workflow-event or audit failure, must roll back the complete transaction. A failed merge must leave the submission APPROVED, with no merge key, no provenance link and no official side effect.
+
+Regression tests in `ReportReviewHardeningIntegrationTest` cover same-key retries, different-key rejection, simultaneous competing merge attempts, and a forced failure at the final audit write after the official record, provenance link, and MERGED event have been written.
 
 Run from the repository root:
 

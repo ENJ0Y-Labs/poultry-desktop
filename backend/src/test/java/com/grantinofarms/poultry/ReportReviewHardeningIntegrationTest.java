@@ -70,6 +70,7 @@ class ReportReviewHardeningIntegrationTest {
     void clearContext() {
         CurrentUserContext.clear();
         jdbc.execute("DROP TRIGGER IF EXISTS test_fail_submission_provenance");
+        jdbc.execute("DROP TRIGGER IF EXISTS test_fail_merge_audit");
     }
 
     @Test
@@ -164,6 +165,164 @@ class ReportReviewHardeningIntegrationTest {
             assertThat(finalStatus).isIn("APPROVED", "REJECTED");
         } finally {
             pool.shutdownNow();
+        }
+    }
+
+    @Test
+    void sameMergeKeyRetryReturnsOriginalResultAndDifferentKeyIsRejected() throws Exception {
+        LocalDate date = LocalDate.now(ZoneId.of("Africa/Lagos"));
+        String description = "Idempotent merge expense";
+        Map<String, Object> submitted = submitExpense(date, description, 183500);
+        String submissionId = String.valueOf(submitted.get("id"));
+        String managerId = createManager();
+        CurrentUserContext.set(managerId, "MANAGER");
+        reviews.decide(submissionId, "APPROVED", null);
+
+        String operationKey = "idempotent-merge-key-001";
+        Map<String, Object> first = merges.merge(submissionId, operationKey);
+        Map<String, Object> retry = merges.merge(submissionId, operationKey);
+
+        assertThat(first.get("lifecycleStatus")).isEqualTo("MERGED");
+        assertThat(retry.get("lifecycleStatus")).isEqualTo("MERGED");
+        assertThat(retry.get("mergeOperationKey")).isEqualTo(operationKey);
+        assertThat(retry.get("links")).isEqualTo(first.get("links"));
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM expenses WHERE farm_id = ? AND description = ?",
+                Integer.class, farmId, description)).isEqualTo(1);
+
+        assertThatThrownBy(() -> merges.merge(submissionId, "different-merge-key-002"))
+                .isInstanceOf(Exception.class)
+                .hasMessageContaining("different Idempotency-Key");
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM expenses WHERE farm_id = ? AND description = ?",
+                Integer.class, farmId, description)).isEqualTo(1);
+        assertThat(reviews.get(submissionId).get("lifecycleStatus")).isEqualTo("MERGED");
+    }
+
+    @Test
+    void oneMergeKeyCannotBeClaimedByTwoDifferentSubmissions() throws Exception {
+        LocalDate date = LocalDate.now(ZoneId.of("Africa/Lagos"));
+        Map<String, Object> firstSubmission = submitExpense(date, "First keyed merge", 125000);
+        Map<String, Object> secondSubmission = submitExpense(date, "Second keyed merge", 126000);
+        String firstId = String.valueOf(firstSubmission.get("id"));
+        String secondId = String.valueOf(secondSubmission.get("id"));
+
+        String managerId = createManager();
+        CurrentUserContext.set(managerId, "MANAGER");
+        reviews.decide(firstId, "APPROVED", null);
+        reviews.decide(secondId, "APPROVED", null);
+
+        String sharedKey = "cross-submission-merge-key-006";
+        merges.merge(firstId, sharedKey);
+        assertThatThrownBy(() -> merges.merge(secondId, sharedKey))
+                .isInstanceOf(Exception.class)
+                .hasMessageContaining("already been used for another report merge");
+
+        assertThat(jdbc.queryForObject(
+                "SELECT lifecycle_status FROM report_submissions WHERE id = ?",
+                String.class, secondId)).isEqualTo("APPROVED");
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM expenses WHERE farm_id = ? AND description = 'First keyed merge'",
+                Integer.class, farmId)).isEqualTo(1);
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM expenses WHERE farm_id = ? AND description = 'Second keyed merge'",
+                Integer.class, farmId)).isZero();
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM report_submission_links WHERE submission_id = ?",
+                Integer.class, secondId)).isZero();
+    }
+
+    @Test
+    void failureAtFinalAuditWriteRollsBackOfficialRecordLinkAndMergedState() throws Exception {
+        LocalDate date = LocalDate.now(ZoneId.of("Africa/Lagos"));
+        String description = "Final audit rollback expense";
+        Map<String, Object> submitted = submitExpense(date, description, 224600);
+        String submissionId = String.valueOf(submitted.get("id"));
+        String managerId = createManager();
+        CurrentUserContext.set(managerId, "MANAGER");
+        reviews.decide(submissionId, "APPROVED", null);
+
+        jdbc.execute("""
+                CREATE TRIGGER test_fail_merge_audit
+                BEFORE INSERT ON audit_logs
+                WHEN NEW.entity_type = 'REPORT_SUBMISSION' AND NEW.action = 'MERGE'
+                BEGIN
+                    SELECT RAISE(ABORT, 'simulated final audit failure');
+                END
+                """);
+
+        assertThatThrownBy(() -> merges.merge(submissionId, "audit-failure-merge-key-003"))
+                .isInstanceOf(Exception.class);
+
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM expenses WHERE farm_id = ? AND description = ?",
+                Integer.class, farmId, description)).isZero();
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM report_submission_links WHERE submission_id = ?",
+                Integer.class, submissionId)).isZero();
+        assertThat(jdbc.queryForObject(
+                "SELECT lifecycle_status FROM report_submissions WHERE id = ?",
+                String.class, submissionId)).isEqualTo("APPROVED");
+        assertThat(jdbc.queryForObject(
+                "SELECT merge_operation_key FROM report_submissions WHERE id = ?",
+                String.class, submissionId)).isNull();
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM report_submission_events WHERE submission_id = ? AND event_type = 'MERGED'",
+                Integer.class, submissionId)).isZero();
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM audit_logs WHERE farm_id = ? AND entity_id = ? AND action = 'MERGE'",
+                Integer.class, farmId, submissionId)).isZero();
+    }
+
+    @Test
+    void concurrentMergesWithDifferentKeysCanCreateOnlyOneOfficialRecord() throws Exception {
+        LocalDate date = LocalDate.now(ZoneId.of("Africa/Lagos"));
+        String description = "Concurrent atomic merge expense";
+        Map<String, Object> submitted = submitExpense(date, description, 315700);
+        String submissionId = String.valueOf(submitted.get("id"));
+        String approvingManager = createManager();
+        CurrentUserContext.set(approvingManager, "MANAGER");
+        reviews.decide(submissionId, "APPROVED", null);
+
+        String managerA = createManager();
+        String managerB = createManager();
+        CountDownLatch start = new CountDownLatch(1);
+        ExecutorService pool = Executors.newFixedThreadPool(2);
+        try {
+            Future<Boolean> first = pool.submit(() -> attemptMerge(
+                    managerA, submissionId, "concurrent-merge-key-a-004", start));
+            Future<Boolean> second = pool.submit(() -> attemptMerge(
+                    managerB, submissionId, "concurrent-merge-key-b-005", start));
+            start.countDown();
+
+            int successes = (first.get() ? 1 : 0) + (second.get() ? 1 : 0);
+            assertThat(successes).isEqualTo(1);
+        } finally {
+            pool.shutdownNow();
+        }
+
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM expenses WHERE farm_id = ? AND description = ?",
+                Integer.class, farmId, description)).isEqualTo(1);
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM report_submission_links WHERE submission_id = ?",
+                Integer.class, submissionId)).isEqualTo(1);
+        assertThat(jdbc.queryForObject(
+                "SELECT lifecycle_status FROM report_submissions WHERE id = ?",
+                String.class, submissionId)).isEqualTo("MERGED");
+    }
+
+    private boolean attemptMerge(String managerId, String submissionId, String operationKey,
+                                 CountDownLatch start) throws InterruptedException {
+        CurrentUserContext.set(managerId, "MANAGER");
+        try {
+            start.await();
+            merges.merge(submissionId, operationKey);
+            return true;
+        } catch (RuntimeException expectedConflict) {
+            return false;
+        } finally {
+            CurrentUserContext.clear();
         }
     }
 

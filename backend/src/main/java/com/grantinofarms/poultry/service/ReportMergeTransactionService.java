@@ -63,7 +63,9 @@ public class ReportMergeTransactionService {
         }
         String actor = CurrentUserContext.get();
         Map<String, Object> header = requireHeader(id);
-        if ("MERGED".equals(header.get("lifecycleStatus"))) return detail(header);
+        if ("MERGED".equals(header.get("lifecycleStatus"))) {
+            return completedMergeResult(header, operationKey);
+        }
         if (actor.equals(header.get("authorId"))) {
             throw new ApiException(HttpStatus.FORBIDDEN, "SELF_MERGE_FORBIDDEN",
                     "A Manager cannot merge their own submission.");
@@ -86,7 +88,9 @@ public class ReportMergeTransactionService {
 
         if (submissions.beginMerge(id, version, operationKey, Instant.now().toString()) != 1) {
             Map<String, Object> refreshed = requireHeader(id);
-            if ("MERGED".equals(refreshed.get("lifecycleStatus"))) return detail(refreshed);
+            if ("MERGED".equals(refreshed.get("lifecycleStatus"))) {
+                return completedMergeResult(refreshed, operationKey);
+            }
             throw new ApiException(HttpStatus.CONFLICT, "MERGE_ALREADY_IN_PROGRESS",
                     "This report changed before the merge could begin. Refresh the review centre.");
         }
@@ -145,6 +149,15 @@ public class ReportMergeTransactionService {
         }
         insertLinkAndComplete(id, version, recordType, recordId, operationKey, header);
         return detail(requireHeader(id));
+    }
+
+    private Map<String, Object> completedMergeResult(Map<String, Object> header, String operationKey) {
+        String committedKey = (String) header.get("mergeOperationKey");
+        if (committedKey == null || !committedKey.equals(operationKey)) {
+            throw new ApiException(HttpStatus.CONFLICT, "MERGE_IDEMPOTENCY_KEY_MISMATCH",
+                    "This report was already merged with a different Idempotency-Key.");
+        }
+        return detail(header);
     }
 
     private void insertLinkAndComplete(String id, int version, String recordType, String recordId,
