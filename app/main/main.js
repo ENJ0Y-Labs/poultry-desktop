@@ -58,8 +58,8 @@ async function requireManagerSession(event) {
     headers: { Cookie: "poultry_session=" + sessionCookie.value }
   });
   const payload = await response.json().catch(() => ({}));
-  if (!response.ok || payload?.data?.role !== "MANAGER") {
-    throw new Error("Only an authenticated Manager can change LAN access.");
+  if (!response.ok || !["MANAGER", "ADMINISTRATOR"].includes(payload?.data?.role)) {
+    throw new Error("Only an authenticated Manager or Administrator can change LAN access.");
   }
   return { value: sessionCookie.value, expirationDate: sessionCookie.expirationDate };
 }
