@@ -1606,3 +1606,24 @@ body { min-width: 1100px; }
 .onboarding-create-label{width:max-content;padding:7px 10px;border-radius:5px;background:#173e37;color:#fff;font-size:9px;font-weight:900;letter-spacing:.1em}.onboarding-fields h2{margin:4px 0 0;font-size:17px}.onboarding-privacy{margin:14px 0 0;color:var(--muted);font-size:11px;line-height:1.55}.onboarding-error{padding:10px 12px;border:1px solid var(--error-border);border-radius:6px;background:var(--error-bg);color:var(--error-text);font-size:12px}.onboarding-skip{display:block;margin:12px auto 0;padding:8px;background:transparent;color:var(--muted);font-size:10px;font-weight:800}
 .onboarding-complete-mark{display:grid;place-items:center;width:62px;height:62px;margin:20px 0;border-radius:50%;background:#e7f3e9;color:#1b7045;font-size:30px;font-weight:900}.onboarding-next-list{display:grid;gap:12px;margin:22px 0;padding-left:20px;color:var(--muted);font-size:13px}.onboarding-ready{margin-top:24px;color:#21805c;font-size:11px;font-weight:900;letter-spacing:.14em}
 @media(max-width:1000px){.onboarding-layout{grid-template-columns:360px minmax(520px,1fr)}.onboarding-art{padding:7vh 34px}.onboarding-form-panel{padding:32px}.onboarding-form-wrap{max-height:calc(100vh - 90px)}}
+
+/* Emergency reporting workspace */
+.incident-reporting-page .full-span{grid-column:1/-1}
+.incident-reporting-page .stacked-actions{display:grid;gap:8px;min-width:220px}
+.incident-reporting-page .notification-list{display:grid;gap:8px}
+.incident-reporting-page .notification-item{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;padding:12px;border:1px solid var(--border);border-radius:10px}
+.incident-reporting-page .notification-item.unread{border-left:3px solid var(--accent)}
+.incident-reporting-page .notification-item.read{opacity:.78}
+.incident-reporting-page .notification-open{display:grid;gap:4px;flex:1;min-width:0;padding:0;border:0;background:transparent;color:var(--text);text-align:left;box-shadow:none}
+.incident-reporting-page .notification-open span{color:var(--muted);font-size:12px}
+.incident-reporting-page .notification-open small{color:var(--muted);font-size:10px}
+.incident-reporting-page details summary{cursor:pointer;color:var(--accent)}
+.incident-reporting-page details ul{padding-left:18px}
+.incident-reporting-page details li{margin:6px 0;font-size:11px;color:var(--muted)}
+.incident-reporting-page details li small{display:block;overflow-wrap:anywhere}
+@media(max-width:650px){
+  .incident-reporting-page .notification-item{flex-direction:column}
+  .incident-reporting-page .stacked-actions{min-width:0}
+  .incident-reporting-page .full-span{grid-column:auto}
+}
+
