@@ -2,7 +2,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 // eslint-disable-next-line no-unused-vars
 import MyReportsPage from "./MyReportsPage.jsx";
-import { reportSubmissionApi } from "../services/api.js";
+import { reportAttachmentApi, reportSubmissionApi } from "../services/api.js";
 
 const fixtures = vi.hoisted(() => ({
   draft: {
@@ -31,6 +31,11 @@ const fixtures = vi.hoisted(() => ({
 }));
 
 vi.mock("../services/api.js", () => ({
+  reportAttachmentApi: {
+    list: vi.fn().mockResolvedValue([]),
+    upload: vi.fn(),
+    download: vi.fn(),
+  },
   reportSubmissionApi: {
     mine: vi.fn().mockResolvedValue([]),
     references: vi.fn().mockResolvedValue({
@@ -249,4 +254,33 @@ describe("MyReportsPage", () => {
     })));
     expect(reportSubmissionApi.submit).not.toHaveBeenCalled();
   });
+  it("uploads evidence to the current server draft version and shows the saved attachment", async () => {
+    reportSubmissionApi.create.mockResolvedValue(fixtures.draft);
+    reportSubmissionApi.get.mockResolvedValue(fixtures.draft);
+    reportAttachmentApi.upload.mockResolvedValue({ id: "attachment-1" });
+    reportAttachmentApi.list.mockResolvedValue([{
+      id: "attachment-1",
+      fileName: "mortality-photo.jpg",
+      mimeType: "image/jpeg",
+      fileSize: 2048,
+      sha256: "a".repeat(64),
+    }]);
+
+    render(<MyReportsPage userId="worker-1" />);
+    await screen.findByText(/No reports yet/);
+    fillMortalityForm();
+    fireEvent.change(screen.getByLabelText("Supporting evidence"), {
+      target: { files: [new File(["evidence"], "mortality-photo.jpg", { type: "image/jpeg" })] },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Upload evidence" }));
+
+    await waitFor(() => expect(reportAttachmentApi.upload).toHaveBeenCalledWith(
+      "submission-1",
+      expect.objectContaining({ name: "mortality-photo.jpg", type: "image/jpeg" }),
+    ));
+    expect(await screen.findByText("mortality-photo.jpg")).toBeInTheDocument();
+    expect(reportAttachmentApi.list).toHaveBeenCalledWith("submission-1");
+  });
+
+
 });
