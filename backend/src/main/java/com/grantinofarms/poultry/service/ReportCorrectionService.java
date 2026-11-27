@@ -83,15 +83,15 @@ public class ReportCorrectionService {
         String now = Instant.now().toString();
 
         submissions.insertLink(submissionId, version, "WEIGHT_RECORD", replacementId, now);
-        String details = "{\\"originalRecordId\\":\\"" + escape(originalId)
-                + "\\",\\"replacementRecordId\\":\\"" + escape(replacementId)
-                + "\\",\\"reason\\":\\"" + escape(reason.trim()) + "\\"}";
+        String details = "{\"originalRecordId\":\"" + escape(originalId)
+                + "\",\"replacementRecordId\":\"" + escape(replacementId)
+                + "\",\"reason\":\"" + escape(reason.trim()) + "\"}";
         submissions.appendEvent(submissionId, version, actor, "POST_MERGE_CORRECTED", details, now);
         audit.append(String.valueOf(header.get("farmId")), "POST_MERGE_CORRECT",
                 "REPORT_SUBMISSION", submissionId,
                 "Merged weight record corrected through a typed reversal and replacement",
-                "{\\"originalRecordId\\":\\"" + escape(originalId) + "\\"}",
-                "{\\"replacementRecordId\\":\\"" + escape(replacementId) + "\\"}", now);
+                "{\"originalRecordId\":\"" + escape(originalId) + "\"}",
+                "{\"replacementRecordId\":\"" + escape(replacementId) + "\"}", now);
 
         Map<String, Object> result = new LinkedHashMap<>(corrected);
         result.put("submissionId", submissionId);
@@ -100,7 +100,6 @@ public class ReportCorrectionService {
     }
 
     private String escape(String value) {
-        return value == null ? "" : value.replace("\\", "\\\\").replace("\\"", "\\\\"")
-                .replace("\\n", " ").replace("\\r", " ");
-    }
+        return value == null ? "" : value.replace("\\", "\\\\").replace("\"", "\\\"")
+                .replace("\n", " ").replace("\r", " ");
 }
