@@ -102,6 +102,74 @@ public class BroilerProductionService {
         return java.util.Map.of("originalId", weightId, "status", "VOIDED", "reason", reason, "occurredAt", now);
     }
 
+    /** Correct the latest effective measurement without rewriting its original facts. */
+    @Transactional
+    public java.util.Map<String, Object> correctWeight(String batchId, String weightId,
+                                                        WeightRecordRequest replacement, String suppliedReason) {
+        String actorId = CurrentUserContext.get();
+        if (actorId == null || actorId.isBlank()) {
+            throw new ApiException(HttpStatus.UNAUTHORIZED, "AUTHENTICATION_REQUIRED",
+                    "Sign in before correcting a weight record.");
+        }
+        String reason = suppliedReason == null ? "" : suppliedReason.trim();
+        if (reason.isBlank() || reason.length() > 500) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_REVERSAL_REASON",
+                    "Enter a reason of 1 to 500 characters.");
+        }
+        if (replacement == null || replacement.recordDate() == null) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_REPLACEMENT",
+                    "Replacement weight details are required.");
+        }
+        requireBatch(batchId);
+        java.util.Map<String,Object> original = repository.findWeightForUndo(batchId, weightId);
+        if (original == null) {
+            throw new ApiException(HttpStatus.NOT_FOUND, "WEIGHT_RECORD_NOT_FOUND",
+                    "The weight record could not be found in this batch.");
+        }
+        if (repository.isWeightReversed(weightId)) {
+            throw new ApiException(HttpStatus.CONFLICT, "TRANSACTION_ALREADY_REVERSED",
+                    "This weight record has already been corrected or voided.");
+        }
+        String originalDate = String.valueOf(original.get("record_date"));
+        if (!replacement.recordDate().toString().equals(originalDate)) {
+            throw new ApiException(HttpStatus.CONFLICT, "CORRECTION_DATE_MUST_MATCH",
+                    "A weight correction must keep the original measurement date. Correct the dependent measurements in order first.");
+        }
+        String createdAt = String.valueOf(original.get("created_at"));
+        if (repository.hasLaterEffectiveWeight(batchId, originalDate, createdAt)) {
+            throw new ApiException(HttpStatus.CONFLICT, "WEIGHT_RECORD_HAS_DEPENDENTS",
+                    "This is not the latest weight record. Correct later weight records first.");
+        }
+
+        // addWeight uses the existing validation, persistence and audit path. The
+        // outer transaction makes the replacement and reversal one atomic change.
+        WeightRecordResponse created = addWeight(batchId, replacement);
+        String farmId = repository.batchFarmId(batchId);
+        String now = Instant.now().toString();
+        String before = String.format(
+                "{\\"batchId\\":\\"%s\\",\\"recordDate\\":\\"%s\\",\\"sampleQuantity\\":%s,\\"totalWeightGrams\\":%s}",
+                batchId, originalDate, original.get("sample_quantity"), original.get("total_weight_grams"));
+        String after = String.format(
+                "{\\"replacementId\\":\\"%s\\",\\"recordDate\\":\\"%s\\",\\"sampleQuantity\\":%d,\\"totalWeightKg\\":\\"%s\\"}",
+                created.id(), replacement.recordDate(), replacement.sampleQuantity(),
+                replacement.totalWeightKg().stripTrailingZeros().toPlainString());
+        try {
+            repository.insertWeightCorrection(UUID.randomUUID().toString(), farmId, batchId,
+                    weightId, created.id(), reason, actorId, now);
+        } catch (org.springframework.dao.DataIntegrityViolationException ex) {
+            throw new ApiException(HttpStatus.CONFLICT, "TRANSACTION_ALREADY_REVERSED",
+                    "This weight record has already been corrected or voided.");
+        }
+        auditRepository.append(farmId, "CORRECT", "WEIGHT_RECORD", weightId,
+                reason, before, after, now);
+        return java.util.Map.of(
+                "originalId", weightId,
+                "replacementId", created.id(),
+                "status", "CORRECTED",
+                "reason", reason,
+                "occurredAt", now);
+    }
+
     public List<WeightRecordResponse> weights(String batchId, LocalDate asOf) {
         requireBatch(batchId);
         LocalDate effective = asOf == null ? LocalDate.now() : asOf;
