@@ -12,11 +12,11 @@ const HEALTH_INTERVAL_MS = 250;
 const STOP_TIMEOUT_MS = 5_000;
 const PACKAGED_PORT_ATTEMPTS = 3;
 
-async function findAvailablePort(address = "127.0.0.1") {
+async function findAvailablePort(listenAddress = "127.0.0.1") {
   const server = createServer();
   await new Promise((resolve, reject) => {
     server.once("error", reject);
-    server.listen(0, address, resolve);
+    server.listen(0, listenAddress, resolve);
   });
 
   const address = server.address();
@@ -303,14 +303,16 @@ export class BackendManager {
           && this.lanSelection?.interfaceName === selected.interfaceName) return this.lanStatus;
       const databasePath = this.databasePath;
       await this.stop();
-      this.bindAddress = selected.address;
-      this.lanSelection = selected;
+      // Revalidate after the old listener has stopped and immediately before the new bind.
+      const currentSelection = validatePrivateIPv4Interface(requested, this.networkInterfacesProvider());
+      this.bindAddress = currentSelection.address;
+      this.lanSelection = currentSelection;
       try {
         await this.start();
         if (this.databasePath !== databasePath || !this.lanStatus.enabled) {
           throw new Error("The LAN backend did not become healthy on the selected interface.");
         }
-        this.writeLog(`LAN access enabled on ${selected.interfaceName} (${selected.address}):${this.port}.`);
+        this.writeLog(`LAN access enabled on ${currentSelection.interfaceName} (${currentSelection.address}):${this.port}.`);
         return this.lanStatus;
       } catch (error) {
         await this.stop();
