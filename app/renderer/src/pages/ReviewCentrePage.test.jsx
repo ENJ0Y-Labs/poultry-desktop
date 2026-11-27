@@ -79,7 +79,7 @@ describe("ReviewCentrePage", () => {
     fireEvent.change(await screen.findByLabelText("Status"), { target: { value: "MERGED" } });
     await waitFor(() => expect(reportReviewApi.queue).toHaveBeenCalledWith({ status: "MERGED", reportType: "" }));
     fireEvent.click(await screen.findByRole("button", { name: /Weight report/ }));
-    expect(await screen.findByText("Correct merged weight record")).toBeInTheDocument();
+    expect(await screen.findByText("Correct latest effective weight record")).toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText("Correction reason"), { target: { value: "Incorrect sample count" } });
     fireEvent.change(screen.getByLabelText("Corrected birds sampled"), { target: { value: "12" } });
@@ -96,6 +96,7 @@ describe("ReviewCentrePage", () => {
       },
     }));
     expect(await screen.findByText(/original weight record was preserved and reversed/)).toBeInTheDocument();
+    expect(await screen.findByText("Correct latest effective weight record")).toBeInTheDocument();
   });
 
 
