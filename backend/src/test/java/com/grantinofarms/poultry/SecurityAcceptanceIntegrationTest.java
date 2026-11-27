@@ -188,9 +188,7 @@ class SecurityAcceptanceIntegrationTest {
                         .cookie(otherWorkerCookie)
                         .header("X-Requested-With", "XMLHttpRequest")
                         .contentType("application/json")
-                        .content("""
-                                {"managerId":"""}
-                                """))
+                        .content("{\"managerId\":\"" + managerId + "\"}"))
                 .andExpect(status().isForbidden());
 
         mvc.perform(post("/api/v1/review/submissions/" + submissionId + "/decision")
