@@ -70,7 +70,7 @@ public class ReportingConfigurationService {
             throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_DUE_TIME", "Enter a valid local due time (HH:mm).");
         }
         validateScope(farm.id(), request.scopeType(), request.scopeId());
-        if (request.batchType() != null && !Set.of("LAYER","BROILER").contains(request.batchType())) {
+        if (request.batchType() != null && !Set.of("LAYER","BROILER","TURKEY").contains(request.batchType())) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_BATCH_TYPE", "Batch type is invalid.");
         }
         String id = UUID.randomUUID().toString();
@@ -111,7 +111,7 @@ public class ReportingConfigurationService {
         }
         if ("BATCH_TYPE".equals(request.scopeType())) {
             if (!Set.of("LAYER","BROILER").contains(request.batchType())) {
-                throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_BATCH_TYPE", "Choose LAYER or BROILER.");
+                throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_BATCH_TYPE", "Choose LAYER, BROILER, or TURKEY.");
             }
         } else validateScope(farm.id(), request.scopeType(), request.scopeId());
         String id = UUID.randomUUID().toString();
