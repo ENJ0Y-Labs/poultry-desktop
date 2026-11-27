@@ -179,3 +179,10 @@ npm test -- --run app/renderer/src/components/AppShell.test.jsx
 ```
 
 Also run the full frontend suite, lint, production browser build, and backend Maven tests. With disposable Worker and Manager accounts, verify the complete browser round-trip: Worker submits; Manager requests changes with a reason; Worker edits and resubmits; Manager reviews the new version, approves it, and explicitly merges it; the resulting official record links back to the submission/version. Confirm approval alone does not change official records, self-review remains blocked, and Workers/Administrators cannot access the Review Centre. Browser automation does not replace the live same-origin LAN acceptance check.
+## Issue #319: approval is not a ledger write
+
+Manager approval records a decision against the immutable submitted version. It must not create or modify an official farm record, create a provenance link, claim a merge idempotency key, or append a merge audit event. The only action that writes the official record is the separate explicit **Merge** operation.
+
+The merge runs the current-data checks again, claims the approved version with its stable Idempotency-Key, calls the existing report-type domain service, and writes the provenance link, MERGED lifecycle event, and audit entry in the same database transaction. Those writes commit together or roll back together. A retry with the same key returns the existing merge result; it does not call the domain service or append another link, event, or audit entry. A different key for an already-merged submission is rejected.
+
+Regression coverage: ReportReviewHardeningIntegrationTest.approvalDoesNotWriteOfficialRecordsAndExplicitMergeWritesOnceWithFullProvenance asserts the official expense count and merge history immediately after submission and approval, then verifies exactly one official record, provenance link, MERGED event, and merge audit entry after merge and after a same-key retry.
