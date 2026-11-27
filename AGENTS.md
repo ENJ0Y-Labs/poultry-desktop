@@ -1537,3 +1537,12 @@ review the error.
 - Save wizard progress locally under `pomas:onboarding:v1`; clear it only when the user chooses GO TO DASHBOARD. This metadata is not farm ledger data and must not be used as an authoritative permission or operational setting.
 - Keep the wizard offline-capable and use only local assets/CSS. No remote illustrations, fonts, maps, analytics, telemetry or CDN resources.
 - Preserve existing farm data and auth flows. Add renderer tests for progression, multi-select, resume after restart, duplicate-farm prevention, validation and existing-farm bypass. See `docs/onboarding.md`.
+
+## Manager Review automated validation gates
+
+- Keep submission authorization at the Spring service boundary. Workers, Administrators and Managers may submit their own reports; Manager-only review, assignment, warning authorization and merge actions must remain Manager-only. A Manager must never review, authorize warnings on, or merge their own submission.
+- Every automated check run must verify the authenticated actor's allowed role and farm scope, plus the exact immutable submitted version, report type and payload. A missing or mismatched version is BLOCKED.
+- Keep DTO/Bean Validation and domain-reference checks server-side. Batch, feed, date, batch-type, population and money constraints must use existing authoritative domain services and repositories.
+- Duplicate/conflict checks must use report-specific business identity. Never treat every record on the same date as a duplicate. Warnings must identify the conflicting official record and require explicit Manager authorization where marked overrideable.
+- Re-run the full validation set immediately before merge. If current farm data changes the result, return the submission to FLAGGED or BLOCKED and do not write official records.
+- Add regression tests for unauthorized review actions, invalid report payload/version integrity, duplicate official records, and data changing between approval and merge.
