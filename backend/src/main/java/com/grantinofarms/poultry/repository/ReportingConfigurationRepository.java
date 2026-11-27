@@ -25,6 +25,7 @@ public class ReportingConfigurationRepository {
             row.put("batchType", rs.getString("batch_type")); row.put("frequency", rs.getString("frequency"));
             row.put("dueTime", rs.getString("due_time")); row.put("dayOfWeek", rs.getObject("day_of_week"));
             row.put("graceMinutes", rs.getInt("grace_minutes")); row.put("enabled", rs.getInt("enabled") == 1);
+            row.put("createdAt", rs.getString("created_at"));
             return row;
         }, farmId);
     }
