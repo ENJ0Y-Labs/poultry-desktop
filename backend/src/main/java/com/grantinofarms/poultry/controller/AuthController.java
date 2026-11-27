@@ -68,8 +68,11 @@ public class AuthController {
     }
 
     static String logoutCookieHeader(boolean sameOriginBrowserRequest, boolean secureTransport) {
-        return AuthService.COOKIE + "=; Path=/; HttpOnly; Max-Age=0"
-                + sameOriginCookieAttributes(sameOriginBrowserRequest, secureTransport);
+        if (!sameOriginBrowserRequest) {
+            return AuthService.COOKIE + "=; Path=/; HttpOnly; Max-Age=0; SameSite=None; Secure";
+        }
+        return AuthService.COOKIE + "=; Path=/; HttpOnly; Max-Age=0; SameSite=Lax"
+                + (secureTransport ? "; Secure" : "");
     }
 
     private static String sameOriginCookieAttributes(boolean sameOriginBrowserRequest, boolean secureTransport) {

@@ -39,7 +39,7 @@ class AuthControllerCookieTest {
 
     @Test
     void sameOriginLogoutClearsTheMatchingLanCookieScope() {
-        assertEquals(AuthService.COOKIE + "=; Path=/; HttpOnly; Max-Age=0; Path=/; HttpOnly; SameSite=Lax",
+        assertEquals(AuthService.COOKIE + "=; Path=/; HttpOnly; Max-Age=0; SameSite=Lax",
                 AuthController.logoutCookieHeader(true, false));
     }
 
@@ -53,6 +53,7 @@ class AuthControllerCookieTest {
 
         assertTrue(AuthController.isSameOriginBrowserRequest(request));
 
+        request.removeHeader("Origin");
         request.addHeader("Origin", "http://192.168.1.21:18942");
         assertTrue(!AuthController.isSameOriginBrowserRequest(request));
     }
