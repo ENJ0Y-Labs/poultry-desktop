@@ -189,6 +189,7 @@ export class BackendManager {
             shell: isWin,
             env: {
               ...env,
+              SERVER_ADDRESS: "127.0.0.1",
               SERVER_PORT: String(this.port),
               DATABASE_PATH: this.databasePath,
               LOG_FILE: this.logFilePath,

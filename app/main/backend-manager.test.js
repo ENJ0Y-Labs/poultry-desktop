@@ -1,7 +1,7 @@
 import { EventEmitter } from "node:events";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const { spawnMock } = vi.hoisted(() => ({ spawnMock: vi.fn() }));
@@ -90,6 +90,46 @@ describe("BackendManager", () => {
     });
 
     expect(manager.databasePath).toMatch(/C:[\\/]project[\\/]data[\\/]poultry\.db$/);
+  });
+
+  it("keeps direct Spring Boot and browser-only development defaults on loopback", () => {
+    const backendProperties = readFileSync(
+      resolve(process.cwd(), "backend/src/main/resources/application.properties"),
+      "utf8"
+    );
+    const browserBackendLauncher = readFileSync(
+      resolve(process.cwd(), "scripts/run-backend-dev.mjs"),
+      "utf8"
+    );
+
+    expect(backendProperties).toContain("server.address=127.0.0.1");
+    expect(browserBackendLauncher).toContain('SERVER_ADDRESS: "127.0.0.1"');
+  });
+
+  it("binds the Electron development backend to loopback", async () => {
+    const child = fakeChild();
+    spawnMock.mockReturnValue(child);
+    const appPath = mkdtempSync(join(tmpdir(), "pomas-electron-dev-"));
+
+    try {
+      const manager = new BackendManager({
+        userDataPath: appPath,
+        appPath,
+        isPackaged: false,
+        port: 19004,
+        resourcesPath,
+        spawnProcess: spawnMock,
+      });
+
+      await manager.start();
+
+      expect(spawnMock.mock.calls[0][2].env.SERVER_ADDRESS).toBe("127.0.0.1");
+      expect(spawnMock.mock.calls[0][2].env.SERVER_PORT).toBe("19004");
+      expect(globalThis.fetch).toHaveBeenCalledWith("http://127.0.0.1:19004/api/v1/health");
+      await manager.stop();
+    } finally {
+      rmSync(appPath, { recursive: true, force: true });
+    }
   });
 
   it("uses the Electron application-data directory for the production database", () => {

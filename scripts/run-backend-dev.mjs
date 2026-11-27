@@ -78,6 +78,7 @@ if (await hasHealthyBackend()) {
       shell: isWindows,
       env: {
         ...process.env,
+        SERVER_ADDRESS: "127.0.0.1",
         SERVER_PORT: port,
         DATABASE_PATH: process.env.DATABASE_PATH || resolve(root, "data", "poultry.db"),
         LOG_FILE: process.env.LOG_FILE || resolve(root, "logs", "backend.log"),
