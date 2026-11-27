@@ -185,6 +185,9 @@ export default function IncidentReportingPage({ currentUser, farm }) {
     if (notification.entityType === "FARM_INCIDENT") {
       setActiveTab("incidents");
       window.location.hash = "#incidents/overview";
+    } else if (notification.entityType === "REPORTING_SCHEDULE") {
+      setActiveTab("schedules");
+      window.location.hash = "#incidents/overview";
     } else if (notification.entityType === "REPORT_SUBMISSION") {
       window.location.hash = manager ? "#review-centre/overview" : "#my-reports/overview";
     }
