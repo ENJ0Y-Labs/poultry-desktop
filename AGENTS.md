@@ -1517,6 +1517,17 @@ keep the dialog open when a destructive request fails so the operator can
 review the error.
 
 
+## Review Centre hardening
+
+- Automated report checks must compare a proposal with the relevant official records before approval/merge. Define identity per report type; never use a global same-date duplicate rule because multiple legitimate events may occur on one day.
+- Current official-record conflict checks cover an existing daily record for the same batch/date and an exact expense match across farm, batch scope, business date, amount in integer minor units, category, and normalized description. Other report types remain explicitly incomplete until their domain-specific identity and conflict rules are implemented.
+- Submission-level duplicate checks must inspect the immutable submitted version, not a mutable current draft, and resolve the report's business date from its supported date field.
+- Warnings remain reviewable warnings. Do not bypass a warning without the existing explicit Manager override and reason. Critical domain validation and transaction failures are never overrideable.
+- Every merge adapter, official domain write, provenance link, lifecycle transition, workflow event, and audit write must remain in one transaction. Add failure-injection tests after each write boundary; a failed merge must leave no official side effect and must not remain MERGED.
+- Version-checked transitions must be compare-and-set operations. Add concurrent tests proving that competing decisions/merges cannot both win for the same version.
+- Post-merge corrections must use the approved transaction-specific reversal-plus-replacement design. Never add a generic table-name/SQL dispatcher or mutate the original official record in place.
+- See `docs/report-submission-review.md`, `docs/review-centre-hardening.md`, and `docs/decisions/2026-10-26-auditable-transaction-corrections.md`.
+
 ## First-run onboarding
 
 - After authentication, a farm-less installation uses the seven-step Pomas onboarding wizard. Existing farms bypass it unless a locally saved onboarding record has `farmCreated: true`, which resumes the unfinished post-creation steps.
@@ -1526,3 +1537,12 @@ review the error.
 - Save wizard progress locally under `pomas:onboarding:v1`; clear it only when the user chooses GO TO DASHBOARD. This metadata is not farm ledger data and must not be used as an authoritative permission or operational setting.
 - Keep the wizard offline-capable and use only local assets/CSS. No remote illustrations, fonts, maps, analytics, telemetry or CDN resources.
 - Preserve existing farm data and auth flows. Add renderer tests for progression, multi-select, resume after restart, duplicate-farm prevention, validation and existing-farm bypass. See `docs/onboarding.md`.
+
+## Manager Review automated validation gates
+
+- Keep submission authorization at the Spring service boundary. Workers, Administrators and Managers may submit their own reports; Manager-only review, assignment, warning authorization and merge actions must remain Manager-only. A Manager must never review, authorize warnings on, or merge their own submission.
+- Every automated check run must verify the authenticated actor's allowed role and farm scope, plus the exact immutable submitted version, report type and payload. A missing or mismatched version is BLOCKED.
+- Keep DTO/Bean Validation and domain-reference checks server-side. Batch, feed, date, batch-type, population and money constraints must use existing authoritative domain services and repositories.
+- Duplicate/conflict checks must use report-specific business identity. Never treat every record on the same date as a duplicate. Warnings must identify the conflicting official record and require explicit Manager authorization where marked overrideable.
+- Re-run the full validation set immediately before merge. If current farm data changes the result, return the submission to FLAGGED or BLOCKED and do not write official records.
+- Add regression tests for unauthorized review actions, invalid report payload/version integrity, duplicate official records, and data changing between approval and merge.

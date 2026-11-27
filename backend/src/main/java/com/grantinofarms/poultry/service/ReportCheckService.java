@@ -9,6 +9,7 @@ import com.grantinofarms.poultry.repository.BatchRepository;
 import com.grantinofarms.poultry.repository.FarmRepository;
 import com.grantinofarms.poultry.repository.FeedRepository;
 import com.grantinofarms.poultry.repository.ReportSubmissionRepository;
+import com.grantinofarms.poultry.repository.ReportConflictRepository;
 import com.grantinofarms.poultry.repository.ReportingConfigurationRepository;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
@@ -36,11 +37,13 @@ public class ReportCheckService {
     private final ObjectMapper mapper;
     private final Validator validator;
     private final ReportingConfigurationRepository reporting;
+    private final ReportConflictRepository conflicts;
 
     public ReportCheckService(ReportSubmissionRepository submissions, BatchRepository batches,
                               FeedRepository feeds, FarmRepository farms, BirdPopulationService population,
                               ObjectMapper mapper, Validator validator,
-                              ReportingConfigurationRepository reporting) {
+                              ReportingConfigurationRepository reporting,
+                              ReportConflictRepository conflicts) {
         this.submissions = submissions;
         this.batches = batches;
         this.feeds = feeds;
@@ -49,12 +52,50 @@ public class ReportCheckService {
         this.mapper = mapper;
         this.validator = validator;
         this.reporting = reporting;
+        this.conflicts = conflicts;
     }
 
     @Transactional
     public String run(String submissionId, int version, String farmId, String reportType, JsonNode payload) {
         String now = Instant.now().toString();
         List<CheckResult> results = new ArrayList<>();
+        Map<String, Object> submission = submissions.findHeader(submissionId);
+        String actorId = CurrentUserContext.get();
+        String actorRole = CurrentUserContext.getRole();
+        boolean permittedActor = actorId != null && !actorId.isBlank()
+                && actorRole != null && Set.of("WORKER", "ADMINISTRATOR", "MANAGER").contains(actorRole)
+                && submission != null && farmId.equals(submission.get("farmId"));
+        if (permittedActor) {
+            results.add(passed("REPORT_PERMISSION_VALID",
+                    "The authenticated actor has a permitted role and the submission belongs to the active farm."));
+        } else {
+            results.add(blocked("REPORT_PERMISSION_INVALID",
+                    "The report could not be checked under an authorized farm account.",
+                    Map.of("role", actorRole == null ? "UNKNOWN" : actorRole)));
+        }
+
+        JsonNode persistedPayload = submissions.findVersions(submissionId).stream()
+                .filter(row -> row.get("version") instanceof Number storedVersion
+                        && storedVersion.intValue() == version)
+                .map(row -> (JsonNode) row.get("payload"))
+                .findFirst().orElse(null);
+        boolean versionIntegrity = submission != null
+                && reportType.equals(submission.get("reportType"))
+                && submission.get("currentVersion") instanceof Number current
+                && current.intValue() == version
+                && submission.get("submittedVersion") instanceof Number submitted
+                && submitted.intValue() == version
+                && payload != null && payload.isObject()
+                && persistedPayload != null && persistedPayload.equals(payload);
+        if (versionIntegrity) {
+            results.add(passed("REPORT_VERSION_INTEGRITY",
+                    "The immutable submitted version, report type and payload match the review request."));
+        } else {
+            results.add(blocked("REPORT_VERSION_INTEGRITY",
+                    "The submitted version or report payload no longer matches the version being checked.",
+                    Map.of("requestedVersion", version, "reportType", reportType)));
+        }
+
         Class<?> dtoType = dtoType(reportType);
         if (dtoType == null) {
             results.add(blocked("UNSUPPORTED_REPORT_TYPE", "This report type is not supported for official records.", Map.of("reportType", reportType)));
@@ -68,7 +109,7 @@ public class ReportCheckService {
         }
 
         String batchId = text(payload, "batchId");
-        LocalDate eventDate = parseDate(text(payload, "eventDate"));
+        LocalDate eventDate = parseDate(firstText(payload, "eventDate", "recordDate", "usageDate", "occurredDate"));
         var farm = farms.findActive();
         String timezone = farm == null ? "UTC" : farm.timezone();
         BatchResponse batch = null;
@@ -162,9 +203,39 @@ public class ReportCheckService {
                     reportType, batchId, eventDate.toString());
             if (!duplicates.isEmpty()) {
                 results.add(warning("POSSIBLE_DUPLICATE",
-                        "A report of the same type already exists for this batch and date. A Manager must inspect both records.",
-                        true, Map.of("possibleSubmissionIds", duplicates)));
+                        "Another submission of this report type exists for the same batch and business date. Compare both versions before merging.",
+                        true, Map.of("possibleSubmissionIds", duplicates, "batchId", batchId,
+                                "eventDate", eventDate.toString(), "reportType", reportType)));
             }
+        }
+
+        if (eventDate != null && batch != null && "DAILY_OPERATIONS".equals(reportType)) {
+            Map<String, Object> existing = conflicts.findDailyRecord(batchId, eventDate.toString());
+            if (existing != null) {
+                results.add(warning("OFFICIAL_DAILY_RECORD_CONFLICT",
+                        "An official daily record already exists for this batch and date. Merging may update its notes or water entries; inspect the current record first.",
+                        true, existing));
+            }
+        }
+
+        if (eventDate != null && "EXPENSE".equals(reportType)) {
+            JsonNode amount = payload.get("amountMinor");
+            String category = text(payload, "category");
+            String description = text(payload, "description");
+            if (amount != null && amount.canConvertToLong() && category != null && description != null) {
+                List<Map<String, Object>> duplicates = conflicts.findExactExpenseDuplicates(
+                        farmId, batchId, eventDate.toString(), amount.asLong(), category, description);
+                if (!duplicates.isEmpty()) {
+                    results.add(warning("OFFICIAL_EXPENSE_DUPLICATE",
+                            "An official expense with the same date, batch, category, amount and description already exists. Verify the receipt or source document before merging.",
+                            true, Map.of("possibleOfficialRecords", duplicates)));
+                }
+            }
+        }
+
+        if (!submissions.findChecks(submissionId, version).isEmpty()) {
+            results.add(passed("CURRENT_DATA_REVALIDATION",
+                    "The submitted version was checked again against current farm, batch, feed, population and official-record data."));
         }
 
         String outcome = results.stream().anyMatch(result -> "BLOCKED".equals(result.outcome())) ? "BLOCKED"
@@ -261,6 +332,14 @@ public class ReportCheckService {
         if (value == null || value.isNull()) return null;
         String text = value.asText();
         return text.isBlank() ? null : text.trim();
+    }
+
+    private String firstText(JsonNode payload, String... fields) {
+        for (String field : fields) {
+            String value = text(payload, field);
+            if (value != null) return value;
+        }
+        return null;
     }
 
     private LocalDate parseDate(String value) {

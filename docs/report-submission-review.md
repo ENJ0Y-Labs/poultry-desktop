@@ -54,6 +54,8 @@ A later merge recheck can return an approved version to FLAGGED or BLOCKED. Deci
 Checks run when a report is submitted and again immediately before merge.
 
 Current checks include:
+- **Permission gate:** every submit, review, override, assignment and merge action is guarded by the authenticated role. Review and merge actions are Manager-only; authors cannot review, authorize warnings on, or merge their own submissions. Automated check runs also record that the actor has an allowed role and the submission belongs to the active farm.
+- **Version integrity gate:** every check run verifies that the report type, current version, submitted version and JSON payload match the exact immutable version being reviewed. A mismatched or missing version is blocked.
 - DTO/Bean Validation for the report type.
 - Required active batch reference and farm ownership.
 - Batch type compatibility for egg and broiler reports.
@@ -61,7 +63,12 @@ Current checks include:
 - Mortality, culling, and bird-sale quantity not exceeding known live population on the event date.
 - Active farm feed type, applicable batch type, and unit validation for feed usage.
 - Event date/time in the configured farm timezone, no future event time, and a reason plus Manager authorization for events older than 24 hours.
-- Likely duplicate report detection for the same report type, batch, and event date.
+- Likely duplicate submission detection for the same report type, batch, and business date. The lookup uses the immutable submitted version and supports each report type's date field (eventDate, recordDate, usageDate, or occurredDate).
+- An official daily-record conflict check before a DAILY_OPERATIONS submission can be approved. It exposes the existing record ID and current notes because the daily operations adapter may update that day's existing record.
+- Exact official expense duplicate detection using farm, batch scope, business date, category, amount, and normalized description. Similar but non-identical expenses remain a Manager judgement rather than an automatic rejection.
+- **Stale-data gate:** the complete validation set is rerun immediately before merge against current farm, batch, feed, population and official-record data. A new duplicate/conflict or invalidated reference returns the approved submission to FLAGGED or BLOCKED instead of merging. The check run records `CURRENT_DATA_REVALIDATION` when this second validation pass has run.
+
+Permission checks are enforced at the service boundary and cannot be bypassed by calling the API directly. Permission and version-integrity checks are also retained in the submission's check history. A stale-data recheck does not silently authorize newly discovered warnings; the Manager must inspect and authorize them against the current check result.
 
 Outcomes:
 - **PASSED:** no issue detected.
@@ -95,11 +102,17 @@ All operations execute in one database transaction. A domain service failure rol
 
 ## Remaining Issue #287 work
 
-The following are not yet implemented and must not be represented as complete:
+The first Review Centre hardening increment adds official-record conflict checks for existing daily records and exact duplicate expenses, plus regression coverage for a failed provenance write and competing version-checked review transitions. This is deliberately narrower than a universal duplicate rule.
 
-- Comparison of proposed values against existing official records and broader conflict detection.
-- Post-merge correction/reversal workflow linking original and corrected official records.
-- Full concurrency, transaction-failure, network interruption, packaged Electron, backup/restore, and end-to-end acceptance coverage.
+The following are still not complete and must not be represented as complete:
+
+- Report-type-specific official-record comparison for health, vaccination, drug, egg, weight, feed, mortality/culling, and sales records. Each needs its own business identity and conflict semantics; same-day activity alone must not be treated as a duplicate.
+- Post-merge correction/reversal workflow linking the original submission, original official record, reversal, and replacement. Follow the transaction-specific reversal decision; do not implement a generic table-name-based correction endpoint.
+- Full concurrency coverage for competing merge attempts and concurrent writes to the same domain records.
+- Failure-injection coverage for every report adapter and each write boundary, including audit, domain side effects, provenance, and merge completion.
+- Network interruption/retry status reconciliation, packaged Electron, backup/restore, and full end-to-end acceptance coverage.
+
+See [Review Centre hardening](review-centre-hardening.md) for the focused regression and manual test plan.
 
 Emergency incidents are stored separately from farm ledgers. Reporting schedules and mortality thresholds are configurable but start unset; the application does not invent defaults. Missing reports are explicitly labelled missing, never interpreted as zero activity. Configured mortality thresholds can create Manager notifications and review warnings, but do not automatically change official records.
 
