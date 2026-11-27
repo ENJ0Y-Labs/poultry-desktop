@@ -6,7 +6,7 @@ const channels = Object.freeze({
   SET_THEME: "theme:set",
   GET_BACKEND_BASE_URL: "backend:base-url",
   GET_APP_INFO: "app:info",
-  QUIT_APP: "app:quit",
+  QUIT_APP: "app:quit",\n  LAN_ACCESS_INFO: "lan-access:info",\n  LAN_ACCESS_ENABLE: "lan-access:enable",\n  LAN_ACCESS_DISABLE: "lan-access:disable",
 });
 
 contextBridge.exposeInMainWorld("poultryDesktop", Object.freeze({
@@ -16,7 +16,7 @@ contextBridge.exposeInMainWorld("poultryDesktop", Object.freeze({
   chooseBackupDirectory: () => ipcRenderer.invoke(channels.CHOOSE_BACKUP_DIRECTORY),
   setTheme: (theme) => ipcRenderer.invoke(channels.SET_THEME, theme),
   getApiBaseUrl: () => ipcRenderer.invoke(channels.GET_BACKEND_BASE_URL),
-  getAppInfo: () => ipcRenderer.invoke(channels.GET_APP_INFO),
+  getAppInfo: () => ipcRenderer.invoke(channels.GET_APP_INFO),\n  getLanAccessInfo: () => ipcRenderer.invoke(channels.LAN_ACCESS_INFO),\n  enableLanAccess: (selection) => ipcRenderer.invoke(channels.LAN_ACCESS_ENABLE, selection),\n  disableLanAccess: () => ipcRenderer.invoke(channels.LAN_ACCESS_DISABLE),
   listDrafts: () => ipcRenderer.invoke(channels.LIST_DRAFTS),
   saveDraft: (draft) => ipcRenderer.invoke(channels.SAVE_DRAFT, draft),
   discardDraft: (id) => ipcRenderer.invoke(channels.DISCARD_DRAFT, id),
