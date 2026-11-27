@@ -19,6 +19,9 @@ ReportReviewHardeningIntegrationTest covers:
 1. An exact official expense duplicate produces an overrideable warning and uses occurredDate when eventDate is absent.
 2. A forced provenance-link failure after the official expense insert rolls back the expense, merge operation key, and MERGED transition.
 3. Two concurrent version-checked review transitions cannot both win.
+4. Invalid expense data is BLOCKED while permission and immutable-version integrity checks are recorded as PASSED.
+5. A Worker cannot call Manager-only queue or decision actions.
+6. An official duplicate inserted after approval is detected by the pre-merge recheck, returns the submission to FLAGGED, and creates no provenance link.
 
 ## Verification commands
 
