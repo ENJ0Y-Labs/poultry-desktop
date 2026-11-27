@@ -285,9 +285,9 @@ export default function ReviewCentrePage({ currentUser }) {
               {((selected.lifecycleStatus || selected.status) === "MERGED") && <section className="review-merge">
                 <h4>Official records and correction history</h4>
                 {(selected.links || []).map(link => <article key={link.id}><strong>{label(link.recordType)}</strong><span>{link.recordId}</span><small>Version {link.version} · {link.createdAt}</small></article>)}
-                {selected.reportType === "WEIGHT_RECORD" && !weightCorrectionAlreadyApplied && (selected.links || []).filter(link => link.recordType === "WEIGHT_RECORD").length === 1 && <form className="review-correction-form" onSubmit={correctMergedWeight}>
-                  <h4>Correct merged weight record</h4>
-                  <p className="muted">This first correction adapter supports weight records only. It preserves the original row, creates a replacement through the existing production service, and rejects corrections when later measurements depend on the original. The original measurement date is retained: {selectedPayload.recordDate || selectedPayload.eventDate || "Unavailable"}.</p>
+                {selected.reportType === "WEIGHT_RECORD" && (selected.links || []).filter(link => link.recordType === "WEIGHT_RECORD").length >= 1 && <form className="review-correction-form" onSubmit={correctMergedWeight}>
+                  <h4>Correct latest effective weight record</h4>
+                  <p className="muted">Each correction preserves the previous row and creates a replacement through the existing production service. The next correction targets the latest effective replacement. Corrections are rejected when later measurements depend on the record. The original measurement date is retained: {selectedPayload.recordDate || selectedPayload.eventDate || "Unavailable"}.</p>
                   <label htmlFor="weight-correction-reason">Correction reason</label>
                   <textarea id="weight-correction-reason" rows={2} maxLength={500} value={correctionReason} onChange={event => setCorrectionReason(event.target.value)} required />
                   <label htmlFor="weight-correction-sample">Corrected birds sampled</label>
@@ -299,7 +299,7 @@ export default function ReviewCentrePage({ currentUser }) {
                   <button type="submit" disabled={saving || !correctionReason.trim() || !correctionSampleQuantity || !correctionTotalWeightKg}>Record correction</button>
                 </form>}
                 {selected.reportType !== "WEIGHT_RECORD" && <p className="muted">Post-merge correction is not yet available for this report type. Its official record remains unchanged.</p>}
-                {weightCorrectionAlreadyApplied && <p className="muted">A post-merge correction has already been recorded for this submission. The original and replacement remain in the provenance history.</p>}
+                {weightCorrectionAlreadyApplied && <p className="muted">Earlier corrections are preserved in the provenance history. The form targets the latest effective replacement, not the original row.</p>}
               </section>}
               <section className="review-history"><h4>Decision and activity history</h4>{(selected.decisions || []).map(item => <article key={item.id}><strong>{label(item.decision)} · version {item.version}</strong><p>{item.reason || "No reason supplied"}</p><small>{item.managerName} · {item.createdAt}</small></article>)}{(selected.history || []).map(item => <p key={item.id}><strong>{label(item.event)}</strong> · {item.occurredAt}</p>)}</section>
             </>}
