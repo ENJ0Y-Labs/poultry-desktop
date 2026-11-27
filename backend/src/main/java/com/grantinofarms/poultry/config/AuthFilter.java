@@ -65,6 +65,7 @@ public class AuthFilter extends OncePerRequestFilter {
         }
 
         String path = request.getRequestURI();
+        boolean browserAsset = lanEnabled && !path.startsWith("/api/");
         boolean publicEndpoint = path.startsWith("/api/v1/auth/") || path.equals("/api/v1/health");
         boolean needsFilterSession = !publicEndpoint || path.equals("/api/v1/auth/me");
         String rawSessionToken = token(request);
@@ -77,11 +78,11 @@ public class AuthFilter extends OncePerRequestFilter {
 
         boolean required = environment.getProperty("poultry.auth-required", Boolean.class, false);
         try {
-            if (user != null && "WORKER".equals(user.get("role")) && !workerEndpoint(path)) {
+            if (user != null && "WORKER".equals(user.get("role")) && !workerEndpoint(path) && !browserAsset) {
                 denyRole(response);
                 return;
             }
-            if (required && !publicEndpoint) {
+            if (required && !publicEndpoint && !browserAsset) {
                 boolean bootstrap = users.count() == 0;
                 if (!bootstrap && user == null) {
                     response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
