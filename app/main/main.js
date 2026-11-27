@@ -14,6 +14,7 @@ if (app.isPackaged) {
 
 let mainWindow;
 let backendManager;
+let lanAccessPublished = false;
 let shutdownInProgress = false;
 
 ipcMain.handle("app:info", async (_event, ...args) => {
@@ -30,7 +31,124 @@ ipcMain.handle("app:quit", async (event, ...args) => {
 ipcMain.handle("backend:base-url", async (_event, ...args) => {
   if (args.length !== 0) throw new Error("Invalid IPC message.");
   if (!backendManager?.port) throw new Error("The local backend is not ready.");
-  return "http://127.0.0.1:" + backendManager.port;
+  return backendManager.baseUrl;
+});
+
+
+async function loadLocalDesktopRenderer() {
+  if (process.env.ELECTRON_RENDERER_URL) {
+    await mainWindow.loadURL(process.env.ELECTRON_RENDERER_URL);
+  } else {
+    await mainWindow.loadFile(join(__dirname, "../renderer/index.html"));
+  }
+}
+
+async function requireLanAccessSession(event) {
+  if (event.sender !== mainWindow?.webContents || !backendManager?.process) {
+    throw new Error("This desktop action is not available from this window.");
+  }
+  const baseUrl = backendManager.baseUrl;
+  const cookies = await mainWindow.webContents.session.cookies.get({
+    url: baseUrl,
+    name: "poultry_session"
+  });
+  const sessionCookie = cookies.find(cookie => cookie.name === "poultry_session");
+  if (!sessionCookie?.value) throw new Error("Sign in with a Manager account before changing LAN access.");
+  const response = await fetch(baseUrl + "/api/v1/auth/me", {
+    headers: { Cookie: "poultry_session=" + sessionCookie.value }
+  });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok || !["MANAGER", "ADMINISTRATOR"].includes(payload?.data?.role)) {
+    throw new Error("Only an authenticated Manager or Administrator can change LAN access.");
+  }
+  return { value: sessionCookie.value, expirationDate: sessionCookie.expirationDate };
+}
+
+async function moveDesktopSessionCookie(url, sessionCookie, lanMode) {
+  await mainWindow.webContents.session.cookies.set({
+    url,
+    name: "poultry_session",
+    value: sessionCookie.value,
+    ...(Number.isFinite(sessionCookie.expirationDate) ? { expirationDate: sessionCookie.expirationDate } : {}),
+    path: "/",
+    httpOnly: true,
+    secure: !lanMode,
+    sameSite: lanMode ? "lax" : "no_restriction"
+  });
+}
+
+ipcMain.handle("lan-access:info", async (event, ...args) => {
+  if (args.length !== 0) throw new Error("Invalid IPC message.");
+  await requireLanAccessSession(event);
+  return Object.freeze({
+    interfaces: backendManager.getLanInterfaces().map(({ interfaceName, address, netmask }) => ({ interfaceName, address, netmask })),
+    status: lanAccessPublished ? backendManager.lanStatus : { enabled: false, interfaceName: null, address: null, url: null }
+  });
+});
+
+ipcMain.handle("lan-access:enable", async (event, selection, ...args) => {
+  if (args.length !== 0 || !selection || typeof selection !== "object"
+      || typeof selection.interfaceName !== "string" || typeof selection.address !== "string") {
+    throw new Error("Invalid LAN interface selection.");
+  }
+  const sessionCookie = await requireLanAccessSession(event);
+  const confirmation = await dialog.showMessageBox(mainWindow, {
+    type: "warning",
+    buttons: ["Enable LAN access", "Cancel"],
+    defaultId: 1,
+    cancelId: 1,
+    title: "Enable network access",
+    message: "Allow other devices on this private network to access Pomas?",
+    detail: "Anyone on the selected network who can reach this computer will see the Pomas sign-in page. Only enable this on a trusted private network."
+  });
+  if (confirmation.response !== 0) return { canceled: true };
+  const status = await backendManager.enableLanAccess(selection);
+  try {
+    const browserResponse = await fetch(status.url + "/", { redirect: "manual" });
+    const browserHtml = browserResponse.ok && (browserResponse.headers.get("content-type") || "").includes("text/html")
+      ? await browserResponse.text() : "";
+    const scriptAsset = browserHtml.match(/<script[^>]+src=["']([^"']+\.js)["']/i)?.[1];
+    if (!browserHtml.includes('<div id="root">') || !browserHtml.includes("theme-init.js") || !scriptAsset) {
+      throw new Error("The production browser workspace is missing or incomplete. Build the renderer before enabling LAN access.");
+    }
+    const [themeResponse, scriptResponse] = await Promise.all([
+      fetch(new URL("/theme-init.js", status.url), { redirect: "manual" }),
+      fetch(new URL(scriptAsset, status.url), { redirect: "manual" })
+    ]);
+    if (!themeResponse.ok || !scriptResponse.ok) {
+      throw new Error("The production browser JavaScript assets could not be loaded from the LAN listener.");
+    }
+    await moveDesktopSessionCookie(status.url, sessionCookie, true);
+    lanAccessPublished = true;
+    await mainWindow.loadURL(status.url + "#settings/network");
+    return status;
+  } catch (error) {
+    lanAccessPublished = false;
+    await backendManager.disableLanAccess();
+    await moveDesktopSessionCookie(backendManager.baseUrl, sessionCookie, false);
+    await loadLocalDesktopRenderer();
+    throw new Error("LAN access was rolled back because the browser workspace could not be opened. " + error.message);
+  }
+});
+
+ipcMain.handle("lan-access:disable", async (event, ...args) => {
+  if (args.length !== 0) throw new Error("Invalid IPC message.");
+  const sessionCookie = await requireLanAccessSession(event);
+  const confirmation = await dialog.showMessageBox(mainWindow, {
+    type: "warning",
+    buttons: ["Disable LAN access", "Cancel"],
+    defaultId: 1,
+    cancelId: 1,
+    title: "Disable network access",
+    message: "Stop access from other devices?",
+    detail: "Pomas will return to localhost-only mode. Other devices will be disconnected."
+  });
+  if (confirmation.response !== 0) return { canceled: true };
+  lanAccessPublished = false;
+  await backendManager.disableLanAccess();
+  await moveDesktopSessionCookie(backendManager.baseUrl, sessionCookie, false);
+  await loadLocalDesktopRenderer();
+  return backendManager.lanStatus;
 });
 
 const DRAFT_IDS = new Set([
@@ -165,7 +283,7 @@ function friendlyFileError(error, fallback) {
 }
 
 async function validateBackup(file) {
-  const response = await fetch("http://127.0.0.1:" + backendManager.port + "/api/v1/backup/validate", {
+  const response = await fetch(backendManager.baseUrl + "/api/v1/backup/validate", {
     method: "POST",
     headers: { "Content-Type": "application/json", "X-Requested-With": "XMLHttpRequest" },
     body: JSON.stringify({ file })
@@ -216,7 +334,7 @@ ipcMain.handle("backup:restore", async (_event, ...args) => {
 
     const validation = await validateBackup(backup);
     const currentHealthResponse = await fetch(
-      "http://127.0.0.1:" + backendManager.port + "/api/v1/health"
+      backendManager.baseUrl + "/api/v1/health"
     );
     const currentHealth = await currentHealthResponse.json().catch(() => ({}));
     if (!currentHealthResponse.ok || currentHealth.schema !== "VALID") {
@@ -253,7 +371,7 @@ ipcMain.handle("backup:restore", async (_event, ...args) => {
     // The backend owns SQLite. Create and validate a consistent pre-restore
     // snapshot before stopping it; never raw-copy a live WAL database.
     const safetyResponse = await fetch(
-      "http://127.0.0.1:" + backendManager.port + "/api/v1/backup",
+      backendManager.baseUrl + "/api/v1/backup",
       {
         method: "POST",
         headers: { "Content-Type": "application/json", "X-Requested-With": "XMLHttpRequest" },
@@ -428,6 +546,10 @@ async function createWindow() {
   mainWindow.webContents.on("will-navigate", (event, url) => {
     const rendererFile = pathToFileURL(join(__dirname, "../renderer/index.html")).href;
     let allowed = url === rendererFile;
+    if (backendManager?.lanStatus?.url) {
+      try { allowed = allowed || new URL(url).origin === new URL(backendManager.lanStatus.url).origin; }
+      catch { allowed = false; }
+    }
     if (process.env.ELECTRON_RENDERER_URL) {
       try {
         allowed = allowed || new URL(url).origin === new URL(process.env.ELECTRON_RENDERER_URL).origin;

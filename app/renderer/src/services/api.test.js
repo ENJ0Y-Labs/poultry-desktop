@@ -1,9 +1,34 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import { authApi, attentionApi, reportApi, settingsApi, expenseCategoryApi, accountApi, populationApi, eggApi, productionTrendApi } from "./api.js";
+import { authApi, attentionApi, reportApi, settingsApi, expenseCategoryApi, accountApi, populationApi, eggApi, productionTrendApi, connectionApi } from "./api.js";
 
 describe("API client", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+  });
+
+
+  it("uses the hosted browser origin for production LAN API requests", async () => {
+    const originalWindow = window;
+    vi.stubGlobal("window", {
+      location: {
+        hostname: "192.168.10.25",
+        port: "18942",
+        origin: "http://192.168.10.25:18942"
+      }
+    });
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ status: "UP", schema: "VALID" }), { status: 200 })
+    );
+
+    try {
+      await expect(connectionApi.check()).resolves.toBe(true);
+      expect(fetchMock).toHaveBeenCalledWith(
+        "http://192.168.10.25:18942/api/v1/health",
+        expect.objectContaining({ credentials: "include" })
+      );
+    } finally {
+      vi.stubGlobal("window", originalWindow);
+    }
   });
 
   it("includes credentials so session cookies are sent", async () => {

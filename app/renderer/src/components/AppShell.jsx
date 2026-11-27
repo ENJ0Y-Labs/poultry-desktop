@@ -108,6 +108,7 @@ const pageTabs = {
     { id: "application", label: "App, appearance & account" },
     { id: "backup", label: "Backup & restore" },
     { id: "pricing", label: "Pricing" },
+    { id: "network", label: "Network access" },
   ],
 };
 const defaultTabs = {

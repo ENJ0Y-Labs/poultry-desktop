@@ -7,19 +7,19 @@ Pomas uses a server-managed session token in the `poultry_session` cookie. The c
 | Attribute | Login behavior | Logout behavior | Reason |
 |---|---|---|---|
 | Name | `poultry_session` | `poultry_session` | Must match the name read by the backend. |
-| `SameSite` | `None` | `None` | The supported renderer contexts include packaged Electron (`file://`) and the browser-only development workflow, where the renderer and API can be treated as cross-site. `None` permits the credentialed API requests required by these contexts. |
-| `Secure` | Present | Present | Chromium requires `Secure` with `SameSite=None`. The API is bound to loopback; validate cookie acceptance in the supported Chromium runtime rather than weakening this attribute. |
+| `SameSite` | `None` for packaged Electron / cross-origin development; `Lax` for same-origin LAN browser | Matches the login context | Same-origin LAN browser requests do not need cross-site cookies. |
+| `Secure` | Present for packaged Electron / cross-origin development and HTTPS; absent for HTTP LAN | Matches the login context | Browsers reject Secure cookies on ordinary HTTP private-LAN addresses. |
 | `HttpOnly` | Present | Present | Renderer JavaScript must not be able to read the session token. |
 | `Path` | `/` | `/` | Makes the cookie available to the API routes and ensures logout targets the same cookie scope. |
 | `Expires` / `Max-Age` | Omitted | `Max-Age=0` | Login creates a browser-session cookie. The server-side session expires after 12 hours; logout immediately expires the browser cookie. |
 
-The application currently uses `SameSite=None; Secure`, not `SameSite=Strict`. Do not change it to `Strict` or `Lax` without validating all supported renderer origins and the credentialed login/API/logout round trip. Conversely, do not assume `None` works in every browser privacy configuration: third-party-cookie restrictions may block cookies in some browser contexts.
+The packaged Electron and cross-origin development flows use `SameSite=None; Secure`. The production LAN browser workspace is same-origin and uses `SameSite=Lax`; its cookie is Secure only when the origin uses HTTPS. Do not broaden the cookie Domain or expose the token to renderer JavaScript.
 
 ## Origin trust boundary
 
-The backend currently permits the literal `Origin: null` for credentialed API requests because the packaged Electron renderer uses `file://`. This is a compatibility allowance, not proof that the caller is the trusted Pomas renderer: unrelated local files and other opaque browser origins can also serialize their origin as `null`. The `X-Requested-With: XMLHttpRequest` check is a CSRF friction, not an authentication secret, because a caller can send that header when the CORS preflight permits it.
+The loopback-only packaged Electron renderer retains the literal `Origin: null` compatibility allowance. LAN mode does not: Electron switches to the same-origin browser workspace before publishing the LAN URL, and the backend rejects opaque or cross-origin requests. In both modes, `X-Requested-With` is CSRF friction rather than an authentication secret.
 
-Treat null-origin access as an unresolved local-origin trust risk until a per-launch renderer/backend trust mechanism is implemented and verified. Do not simply remove `null` from the allow-list without replacing the packaged renderer transport, because that may break the desktop application. Required verification: test an unrelated local HTML file against an authenticated packaged instance, confirm it cannot read API responses or perform state-changing requests, and then repeat normal login, data access, and logout in the packaged app. Record the exact Electron/Chromium version and test results.
+Treat the null-origin allowance as a loopback-only compatibility boundary. LAN mode removes `null` from the CORS allow-list and requires the request Host to match the actual bound IPv4 address and port; any supplied Origin must exactly match that same origin. State-changing LAN requests require exact Origin and the CSRF marker. Automated coverage lives in `LanHostOriginSecurityTest`; packaged Electron runtime checks remain required.
 
 ## Invalidation
 
@@ -39,7 +39,7 @@ The following runtime checks are still required before declaring cross-context b
 Do not claim these manual checks passed until they have been run. If a supported context rejects `Secure` cookies on the loopback API, fix the origin/transport arrangement or document a justified environment-specific policy; do not silently remove `Secure`.
 
 
-## Same-origin LAN browser transport (Issue #310)
+## Same-origin LAN browser transport (Issues #310 and #314)
 
 A production browser workspace served by the Pomas host uses the same scheme, hostname, and port as the REST API. For that exact same-origin request only, the session cookie uses `SameSite=Lax`. On an HTTP-only private LAN URL the cookie is not marked `Secure`, because browsers reject Secure cookies on ordinary LAN HTTP origins. It remains host-only, `HttpOnly`, and `Path=/`; no `Domain` attribute is added. If the same-origin host uses HTTPS, `Secure` remains enabled.
 

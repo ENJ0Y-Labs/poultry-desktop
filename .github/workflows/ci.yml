@@ -75,16 +75,20 @@ jobs:
       - name: Install frontend dependencies
         run: npm ci
 
-      - name: Package backend
+      - name: Package Java runtime
+        run: npm run package:runtime
+
+      - name: Build production renderer and Electron entry points
+        run: npm run build
+
+      - name: Package backend with production browser assets
         run: mvn -B -f backend/pom.xml package -DskipTests
 
+      - name: Verify production package inputs
+        run: npm run package:verify
+
       - name: Build and package Electron application
-        run: |
-          npm run package:runtime
-          npm run build
-          npm run package:verify
-          npx electron-builder --publish never
-          npm run installer:verify
+        run: npx electron-builder --publish never
 
       - name: Verify Windows installer
         run: npm run installer:verify

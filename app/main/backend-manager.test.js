@@ -1,7 +1,7 @@
 import { EventEmitter } from "node:events";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join, resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const { spawnMock } = vi.hoisted(() => ({ spawnMock: vi.fn() }));
@@ -49,6 +49,23 @@ describe("BackendManager", () => {
 
   afterEach(() => {
     rmSync(resourcesPath, { recursive: true, force: true });
+  });
+
+  it("keeps packaged backend startup loopback-only unless LAN mode is explicitly selected", () => {
+    const manager = new BackendManager({
+      userDataPath: "C:/Users/test/AppData/Roaming/Poultry Farm Manager",
+      appPath: "C:/project",
+      isPackaged: true,
+      port: 19048,
+      resourcesPath
+    });
+    expect(manager.backendArgumentsForJava).toContain("--server.address=127.0.0.1");
+    expect(manager.backendArgumentsForJava).toContain("--poultry.lan.enabled=false");
+    expect(manager.baseUrl).toBe("http://127.0.0.1:19048");
+
+    manager.bindAddress = "192.168.10.25";
+    expect(manager.backendArgumentsForJava).toContain("--server.address=192.168.10.25");
+    expect(manager.backendArgumentsForJava).toContain("--poultry.lan.enabled=true");
   });
 
   it("refuses to fall back to a system Java runtime in packaged builds", () => {
@@ -285,12 +302,37 @@ describe("BackendManager", () => {
     });
     try {
       await manager.start();
+      const originalDatabasePath = manager.databasePath;
       expect(manager.lanStatus).toMatchObject({ enabled: false, url: null });
       const status = await manager.enableLanAccess({ interfaceName: "WiFi", address: "192.168.10.25" });
       expect(spawnMock.mock.calls.at(-1)[2].env.SERVER_ADDRESS).toBe("192.168.10.25");
       expect(globalThis.fetch).toHaveBeenLastCalledWith("http://192.168.10.25:19044/api/v1/health");
       expect(status).toMatchObject({ enabled: true, address: "192.168.10.25", url: "http://192.168.10.25:19044" });
-      expect(manager.databasePath).toMatch(/data[\\/]poultry\.db$/);
+      expect(manager.databasePath).toBe(originalDatabasePath);
+      await manager.stop();
+    } finally {
+      rmSync(appPath, { recursive: true, force: true });
+    }
+  });
+
+
+  it("preserves existing SQLite bytes across successful LAN enable and disable", async () => {
+    const appPath = mkdtempSync(join(tmpdir(), "pomas-lan-database-"));
+    const interfaces = { WiFi: [{ address: "192.168.10.25", netmask: "255.255.255.0", family: "IPv4", internal: false }] };
+    spawnMock.mockImplementation(() => fakeChild());
+    const manager = new BackendManager({
+      userDataPath: appPath, appPath, isPackaged: false, port: 19049, resourcesPath,
+      spawnProcess: spawnMock, networkInterfacesProvider: () => interfaces
+    });
+    const originalDatabase = Buffer.from("existing-pomas-sqlite-database-bytes");
+    mkdirSync(dirname(manager.databasePath), { recursive: true });
+    writeFileSync(manager.databasePath, originalDatabase);
+    try {
+      await manager.start();
+      await manager.enableLanAccess({ interfaceName: "WiFi", address: "192.168.10.25" });
+      await manager.disableLanAccess();
+      expect(readFileSync(manager.databasePath)).toEqual(originalDatabase);
+      expect(manager.bindAddress).toBe("127.0.0.1");
       await manager.stop();
     } finally {
       rmSync(appPath, { recursive: true, force: true });
@@ -343,6 +385,9 @@ describe("BackendManager", () => {
       spawnProcess: spawnMock,
       networkInterfacesProvider: () => (++discoveryCount === 1 ? available : {})
     });
+    const originalDatabase = Buffer.from("preserve-this-farm-database-on-lan-startup-failure");
+    mkdirSync(dirname(manager.databasePath), { recursive: true });
+    writeFileSync(manager.databasePath, originalDatabase);
     try {
       await manager.start();
       await expect(manager.enableLanAccess({ interfaceName: "WiFi", address: "192.168.10.25" }))
@@ -351,6 +396,7 @@ describe("BackendManager", () => {
       expect(manager.process).not.toBeNull();
       expect(manager.lanStatus).toMatchObject({ enabled: false, url: null });
       expect(spawnMock.mock.calls.at(-1)[2].env.SERVER_ADDRESS).toBe("127.0.0.1");
+      expect(readFileSync(manager.databasePath)).toEqual(originalDatabase);
       await manager.stop();
     } finally {
       rmSync(appPath, { recursive: true, force: true });

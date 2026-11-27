@@ -1,4 +1,4 @@
-import { useContext } from "react";
+import { useCallback, useContext, useEffect, useState } from "react";
 // eslint-disable-next-line no-unused-vars -- JSX component usage is not detected by the core rule
 import ValidatedForm from "../components/ValidatedForm.jsx";
 import { FarmManagerContext } from "../components/FarmManagerContext.jsx";
@@ -15,7 +15,113 @@ import ToggleSwitch from "../components/ToggleSwitch.jsx";
 // eslint-disable-next-line no-unused-vars -- JSX component usage is not detected by the core rule
 import ThemePreferenceSwitches from "../components/ThemePreferenceSwitches.jsx";
 
-export default function SettingsPage() {
+
+// eslint-disable-next-line no-unused-vars -- JSX component usage is not detected by the core rule
+function LanAccessSettings({ userRole }) {
+  const [interfaces, setInterfaces] = useState([]);
+  const [selected, setSelected] = useState("");
+  const [status, setStatus] = useState({ enabled: false, url: null });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const refresh = useCallback(async () => {
+    if (!window.poultryDesktop?.getLanAccessInfo) return;
+    setLoading(true);
+    setError("");
+    try {
+      const info = await window.poultryDesktop.getLanAccessInfo();
+      setInterfaces(info.interfaces || []);
+      setStatus(info.status || { enabled: false, url: null });
+      if (!selected && info.interfaces?.length) {
+        setSelected(JSON.stringify({ interfaceName: info.interfaces[0].interfaceName, address: info.interfaces[0].address }));
+      }
+    } catch (cause) {
+      setError(cause?.message || "LAN access settings could not be loaded.");
+    } finally {
+      setLoading(false);
+    }
+  }, [selected]);
+
+  useEffect(() => {
+    if (["MANAGER", "ADMINISTRATOR"].includes(userRole)) void refresh();
+  }, [refresh, userRole]);
+
+  async function enable() {
+    if (!selected) return;
+    setLoading(true);
+    setError("");
+    try {
+      const result = await window.poultryDesktop.enableLanAccess(JSON.parse(selected));
+      if (result?.canceled) return;
+      setStatus(result);
+    } catch (cause) {
+      setError(cause?.message || "LAN access could not be enabled.");
+      await refresh();
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function disable() {
+    setLoading(true);
+    setError("");
+    try {
+      const result = await window.poultryDesktop.disableLanAccess();
+      if (result?.canceled) return;
+      setStatus(result);
+    } catch (cause) {
+      setError(cause?.message || "LAN access could not be disabled.");
+      await refresh();
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  if (!["MANAGER", "ADMINISTRATOR"].includes(userRole)) {
+    return <PageSection page="settings" tab="network"><section className="card full"><h2>Network access</h2><p className="muted">Only an authenticated Manager or Administrator can change network access from the Pomas desktop host.</p></section></PageSection>;
+  }
+
+  if (!window.poultryDesktop?.getLanAccessInfo) {
+    return <PageSection page="settings" tab="network"><section className="card full"><h2>Network access</h2><p className="muted">LAN access can only be configured from the Pomas desktop host. This browser session can use Pomas but cannot change host networking.</p></section></PageSection>;
+  }
+
+  return (
+    <PageSection page="settings" tab="network">
+      <section className="card full">
+        <div className="section-head"><h2>Network access</h2><p className="muted">Pomas is localhost-only by default. Enable access only on a trusted private network.</p></div>
+        <div className="form-grid">
+          <p><strong>Status:</strong> {status.enabled ? "Enabled on this private network" : "Localhost only"}</p>
+          {status.enabled ? (
+            <>
+              <p><strong>Network address:</strong> {status.address}</p>
+              <p><strong>Browser URL:</strong> <code>{status.url}</code></p>
+              <p className="muted">Other devices on this network can open this address and sign in with their own Pomas account.</p>
+              <button type="button" className="danger-button" disabled={loading} onClick={disable}>{loading ? "Disabling..." : "Disable LAN access"}</button>
+            </>
+          ) : (
+            <>
+              <label>Network interface
+                <select value={selected} onChange={event => setSelected(event.target.value)} disabled={loading || interfaces.length === 0}>
+                  {interfaces.map(item => {
+                    const value = JSON.stringify({ interfaceName: item.interfaceName, address: item.address });
+                    return <option key={item.interfaceName + item.address} value={value}>{item.interfaceName} · {item.address}</option>;
+                  })}
+                </select>
+              </label>
+              <p className="muted">Only configured private IPv4 addresses are listed. The selected address is checked again immediately before the backend binds to it. Windows may ask you to allow Pomas through the firewall; allow it on Private networks only.</p>
+              <button type="button" disabled={loading || !selected} onClick={enable}>{loading ? "Enabling..." : "Enable LAN access"}</button>
+              {interfaces.length === 0 && <p className="muted">No usable private IPv4 interface was found. Connect this computer to a private Wi-Fi or Ethernet network first.</p>}
+            </>
+          )}
+          {error && <p className="error-text" role="alert">{error}</p>}
+          <button type="button" className="secondary-button" disabled={loading} onClick={refresh}>Refresh network status</button>
+        </div>
+      </section>
+    </PageSection>
+  );
+}
+
+export default function SettingsPage({ userRole }) {
   const { signOut, themePreference, changeThemePreference, saving, farmForm, setFarmForm, feedTypes, pricingSettings, setPricingSettings, crateSize, setCrateSize, defaultWater, setDefaultWater, waterSizes, setWaterSizes, waterUnitLabel, setWaterUnitLabel, expenseCategories, expenseCategoryForm, setExpenseCategoryForm, account, accountForm, setAccountForm, applicationSettings, setApplicationSettings, backupSettings, setBackupSettings, saveFarm, createExpenseCategory, archiveExpenseCategory, saveAccount, saveApplicationSettings, chooseBackupSettingsDirectory, saveBackupSettings, createBackup, restoreBackup, saveSettings, savePricingSettings } = useContext(FarmManagerContext);
 
   return (
@@ -61,6 +167,7 @@ export default function SettingsPage() {
           <label>Working/latest margin %<input readOnly value={pricingSettings.workingMarginPercent ?? ""}/><small>Updated from actual sale results.</small></label>
           <button disabled={saving}>Save pricing target</button>
         </ValidatedForm></section></PageSection>
+      <LanAccessSettings userRole={userRole} />
     </PageTemplate>
   );
 }

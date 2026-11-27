@@ -7,6 +7,9 @@ const channels = Object.freeze({
   GET_BACKEND_BASE_URL: "backend:base-url",
   GET_APP_INFO: "app:info",
   QUIT_APP: "app:quit",
+  LAN_ACCESS_INFO: "lan-access:info",
+  LAN_ACCESS_ENABLE: "lan-access:enable",
+  LAN_ACCESS_DISABLE: "lan-access:disable",
 });
 
 contextBridge.exposeInMainWorld("poultryDesktop", Object.freeze({
@@ -17,6 +20,9 @@ contextBridge.exposeInMainWorld("poultryDesktop", Object.freeze({
   setTheme: (theme) => ipcRenderer.invoke(channels.SET_THEME, theme),
   getApiBaseUrl: () => ipcRenderer.invoke(channels.GET_BACKEND_BASE_URL),
   getAppInfo: () => ipcRenderer.invoke(channels.GET_APP_INFO),
+  getLanAccessInfo: () => ipcRenderer.invoke(channels.LAN_ACCESS_INFO),
+  enableLanAccess: (selection) => ipcRenderer.invoke(channels.LAN_ACCESS_ENABLE, selection),
+  disableLanAccess: () => ipcRenderer.invoke(channels.LAN_ACCESS_DISABLE),
   listDrafts: () => ipcRenderer.invoke(channels.LIST_DRAFTS),
   saveDraft: (draft) => ipcRenderer.invoke(channels.SAVE_DRAFT, draft),
   discardDraft: (id) => ipcRenderer.invoke(channels.DISCARD_DRAFT, id),

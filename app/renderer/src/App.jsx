@@ -1929,7 +1929,7 @@ export default function App() {
         <PageSection page="review-centre"><ReviewCentrePage currentUser={currentUser} /></PageSection>
         <PageSection page="incidents"><IncidentReportingPage currentUser={currentUser} farm={farm} /></PageSection>
         <PageSection page="user-management"><UserManagementPage currentUser={currentUser} /></PageSection>
-        <PageSection page="settings"><SettingsPage /></PageSection>
+        <PageSection page="settings"><SettingsPage userRole={currentUser?.role} /></PageSection>
         <PageSection page="import-export"><ImportExportPage /></PageSection>
       </FarmManagerContext.Provider>
     </AppShell>
