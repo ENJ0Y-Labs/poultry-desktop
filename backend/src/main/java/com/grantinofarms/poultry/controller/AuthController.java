@@ -9,6 +9,7 @@ import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.URI;
 import java.util.Arrays;
 import java.util.Map;
 
@@ -34,14 +35,16 @@ public class AuthController {
     @PostMapping("/login")
     ResponseEntity<?> login(@Valid @RequestBody LoginRequest request, HttpServletRequest httpRequest, HttpServletResponse response) {
         AuthService.Session session = service.login(request, httpRequest.getRemoteAddr());
-        response.addHeader("Set-Cookie", sessionCookieHeader(session.token(), request.persistentSession()));
+        response.addHeader("Set-Cookie", sessionCookieHeader(session.token(), request.persistentSession(),
+                isSameOriginBrowserRequest(httpRequest), httpRequest.isSecure()));
         return ResponseEntity.ok(Map.of("ok", true, "data", session.user()));
     }
 
     @PostMapping("/logout")
     ResponseEntity<?> logout(HttpServletRequest request, HttpServletResponse response) {
         service.logout(sessionToken(request));
-        response.addHeader("Set-Cookie", logoutCookieHeader());
+        response.addHeader("Set-Cookie", logoutCookieHeader(
+                isSameOriginBrowserRequest(request), request.isSecure()));
         return ResponseEntity.ok(Map.of("ok", true, "data", Map.of()));
     }
 
@@ -50,12 +53,54 @@ public class AuthController {
     }
 
     static String sessionCookieHeader(String token, boolean persistent) {
-        return AuthService.COOKIE + "=" + token + COOKIE_ATTRIBUTES
+        return sessionCookieHeader(token, persistent, false, false);
+    }
+
+    static String sessionCookieHeader(String token, boolean persistent,
+                                      boolean sameOriginBrowserRequest, boolean secureTransport) {
+        String attributes = sameOriginCookieAttributes(sameOriginBrowserRequest, secureTransport);
+        return AuthService.COOKIE + "=" + token + attributes
                 + (persistent ? "; Max-Age=" + PERSISTENT_COOKIE_MAX_AGE_SECONDS : "");
     }
 
     static String logoutCookieHeader() {
-        return AuthService.COOKIE + "=; Path=/; HttpOnly; Max-Age=0; SameSite=None; Secure";
+        return logoutCookieHeader(false, false);
+    }
+
+    static String logoutCookieHeader(boolean sameOriginBrowserRequest, boolean secureTransport) {
+        return AuthService.COOKIE + "=; Path=/; HttpOnly; Max-Age=0"
+                + sameOriginCookieAttributes(sameOriginBrowserRequest, secureTransport);
+    }
+
+    private static String sameOriginCookieAttributes(boolean sameOriginBrowserRequest, boolean secureTransport) {
+        if (!sameOriginBrowserRequest) return COOKIE_ATTRIBUTES;
+        // A browser app served by the LAN host is same-origin with its API. Lax
+        // works on plain HTTP LAN addresses without weakening cross-site cookie
+        // protections. Secure is retained whenever the host uses HTTPS.
+        return "; Path=/; HttpOnly; SameSite=Lax" + (secureTransport ? "; Secure" : "");
+    }
+
+    static boolean isSameOriginBrowserRequest(HttpServletRequest request) {
+        String origin = request.getHeader("Origin");
+        if (origin == null || origin.isBlank() || "null".equalsIgnoreCase(origin)) return false;
+        try {
+            URI parsed = URI.create(origin);
+            if (parsed.getScheme() == null || parsed.getHost() == null
+                    || parsed.getUserInfo() != null
+                    || (parsed.getRawPath() != null && !parsed.getRawPath().isEmpty())
+                    || parsed.getRawQuery() != null || parsed.getRawFragment() != null) {
+                return false;
+            }
+            String scheme = request.getScheme();
+            if (!parsed.getScheme().equalsIgnoreCase(scheme)
+                    || !parsed.getHost().equalsIgnoreCase(request.getServerName())) return false;
+            int originPort = parsed.getPort() >= 0 ? parsed.getPort()
+                    : ("https".equalsIgnoreCase(parsed.getScheme()) ? 443 : 80);
+            int requestPort = request.getServerPort();
+            return originPort == requestPort;
+        } catch (IllegalArgumentException exception) {
+            return false;
+        }
     }
 
     @GetMapping("/me")
