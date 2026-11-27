@@ -1527,3 +1527,13 @@ review the error.
 - Version-checked transitions must be compare-and-set operations. Add concurrent tests proving that competing decisions/merges cannot both win for the same version.
 - Post-merge corrections must use the approved transaction-specific reversal-plus-replacement design. Never add a generic table-name/SQL dispatcher or mutate the original official record in place.
 - See `docs/report-submission-review.md`, `docs/review-centre-hardening.md`, and `docs/decisions/2026-10-26-auditable-transaction-corrections.md`.
+
+## First-run onboarding
+
+- After authentication, a farm-less installation uses the seven-step Pomas onboarding wizard. Existing farms bypass it unless a locally saved onboarding record has `farmCreated: true`, which resumes the unfinished post-creation steps.
+- Reuse the authenticated account's full name and email; do not ask for credentials or birthdate again. Email is read-only. Name edits use the existing audited account-update API; do not add a parallel profile endpoint.
+- Create the farm only at the farm-setup step through the existing `farmApi.create` contract. Persist the farm-created marker before moving to poultry-type and priorities steps; when resuming, never issue a second create request.
+- Role, discovery source, poultry-type selections and priorities are stored as local onboarding preferences only. Do not treat them as permissions or operational configuration, and do not create houses, batches, feed, inventory, sales, expenses or other operational records from these selections.
+- Save wizard progress locally under `pomas:onboarding:v1`; clear it only when the user chooses GO TO DASHBOARD. This metadata is not farm ledger data and must not be used as an authoritative permission or operational setting.
+- Keep the wizard offline-capable and use only local assets/CSS. No remote illustrations, fonts, maps, analytics, telemetry or CDN resources.
+- Preserve existing farm data and auth flows. Add renderer tests for progression, multi-select, resume after restart, duplicate-farm prevention, validation and existing-farm bypass. See `docs/onboarding.md`.

@@ -231,14 +231,17 @@ describe("App", () => {
     await waitFor(() => expect(screen.getByRole("heading", { name: "Farm dashboard" })).toBeInTheDocument());
   });
 
-  it("renders the farm setup screen when no farm exists", async () => {
+  it("renders the Pomas onboarding wizard when no farm exists", async () => {
     vi.spyOn(farmApi, "get").mockRejectedValue(new Error("No farm has been created yet."));
+    vi.spyOn(accountApi, "get").mockResolvedValue({ id: "user-1", email: "owner@example.com", fullName: "Farm Owner", role: "ADMINISTRATOR" });
 
     render(<App />);
 
-    await waitFor(() => expect(screen.getByRole("heading", { name: /set up your farm/i })).toBeInTheDocument());
-    expect(screen.getByText("POMAS · FARM MANAGEMENT")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Create farm" })).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByRole("heading", { name: "Welcome to Pomas!" })).toBeInTheDocument());
+    expect(screen.getByText("STEP 1 · USER PROFILE")).toBeInTheDocument();
+    expect(screen.getByLabelText("First name")).toHaveValue("Farm");
+    expect(screen.getByLabelText("Family name")).toHaveValue("Owner");
+    expect(screen.getByLabelText("Email address")).toHaveValue("owner@example.com");
   });
 
   it("prompts for sign-in before requesting protected account data", async () => {
@@ -380,33 +383,47 @@ describe("App", () => {
 
   it("blocks an invalid setup form before calling the API", async () => {
     vi.spyOn(farmApi, "get").mockRejectedValue(new Error("No farm has been created yet."));
+    vi.spyOn(accountApi, "get").mockResolvedValue({ id: "user-1", username: "farm-owner", email: "owner@example.com", fullName: "Farm Owner", role: "ADMINISTRATOR" });
     const createFarm = vi.spyOn(farmApi, "create").mockResolvedValue(farm);
 
     render(<App />);
-    await waitFor(() => expect(screen.getByRole("heading", { name: /set up your farm/i })).toBeInTheDocument());
+    await screen.findByRole("heading", { name: "Welcome to Pomas!" });
+    fireEvent.click(screen.getByRole("button", { name: /next/i }));
+    await screen.findByRole("heading", { name: "Quick question, we appreciate it." });
+    fireEvent.click(screen.getByLabelText("FARM MANAGER"));
+    fireEvent.click(screen.getByRole("button", { name: /next/i }));
+    await screen.findByRole("heading", { name: "How did you hear about Pomas?" });
+    fireEvent.click(screen.getByLabelText("WhatsApp"));
+    fireEvent.click(screen.getByRole("button", { name: /next/i }));
+    await screen.findByRole("heading", { name: "Howdy, Farm!" });
 
-    fireEvent.click(screen.getByRole("button", { name: "Create farm" }));
+    fireEvent.click(screen.getByRole("button", { name: /create farm & continue/i }));
 
     expect(createFarm).not.toHaveBeenCalled();
     expect(screen.getByLabelText("Farm name")).toBeInvalid();
-    expect(screen.getByLabelText("Timezone")).toBeValid();
-    expect(screen.getByLabelText("Currency")).toBeValid();
   });
 
   it("displays structured API validation errors", async () => {
     vi.spyOn(farmApi, "get").mockRejectedValue(new Error("No farm has been created yet."));
+    vi.spyOn(accountApi, "get").mockResolvedValue({ id: "user-1", username: "farm-owner", email: "owner@example.com", fullName: "Farm Owner", role: "ADMINISTRATOR" });
     vi.spyOn(farmApi, "create").mockRejectedValue(Object.assign(
       new Error("Validation failed"),
       { details: { name: "Farm name already exists", currency: "Currency must be 3 letters" } }
     ));
 
     render(<App />);
-    await waitFor(() => expect(screen.getByRole("heading", { name: /set up your farm/i })).toBeInTheDocument());
+    await screen.findByRole("heading", { name: "Welcome to Pomas!" });
+    fireEvent.click(screen.getByRole("button", { name: /next/i }));
+    await screen.findByRole("heading", { name: "Quick question, we appreciate it." });
+    fireEvent.click(screen.getByLabelText("FARM MANAGER"));
+    fireEvent.click(screen.getByRole("button", { name: /next/i }));
+    await screen.findByRole("heading", { name: "How did you hear about Pomas?" });
+    fireEvent.click(screen.getByLabelText("WhatsApp"));
+    fireEvent.click(screen.getByRole("button", { name: /next/i }));
+    await screen.findByRole("heading", { name: "Howdy, Farm!" });
 
     fireEvent.change(screen.getByLabelText("Farm name"), { target: { value: "Grantino Farms" } });
-    fireEvent.change(screen.getByLabelText("Timezone"), { target: { value: "Africa/Lagos" } });
-    fireEvent.change(screen.getByLabelText("Currency"), { target: { value: "NGN" } });
-    fireEvent.click(screen.getByRole("button", { name: "Create farm" }));
+    fireEvent.click(screen.getByRole("button", { name: /create farm & continue/i }));
 
     await waitFor(() => expect(screen.getByText(/name: Farm name already exists/)).toBeInTheDocument());
     expect(screen.getByText(/currency: Currency must be 3 letters/)).toBeInTheDocument();
