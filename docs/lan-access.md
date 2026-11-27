@@ -26,7 +26,7 @@ Do not enable a LAN listener until all six phases are complete. Phase 1 alone in
 ## Runtime flow
 
 1. Pomas starts on `127.0.0.1`; no LAN interface is bound by default.
-2. A signed-in MANAGER opens Settings → Network access, selects a discovered RFC1918 interface, and confirms the native warning.
+2. A signed-in MANAGER or ADMINISTRATOR opens Settings → Network access, selects a discovered RFC1918 interface, and confirms the native warning.
 3. Electron revalidates the selected adapter, restarts Spring Boot on that exact IPv4 address, and waits for the process-identity health check.
 4. Electron requests `/` from that address and verifies that the production React entry point and theme bootstrap are present before moving the desktop window to the same-origin browser workspace.
 5. The desktop session cookie is re-scoped by Electron main process to the LAN host. The browser app and API now share the same scheme, host, and port.
