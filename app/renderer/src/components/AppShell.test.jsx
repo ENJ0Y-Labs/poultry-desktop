@@ -57,6 +57,27 @@ describe("AppShell", () => {
     expect(screen.getByText("Emergency alerts")).toBeInTheDocument();
   });
 
+  it("provides a compact phone navigation only to Worker browser sessions", () => {
+    const onSignOut = vi.fn();
+    render(
+      <AppShell userRole="WORKER" onSignOut={onSignOut} farm={{ name: "Grantino", location: "", currency: "NGN", timezone: "Africa/Lagos" }}>
+        <PageSection page="my-reports"><section>Worker reports</section></PageSection>
+        <PageSection page="incidents"><section>Worker alerts</section></PageSection>
+      </AppShell>
+    );
+
+    const mobileNavigation = screen.getByRole("navigation", { name: "Worker navigation" });
+    expect(within(mobileNavigation).getByRole("button", { name: "My Reports" })).toBeInTheDocument();
+    expect(within(mobileNavigation).getByRole("button", { name: "Alerts" })).toBeInTheDocument();
+    expect(within(mobileNavigation).getByRole("button", { name: "Sign out" })).toBeInTheDocument();
+    expect(within(mobileNavigation).queryByRole("button", { name: "Dashboard" })).not.toBeInTheDocument();
+
+    fireEvent.click(within(mobileNavigation).getByRole("button", { name: "Alerts" }));
+    expect(window.location.hash).toBe("#incidents/overview");
+    fireEvent.click(within(mobileNavigation).getByRole("button", { name: "Sign out" }));
+    expect(onSignOut).toHaveBeenCalledTimes(1);
+  });
+
   it("shows account management to Administrators but keeps the review centre separate", () => {
     render(
       <AppShell userRole="ADMINISTRATOR" farm={{ name: "Farm workspace", location: "", currency: "", timezone: "" }}>
