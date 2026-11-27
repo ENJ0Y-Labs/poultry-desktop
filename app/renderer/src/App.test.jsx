@@ -295,8 +295,7 @@ describe("App", () => {
 
     render(<App />);
 
-    expect(await screen.findByText("POMAS v1.1.0")).toBeInTheDocument();
-    expect(screen.getAllByText("POMAS v1.1.0")).toHaveLength(2);
+    expect(await screen.findAllByText("POMAS v1.1.0")).toHaveLength(2);
     expect(screen.queryByText(/x64/)).not.toBeInTheDocument();
   });
 
