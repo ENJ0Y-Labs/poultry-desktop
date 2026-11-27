@@ -13,6 +13,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.net.URI;
 import java.util.Arrays;
 import java.util.Map;
 
@@ -28,25 +29,38 @@ public class AuthFilter extends OncePerRequestFilter {
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
-        // CORS preflight is a read-only protocol negotiation request. Let Spring MVC
-        // apply the explicit origin/method/header allow-list before auth is evaluated.
-        return "OPTIONS".equalsIgnoreCase(request.getMethod());
+        return "OPTIONS".equalsIgnoreCase(request.getMethod())
+                && !environment.getProperty("poultry.lan.enabled", Boolean.class, false);
     }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
-        String method = request.getMethod();
-        boolean stateChanging = "POST".equalsIgnoreCase(method)
-                || "PUT".equalsIgnoreCase(method)
-                || "PATCH".equalsIgnoreCase(method)
-                || "DELETE".equalsIgnoreCase(method);
-        if (stateChanging && !"XMLHttpRequest".equals(request.getHeader("X-Requested-With"))) {
-            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-            response.setContentType("application/json");
-            response.getWriter().write("""
-                    {"ok":false,"error":{"code":"CSRF_CHECK_FAILED","message":"The request could not be verified."}}
-                    """);
+        boolean lanEnabled = environment.getProperty("poultry.lan.enabled", Boolean.class, false);
+        if (lanEnabled) {
+            if (!hasExpectedHost(request)) {
+                denyRequest(response, "HOST_VALIDATION_FAILED", "The request host is not served by this Pomas instance.");
+                return;
+            }
+            String origin = request.getHeader("Origin");
+            if (origin != null && !isExactSameOrigin(request, origin)) {
+                denyRequest(response, "ORIGIN_VALIDATION_FAILED", "The request origin could not be verified.");
+                return;
+            }
+            if (isStateChanging(request.getMethod())
+                    && (origin == null || !isExactSameOrigin(request, origin))) {
+                denyRequest(response, "ORIGIN_VALIDATION_FAILED", "State-changing LAN requests must come from this Pomas origin.");
+                return;
+            }
+        }
+
+        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+            chain.doFilter(request, response);
+            return;
+        }
+        if (isStateChanging(request.getMethod())
+                && !"XMLHttpRequest".equals(request.getHeader("X-Requested-With"))) {
+            denyRequest(response, "CSRF_CHECK_FAILED", "The request could not be verified.");
             return;
         }
 
@@ -82,6 +96,52 @@ public class AuthFilter extends OncePerRequestFilter {
         } finally {
             CurrentUserContext.clear();
         }
+    }
+
+    private boolean hasExpectedHost(HttpServletRequest request) {
+        String rawHost = request.getHeader("Host");
+        if (rawHost == null || rawHost.isBlank() || rawHost.indexOf(',') >= 0) return false;
+        try {
+            URI parsed = URI.create("http://" + rawHost);
+            if (parsed.getHost() == null || parsed.getRawUserInfo() != null
+                    || (parsed.getRawPath() != null && !parsed.getRawPath().isEmpty())
+                    || parsed.getRawQuery() != null || parsed.getRawFragment() != null) return false;
+            int port = parsed.getPort() >= 0 ? parsed.getPort() : 80;
+            return parsed.getHost().equalsIgnoreCase(request.getLocalAddr())
+                    && port == request.getLocalPort();
+        } catch (IllegalArgumentException exception) {
+            return false;
+        }
+    }
+
+    private boolean isExactSameOrigin(HttpServletRequest request, String origin) {
+        if (origin == null || origin.isBlank() || "null".equalsIgnoreCase(origin)) return false;
+        try {
+            URI parsed = URI.create(origin);
+            if (parsed.getScheme() == null || parsed.getHost() == null
+                    || parsed.getRawUserInfo() != null
+                    || (parsed.getRawPath() != null && !parsed.getRawPath().isEmpty())
+                    || parsed.getRawQuery() != null || parsed.getRawFragment() != null) return false;
+            int expectedPort = parsed.getPort() >= 0 ? parsed.getPort()
+                    : ("https".equalsIgnoreCase(parsed.getScheme()) ? 443 : 80);
+            return parsed.getScheme().equalsIgnoreCase(request.getScheme())
+                    && parsed.getHost().equalsIgnoreCase(request.getLocalAddr())
+                    && expectedPort == request.getLocalPort();
+        } catch (IllegalArgumentException exception) {
+            return false;
+        }
+    }
+
+    private boolean isStateChanging(String method) {
+        return "POST".equalsIgnoreCase(method) || "PUT".equalsIgnoreCase(method)
+                || "PATCH".equalsIgnoreCase(method) || "DELETE".equalsIgnoreCase(method);
+    }
+
+    private void denyRequest(HttpServletResponse response, String code, String message) throws IOException {
+        response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+        response.setContentType("application/json");
+        response.getWriter().write("{\"ok\":false,\"error\":{\"code\":\"" + code
+                + "\",\"message\":\"" + message + "\"}}");
     }
 
     private void denyRole(HttpServletResponse response) throws IOException {
