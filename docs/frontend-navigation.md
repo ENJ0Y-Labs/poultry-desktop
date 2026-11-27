@@ -11,7 +11,7 @@
 7. Sales & Money: customers, the common sales ledger, and expenses.
 8. Reports: farm and batch reports and exports.
 9. Import / Export: supported customer/supplier CSV imports, planned historical batch import, and entry points to supported farm/batch report exports.
-10. Settings: farm profile, farm defaults, configuration, account, backup, and pricing settings.
+10. Settings: farm profile, farm defaults, configuration, account, backup, pricing, and Manager-only network access controls.
 
 ## Routing behavior
 
@@ -23,7 +23,7 @@
 - Feed & Stock has separate Feed & usage, Purchases, Other stock, and Suppliers tabs. The Feed & usage tab manages feed types and stock visibility; daily consumption is recorded from Daily Work.
 - Supplier records are loaded and managed through the existing supplier API; feed purchases can reference a registered supplier.
 - The connection indicator probes the backend health endpoint and refreshes periodically. It reports healthy status only when the backend responds successfully and reports a valid database schema.
-- The API base can be configured with `VITE_API_BASE_URL` or the desktop bridge's `getApiBaseUrl`; the local loopback address is only the development fallback.
+- The API base can be configured with `VITE_API_BASE_URL` or the desktop bridge's `getApiBaseUrl`. The production browser workspace is served by Spring Boot and uses its own origin for same-origin API requests; Vite development keeps its explicit loopback API fallback.
 - Keyboard shortcuts are centrally registered in `app/renderer/src/utils/keyboardShortcuts.js`. Ctrl+1 through Ctrl+8 open Dashboard through Reports, Ctrl+9 opens Import / Export, Ctrl+0 opens Settings, Ctrl+K opens Quick actions, and Ctrl+F focuses the current page record search when one exists.
 - Shortcuts are ignored while typing in inputs, textareas, selects, content-editable elements, or during IME composition. Ctrl+N and Ctrl+S are intentionally not intercepted because they are native commands without a single safe app-wide meaning. Alt+number shortcuts are avoided because they may conflict with operating-system menu behavior.
 - Escape remains owned by the active modal, drawer, or menu so dirty-form confirmation and focus restoration continue to work. The top-bar Keyboard shortcuts reference documents active shortcuts. Navigation remains usable without shortcuts and adds no dependency.
@@ -175,3 +175,11 @@ The top-level page components live under `app/renderer/src/pages/`. Shared form 
 - Filtering operates only on rows already returned by each existing API request. The control explicitly reports “loaded records”; it does not trigger additional requests or silently fetch an unbounded result set. Existing endpoints currently return their module collections without a shared pagination/filter contract. Server-side query parameters and bounded pagination must be introduced at the API/repository layer before any large collection is represented as fully searchable; do not imply the local filter searched records that were not loaded.
 - Every DataTable using the shared component receives the pattern, including applicable batch/house, operations, feed, inventory, health, production, sales, expenses, and audit tables. Tables without a date/batch/house/status field retain text search only.
 - Vitest covers intersection behavior, inclusive date boundaries, no-match results, missing dates, and source-row immutability.
+
+
+## LAN access
+
+- Settings → Network access is visible to the authenticated MANAGER role in the desktop host. It lists validated private IPv4 interfaces and displays the real URL only after the host has verified the served production browser workspace.
+- The enable/disable action is performed by Electron main, which rechecks the live Manager session and asks for native confirmation. Browser-only LAN clients cannot change the host listener.
+- The desktop window switches to the same-origin browser workspace while LAN mode is enabled and returns to its local renderer when disabled. Other devices access the same-origin app and API through the displayed URL.
+- LAN access is disabled by default. See `docs/lan-access.md` for the security boundary and Windows acceptance steps.
