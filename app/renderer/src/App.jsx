@@ -1921,7 +1921,8 @@ export default function App() {
         <PageSection page="sales-money"><SalesMoneyPage /></PageSection>
         <PageSection page="reports"><ReportsPage /></PageSection>
         <PageSection page="my-reports"><MyReportsPage key={currentUser?.id || "anonymous"} userId={currentUser?.id || ""} /></PageSection>
-        <PageSection page="review-centre"><ReviewCentrePage currentUser={currentUser} /></PageSection>\n        <PageSection page="incidents"><IncidentReportingPage currentUser={currentUser} /></PageSection>
+        <PageSection page="review-centre"><ReviewCentrePage currentUser={currentUser} /></PageSection>
+        <PageSection page="incidents"><IncidentReportingPage currentUser={currentUser} /></PageSection>
         <PageSection page="user-management"><UserManagementPage currentUser={currentUser} /></PageSection>
         <PageSection page="settings"><SettingsPage /></PageSection>
         <PageSection page="import-export"><ImportExportPage /></PageSection>
