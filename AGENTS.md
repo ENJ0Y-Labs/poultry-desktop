@@ -1643,3 +1643,13 @@ review the error.
 - Keep the bottom navigation above device safe-area insets, provide at least 44px form controls and 48px navigation targets, and keep wide records inside their own horizontally scrollable containers rather than causing page-level overflow.
 - Scope all narrow viewport overrides to .app-shell[data-role="WORKER"]. MANAGER and ADMINISTRATOR browser sessions retain the desktop canvas; Electron's minimum window size and desktop shell are unchanged.
 - Verify phone layouts at 320px, 360px, and 390px in both themes. Test direct deep links, refresh, back/forward navigation, login/logout, report drafts, attachment interactions, and incident submission using disposable accounts/data. Do not claim device acceptance from CSS tests alone.
+
+## Worker phone report submission (Issue #316)
+
+- Workers must be able to create and explicitly submit supported reports from the production same-origin browser workspace on a phone connected to the host PC's trusted private Wi-Fi.
+- Reuse the existing My Reports form, draft recovery, report submission API, and create/submit idempotency keys. Do not add a mobile-only API or bypass Manager Review.
+- A phone can submit only while it can reach the host over the LAN. Offline drafts remain recoverable locally and are not represented as submitted.
+- Preserve stable idempotency keys across interrupted requests. Reconcile unknown outcomes against the server before local cleanup; never create a replacement submission merely because the response was lost.
+- Backend role/farm-scope authorization, DTO validation, duplicate checks, late-report rules, and submission lifecycle remain authoritative. Submission does not write official farm records.
+- On Worker phone widths, present Save draft and Submit for review as full-width, touch-sized actions. Keep submission explicit and retain accessible form labels/validation.
+- Test valid and invalid submissions from a phone browser, plus a lost-response retry proving one server submission. Use a disposable Worker account and database; manual device acceptance must be recorded separately from automated tests.
