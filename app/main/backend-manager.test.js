@@ -361,6 +361,9 @@ describe("BackendManager", () => {
       spawnProcess: spawnMock,
       networkInterfacesProvider: () => (++discoveryCount === 1 ? available : {})
     });
+    const originalDatabase = Buffer.from("preserve-this-farm-database-on-lan-startup-failure");
+    mkdirSync(dirname(manager.databasePath), { recursive: true });
+    writeFileSync(manager.databasePath, originalDatabase);
     try {
       await manager.start();
       await expect(manager.enableLanAccess({ interfaceName: "WiFi", address: "192.168.10.25" }))
@@ -369,6 +372,7 @@ describe("BackendManager", () => {
       expect(manager.process).not.toBeNull();
       expect(manager.lanStatus).toMatchObject({ enabled: false, url: null });
       expect(spawnMock.mock.calls.at(-1)[2].env.SERVER_ADDRESS).toBe("127.0.0.1");
+      expect(readFileSync(manager.databasePath)).toEqual(originalDatabase);
       await manager.stop();
     } finally {
       rmSync(appPath, { recursive: true, force: true });
