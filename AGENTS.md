@@ -1538,6 +1538,18 @@ review the error.
 - Keep the wizard offline-capable and use only local assets/CSS. No remote illustrations, fonts, maps, analytics, telemetry or CDN resources.
 - Preserve existing farm data and auth flows. Add renderer tests for progression, multi-select, resume after restart, duplicate-farm prevention, validation and existing-farm bypass. See `docs/onboarding.md`.
 
+
+## Atomic Manager Review merge
+
+- The official domain adapter write, merge-operation claim, report provenance link, MERGED lifecycle transition, MERGED workflow event, and audit row must share one Spring-managed database transaction. Do not use REQUIRES_NEW for any part of this sequence.
+- Treat `merge_operation_key` as the idempotency key for the entire merge. A committed retry with the same key returns the original result without invoking a domain adapter again. A different key for an already-merged submission is a conflict, not a successful retry.
+- Keep the unique database index on `merge_operation_key` so a key cannot claim two submissions. Translate a key collision to a stable API conflict.
+- Claim the merge with a compare-and-set update constrained by submission ID, approved lifecycle state, and matching current, submitted, and decision versions. Never rely on a prior read alone for concurrency protection.
+- Concurrent database lock conflicts must not produce partial ledger writes. Return a retryable conflict and require clients to reuse the same Idempotency-Key.
+- Any exception after an official write must roll back the official record, merge key, provenance, lifecycle status, workflow event, and audit row together. Add failure-injection coverage at early and late transaction boundaries.
+- Test same-key retries, different-key retries, cross-request concurrency, and rollback after the final audit write. Run focused integration tests and the complete backend suite before considering the change verified.
+- See `docs/review-centre-hardening.md` and `docs/report-submission-review.md`.
+
 ## Manager Review automated validation gates
 
 - Keep submission authorization at the Spring service boundary. Workers, Administrators and Managers may submit their own reports; Manager-only review, assignment, warning authorization and merge actions must remain Manager-only. A Manager must never review, authorize warnings on, or merge their own submission.
