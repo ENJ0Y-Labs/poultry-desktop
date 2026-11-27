@@ -77,7 +77,7 @@ Report author endpoints:
 - `POST /api/v1/review/submissions/{id}/comments`: author may comment only on their own submission.
 
 Manager review endpoints:
-- `GET /api/v1/review/queue`
+- `GET /api/v1/review/queue` (Managers may pass `?status=MERGED` to reopen merged submissions for provenance inspection and supported corrections)
 - `GET /api/v1/review/managers`
 - `GET /api/v1/review/submissions/{id}`
 - `POST /api/v1/review/submissions/{id}/assign`
