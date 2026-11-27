@@ -84,7 +84,7 @@ The first typed post-merge correction adapter now supports merged `WEIGHT_RECORD
 - The original measurement date is retained. The corrected sample quantity, total sample weight and notes are validated through the existing Broiler/Turkey production service.
 - The replacement weight row, append-only `transaction_reversals` row (`CORRECT` with replacement reference), report provenance link, submission event and audit event share one transaction.
 - The original weight row is preserved and excluded from effective growth calculations after correction.
-- Only the latest effective measurement can be corrected. A later measurement must be corrected first. A second correction of the same original is rejected.
+- Only the latest effective measurement can be corrected. A later measurement must be corrected first. Each original row can be reversed once; the replacement becomes the next effective provenance link and can itself be corrected through a new audited chain step.
 
 This is deliberately **not** a universal correction dispatcher. Mortality/culling, bird sales/transfers, feed purchases/usages, egg collections/sales, expenses and drug-generated expenses remain unsupported by the post-merge correction UI until their owning domain services can reverse all dependent ledgers and rebuild history atomically. Those report types must return a clear conflict; they must never be rewritten or balanced with generic SQL.
 
