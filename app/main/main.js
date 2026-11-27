@@ -119,7 +119,7 @@ ipcMain.handle("lan-access:enable", async (event, selection, ...args) => {
       throw new Error("The production browser JavaScript assets could not be loaded from the LAN listener.");
     }
     await moveDesktopSessionCookie(status.url, sessionCookie, true);
-    await mainWindow.loadURL(status.url);
+    await mainWindow.loadURL(status.url + "#settings/network");
     lanAccessPublished = true;
     return status;
   } catch (error) {
