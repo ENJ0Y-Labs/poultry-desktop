@@ -1732,17 +1732,20 @@ export default function App() {
             <div className="auth-whats-new-heading">
               <p className="auth-whats-new-kicker">{appVersionLabel(appInfo)}</p>
               <h2 id="auth-whats-new-title">What's new</h2>
-              <p>Reach common farm tasks faster, with one Quick actions menu and keyboard shortcuts across the workspace.</p>
+              <p>Coordinate farm reporting with worker submissions, manager review, emergency response, and scheduled reporting.</p>
             </div>
             <div className="auth-whats-new-grid">
               <article className="auth-whats-new-item">
-                <span>01</span><div><h3>Quick actions in one place</h3><p>Start common daily, production, finance, and stock workflows from the top bar.</p></div>
+                <span>01</span><div><h3>Worker report submissions</h3><p>Workers can save drafts, submit operational reports, and follow comments, review status, and decisions.</p></div>
               </article>
               <article className="auth-whats-new-item">
-                <span>02</span><div><h3>Keyboard-first navigation</h3><p>Use Ctrl+1 through Ctrl+0 to navigate, Ctrl+K for Quick actions, and Ctrl+F to focus page search when available.</p></div>
+                <span>02</span><div><h3>Manager Review Centre</h3><p>Managers can validate submissions, request changes, approve reports, and merge approved records once.</p></div>
               </article>
               <article className="auth-whats-new-item">
-                <span>03</span><div><h3>A cleaner dashboard</h3><p>Dashboard space is reserved for farm performance, attention items, and recent activity.</p></div>
+                <span>03</span><div><h3>Emergency alerts and schedules</h3><p>Raise incidents for manager response, configure reporting schedules, and identify missing reports.</p></div>
+              </article>
+              <article className="auth-whats-new-item">
+                <span>04</span><div><h3>Evidence and submission history</h3><p>Attach supporting files and keep versioned reports, comments, decisions, and official-record links together.</p></div>
               </article>
             </div>
           </section>
