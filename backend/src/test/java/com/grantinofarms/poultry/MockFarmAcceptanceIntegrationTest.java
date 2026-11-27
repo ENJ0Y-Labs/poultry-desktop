@@ -82,7 +82,8 @@ class MockFarmAcceptanceIntegrationTest {
         assertThat(eggSale.soldEggs()).isEqualTo(30);
         assertThat(expense.amountMinor()).isEqualTo(75_000L);
         assertThat(eggs.collections(layer.id(), EVENT_DAY)).hasSize(1);
-        assertThat(feed.inventory(EVENT_DAY)).isNotEmpty();
+        assertThat(feed.inventory(EVENT_DAY)).singleElement()
+                .satisfies(stock -> assertThat(stock.remainingQuantityMilli()).isEqualTo(8_000L));
 
         Map<String, Object> report = reports.farm(EVENT_DAY);
         assertThat((List<?>) report.get("sales")).hasSize(1);
