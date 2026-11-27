@@ -208,8 +208,10 @@ public class ReportSubmissionRepository {
     }
 
     public List<String> findPotentialDuplicates(String farmId, String excludingId,
-                                                String reportType, String batchId, String eventDate) {
-        if (batchId == null || batchId.isBlank() || eventDate == null || eventDate.isBlank()) return List.of();
+                                                String reportType, String batchId, String eventDate,
+                                                String submittedPayloadJson) {
+        if (batchId == null || batchId.isBlank() || eventDate == null || eventDate.isBlank()
+                || submittedPayloadJson == null || submittedPayloadJson.isBlank()) return List.of();
         return jdbc.queryForList("""
                 SELECT s.id
                 FROM report_submissions s
@@ -225,9 +227,11 @@ public class ReportSubmissionRepository {
                         json_extract(v.payload_json, '$.usageDate'),
                         json_extract(v.payload_json, '$.occurredDate')
                       ) = ?
+                  AND json(v.payload_json) = json(?)
                 ORDER BY s.submitted_at DESC
                 LIMIT 5
-                """, String.class, farmId, excludingId, reportType, batchId, eventDate);
+                """, String.class, farmId, excludingId, reportType, batchId, eventDate,
+                submittedPayloadJson);
     }
 
     public Map<String, Object> findCheck(String submissionId, int version, String checkId) {
