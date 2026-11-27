@@ -62,6 +62,13 @@ class BackupServiceTest {
         assertThat(first.get("filename")).isEqualTo(
                 "poultry-" + LocalDate.now() + ".db"
         );
+        assertThat(first).containsEntry("valid", true).containsEntry("schemaVersion", "18");
+        assertThat(first.get("sizeBytes")).isInstanceOf(Long.class);
+        assertThat((Long) first.get("sizeBytes")).isPositive();
+        try (Stream<Path> files = Files.list(tempDir)) {
+            assertThat(files.map(path -> path.getFileName().toString())
+                    .noneMatch(name -> name.contains(".tmp-"))).isTrue();
+        }
 
         var second = service.create(tempDir.toString());
         var secondName = (String) second.get("filename");
