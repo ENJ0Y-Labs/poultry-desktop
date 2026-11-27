@@ -21,6 +21,10 @@ The application is designed for farm use without a cloud dependency. The package
 - Backend-derived attention alerts
 - Farm and batch reports
 - CSV and PDF report export
+- Worker report drafts, submissions, comments, and version history
+- Manager Review Centre for assignment, validation, change requests, approval, and controlled merge into official records
+- Emergency incident alerts, configurable reporting schedules, missing-report tracking, and manager notifications
+- Evidence attachments and submission-to-record provenance
 - User authentication and account management
 - Append-only audit history
 - SQLite-safe backup, validation and desktop restore
