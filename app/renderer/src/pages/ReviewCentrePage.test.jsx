@@ -66,10 +66,19 @@ describe("ReviewCentrePage", () => {
     };
     const corrected = {
       ...merged,
-      links: [...merged.links, { id: "link-2", version: 1, recordType: "WEIGHT_RECORD", recordId: "weight-2" }],
-      history: [{ id: "event-1", event: "POST_MERGE_CORRECTED", details: {
-        originalRecordId: "weight-1", replacementRecordId: "weight-2",
-      } }],
+      links: [
+        ...merged.links,
+        { id: "link-2", version: 1, recordType: "WEIGHT_RECORD", recordId: "weight-2" },
+        { id: "link-3", version: 1, recordType: "WEIGHT_RECORD", recordId: "weight-3" },
+      ],
+      history: [
+        { id: "event-1", version: 1, actorId: "manager-1", event: "POST_MERGE_CORRECTED", occurredAt: "2026-11-27T10:00:00Z", details: {
+          originalRecordId: "weight-1", replacementRecordId: "weight-2", reason: "Incorrect sample count",
+        } },
+        { id: "event-2", version: 1, actorId: "manager-1", event: "POST_MERGE_CORRECTED", occurredAt: "2026-11-27T10:05:00Z", details: {
+          originalRecordId: "weight-2", replacementRecordId: "weight-3", reason: "Corrected follow-up calibration",
+        } },
+      ],
     };
     reportReviewApi.queue.mockResolvedValue([merged]);
     reportReviewApi.get.mockResolvedValueOnce(merged).mockResolvedValueOnce(merged).mockResolvedValue(corrected);
@@ -97,6 +106,11 @@ describe("ReviewCentrePage", () => {
     }));
     expect(await screen.findByText(/original weight record was preserved and reversed/)).toBeInTheDocument();
     expect(await screen.findByText("Correct latest effective weight record")).toBeInTheDocument();
+    expect(screen.getAllByText("weight-1").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("weight-2").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("weight-3").length).toBeGreaterThan(0);
+    expect(screen.getByText("Incorrect sample count")).toBeInTheDocument();
+    expect(screen.getByText("Corrected follow-up calibration")).toBeInTheDocument();
   });
 
 
