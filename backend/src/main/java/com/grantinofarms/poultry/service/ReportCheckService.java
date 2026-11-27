@@ -200,7 +200,7 @@ public class ReportCheckService {
 
         if (eventDate != null && batch != null) {
             List<String> duplicates = submissions.findPotentialDuplicates(farmId, submissionId,
-                    reportType, batchId, eventDate.toString());
+                    reportType, batchId, eventDate.toString(), json(payload));
             if (!duplicates.isEmpty()) {
                 results.add(warning("POSSIBLE_DUPLICATE",
                         "A submission of this report type already exists for the same batch and business date. This is only a possible match, not proof of duplication: separate legitimate events can occur on the same day. Compare the submitted version details before deciding whether this report should proceed.",
