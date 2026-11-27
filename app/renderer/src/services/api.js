@@ -447,7 +447,9 @@ export const reportSubmissionApi = {
   save: (id, data) => request("/submissions/" + encodeURIComponent(id), {
     method: "PUT", body: JSON.stringify(data),
   }),
-  submit: (id) => request("/submissions/" + encodeURIComponent(id) + "/submit", { method: "POST" }),
+  submit: (id, idempotencyKey) => request("/submissions/" + encodeURIComponent(id) + "/submit", {
+    method: "POST", headers: { "Idempotency-Key": idempotencyKey },
+  }),
   mine: () => request("/submissions"),
   references: () => request("/submissions/references"),
   get: (id) => request("/submissions/" + encodeURIComponent(id)),

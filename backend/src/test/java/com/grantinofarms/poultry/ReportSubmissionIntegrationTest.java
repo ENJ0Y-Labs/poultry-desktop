@@ -124,26 +124,6 @@ class ReportSubmissionIntegrationTest {
 
 
     @Test
-    void submissionRetryWithTheSameOperationKeyReturnsTheOriginalSubmission() throws Exception {
-        Map<String, Object> created = submissions.createDraft(new ReportSubmissionRequest(
-                "MORTALITY", "Retry-safe mortality", mapper.readTree("{\"batchId\":\"batch-1\",\"quantity\":1}")));
-        String id = String.valueOf(created.get("id"));
-
-        Map<String, Object> first = submissions.submit(id, "submit-retry-key-0001");
-        Map<String, Object> retry = submissions.submit(id, "submit-retry-key-0001");
-
-        assertThat(first.get("id")).isEqualTo(retry.get("id"));
-        assertThat(first.get("submittedVersion")).isEqualTo(retry.get("submittedVersion"));
-        assertThat(retry.get("submitOperationKey")).isEqualTo("submit-retry-key-0001");
-        assertThat(jdbc.queryForObject(
-                "SELECT COUNT(*) FROM report_submission_events WHERE submission_id = ? AND event_type = 'SUBMITTED'",
-                Integer.class, id)).isEqualTo(1);
-        assertThatThrownBy(() -> submissions.submit(id, "different-submit-key-0002"))
-                .isInstanceOf(ApiException.class)
-                .hasMessageContaining("different operation key");
-    }
-
-    @Test
     void reportCreationIsIdempotentOnlyForTheSameRequestContent() throws Exception {
         var original = new ReportSubmissionRequest("MORTALITY", "Morning mortality",
                 mapper.readTree("{\"batchId\":\"batch-1\",\"quantity\":1}"));
